@@ -25,14 +25,16 @@ class CCCCC:
     compiler_height = 30
     
     def __init__(self):
-        try:
-            self.worker = Worker('xxx-ccccc.js')
-            self.worker.onmessage = self.onmessage.bind(self)
-            self.worker.onmessageerror = self.onmessage.bind(self)
-            self.worker.onerror = self.onmessage.bind(self)
-            print(self.worker)
-        except:
-            self.worker = None
+        self.worker = None
+        if in_browser:
+            try:
+                self.worker = Worker('xxx-ccccc.js')
+                self.worker.onmessage = self.onmessage.bind(self)
+                self.worker.onmessageerror = self.onmessage.bind(self)
+                self.worker.onerror = self.onmessage.bind(self)
+                print(self.worker)
+            except:
+                pass
 
     def create_question(self):
         e = new_element('DIV', 'question',
@@ -78,29 +80,52 @@ class CCCCC:
         self.executor = e
         self.top.appendChild(e)
 
-    def run_executor(self, source):
-        if source == '':
-            return ''
-        return JSON.parse(source).toString()
+    def run_compiler(self, source):
+        postMessage(['compile', None])
+        try:
+            f = eval('''function _tmp_(args)
+            {
+            function print(txt) { postMessage(['run', txt + '\\n']) ; } ;
+            ''' + source + '} ; _tmp_')
+            postMessage(['compile', 'Compilation sans erreur'])
+            return f
+        except as err:
+            postMessage(['compile', err.name + '\n' + err.message])
+            postMessage(['run', None])
+
+    def run_executor(self, fct, args):
+        try:
+            fct(args)
+        except as err:
+            postMessage(['run', '\n----------------\n' + err.name + '\n'
+                         + err.message])
+
+    def run(self, source):
+        c = self.run_compiler(source)
+        if c:
+            postMessage(['run', None])
+            self.run_executor(c, [])
 
     def onmousedown(self, event):
         print("mouse down")
         self.editor.focus()
         event.preventDefault(True)
-
     def onkeydown(self, event):
-        print("key down")
-
+        if event.key == 'Tab':
+            event.preventDefault(True)
     def onkeyup(self, event):
-        print("key up")
         self.worker.postMessage(self.editor.textContent)
-
     def onkeypress(self, event):
-        print("key press")
-       
+        pass
     def onmessage(self, event):
-        print(event)
-        self.executor.textContent = event.data.toString()
+        if event.data[0] == 'run':
+            e = self.executor
+        else:
+            e = self.compiler
+        if event.data[1] is None:
+            e.textContent = ''
+        else:
+            e.textContent += event.data[1]
 
     def create_html(self):
         self.top = document.createElement('DIV')
@@ -115,18 +140,12 @@ class CCCCC:
         self.create_compiler()
         self.create_executor()
 
-try:
-    postMessage("Nothing to compile")
+ccccc = CCCCC()
+if in_browser:
+    ccccc.create_html()
+else:
     def onmessage(event):
-        postMessage('(' + event.data.toString() + ')')
-    print("In the worker")
-except:
-    ccccc = CCCCC()
-    if in_browser:
-        ccccc.create_html()
-    else:
-        if ccccc.worker:
-            ccccc.worker.postMessage("hello")
+        ccccc.run(event.data.toString())
             
 print("ok")
 
