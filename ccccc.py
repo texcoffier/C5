@@ -45,6 +45,7 @@ class CCCCC:
                         0, self.question_height,
                         '#CFC')
         self.question = e
+        e.innerHTML = self.question_initial_content()
         self.top.appendChild(e)
 
     def create_tester(self):
@@ -162,8 +163,18 @@ class CCCCC_JS(CCCCC):
                     + html(err.name) + '<br>\n'
                     + html(err.message) + '</error>'])
 
+class CCCCC_JS_1(CCCCC_JS):
+    def question_initial_content(self):
+        return """Pour afficher quelque chose, on tape :
+<pre>
+print(la_chose_a_afficher) ;
+</pre>
 
-ccccc = CCCCC_JS()
+<p>
+Saisissez dans le zone blanche le programme qui affiche le nombre 42.
+        """
+
+ccccc = CCCCC_JS_1()
 if in_browser:
     ccccc.create_html()
 else:
