@@ -7,6 +7,9 @@ try:
 except:
     in_browser = False
 
+def html(txt):
+    return str(txt).replace("&", "&amp;").replace("<","&lt;").replace(">","&gt;")
+
 def new_element(htmltype, htmlclass, left, width, top, height, background):
     e = document.createElement(htmltype)
     e.className = htmlclass
@@ -80,26 +83,6 @@ class CCCCC:
         self.executor = e
         self.top.appendChild(e)
 
-    def run_compiler(self, source):
-        postMessage(['compile', None])
-        try:
-            f = eval('''function _tmp_(args)
-            {
-            function print(txt) { postMessage(['run', txt + '\\n']) ; } ;
-            ''' + source + '} ; _tmp_')
-            postMessage(['compile', 'Compilation sans erreur'])
-            return f
-        except as err:
-            postMessage(['compile', err.name + '\n' + err.message])
-            postMessage(['run', None])
-
-    def run_executor(self, fct, args):
-        try:
-            fct(args)
-        except as err:
-            postMessage(['run', '\n----------------\n' + err.name + '\n'
-                         + err.message])
-
     def run(self, source):
         c = self.run_compiler(source)
         if c:
@@ -123,9 +106,12 @@ class CCCCC:
         else:
             e = self.compiler
         if event.data[1] is None:
-            e.textContent = ''
+            if event.data[0] == 'run':
+                e.innerHTML = self.executor_initial_content()
+            else:
+                e.innerHTML = self.compiler_initial_content()
         else:
-            e.textContent += event.data[1]
+            e.innerHTML += event.data[1]
 
     def create_html(self):
         self.top = document.createElement('DIV')
@@ -140,7 +126,44 @@ class CCCCC:
         self.create_compiler()
         self.create_executor()
 
-ccccc = CCCCC()
+    def compiler_initial_content(self):
+        return "RESULTAT DE LA COMPILATION<hr>"
+    def executor_initial_content(self):
+        return "RESULTAT DE L'EXÉCUTION<hr>"
+
+class CCCCC_JS(CCCCC):
+    def run_compiler(self, source):
+        postMessage(['compile', None])
+        try:
+            f = eval('''function _tmp_(args)
+            {
+               function print(txt)
+                  {
+                     if ( txt )
+                          txt = html(txt) ;
+                     else
+                          txt = '' ;
+                     postMessage(['run', txt + '<br>']) ;
+                 } ;
+            ''' + source + '} ; _tmp_')
+            postMessage(['compile', 'Compilation sans erreur'])
+            return f
+        except as err:
+            postMessage(['compile',
+                   '<error>'
+                    + html(err.name) + '<br>\n' + html(err.message)
+                    + '</error>'])
+            postMessage(['run', None])
+    def run_executor(self, fct, args):
+        try:
+            fct(args)
+        except as err:
+            postMessage(['run', '<error>'
+                    + html(err.name) + '<br>\n'
+                    + html(err.message) + '</error>'])
+
+
+ccccc = CCCCC_JS()
 if in_browser:
     ccccc.create_html()
 else:
