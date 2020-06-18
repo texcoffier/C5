@@ -7,12 +7,15 @@ CCCCC       is the top class (mostly running GUI side)
 CCCCC_JS    is a subclass for compiling and interpreting javascript (worker side)
 CCCCC_JS_1  is a subclass defining an exercice
 
-TODO : tester
+TODO : tester function
 
 """
 try:
     window
     in_browser = True
+    document = document
+    postMessage =  postMessage
+    Error = Error
     @external
     class Worker:
         pass
@@ -40,18 +43,17 @@ class CCCCC:
     question_height = 30
     source_width = 40
     compiler_height = 30
+    question = editor = tester = compiler = executor = None # HTML elements
+    executable = None # Compilation result (worker side)
 
     def __init__(self):
         self.worker = None
         if in_browser:
-            try:
-                self.worker = Worker('xxx-ccccc.js')
-                self.worker.onmessage = self.onmessage.bind(self)
-                self.worker.onmessageerror = self.onmessage.bind(self)
-                self.worker.onerror = self.onmessage.bind(self)
-                print(self.worker)
-            except:
-                pass
+            self.worker = Worker('xxx-ccccc.js')
+            self.worker.onmessage      = self.onmessage.bind(self)
+            self.worker.onmessageerror = self.onmessage.bind(self)
+            self.worker.onerror        = self.onmessage.bind(self)
+            print(self.worker)
 
     def create_question(self):
         e = new_element('DIV', 'question',
@@ -75,7 +77,7 @@ class CCCCC:
                         self.question_width, self.source_width,
                         0, 100,
                         '#FFF')
-        e.contentEditable = true
+        e.contentEditable = True
         self.editor = e
         self.top.appendChild(e)
         self.editor.focus()
@@ -103,8 +105,7 @@ class CCCCC:
         self.executable = self.run_compiler(source)
         if self.executable:
             postMessage(['run', None])
-            self.run_executor([]) # XXX
-
+            self.run_executor([])
     def onmousedown(self, event):
         print("mouse down")
         self.editor.focus()
@@ -131,11 +132,11 @@ class CCCCC:
             e.innerHTML += event.data[1]
 
     def create_html(self):
-        self.top = document.createElement('DIV')
+        self.top             = document.createElement('DIV')
         self.top.onmousedown = self.onmousedown.bind(self)
-        self.top.onkeydown = self.onkeydown.bind(self)
-        self.top.onkeyup = self.onkeyup.bind(self)
-        self.top.onkeypress = self.onkeypress.bind(self)
+        self.top.onkeydown   = self.onkeydown.bind(self)
+        self.top.onkeyup     = self.onkeyup.bind(self)
+        self.top.onkeypress  = self.onkeypress.bind(self)
         document.getElementsByTagName('BODY')[0].appendChild(self.top)
         self.create_question()
         self.create_tester()
@@ -147,6 +148,12 @@ class CCCCC:
         return "RESULTAT DE LA COMPILATION<hr>"
     def executor_initial_content(self):
         return "RESULTAT DE L'EXÉCUTION<hr>"
+    def question_initial_content(self):
+        return "Please redefined this function"
+    def run_compiler(self, _source):
+        postMessage(['compile', 'No compiler defined'])
+    def run_executor(self, _args):
+        postMessage(['compile', 'No executor defined'])
 
 class CCCCC_JS(CCCCC):
     def run_compiler(self, source):
@@ -167,17 +174,17 @@ class CCCCC_JS(CCCCC):
             return f
         except Error as err:
             postMessage(['compile',
-                   '<error>'
-                    + html(err.name) + '<br>\n' + html(err.message)
-                    + '</error>'])
+                         '<error>'
+                         + html(err.name) + '<br>\n' + html(err.message)
+                         + '</error>'])
             postMessage(['run', None])
     def run_executor(self, args):
         try:
             self.executable(args)
         except Error as err:
             postMessage(['run', '<error>'
-                    + html(err.name) + '<br>\n'
-                    + html(err.message) + '</error>'])
+                         + html(err.name) + '<br>\n'
+                         + html(err.message) + '</error>'])
 
 class CCCCC_JS_1(CCCCC_JS):
     def question_initial_content(self):
@@ -199,4 +206,3 @@ else:
         ccccc.run(event.data.toString())
 
 print("ok")
-
