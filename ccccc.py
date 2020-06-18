@@ -113,7 +113,7 @@ class CCCCC:
     def onkeydown(self, event):
         if event.key == 'Tab':
             event.preventDefault(True)
-    def onkeyup(self, event):
+    def onkeyup(self, _event):
         self.worker.postMessage(self.editor.textContent)
     def onkeypress(self, event):
         pass
