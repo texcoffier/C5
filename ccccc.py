@@ -1,3 +1,15 @@
+#!/usr/bin/python3
+
+"""
+To simplify the class contains the code for the GUI and the worker.
+
+CCCCC       is the top class (mostly running GUI side)
+CCCCC_JS    is a subclass for compiling and interpreting javascript (worker side)
+CCCCC_JS_1  is a subclass defining an exercice
+
+TODO : tester
+
+"""
 try:
     window
     in_browser = True
@@ -19,14 +31,16 @@ def new_element(htmltype, htmlclass, left, width, top, height, background):
     e.style.top = top + '%'
     e.style.bottom = (100 - top - height) + '%'
     e.style.background = background
+    e.style.overflow = 'auto'
     return e
 
 class CCCCC:
+    """Create the GUI and launch worker"""
     question_width = 30
     question_height = 30
     source_width = 40
     compiler_height = 30
-    
+
     def __init__(self):
         self.worker = None
         if in_browser:
@@ -69,7 +83,7 @@ class CCCCC:
     def create_compiler(self):
         e = new_element('DIV', 'compiler',
                         self.question_width + self.source_width,
-                        100 - self.question_width + self.source_width,
+                        100 - self.question_width - self.source_width,
                         0, self.compiler_height,
                         '#CCF')
         self.compiler = e
@@ -78,17 +92,18 @@ class CCCCC:
     def create_executor(self):
         e = new_element('DIV', 'executor',
                         self.question_width + self.source_width,
-                        100 - self.question_width + self.source_width,
+                        100 - self.question_width - self.source_width,
                         self.compiler_height, 100 - self.compiler_height,
                         '#EEF')
         self.executor = e
         self.top.appendChild(e)
 
     def run(self, source):
-        c = self.run_compiler(source)
-        if c:
+        """This method runs in the worker"""
+        self.executable = self.run_compiler(source)
+        if self.executable:
             postMessage(['run', None])
-            self.run_executor(c, [])
+            self.run_executor([]) # XXX
 
     def onmousedown(self, event):
         print("mouse down")
@@ -102,6 +117,7 @@ class CCCCC:
     def onkeypress(self, event):
         pass
     def onmessage(self, event):
+        """Interprete messages from the worker"""
         if event.data[0] == 'run':
             e = self.executor
         else:
@@ -149,16 +165,16 @@ class CCCCC_JS(CCCCC):
             ''' + source + '} ; _tmp_')
             postMessage(['compile', 'Compilation sans erreur'])
             return f
-        except as err:
+        except Error as err:
             postMessage(['compile',
                    '<error>'
                     + html(err.name) + '<br>\n' + html(err.message)
                     + '</error>'])
             postMessage(['run', None])
-    def run_executor(self, fct, args):
+    def run_executor(self, args):
         try:
-            fct(args)
-        except as err:
+            self.executable(args)
+        except Error as err:
             postMessage(['run', '<error>'
                     + html(err.name) + '<br>\n'
                     + html(err.message) + '</error>'])
@@ -175,11 +191,12 @@ Saisissez dans le zone blanche le programme qui affiche le nombre 42.
         """
 
 ccccc = CCCCC_JS_1()
+
 if in_browser:
     ccccc.create_html()
 else:
     def onmessage(event):
         ccccc.run(event.data.toString())
-            
+
 print("ok")
 
