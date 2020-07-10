@@ -8,6 +8,16 @@ CCCCC       is the top class (mostly running GUI side)
 CCCCC_JS    is a subclass for compiling and interpreting javascript (worker side)
 CCCCC_JS_1  is a subclass defining an exercice
 
+The interface send to the worker the source code to compile and execute
+with the method: «self.worker.postMessage»
+
+The worker return one of these answers with the «postMessage» function:
+  * ['compile', 'compilation result']
+  * ['run', 'execution result']
+
+
+
+
 TODO : tester function
 
 """
@@ -15,8 +25,9 @@ TODO : tester function
 
 try:
     # pylint: disable=undefined-variable,missing-docstring,too-few-public-methods
-    print(str("Python"))
+    str(42)
     in_python = True
+    in_worker = False
     window = window
     document = document
     postMessage = postMessage
@@ -30,19 +41,13 @@ try:
         return fct.bind(obj)
 except: # pylint: disable=bare-except,redefined-builtin
     in_python = False
+    in_worker = not window or not window.document or not document
     def str(txt):
         """Python like"""
         return txt.toString()
     def bind(fct, _obj):
         """Bind the function to the object: nothing to do in Python"""
         return fct
-
-try:
-    print(window.location)
-    in_browser = True
-except: # pylint: disable=bare-except
-    in_browser = False
-
 def html(txt):
     """Protect text to display it in HTML"""
     return str(txt).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -73,7 +78,7 @@ class CCCCC:
 
     def __init__(self):
         self.worker = None
-        if in_browser:
+        if not in_worker:
             self.worker = Worker('xxx-ccccc.js')
             self.worker.onmessage = bind(self.onmessage, self)
             self.worker.onmessageerror = bind(self.onmessage, self)
@@ -240,11 +245,11 @@ Saisissez dans le zone blanche le programme qui affiche le nombre 42.
 
 ccccc = CCCCC_JS_1()
 
-if in_browser:
-    ccccc.create_html()
-else:
+if in_worker:
     def onmessage(event):
         """Evaluate immediatly the function if in the worker"""
         ccccc.run(event.data.toString())
+else:
+    ccccc.create_html()
 
 print("ok")
