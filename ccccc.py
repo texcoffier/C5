@@ -167,21 +167,11 @@ class CCCCC:
         pass
     def onmessage(self, event):
         """Interprete messages from the worker: update display"""
-        if event.data[0] == 'run':
-            e = self.executor
-        elif event.data[0] == 'compile':
-            e = self.compiler
-        else:
-            e = self.tester
+        route = self.routes[event.data[0]]
         if event.data[1] is None:
-            if event.data[0] == 'run':
-                e.innerHTML = self.executor_initial_content()
-            elif event.data[0] == 'compile':
-                e.innerHTML = self.compiler_initial_content()
-            else:
-                e.innerHTML = self.tester_initial_content()
+            route[0].innerHTML = route[1]
         else:
-            e.innerHTML += event.data[1]
+            route[0].innerHTML += event.data[1]
 
     def create_html(self):
         """Create the page content"""
@@ -196,6 +186,11 @@ class CCCCC:
         self.create_editor()
         self.create_compiler()
         self.create_executor()
+        self.routes = {
+            'run': [self.executor, self.executor_initial_content()],
+            'compile': [self.compiler, self.compiler_initial_content()],
+            'tester': [self.tester, self.tester_initial_content()],
+        }
         self.worker.postMessage(self.editor.innerText)
 
 
