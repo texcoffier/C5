@@ -89,16 +89,15 @@ class CCCCC:
             self.worker.onmessage = bind(self.onmessage, self)
             self.worker.onmessageerror = bind(self.onmessage, self)
             self.worker.onerror = bind(self.onmessage, self)
-            print(self.worker)
 
     def create_question(self):
         """The question text container: course and exercise"""
         e = new_element('DIV', 'question',
                         0, self.question_width,
                         0, self.question_height,
-                        '#CFC')
+                        '#EFE')
         self.question = e
-        e.innerHTML = self.question_initial_content()
+        e.innerHTML = self.question_initial_content() + self.run_question()
         self.top.appendChild(e)
 
     def create_tester(self):
@@ -119,6 +118,7 @@ class CCCCC:
         e.contentEditable = True
         self.editor = e
         self.top.appendChild(e)
+        self.editor.innerText = self.editor_initial_content()
         self.editor.focus()
 
     def create_compiler(self):
@@ -127,7 +127,7 @@ class CCCCC:
                         self.question_width + self.source_width,
                         100 - self.question_width - self.source_width,
                         0, self.compiler_height,
-                        '#CCF')
+                        '#EEF')
         self.compiler = e
         self.top.appendChild(e)
 
@@ -161,7 +161,7 @@ class CCCCC:
             event.preventDefault(True)
     def onkeyup(self, _event):
         """Key up"""
-        self.worker.postMessage(self.editor.textContent)
+        self.worker.postMessage(self.editor.innerText)
     def onkeypress(self, event):
         """Key press"""
         pass
@@ -196,19 +196,24 @@ class CCCCC:
         self.create_editor()
         self.create_compiler()
         self.create_executor()
+        self.worker.postMessage(self.editor.innerText)
 
-    def compiler_initial_content(self): # pylint: disable=no-self-use
-        """Used by the subclass"""
-        return "RESULTAT DE LA COMPILATION<hr>"
-    def executor_initial_content(self): # pylint: disable=no-self-use
-        """Used by the subclass"""
-        return "RESULTAT DE L'EXÉCUTION<hr>"
+
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "Please redefined this function"
+        return "<h2>Question</h2>"
+    def editor_initial_content(self): # pylint: disable=no-self-use
+        """Used by the subclass"""
+        return "// Saisissez votre programme au dessous\n\n\n\n\n\n\n\n"
+    def compiler_initial_content(self): # pylint: disable=no-self-use
+        """Used by the subclass"""
+        return "<h2>Compilation</h2>"
+    def executor_initial_content(self): # pylint: disable=no-self-use
+        """Used by the subclass"""
+        return "<h2>Exécution</h2>"
     def tester_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "Les buts de vous devez atteindre :<br>"
+        return "<h2>Les buts de vous devez atteindre</h2>"
     def run_compiler(self, _source): # pylint: disable=no-self-use
         """Do the compilation"""
         postMessage(['compile', 'No compiler defined'])
@@ -218,6 +223,9 @@ class CCCCC:
     def run_tester(self, _args): # pylint: disable=no-self-use
         """Do the regression tests"""
         postMessage(['tester', 'No tester defined'])
+    def run_question(self): # pylint: disable=no-self-use
+        """Used by the subclass"""
+        return "No question defined"
 
 def check(text, needle_message):
     """Append a message in 'output' for each needle_message"""
@@ -227,7 +235,7 @@ def check(text, needle_message):
         else:
             html_class = 'test_bad'
         postMessage(
-            ['tester', '<div class="' + html_class + '">' + message + '</div>'])
+            ['tester', '<li class="' + html_class + '">' + message + '</li>'])
 class CCCCC_JS(CCCCC):
     """JavaScript compiler and evaluator"""
     execution_result = ''
@@ -240,10 +248,12 @@ class CCCCC_JS(CCCCC):
                function print(txt)
                   {
                      if ( txt )
+                        {
+                          ccccc.execution_result += txt ;
                           txt = html(txt) ;
+                        }
                      else
                           txt = '' ;
-                     ccccc.execution_result += txt ;
                      postMessage(['run', txt + '<br>']) ;
                  } ;
             ''' + source + '} ; _tmp_')
@@ -264,27 +274,28 @@ class CCCCC_JS(CCCCC):
 
 class CCCCC_JS_1(CCCCC_JS):
     """First exercise"""
-    def question_initial_content(self):
+    def run_question(self):
         return """Pour afficher quelque chose, on tape :
 <pre>
 print(la_chose_a_afficher) ;
 </pre>
 
 <p>
-Saisissez dans le zone blanche le programme qui affiche le nombre 42.
+Saisissez dans le zone blanche le programme qui affiche le nombre 42
+dans le bloc en bas à droite.
         """
     def run_tester(self):
         postMessage(['tester',
-                     'Dans votre code source on devrait trouver :'])
+                     '<p>Dans votre code source on devrait trouver :</p>'])
         check(self.source,
             [['print', 'Le nom de la fonction «print» pour afficher la valeur'],
              ['print *[(]', 'Une parenthèse ouvrante après le nom de la fonction'],
-             ['[(] *42', 'Le nombre 42 que vous devez afficher'],
-             ['42 *[)]', 'Une parenthèse fermante après le dernier paramètre de la fonction'],
-             ['; *$', "Un point virgule pour indiquer la fin de l'instruction"],
+             ['[(].*42', 'Le nombre 42 que vous devez afficher'],
+             ['42.*[)]', 'Une parenthèse fermante après le dernier paramètre de la fonction'],
+             ['; *($|\n)', "Un point virgule pour indiquer la fin de l'instruction"],
             ])
         postMessage(['tester',
-                     "Ce que vous devez afficher pour passer à l'exercice suivant :"])
+                     "<p>Ce que vous devez afficher pour passer à l'exercice suivant :</p>"])
         check(self.execution_result, [['42', 'Le texte 42']])
 
 ccccc = CCCCC_JS_1()

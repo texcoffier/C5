@@ -13,11 +13,21 @@
           margin: 0.5em ;
           padding: 0.5em ;
         }
-    .test_ok, .test_bad { margin-left: 1em ; text-indent: -1em }
+    H2 {
+        text-align: center;
+        font-size: 120% ;
+        margin-top: 0em ;
+        margin-bottom: 0.3em ;
+        padding-top: 0.3em ;
+        position: sticky ;
+        top: 0px ;
+        background: linear-gradient(#0002, #FFFF, #0002);
+    }
+    .test_ok, .test_bad { margin-left: 2em ; }
     .test_ok { color: #080 }
     .test_bad { color: #F00 }
-    .test_ok::before { content: '☑' ; }
-    .test_bad::before { content: '☐' ; }
+    .test_ok { list-style-type: '☑ '  }
+    .test_bad { list-style-type: '☐ ' }
     </style>
 </head>
 <body>
