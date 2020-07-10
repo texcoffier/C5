@@ -14,8 +14,7 @@ with the method: «self.worker.postMessage»
 The worker return one of these answers with the «postMessage» function:
   * ['compile', 'compilation result']
   * ['run', 'execution result']
-
-
+  * ['tester', 'regtest results']
 
 
 TODO : tester function
@@ -31,6 +30,9 @@ try:
     window = window
     document = document
     postMessage = postMessage
+    Object = Object
+    Array = Array
+    RegExp = RegExp
     Error = None
     @external
     class Worker:
@@ -48,6 +50,9 @@ except: # pylint: disable=bare-except,redefined-builtin
     def bind(fct, _obj):
         """Bind the function to the object: nothing to do in Python"""
         return fct
+    Object.defineProperty(Array.prototype, 'append',
+                          {'enumerable': False, 'value': Array.prototype.push})
+
 def html(txt):
     """Protect text to display it in HTML"""
     return str(txt).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -75,6 +80,7 @@ class CCCCC:
     question = editor = tester = compiler = executor = None # HTML elements
     executable = None # Compilation result (worker side)
     top = None # Top page HTML element
+    source = None # The source code to compile
 
     def __init__(self):
         self.worker = None
@@ -137,10 +143,14 @@ class CCCCC:
 
     def run(self, source):
         """This method runs in the worker"""
+        self.source = source
         self.executable = self.run_compiler(source)
         postMessage(['run', None])
+        postMessage(['tester', None])
+        self.execution_result = ''
         if self.executable:
             self.run_executor([])
+        self.run_tester()
     def onmousedown(self, event):
         """Mouse down"""
         self.editor.focus()
@@ -156,16 +166,20 @@ class CCCCC:
         """Key press"""
         pass
     def onmessage(self, event):
-        """Interprete messages from the worker"""
+        """Interprete messages from the worker: update display"""
         if event.data[0] == 'run':
             e = self.executor
-        else:
+        elif event.data[0] == 'compile':
             e = self.compiler
+        else:
+            e = self.tester
         if event.data[1] is None:
             if event.data[0] == 'run':
                 e.innerHTML = self.executor_initial_content()
-            else:
+            elif event.data[0] == 'compile':
                 e.innerHTML = self.compiler_initial_content()
+            else:
+                e.innerHTML = self.tester_initial_content()
         else:
             e.innerHTML += event.data[1]
 
@@ -192,15 +206,31 @@ class CCCCC:
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "Please redefined this function"
+    def tester_initial_content(self): # pylint: disable=no-self-use
+        """Used by the subclass"""
+        return "Les buts de vous devez atteindre :<br>"
     def run_compiler(self, _source): # pylint: disable=no-self-use
         """Do the compilation"""
         postMessage(['compile', 'No compiler defined'])
     def run_executor(self, _args): # pylint: disable=no-self-use
         """Do the execution"""
         postMessage(['run', 'No executor defined'])
+    def run_tester(self, _args): # pylint: disable=no-self-use
+        """Do the regression tests"""
+        postMessage(['tester', 'No tester defined'])
 
+def check(text, needle_message):
+    """Append a message in 'output' for each needle_message"""
+    for needle, message in needle_message:
+        if text.match(RegExp(needle)):
+            html_class = 'test_ok'
+        else:
+            html_class = 'test_bad'
+        postMessage(
+            ['tester', '<div class="' + html_class + '">' + message + '</div>'])
 class CCCCC_JS(CCCCC):
     """JavaScript compiler and evaluator"""
+    execution_result = ''
     def run_compiler(self, source):
         postMessage(['compile', None])
         try:
@@ -213,6 +243,7 @@ class CCCCC_JS(CCCCC):
                           txt = html(txt) ;
                      else
                           txt = '' ;
+                     ccccc.execution_result += txt ;
                      postMessage(['run', txt + '<br>']) ;
                  } ;
             ''' + source + '} ; _tmp_')
@@ -242,6 +273,19 @@ print(la_chose_a_afficher) ;
 <p>
 Saisissez dans le zone blanche le programme qui affiche le nombre 42.
         """
+    def run_tester(self):
+        postMessage(['tester',
+                     'Dans votre code source on devrait trouver :'])
+        check(self.source,
+            [['print', 'Le nom de la fonction «print» pour afficher la valeur'],
+             ['print *[(]', 'Une parenthèse ouvrante après le nom de la fonction'],
+             ['[(] *42', 'Le nombre 42 que vous devez afficher'],
+             ['42 *[)]', 'Une parenthèse fermante après le dernier paramètre de la fonction'],
+             ['; *$', "Un point virgule pour indiquer la fin de l'instruction"],
+            ])
+        postMessage(['tester',
+                     "Ce que vous devez afficher pour passer à l'exercice suivant :"])
+        check(self.execution_result, [['42', 'Le texte 42']])
 
 ccccc = CCCCC_JS_1()
 
