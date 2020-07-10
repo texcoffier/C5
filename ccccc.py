@@ -34,6 +34,7 @@ try:
     Array = Array
     RegExp = RegExp
     Date = Date
+    setInterval = setInterval
     Error = None
     @external
     class Worker:
@@ -89,6 +90,8 @@ class CCCCC:
     routes = None # The message routes
     start_time = None # Start time of the evaluation
     nr_eval = 0
+    messages = {}
+    old_source = ''
 
     def __init__(self):
         self.worker = None
@@ -97,6 +100,7 @@ class CCCCC:
             self.worker.onmessage = bind(self.onmessage, self)
             self.worker.onmessageerror = bind(self.onmessage, self)
             self.worker.onerror = bind(self.onmessage, self)
+            setInterval(bind(self.scheduler, self), 200)
 
     def create_question(self):
         """The question text container: course and exercise"""
@@ -167,8 +171,20 @@ class CCCCC:
         if self.executable:
             self.run_executor([])
         self.run_tester([])
-        postMessage(['time', None])
         postMessage(['time', (millisecs() - start_time) + 'ms'])
+    def scheduler(self):
+        """Send a new job if free and update the screen"""
+        for k in self.messages:
+            self.routes[k][0].innerHTML = self.messages[k]
+        if not self.start_time:
+            source = self.editor.innerText
+            if source != self.old_source:
+                self.old_source = source # Do not recompile the same thing
+                self.start_time = millisecs()
+                self.worker.postMessage(source) # Start compile/execute/test
+                self.nr_eval += 1
+                self.messages = {}
+
     def onmousedown(self, event):
         """Mouse down"""
         self.editor.focus()
@@ -179,23 +195,17 @@ class CCCCC:
             event.preventDefault(True)
     def onkeyup(self, _event):
         """Key up"""
-        self.start_time = millisecs()
-        self.worker.postMessage(self.editor.innerText)
-        self.nr_eval += 1
+        pass
     def onkeypress(self, event):
         """Key press"""
         pass
     def onmessage(self, event):
-        """Interprete messages from the worker: update display"""
-        route = self.routes[event.data[0]]
-        if event.data[1] is None:
-            route[0].innerHTML = route[1]
+        """Interprete messages from the worker: update self.messages"""
+        what = event.data[0]
+        if self.messages[what]:
+            self.messages[what] += event.data[1]
         else:
-            if event.data[0] == 'time':
-                event.data[1] = ('#' + self.nr_eval + ' '
-                                 + (millisecs() - self.start_time) + 'ms '
-                                 +  event.data[1])
-            route[0].innerHTML += event.data[1]
+            self.messages[what] = self.routes[what][1](event.data[1])
 
     def create_html(self):
         """Create the page content"""
@@ -211,14 +221,13 @@ class CCCCC:
         self.create_compiler()
         self.create_executor()
         self.create_time()
+        # pylint: disable=bad-whitespace
         self.routes = {
-            'run': [self.executor, self.executor_initial_content()],
-            'compile': [self.compiler, self.compiler_initial_content()],
-            'tester': [self.tester, self.tester_initial_content()],
-            'time': [self.time, ''],
+            'run'    : [self.executor, bind(self.executor_initial_content, self)],
+            'compile': [self.compiler, bind(self.compiler_initial_content, self)],
+            'tester' : [self.tester  , bind(self.tester_initial_content  , self)],
+            'time'   : [self.time    , bind(self.time_initial_content    , self)],
         }
-        self.worker.postMessage(self.editor.innerText)
-
 
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
@@ -235,6 +244,12 @@ class CCCCC:
     def tester_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "<h2>Les buts de vous devez atteindre</h2>"
+    def time_initial_content(self, t):
+        """The message terminate the job. It indicates the worker time"""
+        t = '#' + self.nr_eval + ' ' + (millisecs() - self.start_time) + 'ms ' +  t
+        self.start_time = None # To allow a new job
+        return t
+
     def run_compiler(self, _source): # pylint: disable=no-self-use
         """Do the compilation"""
         postMessage(['compile', 'No compiler defined'])
