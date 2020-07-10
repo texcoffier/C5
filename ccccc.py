@@ -122,6 +122,7 @@ class CCCCC:
         self.top.appendChild(e)
         self.editor.innerText = self.editor_initial_content()
         self.editor.focus()
+        document.getSelection().collapse(self.editor, self.editor.childNodes.length)
 
     def create_compiler(self):
         """The compiler result container"""
@@ -201,7 +202,7 @@ class CCCCC:
         return "<h2>Question</h2>"
     def editor_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "// Saisissez votre programme au dessous (souris interdite) :\n\n\n\n\n\n\n\n"
+        return "// Saisissez votre programme au dessous (souris interdite) :\n\n"
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "<h2>Compilation</h2>"
@@ -251,7 +252,7 @@ class CCCCC_JS(CCCCC):
                         }
                      else
                           txt = '' ;
-                     postMessage(['run', txt + '<br>']) ;
+                     postMessage(['run', txt + '\\n']) ;
                  } ;
             ''' + source + '} ; _tmp_')
             postMessage(['compile', 'Compilation sans erreur'])
@@ -259,14 +260,14 @@ class CCCCC_JS(CCCCC):
         except Error as err:
             postMessage(['compile',
                          '<error>'
-                         + html(err.name) + '<br>\n' + html(err.message)
+                         + html(err.name) + '\n' + html(err.message)
                          + '</error>'])
     def run_executor(self, args):
         try:
             self.executable(args)
         except Error as err:
             postMessage(['run', '<error>'
-                         + html(err.name) + '<br>\n'
+                         + html(err.name) + '\n'
                          + html(err.message) + '</error>'])
 
 class CCCCC_JS_1(CCCCC_JS):
@@ -278,7 +279,7 @@ print(la_chose_a_afficher) ;
 </pre>
 
 <p>
-Saisissez dans le zone blanche le programme qui affiche le nombre 42
+Saisissez dans le zone blanche le programme qui affiche 42
 dans le bloc en bas à droite.
         """
     def run_tester(self, _args):
@@ -287,7 +288,7 @@ dans le bloc en bas à droite.
         check(self.source, [
             ['print', 'Le nom de la fonction «print» pour afficher la valeur'],
             ['print *[(]', 'Une parenthèse ouvrante après le nom de la fonction'],
-            ['[(].*42', 'Le nombre 42 que vous devez afficher'],
+            ['[(].*42', 'Le nombre que vous devez afficher'],
             ['42.*[)]', 'Une parenthèse fermante après le dernier paramètre de la fonction'],
             ['; *($|\n)', "Un point virgule pour indiquer la fin de l'instruction"],
             ])
