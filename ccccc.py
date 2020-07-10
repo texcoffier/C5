@@ -81,6 +81,8 @@ class CCCCC:
     executable = None # Compilation result (worker side)
     top = None # Top page HTML element
     source = None # The source code to compile
+    execution_result = None # The result of the execution (what is displayed)
+    routes = None # The message routes
 
     def __init__(self):
         self.worker = None
@@ -150,7 +152,7 @@ class CCCCC:
         self.execution_result = ''
         if self.executable:
             self.run_executor([])
-        self.run_tester()
+        self.run_tester([])
     def onmousedown(self, event):
         """Mouse down"""
         self.editor.focus()
@@ -199,7 +201,7 @@ class CCCCC:
         return "<h2>Question</h2>"
     def editor_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "// Saisissez votre programme au dessous\n\n\n\n\n\n\n\n"
+        return "// Saisissez votre programme au dessous (souris interdite) :\n\n\n\n\n\n\n\n"
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "<h2>Compilation</h2>"
@@ -279,15 +281,15 @@ print(la_chose_a_afficher) ;
 Saisissez dans le zone blanche le programme qui affiche le nombre 42
 dans le bloc en bas à droite.
         """
-    def run_tester(self):
+    def run_tester(self, _args):
         postMessage(['tester',
                      '<p>Dans votre code source on devrait trouver :</p>'])
-        check(self.source,
-            [['print', 'Le nom de la fonction «print» pour afficher la valeur'],
-             ['print *[(]', 'Une parenthèse ouvrante après le nom de la fonction'],
-             ['[(].*42', 'Le nombre 42 que vous devez afficher'],
-             ['42.*[)]', 'Une parenthèse fermante après le dernier paramètre de la fonction'],
-             ['; *($|\n)', "Un point virgule pour indiquer la fin de l'instruction"],
+        check(self.source, [
+            ['print', 'Le nom de la fonction «print» pour afficher la valeur'],
+            ['print *[(]', 'Une parenthèse ouvrante après le nom de la fonction'],
+            ['[(].*42', 'Le nombre 42 que vous devez afficher'],
+            ['42.*[)]', 'Une parenthèse fermante après le dernier paramètre de la fonction'],
+            ['; *($|\n)', "Un point virgule pour indiquer la fin de l'instruction"],
             ])
         postMessage(['tester',
                      "<p>Ce que vous devez afficher pour passer à l'exercice suivant :</p>"])
