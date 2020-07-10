@@ -33,6 +33,7 @@ try:
     Object = Object
     Array = Array
     RegExp = RegExp
+    Date = Date
     Error = None
     @external
     class Worker:
@@ -57,6 +58,9 @@ def html(txt):
     """Protect text to display it in HTML"""
     return str(txt).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
+def millisecs():
+    """Current time in milli seconds"""
+    return Date().getTime()
 
 def new_element(htmltype, htmlclass, left, width, top, height, background):
     """Create a DOM element"""
@@ -77,7 +81,7 @@ class CCCCC:
     question_height = 30
     source_width = 40
     compiler_height = 30
-    question = editor = tester = compiler = executor = None # HTML elements
+    question = editor = tester = compiler = executor = time = None # HTML elements
     executable = None # Compilation result (worker side)
     top = None # Top page HTML element
     source = None # The source code to compile
@@ -144,8 +148,15 @@ class CCCCC:
         self.executor = e
         self.top.appendChild(e)
 
+    def create_time(self):
+        """The worker time displayer"""
+        e = new_element('DIV', 'time', 97, 3, 98, 2, '#0000')
+        self.time = e
+        self.top.appendChild(e)
+
     def run(self, source):
         """This method runs in the worker"""
+        start_time = millisecs()
         self.source = source
         self.executable = self.run_compiler(source)
         postMessage(['run', None])
@@ -154,6 +165,8 @@ class CCCCC:
         if self.executable:
             self.run_executor([])
         self.run_tester([])
+        postMessage(['time', None])
+        postMessage(['time', (millisecs() - start_time) + 'ms'])
     def onmousedown(self, event):
         """Mouse down"""
         self.editor.focus()
@@ -189,10 +202,12 @@ class CCCCC:
         self.create_editor()
         self.create_compiler()
         self.create_executor()
+        self.create_time()
         self.routes = {
             'run': [self.executor, self.executor_initial_content()],
             'compile': [self.compiler, self.compiler_initial_content()],
             'tester': [self.tester, self.tester_initial_content()],
+            'time': [self.time, ''],
         }
         self.worker.postMessage(self.editor.innerText)
 
