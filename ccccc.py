@@ -87,6 +87,7 @@ class CCCCC:
     source = None # The source code to compile
     execution_result = None # The result of the execution (what is displayed)
     routes = None # The message routes
+    start_time = None # Start time of the evaluation
 
     def __init__(self):
         self.worker = None
@@ -150,7 +151,7 @@ class CCCCC:
 
     def create_time(self):
         """The worker time displayer"""
-        e = new_element('DIV', 'time', 97, 3, 98, 2, '#0000')
+        e = new_element('DIV', 'time', 95, 5, 98, 2, '#0000')
         self.time = e
         self.top.appendChild(e)
 
@@ -177,6 +178,7 @@ class CCCCC:
             event.preventDefault(True)
     def onkeyup(self, _event):
         """Key up"""
+        self.start_time = millisecs()
         self.worker.postMessage(self.editor.innerText)
     def onkeypress(self, event):
         """Key press"""
@@ -187,6 +189,8 @@ class CCCCC:
         if event.data[1] is None:
             route[0].innerHTML = route[1]
         else:
+            if event.data[0] == 'time':
+                event.data[1] = (millisecs() - self.start_time) + '/' +  event.data[1]
             route[0].innerHTML += event.data[1]
 
     def create_html(self):
