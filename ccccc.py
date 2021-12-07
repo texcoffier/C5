@@ -271,16 +271,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def run_question(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "No question defined"
+    def display(self, message):
+        postMessage(['tester', message])
+    def check(self, text, needle_message):
+        """Append a message in 'output' for each needle_message"""
+        for needle, message in needle_message:
+            if text.match(RegExp(needle)):
+                html_class = 'test_ok'
+            else:
+                html_class = 'test_bad'
+            self.display('<li class="' + html_class + '">' + message + '</li>')
 
-def check(text, needle_message):
-    """Append a message in 'output' for each needle_message"""
-    for needle, message in needle_message:
-        if text.match(RegExp(needle)):
-            html_class = 'test_ok'
-        else:
-            html_class = 'test_bad'
-        postMessage(
-            ['tester', '<li class="' + html_class + '">' + message + '</li>'])
 class CCCCC_JS(CCCCC):
     """JavaScript compiler and evaluator"""
     execution_result = ''
@@ -317,40 +318,3 @@ class CCCCC_JS(CCCCC):
             postMessage(['run', '<error>'
                          + html(err.name) + '\n'
                          + html(err.message) + '</error>'])
-
-class CCCCC_JS_1(CCCCC_JS):
-    """First exercise"""
-    def run_question(self):
-        return """Pour afficher quelque chose, on tape :
-<pre>
-print(la_chose_a_afficher) ;
-</pre>
-
-<p>
-Saisissez dans le zone blanche le programme qui affiche 42
-dans le bloc en bas à droite.
-        """
-    def run_tester(self, _args):
-        postMessage(['tester',
-                     '<p>Dans votre code source on devrait trouver :</p>'])
-        check(self.source, [
-            ['print', 'Le nom de la fonction «print» pour afficher la valeur'],
-            ['print *[(]', 'Une parenthèse ouvrante après le nom de la fonction'],
-            ['[(].*42', 'Le nombre que vous devez afficher'],
-            ['\\(.*[)]', 'Une parenthèse fermante après le dernier paramètre de la fonction'],
-            ['; *($|\n)', "Un point virgule pour indiquer la fin de l'instruction"],
-            ])
-        postMessage(['tester',
-                     "<p>Ce que vous devez afficher pour passer à l'exercice suivant :</p>"])
-        check(self.execution_result, [['42', 'Le texte 42']])
-
-ccccc = CCCCC_JS_1()
-
-if in_worker:
-    def onmessage(event):
-        """Evaluate immediatly the function if in the worker"""
-        ccccc.run(event.data.toString())
-else:
-    ccccc.create_html()
-
-print("ok")

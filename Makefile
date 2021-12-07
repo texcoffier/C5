@@ -1,4 +1,4 @@
-PYS = ccccc.py
+PYS = ccccc.py ccccc_js_1.py
 
 xxx-ccccc.js:xxx-merged.py Makefile
 	nodejs $(HOME)/TOMUSS/TOMUSS/PYTHON_JS/RapydScript/bin/rapydscript \
