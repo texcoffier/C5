@@ -6,7 +6,6 @@ To simplify the class contains the code for the GUI and the worker.
 
 CCCCC       is the top class (mostly running GUI side)
 CCCCC_JS    is a subclass for compiling and interpreting javascript (worker side)
-CCCCC_JS_1  is a subclass defining an exercice
 
 The interface send to the worker the source code to compile and execute
 with the method: «self.worker.postMessage»
@@ -15,9 +14,6 @@ The worker return one of these answers with the «postMessage» function:
   * ['compile', 'compilation result']
   * ['run', 'execution result']
   * ['tester', 'regtest results']
-
-
-TODO : tester function
 
 """
 
@@ -63,6 +59,10 @@ except: # pylint: disable=bare-except,redefined-builtin
         return fct
     Object.defineProperty(Array.prototype, 'append',
                           {'enumerable': False, 'value': Array.prototype.push})
+    if in_worker:
+        def onmessage(event):
+            """Evaluate immediatly the function if in the worker"""
+            CCCCC.current.run(event.data.toString())
 
 def html(txt):
     """Protect text to display it in HTML"""
@@ -104,12 +104,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def __init__(self):
         self.worker = None
-        if not in_worker:
+        if in_worker:
+            CCCCC.current = self
+        else:
             self.worker = Worker('xxx-ccccc.js')
             self.worker.onmessage = bind(self.onmessage, self)
             self.worker.onmessageerror = bind(self.onmessage, self)
             self.worker.onerror = bind(self.onmessage, self)
             setInterval(bind(self.scheduler, self), 200)
+            self.create_html()
+        print("ok")
 
     def create_question(self):
         """The question text container: course and exercise"""
@@ -296,7 +300,7 @@ class CCCCC_JS(CCCCC):
                   {
                      if ( txt )
                         {
-                          ccccc.execution_result += txt ;
+                          CCCCC.current.execution_result += txt ;
                           txt = html(txt) ;
                         }
                      else

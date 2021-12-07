@@ -32,13 +32,4 @@ dans le bloc en bas à droite.
         self.display("<p>Ce que vous devez afficher pour passer à l'exercice suivant :</p>")
         self.check(self.execution_result, [['42', 'Le texte 42']])
 
-ccccc = CCCCC_JS_1()
-
-if in_worker:
-    def onmessage(event):
-        """Evaluate immediatly the function if in the worker"""
-        ccccc.run(event.data.toString())
-else:
-    ccccc.create_html()
-
-print("ok")
+CCCCC_JS_1()
