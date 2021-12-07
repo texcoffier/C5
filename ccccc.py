@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# pylint: disable=invalid-name,too-many-arguments,too-many-instance-attributes
+# pylint: disable=invalid-name,too-many-arguments,too-many-instance-attributes,self-assigning-variable
 
 """
 To simplify the class contains the code for the GUI and the worker.
@@ -21,12 +21,8 @@ TODO : tester function
 
 """
 
-
+# Hide pylint warnings
 try:
-    # pylint: disable=undefined-variable,missing-docstring,too-few-public-methods
-    str(42)
-    in_python = True
-    in_worker = False
     window = window
     document = document
     postMessage = postMessage
@@ -35,14 +31,27 @@ try:
     RegExp = RegExp
     Date = Date
     setInterval = setInterval
-    Error = None
     @external
-    class Worker:
+    class Worker: # pylint: disable=function-redefined,too-few-public-methods
+        """Needed for rapydscript"""
         def postMessage(self, _message):
-            pass
-    def bind(fct, obj):
+            """Send a message to the worker"""
+except:  # pylint: disable=bare-except
+    pass
+
+try:
+    # pylint: disable=undefined-variable,missing-docstring,too-few-public-methods
+    str(42)
+    in_python = True
+    in_worker = False
+    Error = None
+    def bind(fct, _obj):
         """Bind the function to the object"""
-        return fct.bind(obj)
+        return fct
+    class Worker: # pylint: disable=function-redefined
+        """JS compatibility"""
+        def postMessage(self, _message):
+            """Send a message to the worker"""
 except: # pylint: disable=bare-except,redefined-builtin
     in_python = False
     in_worker = not window or not window.document or not document
@@ -76,7 +85,7 @@ def new_element(htmltype, htmlclass, left, width, top, height, background):
     e.style.overflow = 'auto'
     return e
 
-class CCCCC:
+class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question_width = 30
     question_height = 30
@@ -172,6 +181,7 @@ class CCCCC:
             self.run_executor([])
         self.run_tester([])
         postMessage(['time', (millisecs() - start_time) + 'ms'])
+
     def scheduler(self):
         """Send a new job if free and update the screen"""
         for k in self.messages:
@@ -195,10 +205,8 @@ class CCCCC:
             event.preventDefault(True)
     def onkeyup(self, _event):
         """Key up"""
-        pass
     def onkeypress(self, event):
         """Key press"""
-        pass
     def onmessage(self, event):
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
@@ -253,6 +261,7 @@ class CCCCC:
     def run_compiler(self, _source): # pylint: disable=no-self-use
         """Do the compilation"""
         postMessage(['compile', 'No compiler defined'])
+        return 'No compiler defined'
     def run_executor(self, _args): # pylint: disable=no-self-use
         """Do the execution"""
         postMessage(['run', 'No executor defined'])
@@ -275,6 +284,7 @@ def check(text, needle_message):
 class CCCCC_JS(CCCCC):
     """JavaScript compiler and evaluator"""
     execution_result = ''
+
     def run_compiler(self, source):
         postMessage(['compile', None])
         try:
@@ -327,7 +337,7 @@ dans le bloc en bas à droite.
             ['print', 'Le nom de la fonction «print» pour afficher la valeur'],
             ['print *[(]', 'Une parenthèse ouvrante après le nom de la fonction'],
             ['[(].*42', 'Le nombre que vous devez afficher'],
-            ['42.*[)]', 'Une parenthèse fermante après le dernier paramètre de la fonction'],
+            ['\\(.*[)]', 'Une parenthèse fermante après le dernier paramètre de la fonction'],
             ['; *($|\n)', "Un point virgule pour indiquer la fin de l'instruction"],
             ])
         postMessage(['tester',
