@@ -91,7 +91,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question_height = 30
     source_width = 40
     compiler_height = 30
-    question = editor = tester = compiler = executor = time = None # HTML elements
+    question = editor = tester = compiler = executor = time = index = None # HTML elements
     executable = None # Compilation result (worker side)
     top = None # Top page HTML element
     source = None # The source code to compile
@@ -101,8 +101,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
     nr_eval = 0
     messages = {}
     old_source = ''
+    questions = []
+    testers = []
+    current_question = 0
 
-    def __init__(self):
+    def __init__(self, questions, testers):
+        self.questions = questions
+        self.testers = testers
         self.worker = None
         if in_worker:
             CCCCC.current = self
@@ -118,17 +123,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def create_question(self):
         """The question text container: course and exercise"""
         e = new_element('DIV', 'question',
-                        0, self.question_width,
+                        1, self.question_width - 1,
                         0, self.question_height,
                         '#EFE')
         self.question = e
-        e.innerHTML = self.question_initial_content() + self.run_question()
+        self.update_question()
         self.top.appendChild(e)
+
+    def update_question(self):
+        """Update the question text"""
+        self.question.innerHTML = self.question_initial_content() + self.run_question()
 
     def create_tester(self):
         """The regression test container"""
         e = new_element('DIV', 'regtests',
-                        0, self.question_width,
+                        1, self.question_width,
                         self.question_height, 100 - self.question_height,
                         '#EFE')
         self.tester = e
@@ -143,9 +152,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         e.contentEditable = True
         self.editor = e
         self.top.appendChild(e)
-        self.editor.innerText = self.editor_initial_content()
         self.editor.focus()
-        document.getSelection().collapse(self.editor, self.editor.childNodes.length)
 
     def create_compiler(self):
         """The compiler result container"""
@@ -172,6 +179,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
         e = new_element('DIV', 'time', 90, 10, 98, 2, '#0000')
         self.time = e
         self.top.appendChild(e)
+
+    def create_index(self):
+        """The question list displayer"""
+        e = new_element('DIV', 'index', 0, 1, 0, 100, '#0000')
+        self.index = e
+        self.top.appendChild(e)
+
+    def next_question(self):
+        """Increment the question number"""
+        self.current_question += 1
+        self.post('index', self.current_question)
 
     def run(self, source):
         """This method runs in the worker"""
@@ -233,13 +251,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_compiler()
         self.create_executor()
         self.create_time()
+        self.create_index()
         # pylint: disable=bad-whitespace
         self.routes = {
-            'run'    : [self.executor, bind(self.executor_initial_content, self)],
-            'compile': [self.compiler, bind(self.compiler_initial_content, self)],
-            'tester' : [self.tester  , bind(self.tester_initial_content  , self)],
-            'time'   : [self.time    , bind(self.time_initial_content    , self)],
+            'run'     : [self.executor, bind(self.executor_initial_content, self)],
+            'compile' : [self.compiler, bind(self.compiler_initial_content, self)],
+            'tester'  : [self.tester  , bind(self.tester_initial_content  , self)],
+            'time'    : [self.time    , bind(self.time_initial_content    , self)],
+            'index'   : [self.index   , bind(self.index_initial_content   , self)],
         }
+        self.onmessage({'data': ['index', 0]})
 
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
@@ -261,7 +282,22 @@ class CCCCC: # pylint: disable=too-many-public-methods
         t = '#' + self.nr_eval + ' ' + (millisecs() - self.start_time) + 'ms ' +  t
         self.start_time = None # To allow a new job
         return t
-
+    def index_initial_content(self, t): # pylint: disable=no-self-use
+        """Used by the subclass"""
+        self.current_question = int(t)
+        self.update_question()
+        self.editor.innerText = self.editor_initial_content()
+        document.getSelection().collapse(self.editor, self.editor.childNodes.length)
+        texts = ''
+        for i, _ in enumerate(self.questions):
+            if i < self.current_question:
+                attr = ' class="done"'
+            elif i == self.current_question:
+                attr = ' class="current"'
+            else:
+                attr = ''
+            texts += '<div' + attr + '>' + str(i+1) + '</div>'
+        return texts
     def run_compiler(self, _source): # pylint: disable=no-self-use
         """Do the compilation"""
         postMessage(['compile', 'No compiler defined'])
@@ -269,12 +305,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def run_executor(self, _args): # pylint: disable=no-self-use
         """Do the execution"""
         postMessage(['run', 'No executor defined'])
-    def run_tester(self, _args): # pylint: disable=no-self-use
-        """Do the regression tests"""
-        postMessage(['tester', 'No tester defined'])
     def run_question(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "No question defined"
+        return self.questions[self.current_question](self)
+    def run_tester(self, args):
+        """Do the regression tests"""
+        current_question = self.current_question
+        self.testers[current_question](self, args)
+        if current_question != self.current_question:
+            self.post('index', self.current_question)
+
     def display(self, message): # pylint: disable=no-self-use
         """Display the message in the student feedback"""
         postMessage(['tester', message])
@@ -286,9 +326,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         return html(text)
     def check(self, text, needle_message):
         """Append a message in 'output' for each needle_message"""
+        results = []
         for needle, message in needle_message:
             if text.match(RegExp(needle)):
                 html_class = 'test_ok'
             else:
                 html_class = 'test_bad'
+            results.append(html_class)
             self.display('<li class="' + html_class + '">' + message + '</li>')
+        return results
