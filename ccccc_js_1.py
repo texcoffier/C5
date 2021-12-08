@@ -1,13 +1,12 @@
 #!/usr/bin/python3
-# pylint: disable=invalid-name
 
 """
 Some questions
 """
 
-class CCCCC_JS_1(CCCCC_JS):
+class CCCCC_JS_1(CCCCC_JS): # pylint: disable=undefined-variable,invalid-name
     """First exercise"""
-    def run_question(self):
+    def run_question(self): # pylint: disable=no-self-use
         """Affiche le contenu de la zone question"""
         return """Pour afficher quelque chose, on tape :
 <pre>

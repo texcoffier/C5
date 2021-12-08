@@ -275,8 +275,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def run_question(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "No question defined"
-    def display(self, message):
+    def display(self, message): # pylint: disable=no-self-use
+        """Display the message in the student feedback"""
         postMessage(['tester', message])
+    def post(self, destination, message): # pylint: disable=no-self-use
+        """Send a message to a worker"""
+        postMessage([destination, message])
+    def escape(self, text): # pylint: disable=no-self-use
+        """Escape HTML chars"""
+        return html(text)
     def check(self, text, needle_message):
         """Append a message in 'output' for each needle_message"""
         for needle, message in needle_message:
@@ -285,40 +292,3 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 html_class = 'test_bad'
             self.display('<li class="' + html_class + '">' + message + '</li>')
-
-class CCCCC_JS(CCCCC):
-    """JavaScript compiler and evaluator"""
-    execution_result = ''
-
-    def run_compiler(self, source):
-        postMessage(['compile', None])
-        try:
-            # pylint: disable=eval-used
-            f = eval('''function _tmp_(args)
-            {
-               function print(txt)
-                  {
-                     if ( txt )
-                        {
-                          CCCCC.current.execution_result += txt ;
-                          txt = html(txt) ;
-                        }
-                     else
-                          txt = '' ;
-                     postMessage(['run', txt + '\\n']) ;
-                 } ;
-            ''' + source + '} ; _tmp_')
-            postMessage(['compile', 'Compilation sans erreur'])
-            return f
-        except Error as err:
-            postMessage(['compile',
-                         '<error>'
-                         + html(err.name) + '\n' + html(err.message)
-                         + '</error>'])
-    def run_executor(self, args):
-        try:
-            self.executable(args)
-        except Error as err:
-            postMessage(['run', '<error>'
-                         + html(err.name) + '\n'
-                         + html(err.message) + '</error>'])
