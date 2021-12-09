@@ -107,6 +107,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def __init__(self, questions):
         self.questions = questions
         self.quest = self.questions[0]
+        for quest in questions:
+            quest.worker = self
         self.worker = None
         if in_worker:
             CCCCC.current = self
@@ -131,7 +133,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def update_question(self):
         """Update the question text"""
-        self.question.innerHTML = self.question_initial_content() + self.quest.question(self)
+        self.question.innerHTML = self.question_initial_content() + self.quest.question()
 
     def create_tester(self):
         """The regression test container"""
@@ -305,7 +307,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def run_tester(self, args):
         """Do the regression tests"""
         current_question = self.current_question
-        self.quest.tester(self, args)
+        self.quest.tester(args)
         if current_question != self.current_question:
             self.post('index', self.current_question)
     def display(self, message): # pylint: disable=no-self-use
@@ -333,12 +335,12 @@ class Question:
     """Define question and expected result"""
     def __init__(self):
         pass
-    def question(self, worker): # pylint: disable=no-self-use
+    def question(self):
         """Display the question"""
-        worker.display("No test defined")
-    def default_answer(self, _worker): # pylint: disable=no-self-use
+        self.worker.display("No test defined")
+    def default_answer(self): # pylint: disable=no-self-use
         """The initial edit content"""
         return "// Saisissez votre programme au dessous (souris interdite) :\n\n"
-    def tester(self, worker): # pylint: disable=no-self-use
+    def tester(self):
         """Test worker.source and worker.execution_result"""
-        worker.display("No test defined")
+        self.worker.display("No test defined")
