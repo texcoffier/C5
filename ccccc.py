@@ -310,15 +310,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.quest.tester(args)
         if current_question != self.current_question:
             self.post('index', self.current_question)
-    def display(self, message): # pylint: disable=no-self-use
-        """Display the message in the student feedback"""
-        postMessage(['tester', message])
     def post(self, destination, message): # pylint: disable=no-self-use
         """Send a message to a worker"""
         postMessage([destination, message])
     def escape(self, text): # pylint: disable=no-self-use
         """Escape HTML chars"""
         return html(text)
+
+class Question:
+    """Define question and expected result"""
+    def __init__(self):
+        self.worker = None
+    def display(self, message): # pylint: disable=no-self-use
+        """Display the message in the student feedback"""
+        postMessage(['tester', message])
     def check(self, text, needle_message):
         """Append a message in 'output' for each needle_message"""
         results = []
@@ -330,17 +335,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
             results.append(html_class)
             self.display('<li class="' + html_class + '">' + message + '</li>')
         return results
+    def set_question(self, index):
+        """Change question"""
+        self.worker.current_question = index
+        self.worker.quest = self.worker.questions[self.worker.current_question]
+    def next_question(self):
+        """Next question"""
+        self.set_question(self.worker.current_question + 1)
 
-class Question:
-    """Define question and expected result"""
-    def __init__(self):
-        pass
     def question(self):
         """Display the question"""
-        self.worker.display("No test defined")
+        self.display("No test defined")
     def default_answer(self): # pylint: disable=no-self-use
         """The initial edit content"""
         return "// Saisissez votre programme au dessous (souris interdite) :\n\n"
     def tester(self):
         """Test worker.source and worker.execution_result"""
-        self.worker.display("No test defined")
+        self.display("No test defined")

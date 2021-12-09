@@ -18,8 +18,8 @@ dans le bloc en bas à droite.
 """
     def tester(self, _args):
         """Affiche le contenu de la zone buts"""
-        self.worker.display('<p>Dans votre code source on devrait trouver :</p>')
-        self.worker.check(self.worker.source, [
+        self.display('<p>Dans votre code source on devrait trouver :</p>')
+        self.check(self.worker.source, [
             ['print', 'Le nom de la fonction «print» pour afficher la valeur'],
             ['print *[(]', 'Une parenthèse ouvrante après le nom de la fonction'],
             ['[(].*42', 'Le nombre que vous devez afficher'],
@@ -27,11 +27,10 @@ dans le bloc en bas à droite.
              'Une parenthèse fermante après le dernier paramètre de la fonction'],
             ['; *($|\n)', "Un point virgule pour indiquer la fin de l'instruction"],
             ])
-        self.worker.display("<p>Ce que vous devez afficher pour passer à l'exercice suivant :</p>")
-        results = self.worker.check(self.worker.execution_result, [['42', 'Le texte 42']])
+        self.display("<p>Ce que vous devez afficher pour passer à l'exercice suivant :</p>")
+        results = self.check(self.worker.execution_result, [['42', 'Le texte 42']])
         if results[-1] == 'test_ok':
-            self.worker.current_question += 1
-            self.worker.quest = self.worker.questions[self.worker.current_question]
+            self.next_question()
 
 class Q2(Question):
     """Question 2"""
@@ -41,10 +40,9 @@ class Q2(Question):
 
     def tester(self, _args):
         """Affiche le contenu de la zone buts"""
-        self.worker.display('====')
+        self.display('====')
         if '*' in self.worker.source:
-            self.worker.current_question += 1
-            self.worker.quest = self.worker.questions[self.worker.current_question]
+            self.next_question()
 
 class Q3(Question):
     """Question 3"""
@@ -54,7 +52,7 @@ class Q3(Question):
         """
     def tester(self, _args):
         """Affiche le contenu de la zone buts"""
-        self.worker.display('bingo 2')
+        self.display('bingo 2')
 
     def default_answer(self):
         """La valeur indiquée au départ dans le champ de saisie"""
