@@ -1,4 +1,3 @@
-# pymlint: disable=invalid-name,too-many-arguments,too-many-instance-attributes,self-assigning-variable
 
 """
 Question base class
@@ -9,12 +8,12 @@ class Question:
         self.worker = None
     def display(self, message): # pylint: disable=no-self-use
         """Display the message in the student feedback"""
-        postMessage(['tester', message])
+        self.worker.post('tester', message)
     def check(self, text, needle_message):
         """Append a message in 'output' for each needle_message"""
         results = []
         for needle, message in needle_message:
-            if text.match(RegExp(needle)):
+            if text.match(RegExp(needle)): # pylint: disable=undefined-variable
                 html_class = 'test_ok'
             else:
                 html_class = 'test_bad'
