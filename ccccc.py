@@ -218,9 +218,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.nr_eval += 1
                 self.messages = {}
 
-    def onmousedown(self, event):
+    def onmousedown(self, _event):
         """Mouse down"""
         self.editor.focus()
+    def onpaste(self, event):
+        """Mouse down"""
+        if event.clipboardData.getData("text") in self.editor.innerText:
+            return # auto paste allowed
+        alert("Interdit !") # pylint: disable=undefined-variable
         event.preventDefault(True)
     def onkeydown(self, event): # pylint: disable=no-self-use
         """Key down"""
@@ -242,6 +247,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Create the page content"""
         self.top = document.createElement('DIV')
         self.top.onmousedown = bind(self.onmousedown, self)
+        self.top.onpaste = bind(self.onpaste, self)
         self.top.onkeydown = bind(self.onkeydown, self)
         self.top.onkeyup = bind(self.onkeyup, self)
         self.top.onkeypress = bind(self.onkeypress, self)
