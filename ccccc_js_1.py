@@ -3,7 +3,7 @@
 Some questions
 """
 
-class Q1(Question):
+class Q1(Question): # pylint: disable=undefined-variable
     """Question 1"""
     def question(self):
         """Affiche le contenu de la zone question"""
@@ -32,7 +32,7 @@ dans le bloc en bas à droite.
         if results[-1] == 'test_ok':
             self.next_question()
 
-class Q2(Question):
+class Q2(Question): # pylint: disable=undefined-variable
     """Question 2"""
     def question(self):
         """Affiche le contenu de la zone question"""
@@ -44,7 +44,7 @@ class Q2(Question):
         if '*' in self.worker.source:
             self.next_question()
 
-class Q3(Question):
+class Q3(Question): # pylint: disable=undefined-variable
     """Question 3"""
     def question(self):
         """Affiche le contenu de la zone question"""
