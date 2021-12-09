@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=invalid-name,too-many-arguments,too-many-instance-attributes,self-assigning-variable
 
 """
@@ -102,12 +101,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
     messages = {}
     old_source = ''
     questions = []
-    testers = []
     current_question = 0
+    quest = None
 
-    def __init__(self, questions, testers):
+    def __init__(self, questions):
         self.questions = questions
-        self.testers = testers
+        self.quest = self.questions[0]
         self.worker = None
         if in_worker:
             CCCCC.current = self
@@ -132,7 +131,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def update_question(self):
         """Update the question text"""
-        self.question.innerHTML = self.question_initial_content() + self.run_question()
+        self.question.innerHTML = self.question_initial_content() + self.quest.question(self)
 
     def create_tester(self):
         """The regression test container"""
@@ -265,9 +264,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "<h2>Question</h2>"
-    def editor_initial_content(self): # pylint: disable=no-self-use
-        """Used by the subclass"""
-        return "// Saisissez votre programme au dessous (souris interdite) :\n\n"
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "<h2>Compilation</h2>"
@@ -285,8 +281,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def index_initial_content(self, t): # pylint: disable=no-self-use
         """Used by the subclass"""
         self.current_question = int(t)
+        self.quest = self.questions[self.current_question]
         self.update_question()
-        self.editor.innerText = self.editor_initial_content()
+        self.editor.innerText = self.quest.default_answer()
         document.getSelection().collapse(self.editor, self.editor.childNodes.length)
         texts = ''
         for i, _ in enumerate(self.questions):
@@ -305,16 +302,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def run_executor(self, _args): # pylint: disable=no-self-use
         """Do the execution"""
         postMessage(['run', 'No executor defined'])
-    def run_question(self): # pylint: disable=no-self-use
-        """Used by the subclass"""
-        return self.questions[self.current_question](self)
     def run_tester(self, args):
         """Do the regression tests"""
         current_question = self.current_question
-        self.testers[current_question](self, args)
+        self.quest.tester(self, args)
         if current_question != self.current_question:
             self.post('index', self.current_question)
-
     def display(self, message): # pylint: disable=no-self-use
         """Display the message in the student feedback"""
         postMessage(['tester', message])
@@ -335,3 +328,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
             results.append(html_class)
             self.display('<li class="' + html_class + '">' + message + '</li>')
         return results
+
+class Question:
+    """Define question and expected result"""
+    def __init__(self):
+        pass
+    def question(self, worker): # pylint: disable=no-self-use
+        """Display the question"""
+        worker.display("No test defined")
+    def default_answer(self, _worker): # pylint: disable=no-self-use
+        """The initial edit content"""
+        return "// Saisissez votre programme au dessous (souris interdite) :\n\n"
+    def tester(self, worker): # pylint: disable=no-self-use
+        """Test worker.source and worker.execution_result"""
+        worker.display("No test defined")
