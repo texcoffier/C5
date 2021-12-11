@@ -48,6 +48,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     source = None # The source code to compile
     start_time = None # Start time of the evaluation
     messages = {'time': 1}
+    messages_previous = {}
     old_source = None
 
     def __init__(self):
@@ -132,8 +133,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             del self.messages['editor']
 
         for k in self.messages:
-            # Optimize
-            self[k].innerHTML = self.messages[k] # pylint: disable=unsubscriptable-object
+            if self.messages_previous[k] != self.messages[k]:
+                self[k].innerHTML = self.messages[k] # pylint: disable=unsubscriptable-object
+                self.messages_previous[k] = self.messages[k]
         source = self.editor.innerText
         if source != self.old_source:
             self.old_source = source # Do not recompile the same thing
