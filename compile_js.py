@@ -2,34 +2,32 @@
 Javascript compiler and interpreter
 """
 
-class CCCCC_JS(CCCCC): # pylint: disable=undefined-variable,invalid-name
+class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
-        self.post('compile', None)
         try:
             # pylint: disable=eval-used
             executable = eval('''function _tmp_(args)
             {
+               Compile.worker.execution_result = '';
                function print(txt)
                   {
                      if ( txt )
-                        {
-                          CCCCC.current.execution_result += txt ;
                           txt = self.escape(txt) ;
-                        }
                      else
                           txt = '' ;
-                     self.post('run', txt + '\\n') ;
+                     Compile.worker.execution_result += txt;
+                     self.post('executor', txt + '\\n') ;
                  } ;
             ''' + source + '} ; _tmp_')
-            self.post('compile', 'Compilation sans erreur')
+            self.post('compiler', 'Compilation sans erreur')
             return executable
         except Error as err: # pylint: disable=undefined-variable
             self.post(
-                'compile',
+                'compiler',
                 '<error>'
                 + self.escape(err.name) + '\n' + self.escape(err.message)
                 + '</error>')
@@ -39,6 +37,6 @@ class CCCCC_JS(CCCCC): # pylint: disable=undefined-variable,invalid-name
             self.executable(args)
         except Error as err: # pylint: disable=undefined-variable
             self.post(
-                'run', '<error>'
+                'executor', '<error>'
                 + self.escape(err.name) + '\n'
                 + self.escape(err.message) + '</error>')
