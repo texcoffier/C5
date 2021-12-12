@@ -14,19 +14,20 @@ class Q0(Question): # pylint: disable=undefined-variable
         Modifiez le programme dans le bloc blanc à droite pour qu'il affiche
         dans le bloc bleu «Exécution» en bas à droite :
         <pre>Je suis un texte super long</pre>"""
-    def tester(self, _args):
+    def tester(self):
         if "Je suis un texte super long" in self.worker.execution_result:
             self.display("Vous affichez le bon message !")
             self.next_question()
             return
-        self.display("""Cette zone vous donne des indices pour répondre.
-        <p>
-        Pour le moment la zone en bas à droite contient :<pre>"""
-        + self.worker.escape(self.worker.execution_result) + """</pre>
-        au lieu de : <pre>Je suis un texte super long</pre>
-        Vous devez remplacer 'court' par 'long' dans la zone blanche
-        à droite.
-        """)
+        self.display(
+            """Cette zone vous donne des indices pour répondre.
+            <p>
+            Pour le moment la zone en bas à droite contient :<pre>"""
+            + self.worker.escape(self.worker.execution_result) + """</pre>
+            au lieu de : <pre>Je suis un texte super long</pre>
+            Vous devez remplacer 'court' par 'long' dans la zone blanche
+            à droite.
+            """)
     def default_answer(self):
         return """
 // Lisez la consigne indiquée à gauche.
@@ -51,7 +52,7 @@ print(la_chose_a_afficher) ;
 Saisissez dans le zone blanche le programme qui affiche """ + self.answer + """
 dans le bloc en bas à droite.
 """
-    def tester(self, _args):
+    def tester(self):
         self.display('<p>Dans votre code source on devrait trouver :</p>')
         self.check(self.worker.source, [
             ['print', 'Le nom de la fonction «print» pour afficher la valeur'],
@@ -77,7 +78,7 @@ class Q2(Question): # pylint: disable=undefined-variable
     def append_to_source_code(self):
         return "return carre"
 
-    def tester(self, _args):
+    def tester(self):
         self.message(self.worker.execution_returns,
                      "La fonction 'carre' est correctement définie")
         all_fine = True
@@ -104,9 +105,8 @@ class Q4(Question): # pylint: disable=undefined-variable
     """Question 3"""
     def question(self):
         return "Plus de questions"
-    def tester(self, _args):
+    def tester(self):
         self.display('FINI !')
-
     def default_answer(self):
         return ""
 

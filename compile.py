@@ -38,9 +38,9 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.execution_returns = None
         self.post('executor', self.executor_initial_content())
         if self.executable:
-            self.run_executor([])
+            self.run_executor()
         self.post('tester', self.tester_initial_content())
-        self.run_tester([])
+        self.run_tester()
         self.post('time', self.time_initial_content())
 
     def millisecs(self):  # pylint: disable=no-self-use
@@ -51,7 +51,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         """Do the compilation"""
         self.post('compile', 'No compiler defined')
         return 'No compiler defined'
-    def run_executor(self, _args): # pylint: disable=no-self-use
+    def run_executor(self): # pylint: disable=no-self-use
         """Do the execution"""
         self.post('run', 'No executor defined')
     def start_question(self):
@@ -61,10 +61,10 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.post('question', self.question_initial_content())
         self.post('question', self.quest.question())
         self.post('index', self.index_initial_content())
-    def run_tester(self, args):
+    def run_tester(self):
         """Do the regression tests"""
         current_question = self.current_question
-        self.quest.tester(args)
+        self.quest.tester()
         if current_question != self.current_question:
             self.start_question()
 

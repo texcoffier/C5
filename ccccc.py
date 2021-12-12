@@ -129,7 +129,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         for k in ['tester', 'executor', 'compiler', 'time', 'editor', 'question', 'index']:
             message = self.messages[k]
-            if not message:
+            if not message and message != '':
                 continue
             if k == 'editor':
                 # New question
