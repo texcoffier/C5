@@ -143,7 +143,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self[k].innerHTML = message # pylint: disable=unsubscriptable-object
                 self.messages_previous[k] = message
 
-
         source = self.editor.innerText
         if source != self.old_source:
             self.old_source = source # Do not recompile the same thing

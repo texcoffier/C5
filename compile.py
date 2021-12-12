@@ -14,6 +14,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
     source = None
     executable = None
     execution_result = None
+    execution_returns = None
     nr_eval = 0
     start_time = None
 
@@ -34,6 +35,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.post('compiler', self.compiler_initial_content())
         self.executable = self.run_compiler(source)
         self.execution_result = ''
+        self.execution_returns = None
         self.post('executor', self.executor_initial_content())
         if self.executable:
             self.run_executor([])

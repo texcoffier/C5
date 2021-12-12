@@ -62,37 +62,43 @@ dans le bloc en bas à droite.
             ['; *($|\n)', "Un point virgule pour indiquer la fin de l'instruction"],
             ])
         self.display("<p>Ce que vous devez afficher pour passer à l'exercice suivant :</p>")
-        results = self.check(self.worker.execution_result,
-                             [[self.answer, 'Le texte ' + self.answer]])
-        if results[-1] == 'test_ok':
+        self.check(self.worker.execution_result,
+                   [[self.answer, 'Le texte ' + self.answer]])
+        if self.worker.execution_result == self.answer:
             self.next_question()
 
 class Q2(Question): # pylint: disable=undefined-variable
     """Question 2"""
     def question(self):
-        """Affiche le contenu de la zone question"""
-        return """La réponse est *"""
+        return """
+        Modifiez la fonction «carre»
+        pour quelle retourne le carré du nombre passé en paramètre"""
+
+    def append_to_source_code(self):
+        return "return carre"
 
     def tester(self, _args):
-        """Affiche le contenu de la zone buts"""
-        self.display('====')
-        if '*' in self.worker.source:
+        self.message(self.worker.execution_returns,
+                     "La fonction 'carre' est correctement définie")
+        all_fine = True
+        i = -2
+        while i != 2.5:
+            fine = self.worker.execution_returns and self.worker.execution_returns(i) == i*i
+            all_fine = all_fine and fine
+            self.message(fine, 'carre(' + i + ') → ' + i*i)
+            i += 0.5
+        if all_fine:
             self.next_question()
-
-class Q3(Question): # pylint: disable=undefined-variable
-    """Question 3"""
-    answer = None
-    def question(self):
-        self.answer = str(self.worker.millisecs() % 100) # pylint: disable=undefined-variable
-        return """La réponse à cette question est """ + self.answer
-    def tester(self, _args):
-        if self.answer in self.worker.source:
-            self.next_question()
-        else:
-            self.display('Je ne trouve pas ' + self.answer + " dans votre réponse")
 
     def default_answer(self):
-        return "// Vous connaissez l'histoire\n\n"
+        return """function carre(x)
+{
+    return x ;
+}
+
+print(carre(3))
+"""
+
 
 class Q4(Question): # pylint: disable=undefined-variable
     """Question 3"""
@@ -104,4 +110,4 @@ class Q4(Question): # pylint: disable=undefined-variable
     def default_answer(self):
         return ""
 
-Compile_JS([Q0(), Q1(), Q2(), Q3(), Q4()]) # pylint: disable=undefined-variable
+Compile_JS([Q0(), Q1(), Q2(), Q4()]) # pylint: disable=undefined-variable

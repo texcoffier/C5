@@ -5,6 +5,7 @@ Javascript compiler and interpreter
 class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
+    execution_returns = None
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
@@ -22,7 +23,7 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
                      Compile.worker.execution_result += txt;
                      self.post('executor', txt + '\\n') ;
                  } ;
-            ''' + source + '\n} ; _tmp_')
+            ''' + source + ';\n' + self.quest.append_to_source_code() + '} ; _tmp_')
             self.post('compiler', 'Compilation sans erreur')
             return executable
         except Error as err: # pylint: disable=undefined-variable
@@ -31,10 +32,11 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
                 '<error>'
                 + self.escape(err.name) + '\n' + self.escape(err.message)
                 + '</error>')
+            return eval("function _() {}") # pylint: disable=eval-used
     def run_executor(self, args):
         """Execute the compiled code"""
         try:
-            self.executable(args)
+            self.execution_returns = self.executable(args)
         except Error as err: # pylint: disable=undefined-variable
             self.post(
                 'executor', '<error>'
