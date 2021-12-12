@@ -81,6 +81,8 @@ class Q2(Question): # pylint: disable=undefined-variable
     def tester(self):
         self.message(self.worker.execution_returns,
                      "La fonction 'carre' est correctement définie")
+        self.message('*' in self.worker.source,
+                     "Le programme contient un '*' pour calculer le carré.")
         all_fine = True
         i = -2
         while i != 2.5:
