@@ -55,9 +55,9 @@ class Compile: # pylint: disable=too-many-instance-attributes
     def start_question(self):
         """Start a new question"""
         self.quest = self.questions[self.current_question]
+        self.post('editor', self.quest.default_answer())
         self.post('question', self.question_initial_content())
         self.post('question', self.quest.question())
-        self.post('editor', self.quest.default_answer())
         self.post('index', self.index_initial_content())
     def run_tester(self, args):
         """Do the regression tests"""

@@ -22,7 +22,7 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
                      Compile.worker.execution_result += txt;
                      self.post('executor', txt + '\\n') ;
                  } ;
-            ''' + source + '} ; _tmp_')
+            ''' + source + '\n} ; _tmp_')
             self.post('compiler', 'Compilation sans erreur')
             return executable
         except Error as err: # pylint: disable=undefined-variable

@@ -7,8 +7,14 @@
     <title>C5 is Compiler Course Class in the Cloud</title>
     <style>
     BODY { font-family: sans-serif }
-    DIV.compiler, DIV.executor { white-space: pre }
+    DIV.question { text-align: justify; }
+    DIV.compiler, DIV.executor, DIV.editor { white-space: pre; font-family: monospace, monospace }
+    BODY > DIV > DIV { padding-left: 0.5em ; padding-right: 0.5em ; }
+    BODY > DIV > DIV.index { padding-left: 0px ; padding-right: 0px ; }
     ERROR { color: #800 ; font-weight: bold }
+    TT {
+        font-family: monospace, monospace;
+    }
     PRE { border: 1px solid #880 ;
           background: #FFD ;
           margin: 0.5em ;
@@ -24,6 +30,7 @@
         position: sticky ;
         top: 0px ;
         background: linear-gradient(#0002, #FFFF, #0002);
+        border-radius: 1em ;
     }
     .test_ok, .test_bad { margin-left: 2em ; }
     .test_ok { color: #080 }

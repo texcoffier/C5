@@ -46,10 +46,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question = editor = tester = compiler = executor = time = index = None # HTML elements
     top = None # Top page HTML element
     source = None # The source code to compile
-    start_time = None # Start time of the evaluation
     messages = {'time': 1}
     messages_previous = {}
     old_source = None
+    first_time = True
 
     def __init__(self):
         print("GUI: start")
@@ -73,7 +73,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def create_tester(self):
         """The regression test container"""
         e = new_element('DIV', 'regtests',
-                        1, self.question_width,
+                        1, self.question_width - 1,
                         self.question_height, 100 - self.question_height,
                         '#EFE')
         self.tester = e
@@ -126,16 +126,24 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Send a new job if free and update the screen"""
         if 'time' not in self.messages:
             return # Compiler is running
-        if 'editor' in self.messages:
-            # New question
-            self.editor.innerText = self.messages['editor']
-            document.getSelection().collapse(self.editor, self.editor.childNodes.length)
-            del self.messages['editor']
 
-        for k in self.messages:
-            if self.messages_previous[k] != self.messages[k]:
-                self[k].innerHTML = self.messages[k] # pylint: disable=unsubscriptable-object
-                self.messages_previous[k] = self.messages[k]
+        for k in ['tester', 'executor', 'compiler', 'time', 'editor', 'question', 'index']:
+            message = self.messages[k]
+            if not message:
+                continue
+            if k == 'editor':
+                # New question
+                if self.first_time:
+                    self.first_time = False
+                else:
+                    alert('Bravo !') # pylint: disable=undefined-variable
+                self.editor.innerText = self.messages['editor']
+                document.getSelection().collapse(self.editor, self.editor.childNodes.length)
+            if self.messages_previous[k] != message:
+                self[k].innerHTML = message # pylint: disable=unsubscriptable-object
+                self.messages_previous[k] = message
+
+
         source = self.editor.innerText
         if source != self.old_source:
             self.old_source = source # Do not recompile the same thing
