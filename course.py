@@ -101,6 +101,42 @@ class Q2(Question): # pylint: disable=undefined-variable
 
 print(carre(3))
 """
+class Q2(Question): # pylint: disable=undefined-variable
+    """Question 2"""
+    good = '''0 0
+1 1
+2 4
+3 9
+4 16
+5 25
+6 36
+7 49
+8 64
+9 81
+10 100'''
+    def question(self):
+        return "Faites afficher les carrés de 0 à 10 en faisant un boucle :<pre>" + self.good + "</pre>"
+
+    def tester(self):
+        self.check([
+            ['function carre(', "une fonction 'carre'"],
+            ['for *\\(.*;.*;.*)', "une boucle 'for(...;...,...)'"],
+            ["print\\(", "un 'print' pour afficher le résultat"],
+        ])
+        good = True
+        for digit in "23456789":
+            if digit in self.worker.source:
+                good = False
+        self.message(good, "ne doit pas contenir les chiffres 2 à 9")
+
+        fine = self.worker.execution_result == self.good
+        self.message(good, "affiche le bon résultat.")
+
+        if fine and good:
+            self.next_question()
+
+    def default_answer(self):
+        return self.worker.source
 
 
 class Q4(Question): # pylint: disable=undefined-variable
