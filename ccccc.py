@@ -50,6 +50,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     messages_previous = {}
     old_source = None
     first_time = True
+    highlight_loaded = False
 
     def __init__(self):
         print("GUI: start")
@@ -89,6 +90,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor = e
         self.top.appendChild(e)
         self.editor.focus()
+        # The overlay with coloring
+        e = new_element('DIV', 'overlay',
+                        self.question_width, self.source_width,
+                        0, 100,
+                        '#0000')
+        self.overlay = e
+        self.top.appendChild(e)
 
     def create_compiler(self):
         """The compiler result container"""
@@ -137,8 +145,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     self.first_time = False
                 else:
                     alert('Bravo !') # pylint: disable=undefined-variable
-                self.editor.innerText = self.messages['editor']
-                document.getSelection().collapse(self.editor, self.editor.childNodes.length)
+                # Many \n at the bug (browser problem when inserting a final \n)
+                message += '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
+                self.editor.innerText = message
+                # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
+                self.coloring()
             if self.messages_previous[k] != message:
                 self[k].innerHTML = message # pylint: disable=unsubscriptable-object
                 self.messages_previous[k] = message
@@ -149,6 +160,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.worker.postMessage(source) # Start compile/execute/test
             self.messages = {}
 
+    def coloring(self):
+        """Coloring of the text editor with an overlay."""
+        if self.highlight_loaded:
+            self.overlay.innerHTML = self.editor.textContent
+            hljs.highlightElement(self.overlay)
+    def coloring_init(self):
+        """highlightjs is loaded"""
+        self.highlight_loaded = True
+        hljs.configure({'languages': self.language})
+        self.coloring()
     def onmousedown(self, _event):
         """Mouse down"""
         self.editor.focus()
@@ -161,9 +182,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onkeydown(self, event): # pylint: disable=no-self-use
         """Key down"""
         if event.key == 'Tab':
+            document.execCommand('insertHTML', False, '    ')
+            event.preventDefault(True)
+        if event.key == 'Enter' and event.target is self.editor:
+            document.execCommand('insertHTML', False, '\n')
             event.preventDefault(True)
     def onkeyup(self, _event):
         """Key up"""
+        self.coloring()
     def onkeypress(self, event):
         """Key press"""
     def onmessage(self, event):
@@ -189,5 +215,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_executor()
         self.create_time()
         self.create_index()
+        setTimeout(bind(self.coloring_init, self), 3000)
 
 CCCCC()

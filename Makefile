@@ -15,7 +15,7 @@ lint:$(PYS)
 	pylint $(PYS)
 
 install:all
-	cp --update ccccc.html xxx-ccccc.js xxx-worker.js $(HOME)/public_html/CCCCC
+	cp -r --update ccccc.html xxx-ccccc.js xxx-worker.js HIGHLIGHT $(HOME)/public_html/CCCCC
 
 # regtest:xxx-regtest-py xxx-regtest-js
 # 	if diff -u xxx-regtest-py xxx-regtest-js ; \
