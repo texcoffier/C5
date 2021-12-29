@@ -90,6 +90,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         0, 100,
                         '#FFF')
         e.contentEditable = True
+        e.spellcheck = False
+        e.autocorrect = False
+        e.autocapitalize = False
+        e.autocomplete = False
+
         self.editor = e
         self.top.appendChild(e)
         self.editor.focus()
