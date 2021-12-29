@@ -190,9 +190,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.key == 'Enter' and event.target is self.editor:
             document.execCommand('insertHTML', False, '\n')
             event.preventDefault(True)
+        self.overlay.style.display = 'none'
     def onkeyup(self, _event):
         """Key up"""
         self.coloring()
+        self.overlay.style.display = 'initial'
     def onkeypress(self, event):
         """Key press"""
     def onmessage(self, event):
