@@ -8,6 +8,7 @@ CCCCC       class manages the GUI
             It receives events to update the GUI
 Compile     worker base class to manage the question list, compilation, execution
 Compile_JS  subclass for Javascript compiler
+Compile_CPP subclass for C++ compiler
 Question    base class for question definition
 """
 
@@ -18,6 +19,7 @@ try:
     setTimeout = setTimeout
     bind = bind
     hljs = hljs
+    window = window
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
         """Needed for rapydscript"""
@@ -57,7 +59,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def __init__(self):
         print("GUI: start")
-        self.worker = Worker('xxx-worker.js')
+        if window.location.hash:
+            course = window.location.hash.substr(1)
+        else:
+            course = 'xxx-worker.js'
+        self.worker = Worker(course)
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onmessage, self)
         self.worker.onerror = bind(self.onmessage, self)
@@ -230,4 +236,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         # XXX Any way to remove this constant waiting time?
         setTimeout(bind(self.coloring_init, self), 4000)
 
-CCCCC()
+def start():
+    """Wait library loading"""
+    try:
+        CCCCC()
+    except:
+        setTimeout(start, 100)
+
+start()

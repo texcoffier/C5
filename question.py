@@ -38,4 +38,4 @@ class Question:
         self.display("No test defined")
     def append_to_source_code(self): # pylint: disable=no-self-use
         """Add this to the user source code"""
-        return "return undefined"
+        return ""
