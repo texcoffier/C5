@@ -15,7 +15,9 @@ Question    base class for question definition
 try:
     document = document
     setInterval = setInterval
+    setTimeout = setTimeout
     bind = bind
+    hljs = hljs
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
         """Needed for rapydscript"""
@@ -43,7 +45,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question_height = 30
     source_width = 40
     compiler_height = 30
-    question = editor = tester = compiler = executor = time = index = None # HTML elements
+    question = editor = overlay = tester = compiler = executor = time = index = None # HTML elements
     top = None # Top page HTML element
     source = None # The source code to compile
     messages = {'time': 1}
@@ -51,6 +53,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     old_source = None
     first_time = True
     highlight_loaded = False
+    language = 'javascript' # For highlighting
 
     def __init__(self):
         print("GUI: start")
@@ -168,7 +171,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def coloring_init(self):
         """highlightjs is loaded"""
         self.highlight_loaded = True
-        hljs.configure({'languages': self.language})
+        hljs.configure({'languages': [self.language]})
         self.coloring()
     def onmousedown(self, _event):
         """Mouse down"""
@@ -215,6 +218,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_executor()
         self.create_time()
         self.create_index()
-        setTimeout(bind(self.coloring_init, self), 3000)
+        # XXX Any way to remove this constant waiting time?
+        setTimeout(bind(self.coloring_init, self), 4000)
 
 CCCCC()
