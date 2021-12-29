@@ -195,7 +195,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif event.key == 'Enter' and event.target is self.editor:
             document.execCommand('insertHTML', False, '\n')
             event.preventDefault(True)
-        elif len(event.key) > 1 and event.key != 'Delete':
+        elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
         self.overlay.style.display = 'none'
     def onkeyup(self, _event):
