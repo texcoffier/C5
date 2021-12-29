@@ -206,7 +206,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay.style.display = 'none'
     def onkeyup(self, _event):
         """Key up"""
-        self.coloring()
+        if self.editor.innerText != self.old_source:
+            self.coloring()
         self.overlay.style.display = 'initial'
     def onkeypress(self, event):
         """Key press"""
