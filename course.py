@@ -65,7 +65,7 @@ dans le bloc en bas à droite.
         self.display("<p>Ce que vous devez afficher pour passer à l'exercice suivant :</p>")
         self.check(self.worker.execution_result,
                    [[self.answer, 'Le texte ' + self.answer]])
-        if self.worker.execution_result == self.answer:
+        if self.worker.execution_result == self.answer + '\n':
             self.next_question()
 
 class Q2(Question): # pylint: disable=undefined-variable
@@ -101,8 +101,8 @@ class Q2(Question): # pylint: disable=undefined-variable
 
 print(carre(3))
 """
-class Q2(Question): # pylint: disable=undefined-variable
-    """Question 2"""
+class Q3(Question): # pylint: disable=undefined-variable
+    """Question 3"""
     good = '''0 0
 1 1
 2 4
@@ -113,14 +113,15 @@ class Q2(Question): # pylint: disable=undefined-variable
 7 49
 8 64
 9 81
-10 100'''
+10 100
+'''
     def question(self):
         return "Faites afficher les carrés de 0 à 10 en faisant un boucle :<pre>" + self.good + "</pre>"
 
     def tester(self):
-        self.check([
-            ['function carre(', "une fonction 'carre'"],
-            ['for *\\(.*;.*;.*)', "une boucle 'for(...;...,...)'"],
+        self.check(self.worker.source, [
+            ['function carre\\(', "une fonction 'carre'"],
+            ['for *\\(.*;.*;.*\\)', "une boucle 'for(...;...,...)'"],
             ["print\\(", "un 'print' pour afficher le résultat"],
         ])
         good = True
@@ -130,7 +131,7 @@ class Q2(Question): # pylint: disable=undefined-variable
         self.message(good, "ne doit pas contenir les chiffres 2 à 9")
 
         fine = self.worker.execution_result == self.good
-        self.message(good, "affiche le bon résultat.")
+        self.message(fine, "affiche le bon résultat.")
 
         if fine and good:
             self.next_question()
@@ -139,8 +140,8 @@ class Q2(Question): # pylint: disable=undefined-variable
         return self.worker.source
 
 
-class Q4(Question): # pylint: disable=undefined-variable
-    """Question 3"""
+class QEnd(Question): # pylint: disable=undefined-variable
+    """Question Finale"""
     def question(self):
         return "Plus de questions"
     def tester(self):
@@ -148,4 +149,4 @@ class Q4(Question): # pylint: disable=undefined-variable
     def default_answer(self):
         return ""
 
-Compile_JS([Q0(), Q1(), Q2(), Q4()]) # pylint: disable=undefined-variable
+Compile_JS([Q0(), Q1(), Q2(), Q3(), QEnd()]) # pylint: disable=undefined-variable
