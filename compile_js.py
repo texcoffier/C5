@@ -20,8 +20,9 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
                           txt = self.escape(txt) ;
                      else
                           txt = '' ;
+                     txt += '\\n' ;
                      Compile.worker.execution_result += txt;
-                     self.post('executor', txt + '\\n') ;
+                     self.post('executor', txt) ;
                  } ;
             ''' + source + ';\n' + self.quest.append_to_source_code() + '} ; _tmp_')
             self.post('compiler', 'Compilation sans erreur')
