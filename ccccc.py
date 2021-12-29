@@ -54,7 +54,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     messages_previous = {}
     old_source = None
     first_time = True
-    highlight_loaded = False
     language = 'javascript' # For highlighting
 
     def __init__(self):
@@ -176,14 +175,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def coloring(self):
         """Coloring of the text editor with an overlay."""
-        if self.highlight_loaded:
-            self.overlay.innerHTML = self.editor.textContent
-            hljs.highlightElement(self.overlay)
-    def coloring_init(self):
-        """highlightjs is loaded"""
-        self.highlight_loaded = True
-        hljs.configure({'languages': [self.language]})
-        self.coloring()
+        self.overlay.innerHTML = self.editor.textContent
+        self.overlay.className = 'overlay language-' + self.language
+        hljs.highlightElement(self.overlay)
     def onmousedown(self, _event):
         """Mouse down"""
         self.editor.focus()
@@ -204,9 +198,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
         self.overlay.style.display = 'none'
-    def onkeyup(self, _event):
+    def onkeyup(self, event):
         """Key up"""
-        if self.editor.innerText != self.old_source:
+        if event.key not in ('Left', 'Right', 'Up', 'Down'):
             self.coloring()
         self.overlay.style.display = 'initial'
     def onkeypress(self, event):
@@ -214,6 +208,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onmessage(self, event):
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
+        if what == 'language':
+            self.language = event.data[1]
+            return
         if what not in self.messages:
             self.messages[what] = ''
         self.messages[what] += event.data[1]
@@ -234,13 +231,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_executor()
         self.create_time()
         self.create_index()
-        # XXX Any way to remove this constant waiting time?
-        setTimeout(bind(self.coloring_init, self), 4000)
 
 def start():
     """Wait library loading"""
     try:
-        CCCCC()
+        window.ccccc = CCCCC()
     except:
         setTimeout(start, 100)
 

@@ -15,7 +15,7 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None
-    language = "python"
+    language = 'python'
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
@@ -26,7 +26,7 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
             self.post('compiler', 'Compilation sans erreur.')
             return x
         except Error as err: # pylint: disable=undefined-variable
-            print(err)
+            # print(err)
             self.post('compiler', 'compile error\n')
             self.post(
                 'compiler',

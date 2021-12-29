@@ -17,6 +17,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
     execution_returns = None
     nr_eval = 0
     start_time = None
+    language = 'javascript'
 
     def __init__(self, questions):
         print("Worker: start")
@@ -25,6 +26,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         for quest in questions:
             quest.worker = self
         self.start_question()
+        self.post('language', self.language)
         print("Worker: init done")
 
     def run(self, source):

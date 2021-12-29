@@ -19,7 +19,7 @@ class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None
-    language = "cpp"
+    language = 'cpp'
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
