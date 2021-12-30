@@ -15,7 +15,7 @@ brython({'debug': 1})
 
 PREAMBLE = '''
 def print(*args, sep=' ', end='\\n'):
-    __outputs__[0] += sep.join(str(arg) for arg in args) + end
+    __outputs__.append(sep.join(str(arg) for arg in args) + end)
 class __eRRor__:
     def write(self, txt):
         console.log(txt)
@@ -51,11 +51,11 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
     def run_executor(self):
         """Execute the compiled code"""
         try:
-            __BRYTHON__.mylocals = {'__outputs__': ['']}
+            __BRYTHON__.mylocals = {'__outputs__': []}
             eval(self.executable.replace(
                 'var $locals___main__ = {}',
                 'var $locals___main__ = __BRYTHON__.mylocals ;'))
-            self.execution_returns = __BRYTHON__.mylocals.__outputs__[0]
+            self.execution_returns = __BRYTHON__.mylocals.__outputs__.join('')
             self.post('executor', self.execution_returns)
         except Error as err: # pylint: disable=undefined-variable
             message = self.escape(err.__class__['$infos'].__qualname__) + ' : '

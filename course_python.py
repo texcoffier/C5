@@ -10,6 +10,19 @@ class QEnd(Question): # pylint: disable=undefined-variable
     def tester(self):
         self.display('FINI !')
     def default_answer(self):
-        return "print(6**5)"
+        return """
+def distance_au_carre(x1, y1, x2, y2):
+    x1 -= x2
+    y1 -= y2
+    return x1*x1 + y1*y1
+
+for y in range(20):
+    for x in range(30):
+        if distance_au_carre(x, y, 10, 10) < 90:
+            print('*', end='')
+        else:
+            print(' ', end='')
+    print()
+"""
 
 Compile_Python([QEnd()]) # pylint: disable=undefined-variable
