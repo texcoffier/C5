@@ -39,6 +39,7 @@ def new_element(htmltype, htmlclass, left, width, top, height, background):
     e.style.bottom = (100 - top - height) + '%'
     e.style.background = background
     e.style.overflow = 'auto'
+    e.background = background
     return e
 
 class CCCCC: # pylint: disable=too-many-public-methods
@@ -165,6 +166,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.coloring()
             if self.messages_previous[k] != message:
                 self[k].innerHTML = message # pylint: disable=unsubscriptable-object
+                if '<error' in message:
+                    self[k].style.background = '#FAA'
+                else:
+                    self[k].style.background = self[k].background
                 self.messages_previous[k] = message
 
         source = self.editor.innerText
