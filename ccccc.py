@@ -232,11 +232,4 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_time()
         self.create_index()
 
-def start():
-    """Wait library loading"""
-    try:
-        window.ccccc = CCCCC()
-    except:
-        setTimeout(start, 100)
-
-start()
+CCCCC()
