@@ -1,8 +1,17 @@
 %.js:%.py
-	nodejs $(HOME)/TOMUSS/TOMUSS/PYTHON_JS/RapydScript/bin/rapydscript \
-		--prettify --bare $*.py >$*.js
+	nodejs RapydScript/bin/rapydscript --prettify --bare $*.py >$*.js
 
-all:xxx-highlight.js xxx-JSCPP.js node_modules/brython xxx-ccccc.js xxx-worker.js xxx-worker-cpp.js xxx-worker-python.js
+all:RapydScript node_modules/brython \
+    xxx-highlight.js xxx-JSCPP.js xxx-ccccc.js \
+	xxx-worker.js xxx-worker-cpp.js xxx-worker-python.js
+	@echo
+	@echo "And now copy the result on a web page:"
+	@echo
+	@echo "cp --recursive --update ccccc.html xxx-*.js brython/ $(HOME)/public_html/CCCCC"
+
+############# Utilities ############
+RapydScript:
+	git clone https://github.com/atsepkov/RapydScript.git
 
 xxx-highlight.js:
 	HERE=$$(pwd) && \
@@ -14,34 +23,29 @@ xxx-highlight.js:
 	cp build/highlight.min.js $$HERE/xxx-highlight.js && \
 	cp build/demo/styles/default.css $$HERE/xxx-highlight.css
 
+############# Compilers ############
+node_modules/brython:
+	npm install brython
+	ln -s node_modules/brython .
 xxx-JSCPP.js:
 	GET https://raw.githubusercontent.com/felixhao28/JSCPP/gh-pages/dist/JSCPP.es5.min.js >$@
 
-node_modules/brython:
-	npm install brython
-
-xxx-ccccc.py:ccccc.py Makefile
+############# GUI ############
+xxx-ccccc.py:ccccc.py
 	cat compatibility.py ccccc.py >$@
-xxx-worker.py:compile.py compile_js.py question.py course.py Makefile
-	cat compatibility.py compile.py compile_js.py question.py course.py >$@
-xxx-worker-cpp.py:compile.py compile_cpp.py question.py course_cpp.py Makefile
-	cat compatibility.py compile.py compile_cpp.py question.py course_cpp.py >$@
-xxx-worker-python.py:compile.py compile_python.py question.py course_python.py Makefile
-	cat compatibility.py compile.py compile_python.py question.py course_python.py >$@
+
+############# Courses ############
+CORE = compatibility.py compile.py question.py
+
+xxx-worker.py:$(CORE) compile_js.py course.py
+	cat $^ >$@
+xxx-worker-cpp.py:$(CORE) compile_cpp.py course_cpp.py
+	cat $^ >$@
+xxx-worker-python.py:$(CORE) compile_python.py course_python.py
+	cat $^ >$@
 
 lint:
 	pylint [^x]*.py
-
-install:all
-	cp --update ccccc.html xxx-*.js $(HOME)/public_html/CCCCC
-
-# regtest:xxx-regtest-py xxx-regtest-js
-# 	if diff -u xxx-regtest-py xxx-regtest-js ; \
-# 	then cat xxx-regtest-py ; echo ; echo "Regtests are fine" ; echo ; fi
-# xxx-regtest-js:xxx-ccccc.js
-# 	node xxx-ccccc.js >$@
-# xxx-regtest-py:xxx-merged.py
-# 	python3 xxx-merged.py >$@
 
 clean:
 	rm xxx*

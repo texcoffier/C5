@@ -4,8 +4,8 @@ Python compiler and interpreter
 
 # pylint: disable=self-assigning-variable,eval-used,len-as-condition
 
-importScripts('node_modules/brython/brython.js') # pylint: disable=undefined-variable
-importScripts('node_modules/brython/brython_stdlib.js') # pylint: disable=undefined-variable
+importScripts('brython/brython.js') # pylint: disable=undefined-variable
+importScripts('brython/brython_stdlib.js') # pylint: disable=undefined-variable
 
 __BRYTHON__ = __BRYTHON__ # pylint: disable=undefined-variable
 brython = brython # pylint: disable=undefined-variable,invalid-name
