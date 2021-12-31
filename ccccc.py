@@ -28,6 +28,10 @@ try:
 except: # pylint: disable=bare-except
     pass
 
+def message(txt):
+    """OK popup with the message"""
+    alert(txt) # pylint: disable=undefined-variable
+
 def new_element(htmltype, htmlclass, left, width, top, height, background):
     """Create a DOM element"""
     e = document.createElement(htmltype)
@@ -158,18 +162,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if self.first_time:
                     self.first_time = False
                 else:
-                    alert('Bravo !') # pylint: disable=undefined-variable
+                    message('Bravo !')
                 # Many \n at the bug (browser problem when inserting a final \n)
                 message += '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
                 self.editor.innerText = message
                 # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
                 self.coloring()
             if self.messages_previous[k] != message:
-                self[k].innerHTML = message # pylint: disable=unsubscriptable-object
+                element = self[k] # pylint: disable=unsubscriptable-object
+                element.innerHTML = message
                 if '<error' in message:
-                    self[k].style.background = '#FAA'
+                    element.style.background = '#FAA'
                 else:
-                    self[k].style.background = self[k].background
+                    element.style.background = element.background
                 self.messages_previous[k] = message
 
         source = self.editor.innerText
@@ -190,9 +195,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Mouse down"""
         if event.clipboardData.getData("text") in self.editor.innerText:
             return # auto paste allowed
-        alert("Interdit !") # pylint: disable=undefined-variable
+        message("Interdit !")
         event.preventDefault(True)
-    def onkeydown(self, event): # pylint: disable=no-self-use
+    def onkeydown(self, event):
         """Key down"""
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
