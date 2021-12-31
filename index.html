@@ -5,23 +5,31 @@
             --body: 40em;
             max-width: var(--body);
             font-family: sans-serif;
+            background: #F8F8F8;
         }
 
         .right {
             position: absolute;
-            left: calc(var(--body) + 2em);
+            left: calc(var(--body) + 1em);
             top: 0px;
             right: 0px;
         }
 
         IFRAME {
-            width: 100%;
-            height: 40em;
+            width: 50vw;
+            height: 27vw;
             box-sizing: border-box;
+            border: 2px solid #000;
         }
 
         H1 {
             font-size: 150%;
+            background: #FFF;
+            border: 1px solid #000;
+        }
+
+        H2 {
+            font-size: 120%;
         }
 
         TABLE {
@@ -48,6 +56,15 @@
             line-height: 1em;
             text-align: center;
         }
+
+        TT,
+        PRE {
+            background: #FFE;
+            border: 1px solid #880;
+            font-family: monospace, monospace;
+            font-size: 90%;
+            overflow: hidden;
+        }
     </style>
 </head>
 
@@ -56,13 +73,11 @@
     <p>
         Pourquoi utiliser C5 ?
     </p>
-    <p>
-        <b>Empêcher toute tricherie lors des examens sur machine.</b>
-    </p>
+    <h2>Empêcher toute tricherie lors des examens sur machine.</h2>
     <ul>
         <li> Tout est fait dans une unique page web facile à surveiller visuellement :
             <ul>
-                <li> Sujet de l'examen.</li>
+                <li> Sujet de l'examen, éventuellement différent pour chaque étudiant.</li>
                 <li> Aide pour les étudiants bloqués.</li>
                 <li> Éditeur de code pour répondre.</li>
                 <li> Résultat de compilation.</li>
@@ -70,13 +85,82 @@
                 <li class="NI"> Rendu de l'examen.</li>
             </ul>
         </li>
-        <li> Le copier/copier de sources extérieures est interdit.</li>
+        <li> Le copier/copier de sources extérieures est impossible.</li>
         <li class="NI"> Toutes les actions clavier/souris sont mémorisées.</li>
     </ul>
+    <h2>Avoir un environnement TP immédiatement fonctionnel.</h2>
+    <p>
+        En effet :
+    </p>
+    <ul>
+        <li> Rien besoin d'installer pour les étudiants.</li>
+        <li> Pas besoin d'apprendre à utiliser un logiciel.</li>
+        <li> Coloration syntaxique.</li>
+        <li> Recompilation et exécution temps-réel.</li>
+        <li> Indices pour guider l'étudiant vers la solution.</li>
+        <li> Ne nécessite pas de serveur pour fonctionner :
+            <ul>
+                <li> Pas de panne possible.</li>
+                <li> Pas de surcharge du serveur.</li>
+                <li> Utilisation sans connexion Internet possible.</li>
+            </ul>
+        </li>
+    </ul>
+    <h2>Comment définir un sujet</h2>
+    <p>
+        Définir des questions avec les méthodes :
+    </p>
+    <ul>
+        <li> <tt>question</tt> qui retourne la question au format HTML.
+            C'est ce qui est affiché en haut à gauche.
+        </li>
+        <li> <tt>tester</tt> qui affiche les indices
+            et décide quand faire passer à la question suivante.
+            C'est ce qui est affiché en bas à gauche.
+        </li>
+        <li> <tt>default_answer</tt> qui retourne la valeur initiale de l'éditeur</li>
+    </ul>
+    </p>
+    <pre>class Q1(Question):
+    """Question 1"""
+    def question(self):
+        return "&lt;p&gt;Vous devez faire afficher «Bonjour»&lt;/p&gt;"
+    def tester(self):
+        self.display('&lt;p&gt;Dans votre code source on devrait trouver :&lt;/p&gt;')
+        self.check(self.worker.source, [
+            ['print'  , 'Le nom de la fonction «print» pour afficher la valeur'],
+            ['Bonjour', 'Le texte «Bonjour» que vous devez afficher'],
+                ])
+        if self.worker.execution_result == 'Bonjour\n':
+            self.next_question()
+    def default_answer(self):
+        return "# Tapez votre programme ici :\n"</pre>
+    <p>
+        Un sujet complet est une liste de question gérées
+        par un unique compilateur.
+        Par exemple :
+    </p>
+    <pre>Compile_Python([Q0(), Q1(), Q2(), Q3(), QEnd()])</pre>
+
+    <h2>Langages supportés</h2>
+    <p>
+        Il est nécessaire d'avoir un compilateur du langage écrit en JavaScript :
+    </p>
+    <ul>
+        <li> JavaScript: <tt>Compile_JS</tt></li>
+        <li> Python: <tt>Compile_Python</tt></li>
+        <li class="NI"> C++: <tt>Compile_CCP</tt></li>
+    </ul>
+
+    <h2>Installer C5</h2>
+    <p>
+    </p>
+
+
     <div class="right">
-        <h1>Exercices Javascript : ceci est fonctionnel, essayez-les !</h1>
+        <h2>Exercices Javascript : ceci est fonctionnel, essayez-les !</h2>
         <iframe src="ccccc.html"></iframe>
-        <h1>Exercices Python : ceci est fonctionnel, essayez-les !</h1>
+        <h2>Exercices Python : ceci est fonctionnel, essayez-les !</h2>
         <iframe src="ccccc.html#xxx-worker-python.js"></iframe>
     </div>
 </body>
