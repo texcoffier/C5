@@ -185,7 +185,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def coloring(self):
         """Coloring of the text editor with an overlay."""
-        self.overlay.innerHTML = self.editor.textContent
+        self.overlay.innerHTML = self.editor.innerText
         self.overlay.className = 'overlay language-' + self.language
         hljs.highlightElement(self.overlay)
     def onmousedown(self, _event):
