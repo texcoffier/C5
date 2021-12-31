@@ -108,6 +108,12 @@
     </ul>
     <h2>Comment définir un sujet</h2>
     <p>
+        Enregistrez le sujet dans un fichier porte le nom
+        <tt>course_{js|python}_nom_sujet.py</tt>,
+        il sera automatiquement compilé et utilisable
+        avec l'URL <tt>…/ccccc.html#course_{js|python}_nom_sujet.js</tt>
+    </p>
+    <p>
         Définir des questions avec les méthodes :
     </p>
     <ul>
@@ -160,13 +166,13 @@
 make</pre>
     <p>
         Si tout c'est bien passé, cela se termine par : <tt>And now copy the result on a web page:</tt>
-        Il suffit ensuite de visiter <tt>index.html</tt>
+        Il suffit ensuite de visiter <tt>index.html</tt> pour voir cette page.
     </p>
 
     <div class="right">
         <h2>Exercices Javascript : ceci est fonctionnel, essayez-les !</h2>
-        <iframe src="ccccc.html"></iframe>
+        <iframe src="ccccc.html#course_js.js"></iframe>
         <h2>Exercices Python : ceci est fonctionnel, essayez-les !</h2>
-        <iframe src="ccccc.html#xxx-worker-python.js"></iframe>
+        <iframe src="ccccc.html#course_python.js"></iframe>
     </div>
 </body>

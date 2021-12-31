@@ -66,7 +66,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if window.location.hash:
             course = window.location.hash.substr(1)
         else:
-            course = 'xxx-worker.js'
+            course = 'course_js.js'
         self.worker = Worker(course)
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onmessage, self)

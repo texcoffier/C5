@@ -1,13 +1,27 @@
-%.js:%.py
-	nodejs RapydScript/bin/rapydscript --prettify --bare $*.py >$*.js
 
-all:RapydScript node_modules/brython \
-    xxx-highlight.js xxx-JSCPP.js xxx-ccccc.js \
-	xxx-worker.js xxx-worker-cpp.js xxx-worker-python.js
+PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
+
+%.js:%.py
+	@echo '$*.py → $*.js'
+	@case $* in \
+	course_*) \
+		COMPILER=$$(echo $* | sed -r -e 's/course_([^_]*).*/\1/') ; \
+		FILES="compatibility.py compile.py question.py compile_$$COMPILER.py $*.py" \
+		;; \
+	*) \
+		FILES="compatibility.py $*.py" \
+		;; \
+	esac ; \
+	cat $$FILES > xxx-$*.py ; \
+	$(PYTOJS) xxx-$*.py >$*.js ; \
+	rm xxx-$*.py
+
+all:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
+	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')
 	@echo
 	@echo "And now copy the result on a web page:"
 	@echo
-	@echo "cp --recursive --update ccccc.html index.html xxx-*.js brython/ $(HOME)/public_html/CCCCC"
+	@echo "cp --recursive --update ccccc.html index.html xxx*.css *.js brython/ $(HOME)/public_html/CCCCC"
 
 ############# Utilities ############
 RapydScript:
@@ -30,22 +44,9 @@ node_modules/brython:
 xxx-JSCPP.js:
 	GET https://raw.githubusercontent.com/felixhao28/JSCPP/gh-pages/dist/JSCPP.es5.min.js >$@
 
-############# GUI ############
-xxx-ccccc.py:ccccc.py
-	cat compatibility.py ccccc.py >$@
 
-############# Courses ############
-CORE = compatibility.py compile.py question.py
-
-xxx-worker.py:$(CORE) compile_js.py course.py
-	cat $^ >$@
-xxx-worker-cpp.py:$(CORE) compile_cpp.py course_cpp.py
-	cat $^ >$@
-xxx-worker-python.py:$(CORE) compile_python.py course_python.py
-	cat $^ >$@
 
 lint:
 	pylint [^x]*.py
-
 clean:
 	rm xxx*
