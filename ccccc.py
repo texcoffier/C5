@@ -28,7 +28,7 @@ try:
 except: # pylint: disable=bare-except
     pass
 
-def message(txt):
+def popup_message(txt):
     """OK popup with the message"""
     alert(txt) # pylint: disable=undefined-variable
 
@@ -162,7 +162,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if self.first_time:
                     self.first_time = False
                 else:
-                    message('Bravo !')
+                    popup_message('Bravo !')
                 # Many \n at the bug (browser problem when inserting a final \n)
                 message += '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
                 self.editor.innerText = message
@@ -196,7 +196,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.clipboardData.getData("text") in self.editor.innerText:
             setTimeout(bind(self.coloring, self), 100)
             return # auto paste allowed
-        message("Interdit !")
+        popup_message("Interdit !")
         event.preventDefault(True)
     def onkeydown(self, event):
         """Key down"""

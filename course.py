@@ -116,7 +116,7 @@ class Q3(Question): # pylint: disable=undefined-variable
 10 100
 '''
     def question(self):
-        return "Faites afficher les carrés de 0 à 10 en faisant un boucle :<pre>" + self.good + "</pre>"
+        return "Faites afficher les carrés de 0 à 10 en faisant une boucle :<pre>" + self.good + "</pre>"
 
     def tester(self):
         self.check(self.worker.source, [

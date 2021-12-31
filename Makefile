@@ -7,7 +7,7 @@ all:RapydScript node_modules/brython \
 	@echo
 	@echo "And now copy the result on a web page:"
 	@echo
-	@echo "cp --recursive --update ccccc.html xxx-*.js brython/ $(HOME)/public_html/CCCCC"
+	@echo "cp --recursive --update ccccc.html index.html xxx-*.js brython/ $(HOME)/public_html/CCCCC"
 
 ############# Utilities ############
 RapydScript:
