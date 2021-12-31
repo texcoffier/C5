@@ -194,6 +194,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onpaste(self, event):
         """Mouse down"""
         if event.clipboardData.getData("text") in self.editor.innerText:
+            setTimeout(bind(self.coloring, self), 100)
             return # auto paste allowed
         message("Interdit !")
         event.preventDefault(True)
