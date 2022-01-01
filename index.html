@@ -1,4 +1,5 @@
 <head>
+    <meta charset="utf-8">
     <title>C5 : C5 is Compiler Course Class in the Cloud</title>
     <style>
         BODY {
@@ -153,9 +154,18 @@
         Il est nécessaire d'avoir un compilateur du langage écrit en JavaScript :
     </p>
     <ul>
-        <li> JavaScript: <tt>Compile_JS</tt></li>
-        <li> Python: <tt>Compile_Python</tt></li>
+        <li> JavaScript: <tt>Compile_JS</tt> (<a href="ccccc.html#course_js.js">démo</a>)</li>
+        <li> Python: <tt>Compile_Python</tt> (<a href="ccccc.html#course_python.js">démo</a>)</li>
         <li class="NI"> C++: <tt>Compile_CCP</tt></li>
+    </ul>
+
+    <h2>Langages supportés</h2>
+    <p>
+        De nombreuses possibilités pour le futur :
+    </p>
+    <ul>
+        <li> Fonctions graphiques.</li>
+        <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
     </ul>
 
     <h2>Installer C5</h2>
@@ -166,7 +176,10 @@
 make</pre>
     <p>
         Si tout s'est bien passé, cela se termine par : <tt>And now copy the result on a web page:</tt>
-        Il suffit ensuite de visiter <tt>index.html</tt> pour voir cette page.
+        Il suffit ensuite de visiter <tt>index.html</tt> pour voir cette page
+        ou bien de lancer un serveur web dans le répertoire :
+        <tt>python3 -m http.server --cgi 8000</tt> et de visiter
+        <a href="http://127.0.0.1:8000/index.html">http://127.0.0.1:8000/index.html</a>
     </p>
 
     <div class="right">
