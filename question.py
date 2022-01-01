@@ -4,6 +4,7 @@ Question base class
 """
 class Question:
     """Define question and expected result"""
+    all_tests_are_fine = True
     def __init__(self):
         self.worker = None
     def display(self, message):
@@ -15,6 +16,7 @@ class Question:
             html_class = 'test_ok'
         else:
             html_class = 'test_bad'
+            self.all_tests_are_fine = False
         self.display(
             '<li class="' + html_class + '">' + txt + '</li>')
     def check(self, text, needle_message):

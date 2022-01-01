@@ -66,6 +66,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
     def run_tester(self):
         """Do the regression tests"""
         current_question = self.current_question
+        self.quest.all_tests_are_fine = True
         self.quest.tester()
         if current_question != self.current_question:
             self.start_question()
