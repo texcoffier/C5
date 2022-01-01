@@ -6,6 +6,7 @@ To be Python compatible
 
 Object = Object # pylint: disable=undefined-variable
 Array = Array # pylint: disable=undefined-variable
+String = String # pylint: disable=undefined-variable
 
 def str(txt): # pylint: disable=redefined-builtin
     """Python like"""
@@ -15,3 +16,5 @@ def bind(fct, _obj):
     return fct
 Object.defineProperty(Array.prototype, 'append',
                       {'enumerable': False, 'value': Array.prototype.push})
+Object.defineProperty(String.prototype, 'lower',
+                      {'enumerable': False, 'value': String.prototype.toLowerCase})
