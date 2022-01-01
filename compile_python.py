@@ -68,3 +68,6 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
             message += '<b>' + self.escape(self.source.split('\n')[line]) + '</b>\n'
             self.post(
                 'executor', '<error>' + message + '</error>')
+    def locals(self):
+        """Returns the local variable dict"""
+        return __BRYTHON__.mylocals
