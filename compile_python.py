@@ -55,8 +55,8 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
             eval(self.executable.replace(
                 'var $locals___main__ = {}',
                 'var $locals___main__ = __BRYTHON__.mylocals ;'))
-            self.execution_returns = __BRYTHON__.mylocals.__outputs__.join('')
-            self.post('executor', self.execution_returns)
+            self.execution_result = __BRYTHON__.mylocals.__outputs__.join('')
+            self.post('executor', self.execution_result)
         except Error as err: # pylint: disable=undefined-variable
             message = self.escape(err.__class__['$infos'].__qualname__) + ' : '
             if len(err.args):
