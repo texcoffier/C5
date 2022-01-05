@@ -4,7 +4,11 @@ Base class for compiler
 
 def onmessage(event):
     """Evaluate immediatly the function if in the worker"""
-    Compile.worker.run(event.data.toString())
+    if event.data.splice:
+        if event.data[0] == 'goto':
+            Compile.worker.goto(event.data[1])
+    else:
+        Compile.worker.run(event.data.toString())
 
 class Compile: # pylint: disable=too-many-instance-attributes
     """Create the GUI and launch worker"""
@@ -19,16 +23,26 @@ class Compile: # pylint: disable=too-many-instance-attributes
     start_time = None
     language = 'javascript'
 
-    def __init__(self, questions, hide_tip=False):
+    def __init__(self, questions):
         print("Worker: start")
         Compile.worker = self
         self.questions = questions
-        self.hide_tip = hide_tip
+        self.allow_tip = True
+        self.allow_goto = True
         for quest in questions:
             quest.worker = self
         self.start_question()
         self.post('language', self.language)
+        self.current_question_max = 0 # RapydScript bug
         print("Worker: init done")
+
+    def disable_goto(self):
+        """Call to disable goto"""
+        self.allow_goto = False
+
+    def disable_tip(self):
+        """Call to disable index tips"""
+        self.allow_tip = False
 
     def run(self, source):
         """Get the source code and do all the jobs"""
@@ -59,11 +73,20 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.post('run', 'No executor defined')
     def start_question(self):
         """Start a new question"""
+        if self.current_question > self.current_question_max:
+            self.current_question_max = self.current_question
         self.quest = self.questions[self.current_question]
         self.post('editor', self.quest.default_answer())
         self.post('question', self.question_initial_content())
         self.post('question', self.quest.question())
         self.post('index', self.index_initial_content())
+    def goto(self, question):
+        """Change question"""
+        if question > self.current_question_max:
+            return
+        self.current_question = question
+        self.post('first_time', 'x')
+        self.start_question()
     def run_tester(self):
         """Do the regression tests"""
         current_question = self.current_question
@@ -101,20 +124,22 @@ class Compile: # pylint: disable=too-many-instance-attributes
         return '#' + self.nr_eval + ' ' + (self.millisecs() - self.start_time) + 'ms'
     def index_initial_content(self): # pylint: disable=no-self-use,invalid-name
         """Used by the subclass"""
-        texts = '''<style>.i { display: none; position: fixed;
-                   background: #EEF; border: 1px solid #00F ;
-                   margin-top: -1.5em ; margin-left: 1.5em; padding: 0.2em }
-                   div:hover > .i { display: block }</style>'''
+        texts = '''<style></style>'''
         for i, _ in enumerate(self.questions):
-            if i < self.current_question:
-                attr = ' class="done"'
-            elif i == self.current_question:
+            if self.allow_goto:
+                link = ' onclick="ccccc.worker.postMessage([\'goto\',' + i + '])"'
+            else:
+                link = ''
+            if i == self.current_question:
                 attr = ' class="current"'
+            elif i <= self.current_question_max:
+                attr = ' class="possible"'
             else:
                 attr = ''
-            if self.hide_tip:
-                tip = ''
-            else:
+                link = ''
+            if self.allow_tip:
                 tip = '<span class="i">' + self.escape(self.questions[i].__doc__) + '</span>'
-            texts += '<div' + attr + '>' + str(i+1) + tip + '</div>'
+            else:
+                tip = ''
+            texts += '<div' + attr + link + '>' + str(i+1) + tip + '</div>'
         return texts

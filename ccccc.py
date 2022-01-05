@@ -222,6 +222,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if what == 'language':
             self.language = event.data[1]
             return
+        if what == 'first_time':
+            self.first_time = True
+            return
         if what not in self.messages:
             self.messages[what] = ''
         self.messages[what] += event.data[1]
@@ -243,4 +246,4 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_time()
         self.create_index()
 
-CCCCC()
+ccccc = CCCCC()
