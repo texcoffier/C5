@@ -19,10 +19,11 @@ class Compile: # pylint: disable=too-many-instance-attributes
     start_time = None
     language = 'javascript'
 
-    def __init__(self, questions):
+    def __init__(self, questions, hide_tip=False):
         print("Worker: start")
         Compile.worker = self
         self.questions = questions
+        self.hide_tip = hide_tip
         for quest in questions:
             quest.worker = self
         self.start_question()
@@ -100,7 +101,10 @@ class Compile: # pylint: disable=too-many-instance-attributes
         return '#' + self.nr_eval + ' ' + (self.millisecs() - self.start_time) + 'ms'
     def index_initial_content(self): # pylint: disable=no-self-use,invalid-name
         """Used by the subclass"""
-        texts = ''
+        texts = '''<style>.i { display: none; position: fixed;
+                   background: #EEF; border: 1px solid #00F ;
+                   margin-top: -1.5em ; margin-left: 1.5em; padding: 0.2em }
+                   div:hover > .i { display: block }</style>'''
         for i, _ in enumerate(self.questions):
             if i < self.current_question:
                 attr = ' class="done"'
@@ -108,5 +112,9 @@ class Compile: # pylint: disable=too-many-instance-attributes
                 attr = ' class="current"'
             else:
                 attr = ''
-            texts += '<div' + attr + '>' + str(i+1) + '</div>'
+            if self.hide_tip:
+                tip = ''
+            else:
+                tip = '<span class="i">' + self.escape(self.questions[i].__doc__) + '</span>'
+            texts += '<div' + attr + '>' + str(i+1) + tip + '</div>'
         return texts

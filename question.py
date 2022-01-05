@@ -3,10 +3,11 @@
 Question base class
 """
 class Question:
-    """Define question and expected result"""
+    """A question"""
     all_tests_are_fine = True
     def __init__(self):
         self.worker = None
+        self.__doc__ = self.__doc__ # Fix RapydScript problem
     def display(self, message):
         """Display the message in the student feedback"""
         self.worker.post('tester', message)
