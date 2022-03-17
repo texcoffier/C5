@@ -121,6 +121,40 @@ print("not ( x < minimum or x > maximum) →",
 
 """
 
+class Q_str_add(Question):
+    """Addition de chaines de caractères"""
+    def question(self):
+        return """On peut utiliser l'opérateur «+» pour ajouter deux
+        chaines de caractères.
+        <p>
+        On ne peut pas ajouter une chaîne de caractères et un entier.
+        C'est pour cela que le bloc «Exécution» est en rouge.
+        <p>
+        Corrigez le programme pour qu'il affiche 11."""
+    def tester(self):
+        self.check(
+            self.worker.source,
+            [['"1".*"1"', 'Vous utilisez deux chaines de caractères "1"'],
+             ['"1" *[+] *"1"', 'Vous additionner deux chaines de caractères "1"'],
+            ])
+        self.message('11' not in self.worker.source,
+                     "Vous n'utilisez pas 11 directement")
+        self.message('11' in self.worker.execution_result,
+                     "Cela affiche 11")
+        if self.all_tests_are_fine:
+            self.next_question()
+    def default_answer(self):
+        return """
+a = "Hello"
+b = "World"
+print(a + " " + b)
+
+print("1" + 1)
+"""
+
+
+
+
 class QEnd(Question):
     """Félicitation vous êtes arrivé au bout !"""
     def question(self):
@@ -145,4 +179,4 @@ for y in range(20):
 print(texte)
 """
 
-Compile_Python([Q_print(), Q_variable(), Q_booleen(), QEnd()]) # pylint: disable=undefined-variable
+Compile_Python([Q_print(), Q_variable(), Q_booleen(), Q_str_add(), QEnd()]) # pylint: disable=undefined-variable
