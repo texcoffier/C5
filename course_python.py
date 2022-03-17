@@ -13,7 +13,7 @@ class Q_print(Question):
     answer = ''
     def question(self):
         self.answer = ["Salut !", "Au revoir", "Bonne nuit"][self.worker.millisecs() % 3]
-        return ("Modifiez le contenu de la grande zone blanche juste à droite pour afficher <pre>"
+        return ("Modifiez le contenu de la grande zone blanche juste à droite pour afficher en bas à droite :<pre>"
                 + self.answer + "</pre>"
                 + "Une fois ce challenge réussi vous passez à la question suivante.")
     def tester(self):
@@ -111,8 +111,9 @@ print("not True →", not True)
 
 x = """ + str(self.min + 5) + """ # milieu de l'intervalle
 print()
-print("Soit x =", x)
+print("Avec x =", x)
 print("x >= minimum →", x >= minimum)
+print("\\nEt les 3 derniers :\\n")
 print("x <= maximum →", x <= maximum)
 print("x >= minimum and x <= maximum →",
        x >= minimum and x <= maximum)
@@ -152,7 +153,94 @@ print(a + " " + b)
 print("1" + 1)
 """
 
+class Q_import_math(Question):
+    """Bibliothèque mathématique"""
+    def question(self):
+        return """Vous pouvez utiliser des outils créés par d'autres personnes.
+        La bibliothèque mathématique est toujours là pour vous aider :
+        <pre>import math</pre>
+        <p>
+        <ul>
+        <li> Mettre la racine carré de 0.5 dans la «sqrt»
+        <li> Mettre le cosinus de π/4 dans «cos»
+        <li> Faites afficher la différence entre les 2
+        </ul>
+        """
+    def tester(self):
+        self.check(
+            self.worker.source,
+            [['\nsqrt *=', 'Enregistrer quelque chose dans «sqrt»'],
+             ['math\\.sqrt *\\( *0.5 *\\)', 'Calculer la racine carrée de 0.5'],
+             ['\ncos *=', 'Enregistrer quelque chose dans «cos»'],
+             ['math\\.pi */ *4', 'Calculer π/4'],
+             ['math\\.cos *\\( *math\\.pi */ *4 *\\)', 'Calculer cos(π/4)'],
+             ['print *\\( *(sqrt *- *cos|cos *- *sqrt) *\\)', 
+              'Affichage de la différence entre «sqrt» et «cos»'],
+            ])
+        self.message('3.1' not in self.worker.source,
+                     "Vous n'utilisez pas 3.14 mais bien π")
+        if self.all_tests_are_fine:
+            self.next_question()
+    def default_answer(self):
+        return """
+import math
+print("La valeur de π est :", math.pi)
+print("La racine carré de 4 est :", math.sqrt(4))
+print("Le cosinus de 0 est :", math.cos(0))
 
+# la racine carré de 0.5 dans «sqrt» :
+
+
+
+# le cosinus de π/4 dans «cos» :
+
+
+
+# Afficher la différence des valeurs de «sqrt» et «cos» :
+
+
+
+"""
+
+
+class Q_exo1(Question):
+    """Surface du disque"""
+    def question(self):
+        return """Ecrire un programme qui affiche la surface
+        d'un disque dont vous aurez choisi le rayon.
+        Vous devez :
+        <ul>
+        <li> enregistrer le rayon du disque dans «rayon»
+        <li> enregistrer la surface du disque dans «surface»
+        </ul>
+        <p>
+        La surface est π multiplié par le rayon au carré.
+        """
+    def tester(self):
+        self.check(
+            self.worker.source,
+            [['\nimport +math *\n', 'Vous importez la bibliothèque mathématique'],
+             ['\nrayon *= *[0-9.]+ *\n', 'Vous enregistrez un nombre dans «rayon»'],
+             ['\nsurface *=', 'Vous enregistrez dans «surface»'],
+             ['math\\.pi', 'Vous utilisez π'],
+             ['rayon \\* *rayon', 'Vous calculez le rayon au carré'],
+            ])
+        rayon = surface = None
+        if 'rayon' in self.worker.locals():
+            rayon = float(self.worker.locals()['rayon'])
+        if 'surface' in self.worker.locals():
+            surface = float(self.worker.locals()['surface'])
+        self.message(abs(surface - 3.1415*rayon*rayon) < 0.01,
+                     "La surface calculée est correcte")
+        if self.all_tests_are_fine:
+            self.next_question()
+    def default_answer(self):
+        return """# Rien pour vous aider
+# Vous pouvez retourner sur les questions précédentes en cliquant
+# sur la colonne de nombres qui est tout à gauche.
+
+
+"""
 
 
 class QEnd(Question):
@@ -179,4 +267,5 @@ for y in range(20):
 print(texte)
 """
 
-Compile_Python([Q_print(), Q_variable(), Q_booleen(), Q_str_add(), QEnd()]) # pylint: disable=undefined-variable
+Compile_Python([Q_print(), Q_variable(), Q_booleen(), Q_str_add(),  # pylint: disable=undefined-variable
+                Q_import_math(), Q_exo1(), QEnd()])
