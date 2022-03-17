@@ -45,6 +45,14 @@ xxx-JSCPP.js:
 	GET https://raw.githubusercontent.com/felixhao28/JSCPP/gh-pages/dist/JSCPP.es5.min.js >$@
 
 
+############# Dependencies ############
+
+FRAMEWORK=ccccc.py compile.py question.py
+course_python.js:$(FRAMEWORK) compile_python.py course_python.py
+course_js.js:$(FRAMEWORK) compile_python.py course_js.py
+course_cpp.js:$(FRAMEWORK) compile_cpp.py course_cpp.py
+
+
 
 lint:
 	pylint [^x]*.py
