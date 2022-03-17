@@ -31,10 +31,13 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.allow_goto = True
         for quest in questions:
             quest.worker = self
+        if '127.0.0.1' in str(window.location): # pylint: disable=undefined-variable
+            self.current_question_max = len(questions)
+        else:
+            self.current_question_max = 0
         self.start_question()
         self.post('language', self.language)
-        self.current_question_max = 0 # RapydScript bug
-        print("Worker: init done")
+        print("Worker: init done. current_question_max=", self.current_question_max)
 
     def disable_goto(self):
         """Call to disable goto"""
@@ -141,4 +144,4 @@ class Compile: # pylint: disable=too-many-instance-attributes
             if self.allow_tip:
                 tips.append('<div>' + self.escape(self.questions[i].__doc__) + '</div>')
             texts += '<div' + attr + link + '>' + str(i+1) + '</div>'
-        return '<div class="i">' + tips.join('') + '</div>' + texts
+        return '<div class="i">' + tips.join('') + '</div>' + texts  # pylint: disable=no-member
