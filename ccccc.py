@@ -60,6 +60,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     old_source = None
     first_time = True
     language = 'javascript' # For highlighting
+    oldScrollTop = None
 
     def __init__(self):
         print("GUI: start")
@@ -168,6 +169,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 message += '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
                 self.overlay_hide()
                 self.editor.innerText = message
+                self.editor.scrollTop = 0
                 # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
                 self.coloring()
             if self.messages_previous[k] != message:
@@ -215,6 +217,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             document.execCommand('insertHTML', False, '    ')
             event.preventDefault(True)
         elif event.key == 'Enter' and event.target is self.editor:
+            # Fix Firefox misbehavior
+            self.oldScrollTop = self.editor.scrollTop
+            # Do not want <br> inserted, so prevent default
             document.execCommand('insertHTML', False, '\n')
             event.preventDefault(True)
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
@@ -228,7 +233,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Key press"""
     def onscroll(self, _event=None):
         """To synchronize syntax highlighting"""
-        self.overlay.scrollTop = self.editor.scrollTop
+        if self.oldScrollTop is not None:
+            # Fix Firefox misbehavior
+            self.editor.scrollTop = self.oldScrollTop
+            self.oldScrollTop = None
+        else:
+            self.overlay.scrollTop = self.editor.scrollTop
     def onmessage(self, event):
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
