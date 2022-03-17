@@ -97,31 +97,33 @@
             opacity: 0.3
         }
 
-        .index DIV {
+        .index>DIV {
             font-size: 80%;
             background: linear-gradient(to right, #FFFF, #0002)
         }
 
-        .index DIV.possible {
+        .index>DIV.possible {
             background: linear-gradient(to right, #8F8F, #0002)
         }
 
-        .index DIV.current {
+        .index>DIV.current {
             background: linear-gradient(to right, #0F0F, #0002)
         }
 
-        .i {
-            display: none;
+        .index>DIV.i {
+            opacity: 0;
             position: fixed;
             background: #EEF;
             border: 1px solid #00F;
-            margin-top: -1.5em;
             margin-left: 1.5em;
-            padding: 0.2em
+            padding: 0.2em;
+            transition: opacity 0.5s, visibility 0.5s;
+            visibility: hidden;
         }
 
         div:hover>.i {
-            display: block
+            opacity: 0.9;
+            visibility: visible;
         }
     </style>
 </head>

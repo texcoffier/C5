@@ -125,6 +125,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
     def index_initial_content(self): # pylint: disable=no-self-use,invalid-name
         """Used by the subclass"""
         texts = '''<style></style>'''
+        tips = []
         for i, _ in enumerate(self.questions):
             if self.allow_goto:
                 link = ' onclick="ccccc.worker.postMessage([\'goto\',' + i + '])"'
@@ -138,8 +139,6 @@ class Compile: # pylint: disable=too-many-instance-attributes
                 attr = ''
                 link = ''
             if self.allow_tip:
-                tip = '<span class="i">' + self.escape(self.questions[i].__doc__) + '</span>'
-            else:
-                tip = ''
-            texts += '<div' + attr + link + '>' + str(i+1) + tip + '</div>'
-        return texts
+                tips.append('<div>' + self.escape(self.questions[i].__doc__) + '</div>')
+            texts += '<div' + attr + link + '>' + str(i+1) + '</div>'
+        return '<div class="i">' + tips.join('') + '</div>' + texts
