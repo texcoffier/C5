@@ -55,7 +55,7 @@ clean:
 #
 
 debug:
-	@$(MAKE) course_python.js
+	@$(MAKE) ccccc.js course_python.js
 	@-python3 -m http.server --cgi 8000 2>/dev/null &
 	@xdg-open http:127.0.0.1:8000/ccccc.html#course_python.js
 

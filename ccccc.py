@@ -104,6 +104,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         e.autocorrect = False
         e.autocapitalize = False
         e.autocomplete = False
+        e.onscroll = bind(self.onscroll, self)
 
         self.editor = e
         self.top.appendChild(e)
@@ -165,6 +166,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     popup_message('Bravo !')
                 # Many \n at the bug (browser problem when inserting a final \n)
                 message += '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
+                self.overlay_hide()
                 self.editor.innerText = message
                 # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
                 self.coloring()
@@ -183,17 +185,26 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.worker.postMessage(source) # Start compile/execute/test
             self.messages = {}
 
+    def overlay_hide(self):
+        """The editor and the overlay are no synchronized"""
+        self.overlay.style.visibility = 'hidden'
+    def overlay_show(self):
+        """The editor and the overlay are synched"""
+        self.onscroll()
+        self.overlay.style.visibility = 'visible'
     def coloring(self):
         """Coloring of the text editor with an overlay."""
         self.overlay.innerHTML = self.editor.innerText
         self.overlay.className = 'overlay language-' + self.language
         hljs.highlightElement(self.overlay)
+        self.overlay_show()
     def onmousedown(self, _event):
         """Mouse down"""
         self.editor.focus()
     def onpaste(self, event):
         """Mouse down"""
         if event.clipboardData.getData("text") in self.editor.innerText:
+            self.overlay_hide()
             setTimeout(bind(self.coloring, self), 100)
             return # auto paste allowed
         popup_message("Interdit !")
@@ -208,14 +219,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
             event.preventDefault(True)
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
-        self.overlay.style.display = 'none'
+        self.overlay_hide()
     def onkeyup(self, event):
         """Key up"""
         if event.key not in ('Left', 'Right', 'Up', 'Down'):
             self.coloring()
-        self.overlay.style.display = 'initial'
     def onkeypress(self, event):
         """Key press"""
+    def onscroll(self, _event=None):
+        """To synchronize syntax highlighting"""
+        self.overlay.scrollTop = self.editor.scrollTop
     def onmessage(self, event):
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
