@@ -76,10 +76,15 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.post('run', 'No executor defined')
     def start_question(self):
         """Start a new question"""
+        if self.quest:
+            self.quest.last_answer = self.source
         if self.current_question > self.current_question_max:
             self.current_question_max = self.current_question
         self.quest = self.questions[self.current_question]
-        self.post('editor', self.quest.default_answer())
+        if hasattr(self.quest, 'last_answer'):
+            self.post('editor', self.quest.last_answer)
+        else:
+            self.post('editor', self.quest.default_answer())
         self.post('question', self.question_initial_content())
         self.post('question', self.quest.question())
         self.post('index', self.index_initial_content())
@@ -95,7 +100,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         current_question = self.current_question
         self.quest.all_tests_are_fine = True
         self.quest.tester()
-        if current_question != self.current_question:
+        if current_question != self.current_question == self.current_question_max:
             self.start_question()
 
     ###########################################################################
