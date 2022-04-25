@@ -100,7 +100,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         current_question = self.current_question
         self.quest.all_tests_are_fine = True
         self.quest.tester()
-        if current_question != self.current_question == self.current_question_max:
+        if current_question != self.current_question and self.current_question != self.current_question_max:
             self.start_question()
 
     ###########################################################################
