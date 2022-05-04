@@ -31,7 +31,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.allow_goto = True
         for quest in questions:
             quest.worker = self
-        if '127.0.0.1' in str(window.location): # pylint: disable=undefined-variable
+        if '127.0.0.1' in str(location): # pylint: disable=undefined-variable
             self.current_question_max = len(questions)
         else:
             self.current_question_max = 0
