@@ -18,3 +18,4 @@ Object.defineProperty(Array.prototype, 'append',
                       {'enumerable': False, 'value': Array.prototype.push})
 Object.defineProperty(String.prototype, 'lower',
                       {'enumerable': False, 'value': String.prototype.toLowerCase})
+String.prototype.strip = String.prototype.trim

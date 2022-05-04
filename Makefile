@@ -49,7 +49,7 @@ xxx-JSCPP.js:
 
 FRAMEWORK=ccccc.py compile.py question.py
 course_python.js:$(FRAMEWORK) compile_python.py course_python.py
-course_js.js:$(FRAMEWORK) compile_python.py course_js.py
+course_js.js:$(FRAMEWORK) compile_js.py course_js.py
 course_cpp.js:$(FRAMEWORK) compile_cpp.py course_cpp.py
 
 

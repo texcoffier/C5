@@ -132,6 +132,7 @@ class Q3(Question): # pylint: disable=undefined-variable
 
         fine = self.worker.execution_result == self.good
         self.message(fine, "affiche le bon résultat.")
+        self.display("<p>Votre programme fait : " + str(len(self.worker.source.strip().split('\n'))) + ' lignes.')
 
         if fine and good:
             self.next_question()
