@@ -1,18 +1,12 @@
 """
-CPP compiler and interpreter
+CPP compiler and interpreter based upon JSCPP
 
-NOT WORKING
+Very limited.
 """
 
-# print("before")
-# window = self
-# importScripts('JSCPP.es5.min.js')
-# for k in window:
-#     print('==', k, window[k])
-# print("after", JSCPP)
-# importScripts('JSCPP.es5.min.js')
-# JSCPP = require "JSCPP.es5.min.js"
-
+self.window = window = {'document': 'fake'}
+importScripts('xxx-JSCPP.js')
+JSCPP = self.window.JSCPP
 
 
 class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
@@ -24,13 +18,21 @@ class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
         try:
-            # pylint: disable=eval-used
-            self.post('compiler', 'look:')
-            self.post('compiler', JSCPP)
-            self.post('compiler', 'done')
-            # ''' + source + ';\n' + self.quest.append_to_source_code() + '} ; _tmp_')
-            # self.post('compiler', 'Compilation sans erreur')
-            return eval("function _() {}")
+            def stdio(text):
+                self.execution_returns += text
+                self.post('executor', text)
+            def error(text, code):
+                self.post('executor', text + '\n$$$$$$$$$' + str(code))
+            executable = JSCPP.run(
+                source,
+                '',
+                {
+                    'stdio': {'write': stdio},
+                    'debug': True
+                },
+                error)
+            self.post('compiler', 'Compilation sans erreur')
+            return executable
         except Error as err: # pylint: disable=undefined-variable
             self.post(
                 'compiler',
@@ -41,7 +43,11 @@ class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
     def run_executor(self):
         """Execute the compiled code"""
         try:
-            self.execution_returns = self.executable()
+            self.execution_returns = ''
+            for _ in range(100000):
+                value = self.executable.next()
+                if value != False:
+                    break
         except Error as err: # pylint: disable=undefined-variable
             self.post(
                 'executor', '<error>'
