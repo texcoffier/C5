@@ -12,6 +12,9 @@ Compile_CPP subclass for C++ compiler
 Question    base class for question definition
 """
 
+def html(txt):
+    return txt.replace(RegExp('&', 'g'), '&amp;').replace(RegExp('<', 'g'), '&lt;').replace(RegExp('>', 'g'), '&gt;')
+
 # Hide pylint warnings
 try:
     document = document
@@ -172,7 +175,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.editor.scrollTop = 0
                 # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
                 self.coloring()
-            if self.messages_previous[k] != message:
+            elif self.messages_previous[k] != message:
                 element = self[k] # pylint: disable=unsubscriptable-object
                 element.innerHTML = message
                 if '<error' in message:
@@ -196,7 +199,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay.style.visibility = 'visible'
     def coloring(self):
         """Coloring of the text editor with an overlay."""
-        self.overlay.innerHTML = self.editor.innerText
+        self.overlay.innerHTML = html(self.editor.innerText)
         self.overlay.className = 'overlay language-' + self.language
         hljs.highlightElement(self.overlay)
         self.overlay_show()
