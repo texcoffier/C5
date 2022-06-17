@@ -10,7 +10,7 @@ JSCPP = self.window.JSCPP
 
 
 class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
-    """JavaScript compiler and evaluator"""
+    """CPP compiler and evaluator"""
     execution_result = ''
     execution_returns = None
     language = 'cpp'

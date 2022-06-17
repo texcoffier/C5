@@ -54,11 +54,14 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.source = source
         self.post('compiler', self.compiler_initial_content())
         self.executable = self.run_compiler(source)
+        if self.executable:
+            self.run_after_compile()
+
+    def run_after_compile(self):
         self.execution_result = ''
         self.execution_returns = None
         self.post('executor', self.executor_initial_content())
-        if self.executable:
-            self.run_executor()
+        self.run_executor()
         self.post('tester', self.tester_initial_content())
         self.run_tester()
         self.post('time', self.time_initial_content())

@@ -51,6 +51,7 @@ FRAMEWORK=ccccc.py compile.py question.py
 course_python.js:$(FRAMEWORK) compile_python.py course_python.py
 course_js.js:$(FRAMEWORK) compile_js.py course_js.py
 course_cpp.js:$(FRAMEWORK) compile_cpp.py course_cpp.py
+course_remote.js:$(FRAMEWORK) compile_remote.py course_remote.py
 
 
 
@@ -71,4 +72,9 @@ debugCPP:
 	@$(MAKE) ccccc.js course_cpp.js
 	@-python3 -m http.server --cgi 8000 2>/dev/null &
 	@xdg-open http:127.0.0.1:8000/ccccc.html#course_cpp.js
+
+debugremote:
+	@$(MAKE) ccccc.js course_remote.js
+	@-python3 -m http.server --cgi 8000 2>/dev/null &
+	@xdg-open http:127.0.0.1:8000/ccccc.html#course_remote.js
 
