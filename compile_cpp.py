@@ -17,6 +17,8 @@ class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
+        if not source:
+            return True
         try:
             def stdio(text):
                 self.execution_returns += text
@@ -39,9 +41,11 @@ class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
                 '<error>'
                 + self.escape(err.name) + '\n' + self.escape(err.message)
                 + '</error>')
-            return eval("function _() {}") # pylint: disable=eval-used
+            return True
     def run_executor(self):
         """Execute the compiled code"""
+        if self.executable == True:
+            return
         try:
             self.execution_returns = ''
             for _ in range(100000):
