@@ -24,6 +24,19 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
                 if 'Bravo, il' not in message:
                     message = '<error>' + message + '<error>'
                 self.post('compiler', message)
+                for line in data[1].split('\n'):
+                    line = line.split(':')
+                    if line[0] == 'c.cpp':
+                        try:
+                            line_nr = int(line[1])
+                            char_nr = int(line[2])
+                            if 'error' in line[3]:
+                                self.post('error', [line_nr, char_nr])
+                            elif 'warning' in line[3]:
+                                self.post('warning', [line_nr, char_nr])
+                        except:
+                            pass
+
             elif data[0] == 'executor':
                 self.post('executor', data[1])
                 self.execution_returns += data[1]

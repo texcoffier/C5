@@ -39,9 +39,9 @@ async def echo(websocket, _path):
             action, data = json.loads(message)
             if action == 'compile':
                 print('compile')
-                with open("xxx.cpp", "w") as file:
+                with open("c.cpp", "w") as file:
                     file.write(data)
-                process = subprocess.run(['g++', '-Wall', 'xxx.cpp', '-o', conid],
+                process = subprocess.run(['g++', '-Wall', 'c.cpp', '-o', conid],
                                          stderr=subprocess.PIPE,
                                          check=False)
                 stderr = process.stderr.decode('utf-8')
