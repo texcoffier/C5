@@ -208,7 +208,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.focus()
     def onpaste(self, event):
         """Mouse down"""
-        if event.clipboardData.getData("text") in self.editor.innerText:
+        if (event.clipboardData or event.dataTransfer).getData("text") in self.editor.innerText:
             self.overlay_hide()
             setTimeout(bind(self.coloring, self), 100)
             return # auto paste allowed
@@ -260,6 +260,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.top = document.createElement('DIV')
         self.top.onmousedown = bind(self.onmousedown, self)
         self.top.onpaste = bind(self.onpaste, self)
+        self.top.ondrop = bind(self.onpaste, self)
         self.top.onkeydown = bind(self.onkeydown, self)
         self.top.onkeyup = bind(self.onkeyup, self)
         self.top.onkeypress = bind(self.onkeypress, self)
