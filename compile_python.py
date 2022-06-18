@@ -23,6 +23,8 @@ import _sys
 _sys.stderr = __eRRor__()
 '''
 
+OFFSET = len(PREAMBLE.split('\n')) - 1
+
 class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
@@ -38,18 +40,21 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
             self.post('compiler', 'Compilation sans erreur.')
             return compiled
         except Error as err: # pylint: disable=undefined-variable
-            # for k in err:
-            #     print(k, err[k])
+            #for k in err:
+            #    print(k, err[k])
             self.post(
                 'compiler',
                 '<error>'
                 + self.escape(err.msg) + '\n'
-                + 'Ligne ' + self.escape(err.lineno) + ' :\n'
+                + 'Ligne ' + self.escape(err.lineno - OFFSET) + ' :\n'
                 + '<b>' + self.escape(err.text) + '</b>\n'
                 + '</error>')
-            return eval("function _() {}") # pylint: disable=eval-used
+            self.post('error', [err.lineno - 8, err.offset])
+            return True
     def run_executor(self):
         """Execute the compiled code"""
+        if self.executable == True:
+            return
         try:
             __BRYTHON__.mylocals = {'__outputs__': []}
             eval(self.executable.replace(
@@ -63,11 +68,12 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
                 message += err.args[0]
             else:
                 message += err.name
-            line = Number(err['$line_info'].split(',')[0]) - len(PREAMBLE.split('\n'))
+            line = Number(err['$line_info'].split(',')[0]) - OFFSET
             message += '\nLigne : ' + (line + 1) + '\n'
             message += '<b>' + self.escape(self.source.split('\n')[line]) + '</b>\n'
-            self.post(
-                'executor', '<error>' + message + '</error>')
+            self.post('executor', '<error>' + message + '</error>')
+            self.post('error', [line, err.offset])
+
     def locals(self):
         """Returns the local variable dict"""
         return __BRYTHON__.mylocals
