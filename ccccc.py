@@ -64,6 +64,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     first_time = True
     language = 'javascript' # For highlighting
     oldScrollTop = None
+    highlight_errors = {}
 
     def __init__(self):
         print("GUI: start")
@@ -187,6 +188,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         source = self.editor.innerText
         if source != self.old_source:
             self.old_source = source # Do not recompile the same thing
+            self.clear_highlight_errors()
             self.worker.postMessage(source) # Start compile/execute/test
             self.messages = {}
 
@@ -197,12 +199,35 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """The editor and the overlay are synched"""
         self.onscroll()
         self.overlay.style.visibility = 'visible'
+    def clear_highlight_errors(self):
+        """Make space fo the new errors"""
+        self.highlight_errors = {}
+        while self.overlay.lastChild and self.overlay.lastChild.className and 'ERROR' in self.overlay.lastChild.className:
+            self.overlay.removeChild(self.overlay.lastChild)
     def coloring(self):
         """Coloring of the text editor with an overlay."""
         self.overlay.innerHTML = html(self.editor.innerText)
         self.overlay.className = 'overlay language-' + self.language
         hljs.highlightElement(self.overlay)
+        for line_char in self.highlight_errors:
+            what = self.highlight_errors[line_char]
+            line_nr, char_nr = line_char.split(':')
+            self.add_highlight_errors(line_nr, char_nr, what)
         self.overlay_show()
+
+    def add_highlight_errors(self, line_nr, char_nr, what):
+        """Add the error or warning"""
+        error = document.createElement('DIV')
+        error.className = 'ERROR ' + what
+        error.style.top = (line_nr - 1) * 1.18 + 'vw'
+        self.overlay.appendChild(error)
+        char = document.createElement('DIV')
+        char.className = what + ' char ERROR'
+        char.style.top = error.style.top
+        char.style.left = (char_nr - 1) + 'ch'
+        char.style.width = '1ch'
+        self.overlay.appendChild(char)
+
     def onmousedown(self, _event):
         """Mouse down"""
         self.editor.focus()
@@ -214,8 +239,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return # auto paste allowed
         popup_message("Interdit !")
         event.preventDefault(True)
+
     def onkeydown(self, event):
         """Key down"""
+        self.clear_highlight_errors()
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
             event.preventDefault(True)
@@ -250,6 +277,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         if what == 'first_time':
             self.first_time = True
+            return
+        if what in ('error', 'warning'):
+            self.highlight_errors[event.data[1][0] + ':' + event.data[1][1]] = what
+            self.add_highlight_errors(event.data[1][0], event.data[1][1], what)
             return
         if what not in self.messages:
             self.messages[what] = ''

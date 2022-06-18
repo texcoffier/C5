@@ -12,6 +12,7 @@
         BODY {
             font-family: sans-serif;
             font-size: 1vw;
+            --pad: 0.5em;
         }
 
         DIV.question {
@@ -24,11 +25,31 @@
         DIV.overlay {
             white-space: pre;
             font-family: monospace, monospace;
+            line-height: 1.18vw;
+        }
+
+        .error, .warning {
+            position: absolute;
+            right: 0;
+            left: 0;
+            opacity: 0.2;
+            pointer-events: none;
+            height: 1.18vw;
+            margin-left: var(--pad);
+        }
+        .error {
+            background: #F00;
+        }
+        .warning {
+            background: #FFA500;
+        }
+        .char {
+            border: 2px solid #000
         }
 
         BODY>DIV>DIV {
-            padding-left: 0.5em;
-            padding-right: 0.5em;
+            padding-left: var(--pad);
+            padding-right: var(--pad);
         }
 
         BODY>DIV>DIV.index {
@@ -54,7 +75,7 @@
         PRE {
             border: 1px solid #880;
             background: #FFD;
-            margin: 0.5em;
+            margin: var(--pad);
             padding: 0.5em;
         }
 
