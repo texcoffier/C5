@@ -58,13 +58,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question = editor = overlay = tester = compiler = executor = time = index = None # HTML elements
     top = None # Top page HTML element
     source = None # The source code to compile
-    messages = {'time': 1}
-    messages_previous = {}
     old_source = None
-    first_time = True
     language = 'javascript' # For highlighting
     oldScrollTop = None
     highlight_errors = {}
+    question_done = {}
 
     def __init__(self):
         print("GUI: start")
@@ -78,7 +76,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.worker.onerror = bind(self.onmessage, self)
         setInterval(bind(self.scheduler, self), 200)
         self.create_html()
+
+        self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))')
+        self.worker.postMessage(['array', self.shared_buffer])
+
+        self.inputs = {} # Indexed by the question number
+        self.do_not_clear = {}
         print("GUI: init done")
+
+    def send_input(self, string):
+        """Send the input value to the worker"""
+        for i in range(len(string)):
+            self.shared_buffer[i+1] = string.charCodeAt(i)
+        self.shared_buffer[len(string) + 1] = -1 # String end
+        self.shared_buffer[0] = 1
 
     def create_question(self):
         """The question text container: course and exercise"""
@@ -156,41 +167,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def scheduler(self):
         """Send a new job if free and update the screen"""
-        if 'time' not in self.messages:
+        if self.state == 'started':
             return # Compiler is running
-
-        for k in ['tester', 'executor', 'compiler', 'time', 'editor', 'question', 'index']:
-            message = self.messages[k]
-            if not message and message != '':
-                continue
-            if k == 'editor':
-                # New question
-                if self.first_time:
-                    self.first_time = False
-                else:
-                    popup_message('Bravo !')
-                # Many \n at the bug (browser problem when inserting a final \n)
-                message += '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
-                self.overlay_hide()
-                self.editor.innerText = message
-                self.editor.scrollTop = 0
-                # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
-                self.coloring()
-            elif self.messages_previous[k] != message:
-                element = self[k] # pylint: disable=unsubscriptable-object
-                element.innerHTML = message
-                if '<error' in message:
-                    element.style.background = '#FAA'
-                else:
-                    element.style.background = element.background
-                self.messages_previous[k] = message
-
         source = self.editor.innerText
         if source != self.old_source:
             self.old_source = source # Do not recompile the same thing
             self.clear_highlight_errors()
+            self.unlock_worker()
+            self.state = 'started'
             self.worker.postMessage(source) # Start compile/execute/test
-            self.messages = {}
+
+    def unlock_worker(self):
+        """ Unlock worker on input waiting to finish MessageEvent"""
+        self.shared_buffer[0] = 2
 
     def overlay_hide(self):
         """The editor and the overlay are no synchronized"""
@@ -242,6 +231,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def onkeydown(self, event):
         """Key down"""
+        if event.target.tagName == 'INPUT':
+            return
         self.clear_highlight_errors()
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
@@ -269,22 +260,85 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.oldScrollTop = None
         else:
             self.overlay.scrollTop = self.editor.scrollTop
+    def oninput(self, event):
+        if event.key == 'Enter':
+            self.inputs[self.current_question][event.target.input_index] = event.target.value
+            if event.target.run_on_change:
+                self.old_source = ''
+                self.unlock_worker()
+            else:
+                self.send_input(event.target.value)
+                event.target.run_on_change = True
+
+    def clear_if_needed(self, box):
+        if box in self.do_not_clear:
+            return
+        self.do_not_clear[box] = True
+        self[box].innerHTML = ''
+
     def onmessage(self, event):
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
+        value = event.data[1]
         if what == 'language':
-            self.language = event.data[1]
-            return
-        if what == 'first_time':
-            self.first_time = True
-            return
-        if what in ('error', 'warning'):
-            self.highlight_errors[event.data[1][0] + ':' + event.data[1][1]] = what
-            self.add_highlight_errors(event.data[1][0], event.data[1][1], what)
-            return
-        if what not in self.messages:
-            self.messages[what] = ''
-        self.messages[what] += event.data[1]
+            self.language = value
+        elif what == 'current_question':
+            self.current_question = value
+        elif what in ('error', 'warning'):
+            self.highlight_errors[value[0] + ':' + value[1]] = what
+            self.add_highlight_errors(value[0], value[1], what)
+        elif what == 'state':
+            self.state = value
+            if self.state == "started":
+                self.input_index = 0
+                self.do_not_clear = {}
+            if self.state == "inputdone":
+                self.state = "started"
+        elif what == 'good':
+            if self.current_question not in self.question_done:
+                self.question_done[self.current_question] = True
+                popup_message('Bravo !')
+        elif what == 'executor':
+            self.clear_if_needed(what)
+            if value == '\000INPUT':
+                span = document.createElement('INPUT')
+                span.onkeypress = bind(self.oninput, self)
+                span.input_index = self.input_index
+                if not self.inputs[self.current_question]:
+                    self.inputs[self.current_question] = {}
+                self.executor.appendChild(span)
+                if self.input_index in self.inputs[self.current_question]:
+                    span.value = self.inputs[self.current_question][self.input_index]
+                    self.send_input(span.value)
+                    span.run_on_change = True
+                else:
+                    if document.activeElement and document.activeElement.tagName == 'INPUT':
+                        span.focus()
+                self.input_index += 1
+            else:
+                span = document.createElement('SPAN')
+                span.innerHTML = value
+                self.executor.appendChild(span)
+        elif what == 'index':
+            self[what].innerHTML = value
+        elif what == 'editor':
+            # New question
+            # Many \n at the bug (browser problem when inserting a final \n)
+            message = value + '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
+            self.overlay_hide()
+            self.editor.innerText = message
+            self.editor.scrollTop = 0
+            # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
+            self.coloring()
+        elif what in ('tester', 'compiler', 'question', 'time'):
+            self.clear_if_needed(what)
+            span = document.createElement('SPAN')
+            span.innerHTML = value
+            if '<error' in value:
+                self[what].style.background = '#FAA'
+            else:
+                self[what].style.background = self[what].background
+            self[what].appendChild(span)
 
     def create_html(self):
         """Create the page content"""

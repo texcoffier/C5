@@ -24,22 +24,33 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
                      Compile.worker.execution_result += txt;
                      self.post('executor', txt) ;
                  } ;
+                function prompt(txt)
+                  {
+                      print(txt);
+                      return Compile.worker.read_input();
+                  }
             ''' + source + ';\n' + self.quest.append_to_source_code() + '} ; _tmp_')
             self.post('compiler', 'Compilation sans erreur')
             return executable
         except Error as err: # pylint: disable=undefined-variable
-            self.post(
-                'compiler',
-                '<error>'
-                + self.escape(err.name) + '\n' + self.escape(err.message)
-                + '</error>')
-            return eval("function _() {}") # pylint: disable=eval-used
+            try:
+                self.post(
+                    'compiler',
+                    '<error>'
+                    + self.escape(err.name) + '\n' + self.escape(err.message)
+                    + '</error>')
+                return
+            except:
+                return
     def run_executor(self):
         """Execute the compiled code"""
         try:
             self.execution_returns = self.executable()
         except Error as err: # pylint: disable=undefined-variable
-            self.post(
-                'executor', '<error>'
-                + self.escape(err.name) + '\n'
-                + self.escape(err.message) + '</error>')
+            try:
+                self.post(
+                    'executor', '<error>'
+                    + self.escape(err.name) + '\n'
+                    + self.escape(err.message) + '</error>')
+            except:
+                self.post('executor', '<error>BUG</error>')

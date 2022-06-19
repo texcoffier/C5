@@ -26,8 +26,10 @@ int distance(int *x1, int *y1, int *x2, int *y2) {
 }
 
 int main() {
-    int x1=15, y1=15, x, y;
-    const int rayon = 10 ;
+    int x1=15, y1=15, x, y, rayon;
+
+    cout << "Saisir le rayon :";
+    cin >> rayon;
 
     for(y=0; y < 30; y++) {
         for(x=0; x < 30; x++)

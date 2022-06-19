@@ -15,7 +15,9 @@ brython({'debug': 1})
 
 PREAMBLE = '''
 def print(*args, sep=' ', end='\\n'):
-    __outputs__.append(sep.join(str(arg) for arg in args) + end)
+    __print__(sep.join(str(arg) for arg in args) + end)
+def input():
+    return __input__()
 class __eRRor__:
     def write(self, txt):
         console.log(txt)
@@ -56,23 +58,33 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
         if self.executable == True:
             return
         try:
-            __BRYTHON__.mylocals = {'__outputs__': []}
+            outputs = []
+            def __print__(txt):
+                outputs.append(txt)
+                self.post('executor', txt)
+            def __input__():
+                return self.read_input()
+
+            __BRYTHON__.mylocals = {'__print__': __print__, '__input__': __input__}
             eval(self.executable.replace(
                 'var $locals___main__ = {}',
                 'var $locals___main__ = __BRYTHON__.mylocals ;'))
-            self.execution_result = __BRYTHON__.mylocals.__outputs__.join('')
-            self.post('executor', self.execution_result)
+            self.execution_result = outputs.join('')
+
         except Error as err: # pylint: disable=undefined-variable
-            message = self.escape(err.__class__['$infos'].__qualname__) + ' : '
-            if len(err.args):
-                message += err.args[0]
-            else:
-                message += err.name
-            line = Number(err['$line_info'].split(',')[0]) - OFFSET
-            message += '\nLigne : ' + (line + 1) + '\n'
-            message += '<b>' + self.escape(self.source.split('\n')[line]) + '</b>\n'
-            self.post('executor', '<error>' + message + '</error>')
-            self.post('error', [line, err.offset])
+            try:
+                message = self.escape(err.__class__['$infos'].__qualname__) + ' : '
+                if len(err.args):
+                    message += err.args[0]
+                else:
+                    message += err.name
+                line = Number(err['$line_info'].split(',')[0]) - OFFSET
+                message += '\nLigne : ' + (line + 1) + '\n'
+                message += '<b>' + self.escape(self.source.split('\n')[line]) + '</b>\n'
+                self.post('executor', '<error>' + message + '</error>')
+                self.post('error', [line, err.offset])
+            except:
+                pass
 
     def locals(self):
         """Returns the local variable dict"""

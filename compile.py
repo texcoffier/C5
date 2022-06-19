@@ -7,7 +7,10 @@ def onmessage(event):
     if event.data.splice:
         if event.data[0] == 'goto':
             Compile.worker.goto(event.data[1])
+        elif event.data[0] == 'array':
+            Compile.worker.shared_buffer = event.data[1]
     else:
+        Compile.worker.shared_buffer[0] = 0
         Compile.worker.run(event.data.toString())
 
 class Compile: # pylint: disable=too-many-instance-attributes
@@ -22,6 +25,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
     nr_eval = 0
     start_time = None
     language = 'javascript'
+    stop_after_compile = True
 
     def __init__(self, questions):
         print("Worker: start")
@@ -49,13 +53,18 @@ class Compile: # pylint: disable=too-many-instance-attributes
 
     def run(self, source):
         """Get the source code and do all the jobs"""
-        self.nr_eval += 1
-        self.start_time = self.millisecs()
-        self.source = source
-        self.post('compiler', self.compiler_initial_content())
-        self.executable = self.run_compiler(source)
-        if self.executable:
-            self.run_after_compile()
+        self.post('state', "started")
+        try:
+            self.nr_eval += 1
+            self.start_time = self.millisecs()
+            self.source = source
+            self.post('compiler', self.compiler_initial_content())
+            self.executable = self.run_compiler(source)
+            if self.executable:
+                self.run_after_compile()
+        finally:
+            if self.stop_after_compile:
+                self.post('state', "stopped")
 
     def run_after_compile(self):
         self.execution_result = ''
@@ -84,6 +93,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         if self.current_question > self.current_question_max:
             self.current_question_max = self.current_question
         self.quest = self.questions[self.current_question]
+        self.post('current_question', self.current_question)
         if hasattr(self.quest, 'last_answer'):
             self.post('editor', self.quest.last_answer)
         else:
@@ -96,7 +106,6 @@ class Compile: # pylint: disable=too-many-instance-attributes
         if question > self.current_question_max:
             return
         self.current_question = question
-        self.post('first_time', 'x')
         self.start_question()
     def run_tester(self):
         """Do the regression tests"""
@@ -104,7 +113,27 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.quest.all_tests_are_fine = True
         self.quest.tester()
         if current_question != self.current_question and self.current_question != self.current_question_max:
-            self.start_question()
+            self.post("good", "")
+            if current_question == self.current_question_max - 1:
+                self.start_question()
+
+
+    def read_input(self):
+        self.post('executor', '\000INPUT')
+        self.post('state', "input")
+        while self.shared_buffer[0] == 0:
+            Atomics.wait(self.shared_buffer, 0, 0, 100)
+        self.post('state', "inputdone")
+        if self.shared_buffer[0] == 2:
+            raise ValueError('canceled')
+        string = ''
+        for i in self.shared_buffer[1:]:
+            if i > 0:
+                string += String.fromCharCode(i)
+            elif i < 0:
+                break
+        self.shared_buffer[0] = 0
+        return string
 
     ###########################################################################
 
@@ -139,7 +168,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         tips = []
         for i, _ in enumerate(self.questions):
             if self.allow_goto:
-                link = ' onclick="ccccc.worker.postMessage([\'goto\',' + i + '])"'
+                link = ' onclick="ccccc.unlock_worker();ccccc.worker.postMessage([\'goto\',' + i + '])"'
             else:
                 link = ''
             if i == self.current_question:
