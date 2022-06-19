@@ -9,6 +9,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
     language = 'cpp'
     socket = None
     connecting = False
+    stop_after_compile = False
 
     def connect(self):
         if self.connecting:
@@ -37,9 +38,11 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
                         except:
                             pass
 
-            elif data[0] == 'executor':
+            elif data[0] in ('executor', 'return'):
                 self.post('executor', data[1])
                 self.execution_returns += data[1]
+                if data[0] == 'return':
+                    self.post('state', "stopped")
 
         def event_open(_event):
             self.socket = socket

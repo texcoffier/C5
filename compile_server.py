@@ -23,43 +23,65 @@ openssl x509 -req -sha256 -days 1024 -in localhost.csr -CA RootCA.pem -CAkey Roo
 
 import json
 import asyncio
-import subprocess
 import ssl
 import os
+import resource
 import websockets
 
 CERT = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 CERT.load_cert_chain(certfile="SSL/localhost.crt", keyfile="SSL/localhost.key")
 
+def set_limits():
+    resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
+    resource.setrlimit(resource.RLIMIT_NOFILE, (10, 10))
+    resource.setrlimit(resource.RLIMIT_DATA, (1000000, 1000000))
+    resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
+
 async def echo(websocket, _path):
     """Analyse the requests from one websocket connection"""
     conid = str(id(websocket))
+    def cleanup():
+        try:
+            os.unlink(conid)
+        except FileNotFoundError:
+            pass
     try:
         async for message in websocket:
             action, data = json.loads(message)
             if action == 'compile':
                 print('compile')
+                cleanup()
                 with open("c.cpp", "w") as file:
                     file.write(data)
-                process = subprocess.run(['g++', '-Wall', 'c.cpp', '-o', conid],
-                                         stderr=subprocess.PIPE,
-                                         check=False)
-                stderr = process.stderr.decode('utf-8')
+                process = await asyncio.create_subprocess_exec(
+                    'g++', '-Wall', 'c.cpp', '-o', conid,
+                    stderr=asyncio.subprocess.PIPE)
+
+                stderr = await process.stderr.read()
                 if not stderr:
                     stderr = "Bravo, il n'y a aucune erreur"
+                else:
+                    stderr = stderr.decode('utf-8')
                 await websocket.send(json.dumps(['compiler', stderr]))
             elif action == 'run':
                 print('run')
-                process = subprocess.Popen(['./' + conid],
-                                           stdout=subprocess.PIPE,
-                                           # stderr=subprocess.PIPE,
-                                          )
-                for line in process.stdout:
-                    await websocket.send(json.dumps(['executor', line.decode('utf-8')]))
+                if not os.path.exists(conid):
+                    await websocket.send(json.dumps(['return', "Rien à exécuter"]))
+                    continue
+                process = await asyncio.create_subprocess_exec(
+                    './' + conid,
+                    stdout=asyncio.subprocess.PIPE,
+                    # stderr=subprocess.PIPE,
+                    preexec_fn=set_limits,
+                    )
+                async for line in process.stdout:
+                    await websocket.send(json.dumps(['executor', line.decode("utf-8")]))
+                await websocket.send(json.dumps(
+                    ['return', "Code de fin d'exécution = " + str(await process.wait())]))
             else:
                 await websocket.send(json.dumps(['compiler', 'bug']))
-    except:
-        os.unlink(conid)
+    finally:
+        cleanup()
 
 async def main():
     """Answer compilation requests"""
