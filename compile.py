@@ -10,7 +10,8 @@ def onmessage(event):
         elif event.data[0] == 'array':
             Compile.worker.shared_buffer = event.data[1]
     else:
-        Compile.worker.shared_buffer[0] = 0
+        if Compile.worker.shared_buffer:
+            Compile.worker.shared_buffer[0] = 0
         Compile.worker.run(event.data.toString())
 
 class Compile: # pylint: disable=too-many-instance-attributes
@@ -119,6 +120,8 @@ class Compile: # pylint: disable=too-many-instance-attributes
 
 
     def read_input(self):
+        if not self.shared_buffer:
+            return "SharedArrayBuffer not allowed by HTTP server"
         self.post('executor', '\000INPUT')
         self.post('state', "input")
         while self.shared_buffer[0] == 0:

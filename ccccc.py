@@ -78,7 +78,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         setInterval(bind(self.scheduler, self), 200)
         self.create_html()
 
-        self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))')
+        try:
+            self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))')
+        except:
+            self.shared_buffer = None
         self.worker.postMessage(['array', self.shared_buffer])
 
         self.inputs = {} # Indexed by the question number
@@ -87,6 +90,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def send_input(self, string):
         """Send the input value to the worker"""
+        if not self.shared_buffer:
+            print("SharedArrayBuffer not allowed by HTTP server")
+            return
         for i in range(len(string)):
             self.shared_buffer[i+1] = string.charCodeAt(i)
         self.shared_buffer[len(string) + 1] = -1 # String end
@@ -180,7 +186,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def unlock_worker(self):
         """ Unlock worker on input waiting to finish MessageEvent"""
-        self.shared_buffer[0] = 2
+        if self.shared_buffer:
+            self.shared_buffer[0] = 2
 
     def overlay_hide(self):
         """The editor and the overlay are no synchronized"""
