@@ -63,6 +63,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     oldScrollTop = None
     highlight_errors = {}
     question_done = {}
+    copied = None
 
     def __init__(self):
         print("GUI: start")
@@ -220,9 +221,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onmousedown(self, _event):
         """Mouse down"""
         self.editor.focus()
+    def oncopy(self, event):
+        """Copy"""
+        text = window.getSelection().toString()
+        if text not in self.editor.innerText:
+            popup_message("Interdit !")
+            event.preventDefault(True)
+            return
+        self.copied = text
+
     def onpaste(self, event):
         """Mouse down"""
-        if (event.clipboardData or event.dataTransfer).getData("text") in self.editor.innerText:
+        text = (event.clipboardData or event.dataTransfer).getData("text")
+        if text in self.editor.innerText or text == self.copied:
             self.overlay_hide()
             setTimeout(bind(self.coloring, self), 100)
             return # auto paste allowed
@@ -348,6 +359,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Create the page content"""
         self.top = document.createElement('DIV')
         self.top.onmousedown = bind(self.onmousedown, self)
+        self.top.oncopy = bind(self.oncopy, self)
+        self.top.oncut = bind(self.oncopy, self)
         self.top.onpaste = bind(self.onpaste, self)
         self.top.ondrop = bind(self.onpaste, self)
         self.top.onkeydown = bind(self.onkeydown, self)
