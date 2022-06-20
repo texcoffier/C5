@@ -223,6 +223,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.focus()
     def oncopy(self, event):
         """Copy"""
+        if self.allow_copy_paste:
+            return
         text = window.getSelection().toString()
         if text not in self.editor.innerText:
             popup_message("Interdit !")
@@ -232,6 +234,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def onpaste(self, event):
         """Mouse down"""
+        if self.allow_copy_paste:
+            return
         text = (event.clipboardData or event.dataTransfer).getData("text")
         if text in self.editor.innerText or text == self.copied:
             self.overlay_hide()
@@ -354,6 +358,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 self[what].style.background = self[what].background
             self[what].appendChild(span)
+        elif what == 'eval':
+            eval(value)
 
     def create_html(self):
         """Create the page content"""

@@ -12,6 +12,7 @@ class Q_print(Question):
     """La fonction 'print'"""
     answer = ''
     def question(self):
+        self.worker.post("eval", "self.allow_copy_paste = true")
         self.answer = ["Salut !", "Au revoir", "Bonne nuit"][self.worker.millisecs() % 3]
         return ("Modifiez le contenu de la grande zone blanche juste à droite pour afficher en bas à droite :<pre>"
                 + self.answer + "</pre>"
