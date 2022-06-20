@@ -72,8 +72,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             course = 'course_js.js'
         self.worker = Worker(course)
         self.worker.onmessage = bind(self.onmessage, self)
-        self.worker.onmessageerror = bind(self.onmessage, self)
-        self.worker.onerror = bind(self.onmessage, self)
+        self.worker.onmessageerror = bind(self.onerror, self)
+        self.worker.onerror = bind(self.onerror, self)
         setInterval(bind(self.scheduler, self), 200)
         self.create_html()
 
@@ -276,9 +276,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.do_not_clear[box] = True
         self[box].innerHTML = ''
 
+    def onerror(self, event):
+        print(event)
+
     def onmessage(self, event):
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
+        // print(self.state, what, str(event.data[1])[:10])
         value = event.data[1]
         if what == 'language':
             self.language = value
