@@ -43,6 +43,12 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
                 self.execution_returns += data[1]
                 if data[0] == 'return':
                     self.post('state', "stopped")
+            elif data[0] == 'input':
+                try:
+                    line = self.read_input()
+                    self.socket.send(JSON.stringify(['input', line]))
+                except ValueError:
+                    self.socket.send(JSON.stringify(['kill', '']))
 
         def event_open(_event):
             self.socket = socket

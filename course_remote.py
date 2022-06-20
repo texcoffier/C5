@@ -25,15 +25,21 @@ int distance(int *x1, int *y1, int *x2, int *y2) {
     return sqrt(SQUARE(*x1 - *x2) + SQUARE(*y1 - *y2));
 }
 
+const int LARGEUR = 40;
+const int HAUTEUR = 20;
+
 int main() {
-    int x1=15, y1=15, x, y, rayon;
+    int x1=LARGEUR/2, y1=HAUTEUR/2, x, y, rayon;
+    char symbol[999];
 
-    cout << "Saisir le rayon :";
+    cout << "Saisir le rayon entier (8 par exemple) :\\n";
     cin >> rayon;
+    cout << "Saisir un symbol :\\n";
+    cin >> symbol;
 
-    for(y=0; y < 30; y++) {
-        for(x=0; x < 30; x++)
-            cout << (distance(&x1, &y1, &x, &y) < rayon ? '*' : ' ');
+    for(y=0; y < HAUTEUR; y++) {
+        for(x=0; x < LARGEUR; x++)
+            cout << (distance(&x1, &y1, &x, &y) < rayon ? symbol : "·");
         cout << '\\n';
     }
     return 0;

@@ -282,7 +282,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onmessage(self, event):
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
-        // print(self.state, what, str(event.data[1])[:10])
+        # print(self.state, what, str(event.data[1])[:10])
         value = event.data[1]
         if what == 'language':
             self.language = value
