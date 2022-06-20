@@ -51,7 +51,7 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
                 + 'Ligne ' + self.escape(err.lineno - OFFSET) + ' :\n'
                 + '<b>' + self.escape(err.text) + '</b>\n'
                 + '</error>')
-            self.post('error', [err.lineno - 8, err.offset])
+            self.post('error', [err.lineno - OFFSET, err.offset])
             return True
     def run_executor(self):
         """Execute the compiled code"""

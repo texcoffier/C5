@@ -2,6 +2,32 @@
 Javascript compiler and interpreter
 """
 
+PREAMBLE = """
+function _tmp_()
+{
+    Compile.worker.execution_result = '';
+    function print()
+        {
+            var txt = '';
+            for(var i in arguments)
+                txt += ' '  + arguments[i];
+            if ( txt )
+                txt = self.escape(txt) ;
+            else
+                txt = '' ;
+            txt += '\\n' ;
+            Compile.worker.execution_result += txt;
+            self.post('executor', txt) ;
+        } ;
+    function prompt(txt)
+        {
+            print(txt);
+            return Compile.worker.read_input();
+        }
+"""
+
+OFFSET = len(PREAMBLE) - 1
+
 class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
@@ -11,25 +37,8 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
         """Compile, display errors and return the executable"""
         try:
             # pylint: disable=eval-used
-            executable = eval('''function _tmp_()
-            {
-               Compile.worker.execution_result = '';
-               function print(txt)
-                  {
-                     if ( txt )
-                          txt = self.escape(txt) ;
-                     else
-                          txt = '' ;
-                     txt += '\\n' ;
-                     Compile.worker.execution_result += txt;
-                     self.post('executor', txt) ;
-                 } ;
-                function prompt(txt)
-                  {
-                      print(txt);
-                      return Compile.worker.read_input();
-                  }
-            ''' + source + ';\n' + self.quest.append_to_source_code() + '} ; _tmp_')
+            executable = eval(PREAMBLE + source + ';\n'
+                + self.quest.append_to_source_code() + '} ; _tmp_')
             self.post('compiler', 'Compilation sans erreur')
             return executable
         except Error as err: # pylint: disable=undefined-variable
@@ -39,6 +48,7 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
                     '<error>'
                     + self.escape(err.name) + '\n' + self.escape(err.message)
                     + '</error>')
+                # self.post('error', [err.lineno - OFFSET, err.colno])
                 return
             except:
                 return
@@ -52,5 +62,6 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
                     'executor', '<error>'
                     + self.escape(err.name) + '\n'
                     + self.escape(err.message) + '</error>')
+                # self.post('error', [err.lineno - OFFSET, err.colno])
             except:
                 self.post('executor', '<error>BUG</error>')

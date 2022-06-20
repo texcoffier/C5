@@ -65,16 +65,16 @@ clean:
 
 debug:
 	@$(MAKE) ccccc.js course_python.js
-	@-python3 -m http.server --cgi 8000 2>/dev/null &
+	@-./http_server.py &
 	@xdg-open http:127.0.0.1:8000/ccccc.html#course_python.js
 
 debugCPP:
 	@$(MAKE) ccccc.js course_cpp.js
-	@-python3 -m http.server --cgi 8000 2>/dev/null &
+	@-./http_server.py &
 	@xdg-open http:127.0.0.1:8000/ccccc.html#course_cpp.js
 
 debugremote:
 	@$(MAKE) ccccc.js course_remote.js
-	@-python3 -m http.server --cgi 8000 2>/dev/null &
+	@-./http_server.py &
 	@xdg-open http:127.0.0.1:8000/ccccc.html#course_remote.js
 
