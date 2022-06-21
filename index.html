@@ -7,13 +7,16 @@
             max-width: var(--body);
             font-family: sans-serif;
             background: #F8F8F8;
+            line-height: 1.3em;
         }
 
         .right {
-            position: absolute;
+            position: fixed;
             left: calc(var(--body) + 1em);
             top: 0px;
             right: 0px;
+            bottom: 0px;
+            overflow: scroll;
         }
 
         IFRAME {
@@ -25,12 +28,20 @@
 
         H1 {
             font-size: 150%;
-            background: #FFF;
+            background: #000;
             border: 1px solid #000;
+            color: #FFF;
+            padding: 0.2em;
         }
 
         H2 {
             font-size: 120%;
+            background: #FFF;
+            border-bottom: 1px solid #000;
+        }
+
+        H3 {
+            font-size: 100%;
         }
 
         TABLE {
@@ -118,17 +129,22 @@
         avec l'URL <tt>…/ccccc.html#course_{js|python}_nom_sujet.js</tt>
     </p>
     <p>
-        Définir des questions avec les méthodes :
+        Pour chaque question il y a une classe
+        dont les méthodes définissent la question.
+        Voici les méthodes possibles dans l'ordre d'appel :
     </p>
     <ul>
-        <li> <tt>question</tt> qui retourne la question au format HTML.
+        <li> <tt>default_answer(self)</tt> qui retourne la valeur initiale de l'éditeur.</li>
+        <li> <tt>question(self)</tt> qui retourne la question au format HTML.
             C'est ce qui est affiché en haut à gauche.
+            Cette méthode est appelée chaque fois que l'étudiant arrive sur la question.
+            Si la question est aléatoire, on peut conserver dans l'instance
+            de la question l'aléa choisi ou bien en choisir un nouveau à chaque fois.
         </li>
-        <li> <tt>tester</tt> qui affiche les indices
+        <li> <tt>tester(self)</tt> qui affiche les indices
             et décide quand faire passer à la question suivante.
             C'est ce qui est affiché en bas à gauche.
         </li>
-        <li> <tt>default_answer</tt> qui retourne la valeur initiale de l'éditeur</li>
     </ul>
     </p>
     <pre>class Q1(Question):
@@ -152,6 +168,34 @@
     </p>
     <pre>Compile_Python([Q0(), Q1(), Q2(), Q3(), QEnd()])</pre>
 
+    <h3>Attributs</h3>
+    <ul>
+        <li> <tt>self.worker.execution_result</tt> résultat de l'exécution
+            une fois toutes les lectures claviers faites</li>
+        <li> <tt>self.worker.source</tt> la réponse de l'étudiant</li>
+        <li> <tt>self.all_tests_are_fine</tt> vrai au départ puis mis à jour automatiquement
+            par les fonctions utilitaires.
+        </li>
+    </ul>
+
+    <h3>Fonctions utilitaires</h3>
+    <ul>
+        <li> <tt>millisec()</tt> depuis le 1 janvier 1970</li>
+        <li> <tt>self.display(html)</tt> affiche dans la zone de test</li>
+        <li> <tt>self.worker.escape(text)</tt> échappe les balises HTML</li>
+        <li> <tt>self.next_question()</tt> passage à la question suivante</li>
+        <li> <tt>self.message(bool, message)</tt>
+            Affiche le message vert si <tt>bool</tt> est vrai, sinon rouge.</li>
+        <li> <tt>self.check(text, [ [re, message], ...])</tt>
+            Affiche les messages vert/rouge en fonction de la présence
+            de <tt>re</tt> dans <tt>text</tt>
+        </li>
+        <li> <tt>self.worker.post("eval", "self.allow_copy_paste = true")</tt>
+            Autorise le copier/coller</li>
+    </ul>
+
+
+
     <h2>Langages supportés</h2>
     <p>
         Il est nécessaire d'avoir un compilateur du langage écrit en JavaScript :
@@ -162,6 +206,10 @@
         <li> C++: <tt>Compile_CCP</tt> (<a href="ccccc.html#course_cpp.js">démo</a>)
             ATTENTION : pas de classe, de structure ni de passage par référence.
         </li>
+        <li> C++: <tt>Compile_remote</tt> envoi des requêtes à
+            <tt>compile_server.py</tt> pour compiler avec <tt>g++</tt>
+            et exécuter. Supporte <tt>cin</tt> mais pas le graphique.
+            Aucune sécurité, donc pas utilisable en production.</li>
     </ul>
 
     <h2>Dévoloppements possibles</h2>
@@ -180,19 +228,18 @@
     <pre>git clone https://github.com/texcoffier/C5.git
 make</pre>
     <p>
-        Si tout s'est bien passé, cela se termine par : <tt>And now copy the result on a web page:</tt>
-        Il suffit ensuite de visiter <tt>index.html</tt> pour voir cette page
-        ou bien de lancer un serveur web dans le répertoire :
-        <tt>python3 -m http.server --cgi 8000</tt> et de visiter
-        <a href="http://127.0.0.1:8000/index.html">http://127.0.0.1:8000/index.html</a>
+        Si tout s'est bien passé, une page web s'ouvre sur une copie
+        de cette page qui est sur votre machine.
     </p>
 
     <div class="right">
-        <h2>Exercices Javascript : ceci est fonctionnel, essayez-les !</h2>
-        <iframe src="ccccc.html#course_js.js"></iframe>
-        <h2>Exercices Python : ceci est fonctionnel, essayez-les !</h2>
-        <iframe src="ccccc.html#course_python.js"></iframe>
-        <h2>Exercices C++ : ceci est fonctionnel, essayez-les !</h2>
-        <iframe src="ccccc.html#course_cpp.js"></iframe>
+        <div>
+            <h3>Exercices Javascript : ceci est fonctionnel, essayez-les !</h3>
+            <iframe src="ccccc.html#course_js.js"></iframe>
+            <h3>Exercices Python : ceci est fonctionnel, essayez-les !</h3>
+            <iframe src="ccccc.html#course_python.js"></iframe>
+            <h3>Exercices C++ : ceci est fonctionnel, essayez-les !</h3>
+            <iframe src="ccccc.html#course_cpp.js"></iframe>
+        </div>
     </div>
 </body>
