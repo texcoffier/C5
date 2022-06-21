@@ -27,6 +27,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
     start_time = None
     language = 'javascript'
     stop_after_compile = True
+    previous_source = None
 
     def __init__(self, questions):
         print("Worker: start")
@@ -56,13 +57,17 @@ class Compile: # pylint: disable=too-many-instance-attributes
         """Get the source code and do all the jobs"""
         self.post('state', "started")
         try:
-            self.nr_eval += 1
-            self.start_time = self.millisecs()
-            self.source = source
-            self.post('compiler', self.compiler_initial_content())
-            self.executable = self.run_compiler(source)
-            if self.executable:
+            if source == self.previous_source:
                 self.run_after_compile()
+            else:
+                self.previous_source = source
+                self.nr_eval += 1
+                self.start_time = self.millisecs()
+                self.source = source
+                self.post('compiler', self.compiler_initial_content())
+                self.executable = self.run_compiler(source)
+                if self.executable:
+                    self.run_after_compile()
         finally:
             if self.stop_after_compile:
                 self.post('state', "stopped")

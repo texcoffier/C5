@@ -44,13 +44,14 @@ class Process:
         self.conid = str(id(websocket))
         self.process = None
         self.tasks = ()
-    def cleanup(self):
+    def cleanup(self, erase_executable=False):
         """Close connection"""
         print("cleanup")
-        try:
-            os.unlink(self.conid)
-        except FileNotFoundError:
-            pass
+        if erase_executable:
+            try:
+                os.unlink(self.conid)
+            except FileNotFoundError:
+                pass
         if self.process:
             for task in self.tasks:
                 task.cancel()
@@ -69,7 +70,7 @@ class Process:
         # pylint: disable=cell-var-from-loop
         self.wait_input = False
         while True:
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
             if self.wait_input:
                 continue
             print("TIMEOUT", self.process)
@@ -87,7 +88,7 @@ class Process:
             self.cleanup()
     async def compile(self, source):
         """Compile"""
-        self.cleanup()
+        self.cleanup(erase_executable=True)
         with open("c.cpp", "w") as file:
             file.write(source)
         self.process = await asyncio.create_subprocess_exec(
