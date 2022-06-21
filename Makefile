@@ -16,6 +16,9 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 	$(PYTOJS) xxx-$*.py >$*.js ; \
 	rm xxx-$*.py
 
+default:all
+	@xdg-open http:127.0.0.1:8000/index.html
+
 all:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
 	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')
 	@echo
@@ -28,7 +31,6 @@ all:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
 	@echo "http:127.0.0.1:8000/index.html"
 	@echo
 	@-./http_server.py &
-	@xdg-open http:127.0.0.1:8000/index.html
 
 
 ############# Utilities ############

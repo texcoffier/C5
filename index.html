@@ -123,11 +123,18 @@
         L'ensemble de l'environnement est programmé en Python.
     </p>
     <p>
-        Enregistrez le sujet dans un fichier portant le nom
-        <tt>course_{js|python}_nom_sujet.py</tt>,
-        il sera automatiquement compilé et utilisable
-        avec l'URL <tt>…/ccccc.html#course_{js|python}_nom_sujet.js</tt>
+        Chaque sujet contient un ensemble de question s'enchaînant successivement.
     </p>
+    <ul>
+        <li> Le sujet est dans un fichier avec comme nom :<br>
+            <tt>course_{js|python|cpp|remote}_<b>nom_sujet</b>.py</tt><br>
+            par exemple <tt>course_js_<b>example</b>.py</tt>
+        </li>
+        <li> Il est compilé en tapant :<br>
+            <tt>make course_js_<b>example.js</b></tt></li>
+        <li> Il est utilisable avec l'URL :<br>
+            <tt>…/ccccc.html#course_js_<b>example.js</b></tt></li>
+    </ul>
     <p>
         Pour chaque question il y a une classe
         dont les méthodes définissent la question.
