@@ -120,7 +120,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.quest.tester()
         if current_question != self.current_question and self.current_question != self.current_question_max:
             self.post("good", "")
-            if current_question == self.current_question_max - 1:
+            if current_question >= self.current_question_max - 1:
                 self.start_question()
 
 
@@ -169,7 +169,10 @@ class Compile: # pylint: disable=too-many-instance-attributes
         return "<h2>Compilation</h2>"
     def time_initial_content(self):
         """The message terminate the job. It indicates the worker time"""
-        return '#' + self.nr_eval + ' ' + (self.millisecs() - self.start_time) + 'ms'
+        more = ' ' + self.current_question_max
+        if self.allow_goto:
+            more += 'G'
+        return '#' + self.nr_eval + ' ' + (self.millisecs() - self.start_time) + 'ms' + more
     def index_initial_content(self): # pylint: disable=no-self-use,invalid-name
         """Used by the subclass"""
         texts = '''<style></style>'''
