@@ -27,11 +27,10 @@ all:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
 	@echo
 	@echo "cp --recursive --update ccccc.html index.html xxx*.css *.js brython/ $(HOME)/public_html/CCCCC"
 	@echo
-	@echo "Or visit localy:"
-	@echo "http:127.0.0.1:8000/index.html"
-	@echo
+	@echo "Launching web server"
 	@-./http_server.py &
-
+	@echo "Launching compilation server (only needed for compile_remote.py)"
+	@-./compile_server.py &
 
 ############# Utilities ############
 RapydScript:
@@ -49,7 +48,8 @@ xxx-highlight.js:
 
 ############# Compilers ############
 node_modules/brython:
-	npm install brython
+	-rm brython
+	npm install brython@3.10.6
 	ln -s node_modules/brython .
 xxx-JSCPP.js:
 	GET https://raw.githubusercontent.com/felixhao28/JSCPP/gh-pages/dist/JSCPP.es5.min.js >$@
@@ -69,23 +69,6 @@ lint:
 	pylint [^x]*.py
 clean:
 	rm xxx*
-
-#
-#
-
-debug:
-	@$(MAKE) ccccc.js course_python.js
-	@-./http_server.py &
-	@xdg-open http:127.0.0.1:8000/ccccc.html#course_python.js
-
-debugCPP:
-	@$(MAKE) ccccc.js course_cpp.js
-	@-./http_server.py &
-	@xdg-open http:127.0.0.1:8000/ccccc.html#course_cpp.js
-
-debugremote:
-	@$(MAKE) ccccc.js course_remote.js
-	@-./http_server.py &
-	@-./compile_server.py &
-	@xdg-open http:127.0.0.1:8000/ccccc.html#course_remote.js
-
+kill:
+	-pkill -f http_server.py
+	-pkill -f compile_server.py
