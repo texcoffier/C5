@@ -19,9 +19,17 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 all:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
 	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')
 	@echo
-	@echo "And now copy the result on a web page:"
+	@echo "All seems fine."
+	@echo "You can now copy the result on a web page:"
 	@echo
 	@echo "cp --recursive --update ccccc.html index.html xxx*.css *.js brython/ $(HOME)/public_html/CCCCC"
+	@echo
+	@echo "Or visit localy:"
+	@echo "http:127.0.0.1:8000/index.html"
+	@echo
+	@-./http_server.py &
+	@xdg-open http:127.0.0.1:8000/index.html
+
 
 ############# Utilities ############
 RapydScript:
@@ -76,5 +84,6 @@ debugCPP:
 debugremote:
 	@$(MAKE) ccccc.js course_remote.js
 	@-./http_server.py &
+	@-./compile_server.py &
 	@xdg-open http:127.0.0.1:8000/ccccc.html#course_remote.js
 

@@ -137,7 +137,7 @@ async def echo(websocket, _path):
                 await websocket.send(json.dumps(['compiler', 'bug']))
             print("ACTION DONE")
     finally:
-        process.cleanup()
+        process.cleanup(erase_executable=True)
 
 async def main():
     """Answer compilation requests"""
