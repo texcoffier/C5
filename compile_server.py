@@ -1,53 +1,14 @@
 #!/usr/bin/python3
 """
-
+Compiling and executing server
 """
 
 import json
 import asyncio
-import ssl
 import os
 import resource
 import websockets
-
-if not os.path.exists("SSL"):
-    os.system("""
-mkdir SSL
-cd SSL
-openssl req -x509 -nodes -new -sha256 -days 1024 -newkey rsa:2048 -keyout RootCA.key -out RootCA.pem -subj "/C=US/CN=_______C5_______"
-openssl x509 -outform pem -in RootCA.pem -out RootCA.crt
-echo '
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
-[alt_names]
-DNS.1 = localhost:4200
-DNS.2 = 127.0.0.1:4200
-DNS.3 = 192.168.0.1:4200
-' >domains.ext
-openssl req -new -nodes -newkey rsa:2048 -keyout localhost.key -out localhost.csr -subj "/C=US/ST=YourState/L=YourCity/O=Example-Certificates/CN=localhost.local"
-openssl x509 -req -sha256 -days 1024 -in localhost.csr -CA RootCA.pem -CAkey RootCA.key -CAcreateserial -extfile domains.ext -out localhost.crt
-""")
-    print("""
-    ********************************************************************
-    ********************************************************************
-    You must indicate to the browser to add a security exception
-    ********************************************************************
-    ********************************************************************
-    With Firefox:
-        * about:preferences
-        * Search «certificate»
-        * Click on the button «View certificates»
-        * Goto on tab «Servers»
-        * Click on «Add exception»
-        * Add : «https:127.0.0.1:4200»
-        * Confirm
-    ********************************************************************
-""")
-
-CERT = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-CERT.load_cert_chain(certfile="SSL/localhost.crt", keyfile="SSL/localhost.key")
+import utilities
 
 def set_limits():
     """Do not allow big processes"""
@@ -57,11 +18,13 @@ def set_limits():
     resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
 
 class Process:
+    """A websocket session"""
     def __init__(self, websocket):
         self.websocket = websocket
         self.conid = str(id(websocket))
         self.process = None
         self.tasks = ()
+        self.wait_input = False
     def cleanup(self, erase_executable=False):
         """Close connection"""
         print("cleanup")
@@ -80,6 +43,7 @@ class Process:
                 pass
             self.process = None
     def send_input(self, data):
+        """Send the data to the running process standard input"""
         self.process.stdin.write(data.encode('utf-8') + b'\n')
         self.wait_input = False
 
@@ -159,7 +123,20 @@ async def echo(websocket, _path):
 
 async def main():
     """Answer compilation requests"""
-    async with websockets.serve(echo, "127.0.0.1", 4200, ssl=CERT):
+    async with websockets.serve(echo, utilities.local_ip(), utilities.C5_SOCK, ssl=CERT):
+        print("compile_server running", flush=True)
         await asyncio.Future()  # run forever
 
-asyncio.run(main())
+CERT = utilities.get_certificate()
+if CERT:
+    asyncio.run(main())
+
+print("""
+======================================================
+The remote compiling works only on secure connection.
+To create the certificate, use one the two commands:
+
+    * ./utilities.py SSL-SS
+    * ./utilities.py SSL-LE
+======================================================
+""")

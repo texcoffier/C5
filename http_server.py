@@ -2,6 +2,7 @@
 
 import os
 from aiohttp import web
+import utilities
 
 # To make casauth work we should not use a proxy
 for i in ('http_proxy', 'https_proxy'):
@@ -35,8 +36,13 @@ class FileCache:
         mtime = os.path.getmtime(self.filename)
         if mtime != self.mtime:
             self.mtime = mtime
-            with open(self.filename, "r" + ('b' if self.charset is None else '')) as file:
-                self.content = file.read()
+            with open(self.filename, "rb") as file:
+                content = file.read()
+                if self.charset is not None:
+                    content = content.decode(self.charset)
+                    content = content .replace("__SOCK__",
+                                               f"wss://{utilities.C5_WEBSOCKET}")
+                self.content = content
         return self.content
     def response(self):
         """Get the response to send"""
@@ -66,10 +72,15 @@ def handle(base=''):
         return FILE_CACHE[filename].response()
     return real_handle
 
+async def startup(_app):
+    print('http serveur running', flush=True)
+
 APP = web.Application()
 APP.add_routes([web.get('/', handle()),
                 web.get('/{filename}', handle()),
                 web.get('/brython/{filename}', handle('brython')),
                 ])
+APP.on_startup.append(startup)
 
-web.run_app(APP, host='127.0.0.1', port=8000)
+web.run_app(APP, host=utilities.local_ip(), port=utilities.C5_HTTP,
+            ssl_context=utilities.get_certificate(False))

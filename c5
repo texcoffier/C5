@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Call utilities.py with the configuration defined.
+
+export C5_HOST="134.214.55.164"
+export C5_ROOT="debian"
+export C5_LOGIN="c5"
+export C5_HTTP="4201"
+export C5_SOCK="4202"
+export C5_MAIL="thierry.excoffier@univ-lyon1.fr"
+export C5_CERT="NGINX"
+export C5_URL="c5.univ-lyon1.fr"
+export C5_WEBSOCKET="c5.univ-lyon1.fr/WebSocket"
+
+./utilities.py $@
+

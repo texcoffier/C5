@@ -15,7 +15,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
         if self.connecting:
             return
 
-        socket = eval('new WebSocket("wss://127.0.0.1:4200/hello", "1")')
+        socket = eval('new WebSocket("__SOCK__", "1")')
 
         def event_message(event):
             data = JSON.parse(event.data)

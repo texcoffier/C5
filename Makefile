@@ -17,20 +17,14 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 	rm xxx-$*.py
 
 default:all
-	@xdg-open http:127.0.0.1:8000/index.html
+	@./utilities.py open # Open page on browser
 
-all:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
+prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
 	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')
+
+all:prepare
 	@echo
-	@echo "All seems fine."
-	@echo "You can now copy the result on a web page:"
-	@echo
-	@echo "cp --recursive --update ccccc.html index.html xxx*.css *.js brython/ $(HOME)/public_html/CCCCC"
-	@echo
-	@echo "Launching web server"
-	@-./http_server.py &
-	@echo "Launching compilation server (only needed for compile_remote.py)"
-	@-./compile_server.py &
+	@./utilities.py start
 
 ############# Utilities ############
 RapydScript:
