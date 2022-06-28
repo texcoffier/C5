@@ -3,13 +3,14 @@
 """
 To simplify the class contains the code for the GUI and the worker.
 
-CCCCC       class manages the GUI
-            It sends source code to the Compile worker with sendMessage
-            It receives events to update the GUI
-Compile     worker base class to manage the question list, compilation, execution
-Compile_JS  subclass for Javascript compiler
-Compile_CPP subclass for C++ compiler
-Question    base class for question definition
+CCCCC          class manages the GUI
+               It sends source code to the Compile worker with sendMessage
+               It receives events to update the GUI
+Compile        worker base class to manage the question list, compilation, execution
+Compile_JS     subclass for Javascript compiler
+Compile_CPP    subclass for C++ compiler
+Compile_remote subclass for remote compiling
+Question       base class for question definition
 """
 
 def html(txt):
@@ -67,14 +68,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def __init__(self):
         print("GUI: start")
-        if window.location.hash:
-            course = window.location.hash.substr(1)
-        else:
+        course = None
+        if window.location.pathname:
+            path = str(window.location.pathname)
+            if path[:2] == '/=':
+                course = path[2:]
+        if not course:
             course = 'course_js.js'
-        self.worker = Worker(course)
+        self.worker = Worker(course + "?ticket=" + TICKET)
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
         self.worker.onerror = bind(self.onerror, self)
+        self.worker.postMessage(['config', {'TICKET': TICKET, 'LOGIN': LOGIN, 'SOCK': SOCK}])
         setInterval(bind(self.scheduler, self), 200)
         self.create_html()
 
@@ -162,7 +167,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def create_time(self):
         """The worker time displayer"""
-        e = new_element('DIV', 'time', 90, 10, 98, 2, '#0000')
+        e = new_element('DIV', 'time', 80, 20, 98, 2, '#0000')
         self.time = e
         self.top.appendChild(e)
 
@@ -182,6 +187,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.clear_highlight_errors()
             self.unlock_worker()
             self.state = 'started'
+            print("send to compiler")
             self.worker.postMessage(source) # Start compile/execute/test
 
     def unlock_worker(self):
@@ -358,6 +364,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.coloring()
         elif what in ('tester', 'compiler', 'question', 'time'):
             self.clear_if_needed(what)
+            if what == 'time':
+                value += ' ' + self.state + ' ' + LOGIN ;
             span = document.createElement('SPAN')
             span.innerHTML = value
             if '<error' in value:

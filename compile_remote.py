@@ -12,10 +12,10 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
     stop_after_compile = False
 
     def connect(self):
+        print('connect', self.connecting)
         if self.connecting:
             return
-
-        socket = eval('new WebSocket("__SOCK__", "1")')
+        socket = eval('new WebSocket(self.config.SOCK + "/" + self.config.TICKET, "1")')
 
         def event_message(event):
             data = JSON.parse(event.data)
@@ -51,6 +51,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
                     self.socket.send(JSON.stringify(['kill', '']))
 
         def event_open(_event):
+            print('Socket opened')
             self.socket = socket
             self.connecting = False
 
@@ -58,6 +59,11 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
             print("Error", event)
             self.socket = None
             self.connecting = False
+            self.post('state', "stopped")
+            def reconnect():
+                print('reconnect')
+                self.connect()
+            setTimeout(reconnect, 1000)
 
         socket.onopen = event_open
         socket.onmessage = event_message
@@ -67,14 +73,17 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
-        print('compile?')
+        print('sock', '__SOCK__', self.socket, 'src', len(source or ''))
         if not source:
+            self.post('compiler', 'Rien à compiler')
+            self.post('state', "stopped")
             return True
-        print('compile')
         if not self.socket:
+            print('call connect')
             self.connect()
             self.post('compiler', 'On attend le serveur...<br>')
             def retry():
+                print('retry')
                 self.run_compiler(source)
             setTimeout(retry, 100)
             return
@@ -90,7 +99,10 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
             return eval("function _() {}") # pylint: disable=eval-used
     def run_executor(self):
         """Execute the compiled code"""
-        print('execute')
+        print('execute', self.executable)
+        if self.executable == True:
+            self.execution_returns = ''
+            return
         try:
             self.execution_returns = ''
             self.socket.send(JSON.stringify(['run', '']))

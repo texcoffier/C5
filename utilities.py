@@ -35,18 +35,24 @@ C5_MAIL = os.getenv('C5_MAIL', f'root@{C5_ROOT}')    # For Let's encrypt certifi
 C5_CERT = os.getenv('C5_CERT', 'SS')                 # Encrypt by self or NGINX
 C5_URL = os.getenv('C5_URL', f'{C5_HOST}:{C5_HTTP}') # c5 public URL
 C5_WEBSOCKET = os.getenv('C5_WEBSOCKET', f'{C5_HOST}:{C5_SOCK}') # c5 public websocket
+# CAS redirection as: 'https://cas.univ-lyon1.fr/login?service='
+C5_REDIRECT = os.getenv('C5_REDIRECT', '')
+# CAS login validation as:  'https://cas.univ-lyon1.fr/cas/validate?service=%s&ticket=%s'
+C5_VALIDATE = os.getenv('C5_VALIDATE', '')
 
 def print_state():
     print(f"""Uses environment shell variables :
-{'C5_HOST=' + str(C5_HOST):<25}     # Production host (for SSH)
-{'C5_ROOT=' + str(C5_ROOT):<25}     # login allowed to sudo
-{'C5_LOGIN=' + str(C5_LOGIN):<25}     # c5 login
-{'C5_HTTP=' + str(C5_HTTP):<25}     # Port number for HTTP
-{'C5_SOCK=' + str(C5_SOCK):<25}     # Port number for WebSocket
-{'C5_MAIL=' + str(C5_MAIL):<25}     # Mail address to create Let's Encrypt certificate
-{'C5_CERT=' + str(C5_CERT):<25}     # SS: C5/SSL directory, NGINX: NGINX
-{'C5_URL=' + str(C5_URL):<25}     # Browser visible address
-{'C5_WEBSOCKET=' + str(C5_WEBSOCKET):<25} # Browser visible address for WebSocket
+{'C5_HOST=' + str(C5_HOST):<40}     # Production host (for SSH)
+{'C5_ROOT=' + str(C5_ROOT):<40}     # login allowed to sudo
+{'C5_LOGIN=' + str(C5_LOGIN):<40}     # c5 login
+{'C5_HTTP=' + str(C5_HTTP):<40}     # Port number for HTTP
+{'C5_SOCK=' + str(C5_SOCK):<40}     # Port number for WebSocket
+{'C5_MAIL=' + str(C5_MAIL):<40}     # Mail address to create Let's Encrypt certificate
+{'C5_CERT=' + str(C5_CERT):<40}     # SS: C5/SSL directory, NGINX: NGINX
+{'C5_URL=' + str(C5_URL):<40}     # Browser visible address
+{'C5_WEBSOCKET=' + str(C5_WEBSOCKET):<40}     # Browser visible address for WebSocket
+{'C5_REDIRECT=' + str(C5_REDIRECT):<40} # CAS redirection
+{'C5_VALIDATE=' + str(C5_VALIDATE):<40} # CAS get login
 """)
 
 def print_help():
@@ -63,6 +69,7 @@ def print_help():
    * open : launch web browser (second argument may be js|python|cpp|remote)
 """)
     print_state()
+    os.system("ps -fe | grep -e http_server.py -e compile_server.py | grep -v grep")
     sys.exit(1)
 
 ACTIONS = {
@@ -122,7 +129,7 @@ server {{
             certbot certonly --standalone -d {C5_URL} -m {C5_MAIL}
             '
         """,
-    'SSL-S': f"""#C5_LOGIN
+    'SSL-SS': f"""#C5_LOGIN
         set -e
         cd C5
         if [ -d SSL ]
@@ -163,6 +170,7 @@ With Firefox:
     * Goto on tab «Servers»
     * Click on «Add exception»
     * Add : «https://{C5_URL}»
+    * Add : «https://{C5_WEBSOCKET}»
     * Confirm
 ********************************************************************
         '
@@ -180,7 +188,7 @@ With Firefox:
         pkill -f 'http_server.py|compile_server.py'
         """,
     'open': f"""
-        xdg-open https://{C5_URL}#course_{sys.argv[2] if len(sys.argv) >= 3 else 'js'}.js
+        xdg-open https://{C5_URL}/=course_{sys.argv[2] if len(sys.argv) >= 3 else 'js'}.js
         """
 }
 ACTIONS['restart'] = ACTIONS['stop'] + ACTIONS['start']
@@ -202,6 +210,9 @@ export C5_URL={C5_URL}
 export C5_SOCK={C5_SOCK}
 export C5_MAIL={C5_MAIL}
 export C5_CERT={C5_CERT}
+export C5_WEBSOCKET='{C5_WEBSOCKET}'
+export C5_REDIRECT='{C5_REDIRECT}'
+export C5_VALIDATE='{C5_VALIDATE}'
 """ + ACTIONS[action]
     assert '"' not in action
     if '#C5_ROOT' in action:

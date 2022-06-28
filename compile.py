@@ -9,6 +9,8 @@ def onmessage(event):
             Compile.worker.goto(event.data[1])
         elif event.data[0] == 'array':
             Compile.worker.shared_buffer = event.data[1]
+        elif event.data[0] == 'config':
+            Compile.worker.config = event.data[1]
     else:
         if Compile.worker.shared_buffer:
             Compile.worker.shared_buffer[0] = 0

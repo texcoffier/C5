@@ -100,8 +100,22 @@ class Process:
             asyncio.ensure_future(self.runner())
         ]
 
-async def echo(websocket, _path):
+async def echo(websocket, path):
     """Analyse the requests from one websocket connection"""
+    print(path)
+    ticket = f'TICKETS/{path[1:]}'
+    if not os.path.exists(ticket):
+        return
+    with open(ticket, 'r') as file:
+        ip, browser, login = eval(file.read())
+
+    client_ip = websocket.request_headers.get('x-forwarded-for', '')
+    if client_ip:
+        client_ip = client_ip.split(",")[0]
+    else:
+        client_ip, _port = websocket.remote_address
+    assert ip == client_ip
+
     process = Process(websocket)
     try:
         async for message in websocket:
@@ -134,7 +148,7 @@ if CERT:
 print("""
 ======================================================
 The remote compiling works only on secure connection.
-To create the certificate, use one the two commands:
+To create the certificate, use one of the two commands:
 
     * ./utilities.py SSL-SS
     * ./utilities.py SSL-LE

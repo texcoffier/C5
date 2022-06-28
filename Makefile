@@ -20,6 +20,7 @@ default:all
 	@./utilities.py open # Open page on browser
 
 prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
+	if [ ! -d TICKETS ] ; then mkdir TICKETS ; fi
 	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')
 
 all:prepare
