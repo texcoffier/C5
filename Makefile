@@ -19,7 +19,15 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 default:all
 	@./utilities.py open # Open page on browser
 
-prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
+sandbox:
+	git clone "https://github.com/cloudflare/sandbox.git"
+	(cd sandbox ; \
+	curl -L -O https://github.com/seccomp/libseccomp/releases/download/v2.4.3/libseccomp-2.4.3.tar.gz ; \
+    tar xf libseccomp-2.4.3.tar.gz && mv libseccomp-2.4.3 libseccomp ; \
+    (cd libseccomp && ./configure --enable-shared=no && make) ; \
+	make libsandbox.so)
+
+prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js sandbox
 	if [ ! -d TICKETS ] ; then mkdir TICKETS ; fi
 	if [ ! -d USERS ] ; then mkdir USERS ; fi
 	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')

@@ -18,6 +18,7 @@ def set_limits():
     resource.setrlimit(resource.RLIMIT_DATA, (1000000, 1000000))
     resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
 
+
 class Process:
     """A websocket session"""
     def __init__(self, websocket, login):
@@ -112,6 +113,10 @@ class Process:
             stdout=asyncio.subprocess.PIPE,
             stdin=asyncio.subprocess.PIPE,
             # stderr=subprocess.PIPE,
+            env={'LD_PRELOAD': 'sandbox/libsandbox.so',
+                 'SECCOMP_SYSCALL_ALLOW': "fstat:write:read:lseek:exit_group" # brk
+                },
+            close_fds=True,
             preexec_fn=set_limits,
             )
         self.tasks = [
