@@ -6,6 +6,7 @@ Compiling and executing server
 import json
 import asyncio
 import os
+import time
 import resource
 import websockets
 import utilities
@@ -19,18 +20,31 @@ def set_limits():
 
 class Process:
     """A websocket session"""
-    def __init__(self, websocket):
+    def __init__(self, websocket, login):
         self.websocket = websocket
         self.conid = str(id(websocket))
         self.process = None
         self.tasks = ()
         self.wait_input = False
+        self.login = login
+        try:
+            os.mkdir(f"USERS/{login}")
+        except OSError:
+            pass
+        self.exec_file = f"USERS/{self.login}/{self.conid}"
+        self.log_file = f"USERS/{self.login}/log"
+        self.log("START")
+
+    def log(self, more):
+        with open(self.log_file, "a") as file:
+            file.write(repr((int(time.time()), self.conid, more)) + '\n')
+
     def cleanup(self, erase_executable=False):
         """Close connection"""
         print("cleanup")
         if erase_executable:
             try:
-                os.unlink(self.conid)
+                os.unlink(self.exec_file)
             except FileNotFoundError:
                 pass
         if self.process:
@@ -44,6 +58,7 @@ class Process:
             self.process = None
     def send_input(self, data):
         """Send the data to the running process standard input"""
+        self.log(("INPUT", data))
         self.process.stdin.write(data.encode('utf-8') + b'\n')
         self.wait_input = False
 
@@ -70,26 +85,30 @@ class Process:
             self.cleanup()
     async def compile(self, source):
         """Compile"""
+        self.log(("COMPILE", source))
         self.cleanup(erase_executable=True)
-        with open("c.cpp", "w") as file:
+        source_file = f"USERS/{self.login}/{self.conid}.cpp"
+        with open(source_file, "w") as file:
             file.write(source)
         self.process = await asyncio.create_subprocess_exec(
-            'g++', '-Wall', 'c.cpp', '-o', self.conid,
+            'g++', '-Wall', source_file, '-o', self.exec_file,
             stderr=asyncio.subprocess.PIPE)
-
         stderr = await self.process.stderr.read()
         if not stderr:
             stderr = "Bravo, il n'y a aucune erreur"
         else:
             stderr = stderr.decode('utf-8')
         await self.websocket.send(json.dumps(['compiler', stderr]))
+        os.unlink(source_file)
     async def run(self):
         """Launch process"""
-        if not os.path.exists(self.conid):
+        if not os.path.exists(self.exec_file):
+            self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
+        self.log("RUN")
         self.process = await asyncio.create_subprocess_exec(
-            './' + self.conid,
+            f"USERS/{self.login}/{self.conid}",
             stdout=asyncio.subprocess.PIPE,
             stdin=asyncio.subprocess.PIPE,
             # stderr=subprocess.PIPE,
@@ -116,23 +135,25 @@ async def echo(websocket, path):
         client_ip, _port = websocket.remote_address
     assert ip == client_ip
 
-    process = Process(websocket)
+    process = Process(websocket, login)
     try:
         async for message in websocket:
             action, data = json.loads(message)
-            print("ACTION", action)
             if action == 'compile':
                 await process.compile(data)
             elif action == 'kill':
+                process.log("KILL")
                 process.cleanup()
             elif action == 'input':
                 process.send_input(data)
             elif action == 'run':
                 await process.run()
             else:
+                process.log(("BUG", action, data))
                 await websocket.send(json.dumps(['compiler', 'bug']))
             print("ACTION DONE")
     finally:
+        process.log("STOP")
         process.cleanup(erase_executable=True)
 
 async def main():

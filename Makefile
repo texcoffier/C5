@@ -21,6 +21,7 @@ default:all
 
 prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js
 	if [ ! -d TICKETS ] ; then mkdir TICKETS ; fi
+	if [ ! -d USERS ] ; then mkdir USERS ; fi
 	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')
 
 all:prepare
