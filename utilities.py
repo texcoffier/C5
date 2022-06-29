@@ -175,23 +175,28 @@ With Firefox:
 ********************************************************************
         '
     """,
-    'start': """#C5_LOGIN
+    'start': r"""#C5_LOGIN
         set -e
+        echo START SERVERS
         cd C5
         ./http_server.py >>http_server.log 2>&1 &
+        echo \$! >http_server.pid
         ./compile_server.py >>compile_server.log 2>&1 &
+        echo \$! >compile_server.pid
         sleep 0.5
         tail -1 http_server.log
         tail -1 compile_server.log
         """,
     'stop': """#C5_LOGIN
-        pkill -f 'http_server.py|compile_server.py'
+        echo STOP SERVERS
+        kill $(cat http_server.pid) $(cat compile_server.pid) || true
+        kill -1 $(cat http_server.pid) $(cat compile_server.pid) || true
         """,
     'open': f"""
         xdg-open https://{C5_URL}/=course_{sys.argv[2] if len(sys.argv) >= 3 else 'js'}.js
         """
 }
-ACTIONS['restart'] = ACTIONS['stop'] + ACTIONS['start']
+ACTIONS['restart'] = ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
 
 def main():
     """MAIN"""
