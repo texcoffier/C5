@@ -168,7 +168,11 @@ class Compile: # pylint: disable=too-many-instance-attributes
         return "<h2>Exécution</h2>"
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "<h2>Compilation</h2>"
+        return ('<h2>Compilation <label>'
+                + '<input type="checkbox" '
+                + ' onchange="ccccc.automatic_compile = !ccccc.automatic_compile">'
+                + '<span>Désactivée</span>'
+                + '</label></h2>')
     def time_initial_content(self):
         """The message terminate the job. It indicates the worker time"""
         more = ' ' + self.current_question_max

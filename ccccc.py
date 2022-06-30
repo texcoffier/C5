@@ -64,7 +64,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
     oldScrollTop = None
     highlight_errors = {}
     question_done = {}
-    copied = None
+    copied = None # Copy with ^C ou ^X
+    automatic_compile = True
 
     def __init__(self):
         print("GUI: start")
@@ -182,7 +183,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.state == 'started':
             return # Compiler is running
         source = self.editor.innerText
-        if source != self.old_source:
+        if self.automatic_compile and source != self.old_source:
             self.old_source = source # Do not recompile the same thing
             self.clear_highlight_errors()
             self.unlock_worker()

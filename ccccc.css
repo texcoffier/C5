@@ -143,3 +143,15 @@ div:hover>.i {
     opacity: 0.9;
     visibility: visible;
 }
+
+LABEL {
+    border-radius: 0.5em;
+    padding-right: 0.3em;
+    position: absolute;
+    right: 0.3em;
+    background: #DDF;
+    font-weight: normal;
+}
+LABEL SPAN {
+    font-size: 80%;
+}
