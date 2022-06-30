@@ -13,6 +13,7 @@ DIV.executor,
 DIV.editor,
 DIV.overlay {
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
     font-family: monospace, monospace;
     line-height: 1.18vw;
 }
