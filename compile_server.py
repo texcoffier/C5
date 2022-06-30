@@ -90,9 +90,10 @@ class Process:
             await self.websocket.send(json.dumps(
                 ['return', "Code de fin d'exécution = " + str(await self.process.wait())]))
             self.cleanup()
-    async def compile(self, source):
+    async def compile(self, data):
         """Compile"""
-        self.log(("COMPILE", source))
+        _course, question, source = data
+        self.log(("COMPILE", data))
         self.cleanup(erase_executable=True)
         source_file = f"USERS/{self.login}/{self.conid}.cpp"
         with open(source_file, "w") as file:

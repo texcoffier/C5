@@ -88,7 +88,8 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
             setTimeout(retry, 100)
             return
         try:
-            self.socket.send(JSON.stringify(['compile', source]))
+            self.socket.send(JSON.stringify(
+                ['compile', [self.config.COURSE, self.current_question, source]]))
             return
         except Error as err: # pylint: disable=undefined-variable
             self.post(

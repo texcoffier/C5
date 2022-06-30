@@ -80,7 +80,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
         self.worker.onerror = bind(self.onerror, self)
-        self.worker.postMessage(['config', {'TICKET': TICKET, 'LOGIN': LOGIN, 'SOCK': SOCK}])
+        self.worker.postMessage(['config', {
+            'TICKET': TICKET,
+            'LOGIN': LOGIN,
+            'SOCK': SOCK,
+            'COURSE': course,
+            }])
         setInterval(bind(self.scheduler, self), 200)
         self.create_html()
 
