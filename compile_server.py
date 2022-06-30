@@ -18,6 +18,12 @@ def set_limits():
     resource.setrlimit(resource.RLIMIT_DATA, (1000000, 1000000))
     resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
 
+def set_compiler_limits():
+    """Do not allow big processes"""
+    resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
+    resource.setrlimit(resource.RLIMIT_DATA, (100000000, 100000000))
+    resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
+
 
 class Process:
     """A websocket session"""
@@ -93,7 +99,9 @@ class Process:
             file.write(source)
         self.process = await asyncio.create_subprocess_exec(
             'g++', '-Wall', source_file, '-o', self.exec_file,
-            stderr=asyncio.subprocess.PIPE)
+            stderr=asyncio.subprocess.PIPE,
+            preexec_fn=set_compiler_limits,
+            )
         stderr = await self.process.stderr.read()
         if not stderr:
             stderr = "Bravo, il n'y a aucune erreur"
