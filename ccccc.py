@@ -74,6 +74,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
     input_index = -1 # The input number needed
     current_question = -1 # The question on screen
     allow_copy_paste = False # The question set this to True or False
+    record_to_send = []
+    record_last_time = 0
+    record_start = 0
 
     def __init__(self):
         print("GUI: start")
@@ -84,6 +87,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 course = path[2:]
         if not course:
             course = 'course_js.js'
+        self.course = course
         self.worker = Worker(course + "?ticket=" + TICKET) # pylint: disable=undefined-variable
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
@@ -234,6 +238,29 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.add_highlight_errors(line_nr, char_nr, what)
         self.overlay_show()
 
+    def record(self, data):  # pylint: disable=no-self-use
+        """Append event to record to 'record_to_send'"""
+        time = Math.floor(Date().getTime()/1000) # pylint: disable=undefined-variable
+        if time != self.record_last_time:
+            if len(self.record_to_send): # pylint: disable=len-as-condition
+                self.record_to_send.append(time - self.record_last_time)
+            else:
+                self.record_to_send.append(time)
+                self.record_to_send.append(self.course)
+                self.record_start = time
+            self.record_last_time = time
+        self.record_to_send.append(data)
+        if time - self.record_start > 60 or len(self.record_to_send) > 100:
+            # Record on the server
+            feedback = document.createElement('IMG')
+            feedback.src = (
+                'log/'
+                + encodeURIComponent(JSON.stringify(self.record_to_send) + '\n') # pylint: disable=undefined-variable
+                + "?ticket=" + TICKET) # pylint: disable=undefined-variable
+            document.body.appendChild(feedback)
+            self.record_to_send = []
+            self.record_last_time = 0
+
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
         error = document.createElement('DIV')
@@ -249,27 +276,34 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def onmousedown(self, _event):
         """Mouse down"""
+        self.record('MouseDown')
         self.editor.focus()
     def oncopy(self, event):
         """Copy"""
         if self.allow_copy_paste:
+            self.record('Copy')
             return
         text = window.getSelection().toString()
         if text not in self.editor.innerText:
+            self.record('CopyRejected')
             popup_message("Interdit !")
             event.preventDefault(True)
             return
+        self.record('CopyAllowed')
         self.copied = text
 
     def onpaste(self, event):
         """Mouse down"""
         if self.allow_copy_paste:
+            self.record('Paste')
             return
         text = (event.clipboardData or event.dataTransfer).getData("text")
         if text in self.editor.innerText or text == self.copied:
+            self.record('PasteOk')
             self.overlay_hide()
             setTimeout(bind(self.coloring, self), 100)
             return # auto paste allowed
+        self.record('PasteRejected')
         popup_message("Interdit !")
         event.preventDefault(True)
 
@@ -277,6 +311,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Key down"""
         if event.target.tagName == 'INPUT':
             return
+        self.record(event.key)
         self.clear_highlight_errors()
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
@@ -335,6 +370,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.language = value
         elif what == 'current_question':
             self.current_question = value
+            self.record('Question=' + str(self.current_question))
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
             self.add_highlight_errors(value[0], value[1], what)

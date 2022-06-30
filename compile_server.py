@@ -39,7 +39,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         except OSError:
             pass
         self.exec_file = f"USERS/{self.login}/{self.conid}"
-        self.log_file = f"USERS/{self.login}/log"
+        self.log_file = f"USERS/{self.login}/compile_server.log"
         self.log("START")
 
     def log(self, more):

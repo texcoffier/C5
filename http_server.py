@@ -166,6 +166,16 @@ def handle(base=''):
         return File(filename).response(session)
     return real_handle
 
+async def log(request):
+    """Log user actions"""
+    print(('log', request.url), flush=True)
+    session = Session.get(request)
+    login = await session.get_login(str(request.url).split('?')[0])
+    data = request.match_info['data']
+    with open(f'USERS/{login}/http_server.log', "a") as file:
+        file.write(urllib.request.unquote(data))
+    return File('favicon.ico').response(session)
+
 async def startup(_app):
     """For the log"""
     print('http serveur running!', flush=True)
@@ -173,6 +183,7 @@ async def startup(_app):
 APP = web.Application()
 APP.add_routes([web.get('/', handle()),
                 web.get('/{filename}', handle()),
+                web.get('/log/{data}', log),
                 web.get('/brython/{filename}', handle('brython')),
                 ])
 APP.on_startup.append(startup)
