@@ -12,13 +12,15 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
     stop_after_compile = False
 
     def connect(self):
+        """Connect to the remote compiler/executor with a WebSocket"""
         print('connect', self.connecting)
         if self.connecting:
             return
+        # pylint: disable=eval-used
         socket = eval('new WebSocket(self.config.SOCK + "/" + self.config.TICKET, "1")')
 
         def event_message(event):
-            data = JSON.parse(event.data)
+            data = JSON.parse(event.data) # pylint: disable=undefined-variable
             if data[0] == 'compiler':
                 self.run_after_compile()
                 message = data[1]
@@ -35,7 +37,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
                                 self.post('error', [line_nr, char_nr])
                             elif 'warning' in line[3]:
                                 self.post('warning', [line_nr, char_nr])
-                        except:
+                        except: # pylint: disable=bare-except
                             pass
 
             elif data[0] in ('executor', 'return'):
@@ -46,9 +48,9 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
             elif data[0] == 'input':
                 try:
                     line = self.read_input()
-                    self.socket.send(JSON.stringify(['input', line]))
+                    self.socket.send(JSON.stringify(['input', line])) # pylint: disable=undefined-variable
                 except ValueError:
-                    self.socket.send(JSON.stringify(['kill', '']))
+                    self.socket.send(JSON.stringify(['kill', ''])) # pylint: disable=undefined-variable
 
         def event_open(_event):
             print('Socket opened')
@@ -63,7 +65,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
             def reconnect():
                 print('reconnect')
                 self.connect()
-            setTimeout(reconnect, 1000)
+            setTimeout(reconnect, 1000) # pylint: disable=undefined-variable
 
         socket.onopen = event_open
         socket.onmessage = event_message
@@ -85,12 +87,12 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
             def retry():
                 print('retry')
                 self.run_compiler(source)
-            setTimeout(retry, 100)
-            return
+            setTimeout(retry, 100) # pylint: disable=undefined-variable
+            return None
         try:
-            self.socket.send(JSON.stringify(
+            self.socket.send(JSON.stringify( # pylint: disable=undefined-variable
                 ['compile', [self.config.COURSE, self.current_question, source]]))
-            return
+            return None
         except Error as err: # pylint: disable=undefined-variable
             self.post(
                 'compiler',
@@ -101,12 +103,12 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
     def run_executor(self):
         """Execute the compiled code"""
         print('execute', self.executable)
-        if self.executable == True:
+        if self.executable is True:
             self.execution_returns = ''
             return
         try:
             self.execution_returns = ''
-            self.socket.send(JSON.stringify(['run', '']))
+            self.socket.send(JSON.stringify(['run', ''])) # pylint: disable=undefined-variable
         except Error as err: # pylint: disable=undefined-variable
             self.post(
                 'executor', '<error>'

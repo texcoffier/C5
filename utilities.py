@@ -41,6 +41,7 @@ C5_REDIRECT = os.getenv('C5_REDIRECT', '')
 C5_VALIDATE = os.getenv('C5_VALIDATE', '')
 
 def print_state():
+    """Print the current configuration"""
     print(f"""Uses environment shell variables :
 {'C5_HOST=' + str(C5_HOST):<40}     # Production host (for SSH)
 {'C5_ROOT=' + str(C5_ROOT):<40}     # login allowed to sudo

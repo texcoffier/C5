@@ -30,6 +30,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
     language = 'javascript'
     stop_after_compile = True
     previous_source = None
+    shared_buffer = []
 
     def __init__(self, questions):
         print("Worker: start")
@@ -75,6 +76,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
                 self.post('state', "stopped")
 
     def run_after_compile(self):
+        """If the compilation was successful, run the execution"""
         self.execution_result = ''
         self.execution_returns = None
         self.post('executor', self.executor_initial_content())
@@ -120,26 +122,28 @@ class Compile: # pylint: disable=too-many-instance-attributes
         current_question = self.current_question
         self.quest.all_tests_are_fine = True
         self.quest.tester()
-        if current_question != self.current_question and self.current_question != self.current_question_max:
+        if (current_question != self.current_question
+                and self.current_question != self.current_question_max):
             self.post("good", "")
             if current_question >= self.current_question_max - 1:
                 self.start_question()
 
 
     def read_input(self):
+        """Ask the webpage some input text, wait the answer."""
         if not self.shared_buffer:
             return "SharedArrayBuffer not allowed by HTTP server"
         self.post('executor', '\000INPUT')
         self.post('state', "input")
         while self.shared_buffer[0] == 0:
-            Atomics.wait(self.shared_buffer, 0, 0, 100)
+            Atomics.wait(self.shared_buffer, 0, 0, 100) # pylint: disable=undefined-variable
         self.post('state', "inputdone")
         if self.shared_buffer[0] == 2:
             raise ValueError('canceled')
         string = ''
         for i in self.shared_buffer[1:]:
             if i > 0:
-                string += String.fromCharCode(i)
+                string += String.fromCharCode(i) # pylint: disable=undefined-variable
             elif i < 0:
                 break
         self.shared_buffer[0] = 0
@@ -185,7 +189,8 @@ class Compile: # pylint: disable=too-many-instance-attributes
         tips = []
         for i, _ in enumerate(self.questions):
             if self.allow_goto:
-                link = ' onclick="ccccc.unlock_worker();ccccc.worker.postMessage([\'goto\',' + i + '])"'
+                link = (' onclick="ccccc.unlock_worker();ccccc.worker.postMessage([\'goto\','
+                        + i + '])"')
             else:
                 link = ''
             if i == self.current_question:

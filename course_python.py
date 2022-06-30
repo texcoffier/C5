@@ -14,7 +14,8 @@ class Q_print(Question):
     def question(self):
         self.worker.post("eval", "self.allow_copy_paste = true")
         self.answer = ["Salut !", "Au revoir", "Bonne nuit"][self.worker.millisecs() % 3]
-        return ("Modifiez le contenu de la grande zone blanche juste à droite pour afficher en bas à droite :<pre>"
+        return ("Modifiez le contenu de la grande zone blanche juste à droite "
+                + " pour afficher en bas à droite :<pre>"
                 + self.answer + "</pre>"
                 + "Une fois ce challenge réussi vous passez à la question suivante.")
     def tester(self):
@@ -26,7 +27,8 @@ class Q_print(Question):
             return
         self.display('<p>Elle ne contient pas «' + self.answer + "»")
         if canonise(self.answer) in canonise(self.worker.execution_result):
-            self.display('<p style="background:#F88">Auriez-vous oublié un espace ou une majuscule ?')
+            self.display('<p style="background:#F88">'
+                         + 'Auriez-vous oublié un espace ou une majuscule ?')
     def default_answer(self):
         return """
 # Lisez la consigne indiquée à gauche
@@ -175,7 +177,7 @@ class Q_import_math(Question):
              ['\ncos *=', 'Enregistrer quelque chose dans «cos»'],
              ['math\\.pi */ *4', 'Calculer π/4'],
              ['math\\.cos *\\( *math\\.pi */ *4 *\\)', 'Calculer cos(π/4)'],
-             ['print *\\( *(sqrt *- *cos|cos *- *sqrt) *\\)', 
+             ['print *\\( *(sqrt *- *cos|cos *- *sqrt) *\\)',
               'Affichage de la différence entre «sqrt» et «cos»'],
             ])
         self.message('3.1' not in self.worker.source,

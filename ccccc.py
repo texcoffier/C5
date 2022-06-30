@@ -14,7 +14,11 @@ Question       base class for question definition
 """
 
 def html(txt):
-    return txt.replace(RegExp('&', 'g'), '&amp;').replace(RegExp('<', 'g'), '&lt;').replace(RegExp('>', 'g'), '&gt;')
+    """Escape < > &"""
+    # pylint: disable=undefined-variable
+    return txt.replace(RegExp('&', 'g'), '&amp;'
+                      ).replace(RegExp('<', 'g'), '&lt;'
+                               ).replace(RegExp('>', 'g'), '&gt;')
 
 # Hide pylint warnings
 try:
@@ -66,6 +70,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question_done = {}
     copied = None # Copy with ^C ou ^X
     automatic_compile = True
+    state = "uninitalised"
+    input_index = -1 # The input number needed
+    current_question = -1 # The question on screen
+    allow_copy_paste = False # The question set this to True or False
 
     def __init__(self):
         print("GUI: start")
@@ -76,22 +84,22 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 course = path[2:]
         if not course:
             course = 'course_js.js'
-        self.worker = Worker(course + "?ticket=" + TICKET)
+        self.worker = Worker(course + "?ticket=" + TICKET) # pylint: disable=undefined-variable
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
         self.worker.onerror = bind(self.onerror, self)
         self.worker.postMessage(['config', {
-            'TICKET': TICKET,
-            'LOGIN': LOGIN,
-            'SOCK': SOCK,
+            'TICKET': TICKET, # pylint: disable=undefined-variable
+            'LOGIN': LOGIN, # pylint: disable=undefined-variable
+            'SOCK': SOCK, # pylint: disable=undefined-variable
             'COURSE': course,
             }])
         setInterval(bind(self.scheduler, self), 200)
         self.create_html()
 
         try:
-            self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))')
-        except:
+            self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
+        except: # pylint: disable=bare-except
             self.shared_buffer = None
         self.worker.postMessage(['array', self.shared_buffer])
 
@@ -211,7 +219,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def clear_highlight_errors(self):
         """Make space fo the new errors"""
         self.highlight_errors = {}
-        while self.overlay.lastChild and self.overlay.lastChild.className and 'ERROR' in self.overlay.lastChild.className:
+        while (self.overlay.lastChild
+               and self.overlay.lastChild.className
+               and 'ERROR' in self.overlay.lastChild.className):
             self.overlay.removeChild(self.overlay.lastChild)
     def coloring(self):
         """Coloring of the text editor with an overlay."""
@@ -295,6 +305,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         else:
             self.overlay.scrollTop = self.editor.scrollTop
     def oninput(self, event):
+        """Send the input to the worker"""
         if event.key == 'Enter':
             self.inputs[self.current_question][event.target.input_index] = event.target.value
             if event.target.run_on_change:
@@ -305,15 +316,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 event.target.run_on_change = True
 
     def clear_if_needed(self, box):
+        """Clear ony once the new content starts to come"""
         if box in self.do_not_clear:
             return
         self.do_not_clear[box] = True
-        self[box].innerHTML = ''
+        self[box].innerHTML = '' # pylint: disable=unsubscriptable-object
 
-    def onerror(self, event):
+    def onerror(self, event): # pylint: disable=no-self-use
+        """When the worker die?"""
         print(event)
 
-    def onmessage(self, event):
+    def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
         # print(self.state, what, str(event.data[1])[:10])
@@ -356,9 +369,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 span = document.createElement('SPAN')
                 span.innerHTML = value
-                self.executor.appendChild(span)
+                self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
-            self[what].innerHTML = value
+            self[what].innerHTML = value # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question
             # Many \n at the bug (browser problem when inserting a final \n)
@@ -369,18 +382,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
             self.coloring()
         elif what in ('tester', 'compiler', 'question', 'time'):
-            self.clear_if_needed(what)
+            self.clear_if_needed(what) # pylint: disable=undefined-variable
             if what == 'time':
-                value += ' ' + self.state + ' ' + LOGIN ;
+                value += ' ' + self.state + ' ' + LOGIN # pylint: disable=undefined-variable
             span = document.createElement('SPAN')
             span.innerHTML = value
             if '<error' in value:
-                self[what].style.background = '#FAA'
+                self[what].style.background = '#FAA' # pylint: disable=unsubscriptable-object
             else:
-                self[what].style.background = self[what].background
-            self[what].appendChild(span)
+                self[what].style.background = self[what].background # pylint: disable=unsubscriptable-object
+            self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
         elif what == 'eval':
-            eval(value)
+            eval(value) # pylint: disable=eval-used
 
     def create_html(self):
         """Create the page content"""

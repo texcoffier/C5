@@ -55,7 +55,7 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
             return True
     def run_executor(self):
         """Execute the compiled code"""
-        if self.executable == True:
+        if self.executable is True:
             return
         try:
             outputs = []
@@ -69,7 +69,7 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
             eval(self.executable.replace(
                 'var $locals___main__ = {}',
                 'var $locals___main__ = __BRYTHON__.mylocals ;'))
-            self.execution_result = outputs.join('')
+            self.execution_result = outputs.join('')  # pylint: disable=no-member
 
         except Error as err: # pylint: disable=undefined-variable
             try:
@@ -83,9 +83,9 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
                 message += '<b>' + self.escape(self.source.split('\n')[line]) + '</b>\n'
                 self.post('executor', '<error>' + message + '</error>')
                 self.post('error', [line, err.offset])
-            except:
+            except: # pylint: disable=bare-except
                 pass
 
-    def locals(self):
+    def locals(self): # pylint: disable=no-self-use
         """Returns the local variable dict"""
         return __BRYTHON__.mylocals

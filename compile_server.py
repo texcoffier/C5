@@ -25,7 +25,7 @@ def set_compiler_limits():
     resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
 
 
-class Process:
+class Process: # pylint: disable=too-many-instance-attributes
     """A websocket session"""
     def __init__(self, websocket, login):
         self.websocket = websocket
@@ -43,6 +43,7 @@ class Process:
         self.log("START")
 
     def log(self, more):
+        """Log action to USERS/login/log"""
         with open(self.log_file, "a") as file:
             file.write(repr((int(time.time()), self.conid, more)) + '\n')
 
@@ -92,7 +93,7 @@ class Process:
             self.cleanup()
     async def compile(self, data):
         """Compile"""
-        _course, question, source = data
+        _course, _question, source = data
         self.log(("COMPILE", data))
         self.cleanup(erase_executable=True)
         source_file = f"USERS/{self.login}/{self.conid}.cpp"
@@ -140,14 +141,17 @@ async def echo(websocket, path):
     if not os.path.exists(ticket):
         return
     with open(ticket, 'r') as file:
-        ip, browser, login = eval(file.read())
+        the_ip, _browser, login = eval(file.read()) # pylint: disable=eval-used
 
     client_ip = websocket.request_headers.get('x-forwarded-for', '')
     if client_ip:
         client_ip = client_ip.split(",")[0]
     else:
         client_ip, _port = websocket.remote_address
-    assert ip == client_ip
+    assert the_ip == client_ip
+
+    # client_browser = websocket.headers.get('user-agent', '')
+    # assert _browser == client_browser
 
     process = Process(websocket, login)
     try:

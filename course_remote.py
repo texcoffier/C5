@@ -32,9 +32,11 @@ int main() {
     int x1=LARGEUR/2, y1=HAUTEUR/2, x, y, rayon;
     char symbol[999];
 
+    // fopen("/etc/passwd", "r"); // Is forbiden by sand box
+
     cout << "Saisir le rayon entier (8 par exemple) :\\n";
     cin >> rayon;
-    cout << "Saisir un symbol :\\n";
+    cout << "Saisir un symbole :\\n";
     cin >> symbol;
 
     for(y=0; y < HAUTEUR; y++) {

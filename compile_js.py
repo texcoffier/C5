@@ -38,7 +38,7 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
         try:
             # pylint: disable=eval-used
             executable = eval(PREAMBLE + source + ';\n'
-                + self.quest.append_to_source_code() + '} ; _tmp_')
+                              + self.quest.append_to_source_code() + '} ; _tmp_')
             self.post('compiler', 'Compilation sans erreur')
             return executable
         except Error as err: # pylint: disable=undefined-variable
@@ -49,9 +49,9 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
                     + self.escape(err.name) + '\n' + self.escape(err.message)
                     + '</error>')
                 # self.post('error', [err.lineno - OFFSET, err.colno])
-                return
-            except:
-                return
+                return None
+            except: # pylint: disable=bare-except
+                return None
     def run_executor(self):
         """Execute the compiled code"""
         try:
@@ -63,5 +63,5 @@ class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
                     + self.escape(err.name) + '\n'
                     + self.escape(err.message) + '</error>')
                 # self.post('error', [err.lineno - OFFSET, err.colno])
-            except:
+            except: # pylint: disable=bare-except
                 self.post('executor', '<error>BUG</error>')

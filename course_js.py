@@ -116,7 +116,8 @@ class Q3(Question): # pylint: disable=undefined-variable
 10 100
 '''
     def question(self):
-        return "Faites afficher les carrés de 0 à 10 en faisant une boucle :<pre>" + self.good + "</pre>"
+        return ("Faites afficher les carrés de 0 à 10 en faisant une boucle :<pre>"
+                + self.good + "</pre>")
 
     def tester(self):
         self.check(self.worker.source, [
@@ -132,7 +133,8 @@ class Q3(Question): # pylint: disable=undefined-variable
 
         fine = self.worker.execution_result == self.good
         self.message(fine, "affiche le bon résultat.")
-        self.display("<p>Votre programme fait : " + str(len(self.worker.source.strip().split('\n'))) + ' lignes.')
+        self.display("<p>Votre programme fait : "
+                     + str(len(self.worker.source.strip().split('\n'))) + ' lignes.')
 
         if fine and good:
             self.next_question()

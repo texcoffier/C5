@@ -4,9 +4,9 @@ CPP compiler and interpreter based upon JSCPP
 Very limited.
 """
 
-self.window = window = {'document': 'fake'}
-importScripts('xxx-JSCPP.js')
-JSCPP = self.window.JSCPP
+self.window = window = {'document': 'fake'} # pylint: disable=undefined-variable,invalid-name
+importScripts('xxx-JSCPP.js') # pylint: disable=undefined-variable
+JSCPP = self.window.JSCPP # pylint: disable=undefined-variable
 
 
 class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
@@ -44,13 +44,13 @@ class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
             return True
     def run_executor(self):
         """Execute the compiled code"""
-        if self.executable == True:
+        if self.executable is True:
             return
         try:
             self.execution_returns = ''
             for _ in range(100000):
                 value = self.executable.next()
-                if value != False:
+                if value is not False:
                     break
         except Error as err: # pylint: disable=undefined-variable
             self.post(

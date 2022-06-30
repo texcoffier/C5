@@ -93,7 +93,8 @@ class Session:
             return self.login
         if utilities.C5_VALIDATE:
             async with aiohttp.ClientSession() as session:
-                url = utilities.C5_VALIDATE % (urllib.request.quote(service), urllib.request.quote(self.ticket))
+                url = utilities.C5_VALIDATE % (urllib.request.quote(service),
+                                               urllib.request.quote(self.ticket))
                 async with session.get(url) as data:
                     lines = await data.text()
                     lines = lines.split('\n')
@@ -114,11 +115,13 @@ class Session:
 
         return self.login
     def record(self):
+        """Record the ticket for the compile server"""
         with open(f'TICKETS/{self.ticket}', 'w') as file:
             file.write(str(self))
     def __str__(self):
         return repr((self.client_ip, self.browser, self.login))
     def check(self, request, client_ip, browser):
+        """Check for hacker"""
         if self.client_ip != client_ip or self.browser != browser:
             raise web.HTTPFound(str(request.url).split('?')[0])
 
@@ -139,7 +142,7 @@ class Session:
             session.check(request, client_ip, browser)
         elif ticket and os.path.exists(f'TICKETS/{ticket}'):
             with open(f'TICKETS/{ticket}', 'r') as file:
-                session = Session(ticket, *eval(file.read()))
+                session = Session(ticket, *eval(file.read())) # pylint: disable=eval-used
             session.check(request, client_ip, browser)
         else:
             session = Session(ticket, client_ip, browser)
