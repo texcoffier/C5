@@ -6,6 +6,7 @@ And some utilities
 
 import os
 import sys
+import re
 import socket
 import ssl
 import time
@@ -31,7 +32,7 @@ def is_admin(login):
     """Returns True if it is and admin login"""
     return not login[-1].isdigit()
 
-class CourseConfig:
+class CourseConfig: # pylint: disable=too-many-instance-attributes
     """A course session"""
     configs = {}
     def __init__(self, course):
@@ -43,46 +44,68 @@ class CourseConfig:
 
     def load(self):
         """Load course configuration file"""
+        self.config = {'start': "2000-01-01 00:00:00",
+                       'stop': "2100-01-01 00:00:00",
+                       'tt': '',
+                      }
+        self.time = time.time()
         try:
             with open(self.filename, 'r') as file:
-                self.config = eval(file.read()) # pylint: disable=eval-used
-                self.time = time.time()
+                self.config.update(eval(file.read())) # pylint: disable=eval-used
         except IOError:
-            self.config = {'start': "2000-01-01 00:00:00",
-                           'stop': "2100-01-01 00:00:00",
-                          }
+            pass
 
     def update(self):
         """Compute some values"""
         self.start = self.config['start']
+        self.start_timestamp = time.mktime(time.strptime(self.start, '%Y-%m-%d %H:%M:%S'))
         self.stop = self.config['stop']
-
+        self.stop_timestamp = time.mktime(time.strptime(self.stop, '%Y-%m-%d %H:%M:%S'))
+        self.stop_tt_timestamp = self.start_timestamp + (
+            self.stop_timestamp - self.start_timestamp) * 4 / 3
+        self.stop_tt = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.stop_tt_timestamp))
+        self.tt_list = set(re.split('[ \n\r\t]+', self.config['tt']))
+        self.tt_list.add('')
     def record(self):
         """Record option on disk"""
         with open(self.course + '.cf', 'w') as file:
             file.write(repr(self.config))
 
-    def start_date(self, date):
+    def set_start(self, date):
         """Set the start date"""
         self.config['start'] = date
         self.update()
         self.record()
-    def stop_date(self, date):
+    def set_stop(self, date):
         """Set the stop date"""
         self.config['stop'] = date
         self.update()
         self.record()
-    def status(self):
+    def set_tt(self, tt_list):
+        """Set the tiers temps login list"""
+        self.config['tt'] = tt_list
+        self.record()
+    def get_stop(self, login):
+        """Get stop date, taking login into account"""
+        if login in self.tt_list:
+            return self.stop_tt
+        return self.stop
+    def status(self, login):
         """Status of the course"""
         if os.path.getmtime(self.filename) > self.time:
             self.load()
             self.update()
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        if self.start > now:
+        if now < self.start:
             return 'pending'
-        if self.stop <= now:
-            return 'done'
-        return 'running'
+        if now < self.stop:
+            return 'running'
+        if login in self.tt_list and now < self.stop_tt:
+            return 'running_tt'
+        return 'done'
+    def running(self, login):
+        """If the session running for the user"""
+        return self.status(login).startswith('running')
 
     @classmethod
     def get(cls, course):

@@ -7,6 +7,7 @@ import os
 import time
 import json
 import urllib.request
+import html
 import asyncio
 import aiohttp
 from aiohttp import web
@@ -168,8 +169,8 @@ def handle(base=''):
                 filename = 'ccccc.html'
             if filename.startswith('course_'):
                 course = utilities.CourseConfig(filename[:-3])
-                status = course.status()
-                if not utilities.is_admin(session.login):
+                status = course.status(login)
+                if not utilities.is_admin(login):
                     if status == 'done':
                         filename = "course_js_done.js"
                     elif status == 'pending':
@@ -183,7 +184,7 @@ async def log(request):
     session = Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
     course = utilities.CourseConfig.get(request.match_info['course'])
-    if course.status() != 'running':
+    if not course.running():
         return
     data = request.match_info['data']
     if not os.path.exists(f'{course.course}/{login}'):
@@ -242,14 +243,19 @@ async def adm_config(request):
     config = utilities.CourseConfig.get(course)
     action = request.match_info['action']
     if ':' in action:
-        action, date = action.split(':', 1)
+        action, more = action.split(':', 1)
     else:
-        date = time.strftime('%Y-%m-%d %H:%M:%S')
+        more = time.strftime('%Y-%m-%d %H:%M:%S')
     if action == 'stop':
-        config.stop_date(date)
-    if action == 'start':
-        config.start_date(date)
-        config.stop_date('2100-01-01 00:00:00')
+        config.set_stop(more)
+        if config.start > more:
+            config.set_start(more)
+    elif action == 'start':
+        config.set_start(more)
+        config.set_stop('2100-01-01 00:00:00')
+    elif action == 'tt':
+        config.set_tt(more)
+
     return await adm_home(request)
 
 async def adm_home(request):
@@ -259,13 +265,21 @@ async def adm_home(request):
                <h1>C5 Administration</h1>
                <style>
                TABLE { border-spacing: 0px; border-collapse: collapse ; }
-               TABLE TD { border: 1px solid #888 ; padding: 0.5em }
+               TABLE TD { border: 1px solid #888; padding: 0px }
+               TABLE TD INPUT { margin: 0.5em }
+                TABLE TD TEXTAREA { border: 0px; height: 4em }
                TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
-               TR.done { background: #FDD }
-               TR.running { background: #DFD }
+               .done { background: #FDD }
+               .running { background: #DFD }
+               .running_tt { background: #FEB }
                </style>
+               Colors:
+               <span class="done">The session is done</span>,
+               <span class="running">The session is running</span>,
+               <span class="running_tt">The session is running for tiers-temps</span>,
+               <span>The session has not yet started</span>.
                <table>
-               <tr><th>Course logs<th>Try<th>Start<th>Stop</tr>\n'''
+               <tr><th>Course logs<th>Try<th>Start<th>Stop<th>TT logins</tr>\n'''
            ]
     for course in sorted(os.listdir('.')):
         if course.startswith('course_') and course.endswith('.js'):
@@ -273,7 +287,7 @@ async def adm_home(request):
                 continue
             course = course[:-3]
             config = utilities.CourseConfig.get(course)
-            status = config.status()
+            status = config.status('')
             text.append(f'<tr class="{status}"><td>')
             if os.path.exists(course):
                 text.append(f'<a target="_blank" href="adm_course={course}?ticket={session.ticket}">{course}</a>')
@@ -290,6 +304,9 @@ async def adm_home(request):
             text.append('">')
             if status != 'done':
                 text.append(f' <a href="adm_config={course}=stop?ticket={session.ticket}">Now</a>')
+            text.append(f'<td><textarea onchange="window.location=\'adm_config={course}=tt:\'+encodeURIComponent(this.value)+\'?ticket={session.ticket}\'">')
+            text.append(html.escape(config.config['tt']))
+            text.append('</textarea>')
             text.append('</tr>\n')
     text.append('</table>')
     return web.Response(

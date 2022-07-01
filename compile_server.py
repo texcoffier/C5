@@ -158,7 +158,7 @@ async def echo(websocket, path):
     try:
         async for message in websocket:
             action, data = json.loads(message)
-            if not utilities.is_admin(login) and process.course.status() != 'running':
+            if not utilities.is_admin(login) and not process.course.running(login):
                 if action == 'compile':
                     await process.websocket.send(json.dumps(['compiler', "La session est terminée"]))
                 if action == 'run':
