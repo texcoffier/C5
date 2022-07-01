@@ -17,7 +17,8 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
         if self.connecting:
             return
         # pylint: disable=eval-used
-        socket = eval('new WebSocket(self.config.SOCK + "/" + self.config.TICKET, "1")')
+        course = self.config.COURSE[:-3]
+        socket = eval('new WebSocket(self.config.SOCK + "/" + self.config.TICKET + "/" + course, "1")')
 
         def event_message(event):
             data = JSON.parse(event.data) # pylint: disable=undefined-variable

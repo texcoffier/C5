@@ -6,6 +6,7 @@ Simple web server with session management
 import os
 import time
 import json
+import glob
 import urllib.request
 import asyncio
 import aiohttp
@@ -174,8 +175,12 @@ async def log(request):
     print(('log', request.url), flush=True)
     session = Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
+    course = request.match_info['course']
+    assert utilities.valid_course(course)
     data = request.match_info['data']
-    with open(f'USERS/{login}/http_server.log', "a") as file:
+    if not os.path.exists(f'{course}/{login}'):
+        os.mkdir(f'{course}/{login}')
+    with open(f'{course}/{login}/http_server.log', "a") as file:
         file.write(urllib.request.unquote(data))
     return File('favicon.ico').response(session)
 
@@ -184,6 +189,7 @@ async def startup(_app):
     print('http serveur running!', flush=True)
 
 def is_admin(login):
+    """Returns True if it is and admin login"""
     return not login[-1].isdigit()
 
 async def get_admin_login(request):
@@ -195,20 +201,22 @@ async def get_admin_login(request):
         raise web.HTTPFound('..')
     return session
 
-async def adm_home(request):
-    """Home page for administrators"""
+async def adm_course(request):
+    """Course details page for administrators"""
     session = await get_admin_login(request)
+    course = request.match_info['course']
+    print("COURSE", course, flush=True)
     students = {}
-    for user in sorted(os.listdir('USERS')):
+    for user in sorted(os.listdir(course)):
         await asyncio.sleep(0)
         files = []
         students[user] = student = {'files': files}
-        for filename in os.listdir(f'USERS/{user}'):
+        for filename in os.listdir(f'{course}/{user}'):
             if '.' in filename:
                 # To not display executables
                 files.append(filename)
         try:
-            with open(f'USERS/{user}/http_server.log') as file:
+            with open(f'{course}/{user}/http_server.log') as file:
                 student['http_server'] = file.read()
         except IOError:
             pass
@@ -216,9 +224,24 @@ async def adm_home(request):
     return web.Response(
         body=f"""
             <html><body></body></html>
-            <script>STUDENTS = {json.dumps(students)};</script>
+            <script>STUDENTS = {json.dumps(students)}; COURSE = '{course}';</script>
             <script src="adm_home.js?ticket={session.ticket}"></script>
             """,
+        content_type='text/html',
+        charset='utf-8',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
+async def adm_home(request):
+    """Home page for administrators"""
+    session = await get_admin_login(request)
+    text = []
+    for course in sorted(os.listdir('.')):
+        if course.startswith('course_') and course.endswith('.js'):
+            course = course[:-3]
+            text.append(f'<li><a target="_blank" href="adm_course={course}?ticket={session.ticket}">{course}</a>')
+    return web.Response(
+        body=''.join(text),
         content_type='text/html',
         charset='utf-8',
         headers={'Cache-Control': 'no-cache'}
@@ -244,8 +267,9 @@ async def adm_get(request):
 APP = web.Application()
 APP.add_routes([web.get('/', handle()),
                 web.get('/adm_home', adm_home),
+                web.get('/adm_course={course}', adm_course),
                 web.get('/{filename}', handle()),
-                web.get('/log/{data}', log),
+                web.get('/log/{course}/{data}', log),
                 web.get('/brython/{filename}', handle('brython')),
                 web.get('/adm_get/{filename:.*}', adm_get),
                 ])

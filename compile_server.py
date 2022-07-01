@@ -27,23 +27,25 @@ def set_compiler_limits():
 
 class Process: # pylint: disable=too-many-instance-attributes
     """A websocket session"""
-    def __init__(self, websocket, login):
+    def __init__(self, websocket, login, course):
         self.websocket = websocket
         self.conid = str(id(websocket))
         self.process = None
         self.tasks = ()
         self.wait_input = False
         self.login = login
-        try:
-            os.mkdir(f"USERS/{login}")
-        except OSError:
-            pass
-        self.exec_file = f"USERS/{self.login}/{self.conid}"
-        self.log_file = f"USERS/{self.login}/compile_server.log"
+        assert utilities.valid_course(course)
+        self.dir = f"{course}/{login}"
+        if not os.path.exists(self.dir):
+            os.mkdir(f"{course}/{login}")
+        self.course = course
+        self.log_file = f"{self.dir}/compile_server.log"
+        self.exec_file = f"{self.dir}/{self.conid}"
+        self.source_file = f"{self.dir}/{self.conid}.cpp"
         self.log("START")
 
     def log(self, more):
-        """Log action to USERS/login/log"""
+        """Log action to COURSE/login/compile_server.log"""
         with open(self.log_file, "a") as file:
             file.write(repr((int(time.time()), self.conid, more)) + '\n')
 
@@ -96,11 +98,10 @@ class Process: # pylint: disable=too-many-instance-attributes
         _course, _question, source = data
         self.log(("COMPILE", data))
         self.cleanup(erase_executable=True)
-        source_file = f"USERS/{self.login}/{self.conid}.cpp"
-        with open(source_file, "w") as file:
+        with open(self.source_file, "w") as file:
             file.write(source)
         self.process = await asyncio.create_subprocess_exec(
-            'g++', '-Wall', source_file, '-o', self.exec_file,
+            'g++', '-Wall', self.source_file, '-o', self.exec_file,
             stderr=asyncio.subprocess.PIPE,
             preexec_fn=set_compiler_limits,
             )
@@ -118,7 +119,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             return
         self.log("RUN")
         self.process = await asyncio.create_subprocess_exec(
-            f"USERS/{self.login}/{self.conid}",
+            f"{self.course}/{self.login}/{self.conid}",
             stdout=asyncio.subprocess.PIPE,
             stdin=asyncio.subprocess.PIPE,
             # stderr=subprocess.PIPE,
@@ -136,7 +137,9 @@ class Process: # pylint: disable=too-many-instance-attributes
 async def echo(websocket, path):
     """Analyse the requests from one websocket connection"""
     print(path)
-    ticket = f'TICKETS/{path[1:]}'
+
+    _, ticket, course = path.split('/')
+    ticket = 'TICKETS/' + ticket
     if not os.path.exists(ticket):
         return
     with open(ticket, 'r') as file:
@@ -152,7 +155,7 @@ async def echo(websocket, path):
     # client_browser = websocket.headers.get('user-agent', '')
     # assert _browser == client_browser
 
-    process = Process(websocket, login)
+    process = Process(websocket, login, course)
     try:
         async for message in websocket:
             action, data = json.loads(message)

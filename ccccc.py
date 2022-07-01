@@ -247,7 +247,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.record_to_send.append(time - self.record_last_time)
             else:
                 self.record_to_send.append(time)
-                self.record_to_send.append(self.course)
                 self.record_start = time
             self.record_last_time = time
         self.record_to_send.append(data)
@@ -255,7 +254,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # Record on the server
             feedback = document.createElement('IMG')
             feedback.src = (
-                'log/'
+                'log/' + self.course[:-3] + '/'
                 + encodeURIComponent(JSON.stringify(self.record_to_send) + '\n') # pylint: disable=undefined-variable
                 + "?ticket=" + TICKET) # pylint: disable=undefined-variable
             document.body.appendChild(feedback)

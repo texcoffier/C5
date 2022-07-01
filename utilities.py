@@ -9,6 +9,19 @@ import sys
 import socket
 import ssl
 
+def valid_course(course, allowed=set()): # pylint: disable=dangerous-default-value
+    """Check if the course is possible"""
+    if course in allowed:
+        return True
+    assert ('/' not in course
+            and not course.startswith('.')
+            and os.path.exists(course + '.js')
+           )
+    allowed.add(course)
+    if not os.path.exists(course):
+        os.mkdir(course)
+    return True
+
 def local_ip():
     """Get the local IP"""
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
