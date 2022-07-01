@@ -2,6 +2,7 @@ xxx*
 *.js
 *.log
 *.pid
+*.cf
 node_modules
 package-lock.json
 RapydScript

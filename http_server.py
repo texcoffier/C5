@@ -6,7 +6,6 @@ Simple web server with session management
 import os
 import time
 import json
-import glob
 import urllib.request
 import asyncio
 import aiohttp
@@ -57,7 +56,7 @@ class File:
                 '__LOGIN__', session.login).replace(
                     '__TICKET__', session.ticket).replace(
                         '__SOCK__', f"wss://{utilities.C5_WEBSOCKET}").replace(
-                            '__ADMIN__', str(int(is_admin(session.login))))
+                            '__ADMIN__', str(int(utilities.is_admin(session.login))))
 
         return self.content
     def response(self, session):
@@ -167,6 +166,14 @@ def handle(base=''):
         else:
             if filename.startswith("="):
                 filename = 'ccccc.html'
+            if filename.startswith('course_'):
+                course = utilities.CourseConfig(filename[:-3])
+                status = course.status()
+                if not utilities.is_admin(session.login):
+                    if status == 'done':
+                        filename = "course_js_done.js"
+                    elif status == 'pending':
+                        filename = "course_js_pending.js"
         return File(filename).response(session)
     return real_handle
 
@@ -175,12 +182,13 @@ async def log(request):
     print(('log', request.url), flush=True)
     session = Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
-    course = request.match_info['course']
-    assert utilities.valid_course(course)
+    course = utilities.CourseConfig.get(request.match_info['course'])
+    if course.status() != 'running':
+        return
     data = request.match_info['data']
-    if not os.path.exists(f'{course}/{login}'):
-        os.mkdir(f'{course}/{login}')
-    with open(f'{course}/{login}/http_server.log', "a") as file:
+    if not os.path.exists(f'{course.course}/{login}'):
+        os.mkdir(f'{course.course}/{login}')
+    with open(f'{course.course}/{login}/http_server.log', "a") as file:
         file.write(urllib.request.unquote(data))
     return File('favicon.ico').response(session)
 
@@ -188,16 +196,12 @@ async def startup(_app):
     """For the log"""
     print('http serveur running!', flush=True)
 
-def is_admin(login):
-    """Returns True if it is and admin login"""
-    return not login[-1].isdigit()
-
 async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
     print(('log', request.url), flush=True)
     session = Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
-    if not is_admin(login):
+    if not utilities.is_admin(login):
         raise web.HTTPFound('..')
     return session
 
@@ -205,7 +209,6 @@ async def adm_course(request):
     """Course details page for administrators"""
     session = await get_admin_login(request)
     course = request.match_info['course']
-    print("COURSE", course, flush=True)
     students = {}
     for user in sorted(os.listdir(course)):
         await asyncio.sleep(0)
@@ -232,14 +235,63 @@ async def adm_course(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def adm_config(request):
+    """Course details page for administrators"""
+    _session = await get_admin_login(request)
+    course = request.match_info['course']
+    config = utilities.CourseConfig.get(course)
+    action = request.match_info['action']
+    if ':' in action:
+        action, date = action.split(':', 1)
+    else:
+        date = time.strftime('%Y-%m-%d %H:%M:%S')
+    if action == 'stop':
+        config.stop_date(date)
+    if action == 'start':
+        config.start_date(date)
+        config.stop_date('2100-01-01 00:00:00')
+    return await adm_home(request)
+
 async def adm_home(request):
     """Home page for administrators"""
     session = await get_admin_login(request)
-    text = []
+    text = ['''<title>C5 Administration</title>
+               <h1>C5 Administration</h1>
+               <style>
+               TABLE { border-spacing: 0px; border-collapse: collapse ; }
+               TABLE TD { border: 1px solid #888 ; padding: 0.5em }
+               TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
+               TR.done { background: #FDD }
+               TR.running { background: #DFD }
+               </style>
+               <table>
+               <tr><th>Course logs<th>Try<th>Start<th>Stop</tr>\n'''
+           ]
     for course in sorted(os.listdir('.')):
         if course.startswith('course_') and course.endswith('.js'):
+            if course in ('course_js_done.js', 'course_js_pending.js'):
+                continue
             course = course[:-3]
-            text.append(f'<li><a target="_blank" href="adm_course={course}?ticket={session.ticket}">{course}</a>')
+            config = utilities.CourseConfig.get(course)
+            status = config.status()
+            text.append(f'<tr class="{status}"><td>')
+            if os.path.exists(course):
+                text.append(f'<a target="_blank" href="adm_course={course}?ticket={session.ticket}">{course}</a>')
+            else:
+                text.append(course)
+            text.append(f'<td><a target="_blank" href="={course}.js?ticket={session.ticket}">Try</a>')
+            text.append(f'<td><input onchange="window.location=\'adm_config={course}=start:\'+this.value+\'?ticket={session.ticket}\'" value="')
+            text.append(config.start)
+            text.append('">')
+            if status != 'running':
+                text.append(f' <a href="adm_config={course}=start?ticket={session.ticket}">Now</a>')
+            text.append(f'<td><input onchange="window.location=\'adm_config={course}=stop:\'+this.value+\'?ticket={session.ticket}\'" value="')
+            text.append(config.stop)
+            text.append('">')
+            if status != 'done':
+                text.append(f' <a href="adm_config={course}=stop?ticket={session.ticket}">Now</a>')
+            text.append('</tr>\n')
+    text.append('</table>')
     return web.Response(
         body=''.join(text),
         content_type='text/html',
@@ -268,6 +320,7 @@ APP = web.Application()
 APP.add_routes([web.get('/', handle()),
                 web.get('/adm_home', adm_home),
                 web.get('/adm_course={course}', adm_course),
+                web.get('/adm_config={course}={action}', adm_config),
                 web.get('/{filename}', handle()),
                 web.get('/log/{course}/{data}', log),
                 web.get('/brython/{filename}', handle('brython')),

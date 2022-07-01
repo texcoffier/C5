@@ -8,19 +8,7 @@ import os
 import sys
 import socket
 import ssl
-
-def valid_course(course, allowed=set()): # pylint: disable=dangerous-default-value
-    """Check if the course is possible"""
-    if course in allowed:
-        return True
-    assert ('/' not in course
-            and not course.startswith('.')
-            and os.path.exists(course + '.js')
-           )
-    allowed.add(course)
-    if not os.path.exists(course):
-        os.mkdir(course)
-    return True
+import time
 
 def local_ip():
     """Get the local IP"""
@@ -38,6 +26,72 @@ def get_certificate(server=True):
         cert.load_cert_chain(certfile="SSL/localhost.crt", keyfile="SSL/localhost.key")
         return cert
     return None
+
+def is_admin(login):
+    """Returns True if it is and admin login"""
+    return not login[-1].isdigit()
+
+class CourseConfig:
+    """A course session"""
+    configs = {}
+    def __init__(self, course):
+        self.course = course
+        self.filename = course + '.cf'
+        self.load()
+        self.update()
+        self.configs[course] = self
+
+    def load(self):
+        """Load course configuration file"""
+        try:
+            with open(self.filename, 'r') as file:
+                self.config = eval(file.read()) # pylint: disable=eval-used
+                self.time = time.time()
+        except IOError:
+            self.config = {'start': "2000-01-01 00:00:00",
+                           'stop': "2100-01-01 00:00:00",
+                          }
+
+    def update(self):
+        """Compute some values"""
+        self.start = self.config['start']
+        self.stop = self.config['stop']
+
+    def record(self):
+        """Record option on disk"""
+        with open(self.course + '.cf', 'w') as file:
+            file.write(repr(self.config))
+
+    def start_date(self, date):
+        """Set the start date"""
+        self.config['start'] = date
+        self.update()
+        self.record()
+    def stop_date(self, date):
+        """Set the stop date"""
+        self.config['stop'] = date
+        self.update()
+        self.record()
+    def status(self):
+        """Status of the course"""
+        if os.path.getmtime(self.filename) > self.time:
+            self.load()
+            self.update()
+        now = time.strftime('%Y-%m-%d %H:%M:%S')
+        if self.start > now:
+            return 'pending'
+        if self.stop <= now:
+            return 'done'
+        return 'running'
+
+    @classmethod
+    def get(cls, course):
+        """Get a config from cache"""
+        config = cls.configs.get(course, None)
+        if config:
+            return config
+        return CourseConfig(course)
+
 
 C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host
 C5_ROOT = os.getenv('C5_ROOT', 'root')               # login allowed to sudo

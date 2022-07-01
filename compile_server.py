@@ -34,11 +34,10 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.tasks = ()
         self.wait_input = False
         self.login = login
-        assert utilities.valid_course(course)
+        self.course = utilities.CourseConfig.get(course)
         self.dir = f"{course}/{login}"
         if not os.path.exists(self.dir):
             os.mkdir(f"{course}/{login}")
-        self.course = course
         self.log_file = f"{self.dir}/compile_server.log"
         self.exec_file = f"{self.dir}/{self.conid}"
         self.source_file = f"{self.dir}/{self.conid}.cpp"
@@ -119,7 +118,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             return
         self.log("RUN")
         self.process = await asyncio.create_subprocess_exec(
-            f"{self.course}/{self.login}/{self.conid}",
+            f"{self.course.course}/{self.login}/{self.conid}",
             stdout=asyncio.subprocess.PIPE,
             stdin=asyncio.subprocess.PIPE,
             # stderr=subprocess.PIPE,
@@ -159,6 +158,12 @@ async def echo(websocket, path):
     try:
         async for message in websocket:
             action, data = json.loads(message)
+            if not utilities.is_admin(login) and process.course.status() != 'running':
+                if action == 'compile':
+                    await process.websocket.send(json.dumps(['compiler', "La session est terminée"]))
+                if action == 'run':
+                    await process.websocket.send(json.dumps(['return', "La session est terminée"]))
+                continue
             if action == 'compile':
                 await process.compile(data)
             elif action == 'kill':

@@ -1,7 +1,7 @@
 
 def display():
     """Create the admin home page"""
-    document.title = "C5 Administration"
+    document.title = "C5 " + COURSE
     students = []
     for student in STUDENTS:
         students.append(student)
