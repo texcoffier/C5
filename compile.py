@@ -65,7 +65,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
             else:
                 self.previous_source = source
                 self.nr_eval += 1
-                self.start_time = self.millisecs()
+                self.start_time = millisecs()
                 self.source = source
                 self.post('compiler', self.compiler_initial_content())
                 self.executable = self.run_compiler(source)
@@ -84,10 +84,6 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.post('tester', self.tester_initial_content())
         self.run_tester()
         self.post('time', self.time_initial_content())
-
-    def millisecs(self):  # pylint: disable=no-self-use
-        """Current time in milli seconds"""
-        return Date().getTime() # pylint: disable=undefined-variable
 
     def run_compiler(self, _source): # pylint: disable=no-self-use
         """Do the compilation"""
@@ -163,7 +159,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
 
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "<h2>Question</h2>"
+        return '<h2>Question <div class="timer"><span id="timer"></span>⏱</div></h2>'
     def tester_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "<h2>Les buts de vous devez atteindre</h2>"
@@ -182,7 +178,7 @@ class Compile: # pylint: disable=too-many-instance-attributes
         more = ' ' + self.current_question_max
         if self.allow_goto:
             more += 'G'
-        return '#' + self.nr_eval + ' ' + (self.millisecs() - self.start_time) + 'ms' + more
+        return '#' + self.nr_eval + ' ' + (millisecs() - self.start_time) + 'ms' + more
     def index_initial_content(self): # pylint: disable=no-self-use,invalid-name
         """Used by the subclass"""
         texts = '''<style></style>'''

@@ -144,14 +144,52 @@ div:hover>.i {
     visibility: visible;
 }
 
-LABEL {
-    border-radius: 0.5em;
-    padding-right: 0.3em;
+H2 {
+    position: relative;
+}
+
+LABEL, .timer {
     position: absolute;
-    right: 0.3em;
     background: #DDF;
+    border: 1px solid #00F;
     font-weight: normal;
+    border-radius: 20px;
+    padding-left: 10px;
+    padding-right: 10px;
+    right: 10px;
+    top: 5px;
+    bottom: 5px;
 }
 LABEL SPAN {
     font-size: 80%;
+}
+
+LABEL *, .timer * { vertical-align: middle }
+
+.timer {
+    display: inline-block;
+    background: #DFD;
+    border: 1px solid #0F0;
+}
+.timer SPAN { display: inline-block; font-size: 50%; }
+
+H2:hover .timer SPAN {
+    visibility: visible;
+}
+
+.timer SPAN {
+    visibility: hidden;
+}
+
+.timer .done {
+    background: #F00;
+    color: #FFF;
+    visibility: visible;
+}
+.timer .minus60 {
+    color: #F00;
+    visibility: visible;
+}
+.timer .minus300 {
+    visibility: visible;
 }

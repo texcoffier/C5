@@ -70,6 +70,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         """Record option on disk"""
         with open(self.course + '.cf', 'w') as file:
             file.write(repr(self.config))
+        self.time = time.time()
 
     def set_start(self, date):
         """Set the start date"""
@@ -84,12 +85,13 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     def set_tt(self, tt_list):
         """Set the tiers temps login list"""
         self.config['tt'] = tt_list
+        self.update()
         self.record()
     def get_stop(self, login):
         """Get stop date, taking login into account"""
         if login in self.tt_list:
-            return self.stop_tt
-        return self.stop
+            return self.stop_tt_timestamp
+        return self.stop_timestamp
     def status(self, login):
         """Status of the course"""
         if os.path.getmtime(self.filename) > self.time:

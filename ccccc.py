@@ -54,6 +54,10 @@ def new_element(htmltype, htmlclass, left, width, top, height, background):
     e.background = background
     return e
 
+def two_digit(number):
+    """ 6 → 06 """
+    return ('0' + str(int(number)))[-2:]
+
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question_width = 30
@@ -97,6 +101,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'LOGIN': LOGIN, # pylint: disable=undefined-variable
             'SOCK': SOCK, # pylint: disable=undefined-variable
             'ADMIN': ADMIN, # pylint: disable=undefined-variable
+            'STOP': STOP, # pylint: disable=undefined-variable
             'COURSE': course,
             }])
         setInterval(bind(self.scheduler, self), 200)
@@ -110,6 +115,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         self.inputs = {} # Indexed by the question number
         self.do_not_clear = {}
+        self.seconds = int(millisecs() / 1000) # pylint: disable=undefined-variable
         print("GUI: init done")
 
     def send_input(self, string):
@@ -208,6 +214,34 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.state = 'started'
             print("send to compiler")
             self.worker.postMessage(source) # Start compile/execute/test
+        seconds = int(millisecs() / 1000) # pylint: disable=undefined-variable
+        if self.seconds != seconds:
+            self.seconds = seconds
+            timer = document.getElementById('timer')
+            if timer:
+                delta = STOP - seconds # pylint: disable=undefined-variable
+                if delta < 0:
+                    timer.className = "done"
+                    message = "Fini depuis"
+                    delta = -delta
+                else:
+                    message = "Fini dans"
+                print(delta)
+                if delta < 60:
+                    delta = str(delta) + ' secondes'
+                    if timer.className != 'done':
+                        timer.className = "minus60"
+                elif delta < 3600:
+                    if delta < 300 and timer.className != 'done':
+                        timer.className = "minus300"
+                    delta = int(delta/60) + ' m ' + two_digit(delta % 60) + ' s'
+                elif delta < 24*60*60:
+                    delta = int(delta/3600) + ' h ' + two_digit((delta/60) % 60) + ' m'
+                elif delta < 10*24*60*60:
+                    delta = int(delta/86400) + ' j ' + two_digit((delta/3600) % 24) + ' h'
+                else:
+                    delta = int(delta/86400) + ' jours'
+                timer.innerHTML = message + '<br>' + delta
 
     def unlock_worker(self):
         """ Unlock worker on input waiting to finish MessageEvent"""

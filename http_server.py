@@ -42,7 +42,7 @@ class File:
         else:
             print(filename)
             self.mime = 'text/plain'
-    def get_content(self, session):
+    def get_content(self, session, course=None):
         """Check file date and returns content"""
         mtime = os.path.getmtime(self.filename)
         if mtime != self.mtime:
@@ -53,17 +53,19 @@ class File:
                     content = content.decode(self.charset)
                 self.content = content
         if self.filename == 'ccccc.html':
-            return self.content.replace(
-                '__LOGIN__', session.login).replace(
-                    '__TICKET__', session.ticket).replace(
-                        '__SOCK__', f"wss://{utilities.C5_WEBSOCKET}").replace(
-                            '__ADMIN__', str(int(utilities.is_admin(session.login))))
+            content = self.content.replace('__LOGIN__', session.login)
+            content = content.replace('__TICKET__', session.ticket)
+            content = content.replace('__SOCK__', f"wss://{utilities.C5_WEBSOCKET}")
+            content = content.replace('__ADMIN__', str(int(utilities.is_admin(session.login))))
+            if course:
+                content = content.replace('__STOP__', str(course.get_stop(session.login)))
+            return content
 
         return self.content
-    def response(self, session):
+    def response(self, session, course=None):
         """Get the response to send"""
         return web.Response(
-            body=self.get_content(session),
+            body=self.get_content(session, course),
             content_type=self.mime,
             charset=self.charset,
             headers={
@@ -162,20 +164,22 @@ def handle(base=''):
         login = await session.get_login(str(request.url).split('?')[0])
         print((login, request.url))
         filename = request.match_info.get('filename', "=course_js.js")
+        course = None
         if base:
             filename = base + '/' + filename
         else:
             if filename.startswith("="):
+                course = utilities.CourseConfig.get(filename[1:-3])
                 filename = 'ccccc.html'
             if filename.startswith('course_'):
-                course = utilities.CourseConfig(filename[:-3])
+                course = utilities.CourseConfig.get(filename[:-3])
                 status = course.status(login)
                 if not utilities.is_admin(login):
                     if status == 'done':
                         filename = "course_js_done.js"
                     elif status == 'pending':
                         filename = "course_js_pending.js"
-        return File(filename).response(session)
+        return File(filename).response(session, course)
     return real_handle
 
 async def log(request):
@@ -184,7 +188,7 @@ async def log(request):
     session = Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
     course = utilities.CourseConfig.get(request.match_info['course'])
-    if not course.running():
+    if not course.running(login):
         return
     data = request.match_info['data']
     if not os.path.exists(f'{course.course}/{login}'):
@@ -278,6 +282,8 @@ async def adm_home(request):
                <span class="running">The session is running</span>,
                <span class="running_tt">The session is running for tiers-temps</span>,
                <span>The session has not yet started</span>.
+               <p>
+               Changing the stop date will not update onscreen timers.
                <table>
                <tr><th>Course logs<th>Try<th>Start<th>Stop<th>TT logins</tr>\n'''
            ]
