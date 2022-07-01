@@ -96,6 +96,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'TICKET': TICKET, # pylint: disable=undefined-variable
             'LOGIN': LOGIN, # pylint: disable=undefined-variable
             'SOCK': SOCK, # pylint: disable=undefined-variable
+            'ADMIN': ADMIN, # pylint: disable=undefined-variable
             'COURSE': course,
             }])
         setInterval(bind(self.scheduler, self), 200)
@@ -407,6 +408,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 span.innerHTML = value
                 self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
+            if ADMIN: # pylint: disable=undefined-variable
+                value += '<br><a href="javascript:window.location.pathname=\'adm_home\'">#</a>'
             self[what].innerHTML = value # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question

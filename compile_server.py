@@ -110,7 +110,6 @@ class Process: # pylint: disable=too-many-instance-attributes
         else:
             stderr = stderr.decode('utf-8')
         await self.websocket.send(json.dumps(['compiler', stderr]))
-        os.unlink(source_file)
     async def run(self):
         """Launch process"""
         if not os.path.exists(self.exec_file):
