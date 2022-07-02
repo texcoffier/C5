@@ -1,4 +1,53 @@
 
+STUDENTS = STUDENTS
+COURSE = COURSE
+document = document
+window = window
+
+
+def analyse(http_server):
+    """Extract statistiques from log"""
+    answered = []
+    key_stroke = 0
+    mouse_click = 0
+    copy_bad = 0
+    copy_ok = 0
+    paste_bad = 0
+    paste_ok = 0
+    last = -1
+    for line in http_server.split('\n'):
+        if len(line) == 0:
+            continue
+        line = eval(line) # pylint: disable=eval-used
+        for cell in line[1:]:
+            if cell.toLowerCase:
+                if cell.startswith('Mouse'):
+                    mouse_click += 1
+                elif cell == 'CopyRejected':
+                    copy_bad += 1
+                elif cell == 'PasteRejected':
+                    paste_bad += 1
+                elif cell.startswith('Paste'):
+                    paste_ok += 1
+                elif cell.startswith('Copy'):
+                    copy_ok += 1
+                else:
+                    key_stroke += 1
+            if cell[0] == 'answer':
+                answered[cell[1]] = cell[2]
+                if cell[1] > last:
+                    last = cell[1]
+    text = ''
+    for i in range(last+1):
+        if answered[i]:
+            text += '*'
+        else:
+            text += '·'
+    return {'questions': text, 'key_stroke': key_stroke, 'mouse_click': mouse_click,
+            'copy_bad': copy_bad, 'copy_ok': copy_ok,
+            'paste_bad': paste_bad, 'paste_ok': paste_ok,
+           }
+
 def display():
     """Create the admin home page"""
     document.title = "C5 " + COURSE
@@ -6,12 +55,30 @@ def display():
     for student in STUDENTS:
         students.append(student)
     students.sort()
-    text = []
-    for student in students:
-        text.append('<p>' + student)
-        for filename in STUDENTS[student].files:
+    text = ['<table border><tr><th>Login<th>Questions<th>Keys<th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Files</tr>']
+    for login in students:
+        student = STUDENTS[login]
+        stats = analyse(student.http_server)
+        text.append('<tr><td>')
+        text.append(login)
+        text.append('<td>')
+        text.append(stats['questions'])
+        text.append('<td>')
+        text.append(stats['key_stroke'])
+        text.append('<td>')
+        text.append(stats['mouse_click'])
+        text.append('<td>')
+        text.append(stats['copy_ok'])
+        text.append('<td>')
+        text.append(stats['copy_bad'])
+        text.append('<td>')
+        text.append(stats['paste_ok'])
+        text.append('<td>')
+        text.append(stats['paste_bad'])
+        text.append('<td>')
+        for filename in student.files:
             text.append(' <a target="_blank" href="adm_get/' + COURSE + '/')
-            text.append(student)
+            text.append(login)
             text.append('/')
             text.append(filename)
             text.append(window.location.search)
@@ -20,12 +87,4 @@ def display():
             text.append('</a>')
     document.body.innerHTML = text.join('')
 
-
-
 display()
-
-"""
-String student.http_server =
-[1656599644,"course_js.js","Question=0",5,"MouseDown","Enter",279,"Control"]
-[1656599929,"course_js.js","Question=0",97,"Control"]
-"""

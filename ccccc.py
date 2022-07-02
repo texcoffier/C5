@@ -80,6 +80,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     highlight_errors = {}
     question_done = {}
     question_original = {}
+    last_answer = {}
     copied = None # Copy with ^C ou ^X
     automatic_compile = True
     state = "uninitalised"
@@ -290,7 +291,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.add_highlight_errors(line_nr, char_nr, what)
         self.overlay_show()
 
-    def record(self, data):  # pylint: disable=no-self-use
+    def record(self, data, send_now=False):  # pylint: disable=no-self-use
         """Append event to record to 'record_to_send'"""
         time = Math.floor(Date().getTime()/1000)
         if time != self.record_last_time:
@@ -301,7 +302,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.record_start = time
             self.record_last_time = time
         self.record_to_send.append(data)
-        if time - self.record_start > 60 or len(self.record_to_send) > 100:
+        if send_now or time - self.record_start > 60 or len(self.record_to_send) > 100:
             # Record on the server
             feedback = document.createElement('IMG')
             feedback.src = (
@@ -425,8 +426,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if what == 'language':
             self.language = value
         elif what == 'current_question':
+            if (self.current_question >= 0
+                    and self.last_answer[self.current_question] != self.editor.innerText):
+                self.record(['answer', self.current_question, self.editor.innerText], True)
+                self.last_answer[self.current_question] = self.editor.innerText
             self.current_question = value
-            self.record('Question=' + str(self.current_question))
+            self.record(['question', self.current_question])
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
             self.add_highlight_errors(value[0], value[1], what)

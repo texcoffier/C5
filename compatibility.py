@@ -20,7 +20,12 @@ Object.defineProperty(Array.prototype, 'append',
 Object.defineProperty(String.prototype, 'lower',
                       {'enumerable': False, 'value': String.prototype.toLowerCase})
 String.prototype.strip = String.prototype.trim
-
+def startswith(txt):
+    """Only if txt is a string"""
+    return this.substr(0, txt.length) == txt
+Object.defineProperty(String.prototype, 'startswith',
+                      {'enumerable': False, 'value': startswith})
+String.prototype.strip = String.prototype.trim
 def millisecs():
     """Current time in milli seconds"""
     return Date().getTime()
