@@ -14,6 +14,7 @@ class Q0(Question): # pylint: disable=undefined-variable
         Modifiez le programme dans le bloc blanc à droite pour qu'il affiche
         dans le bloc bleu «Exécution» en bas à droite :
         <pre>Je suis un texte super long</pre>"""
+
     def tester(self):
         if "Je suis un texte super long" in self.worker.execution_result:
             self.display("Vous affichez le bon message !")

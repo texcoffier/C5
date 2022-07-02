@@ -28,6 +28,7 @@ try:
     bind = bind
     hljs = hljs
     window = window
+    confirm = confirm
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
         """Needed for rapydscript"""
@@ -64,7 +65,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question_height = 30
     source_width = 40
     compiler_height = 30
-    question = editor = overlay = tester = compiler = executor = time = index = None # HTML elements
+    question = editor = overlay = tester = compiler = executor = time = None
+    index = reset_button = None # HTML elements
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -72,6 +74,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     oldScrollTop = None
     highlight_errors = {}
     question_done = {}
+    question_original = {}
     copied = None # Copy with ^C ou ^X
     automatic_compile = True
     state = "uninitalised"
@@ -170,6 +173,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay = e
         self.top.appendChild(e)
 
+        e = new_element('DIV', 'reset',
+                        self.question_width + self.source_width - 2, 2,
+                        0, 2,
+                        '#0000')
+        e.textContent = '🗑'
+        e.style.fontFamily = 'emoji'
+        e.onclick = bind(self.reset, self)
+        self.reset_button = e
+        self.top.appendChild(e)
+
     def create_compiler(self):
         """The compiler result container"""
         e = new_element('DIV', 'compiler',
@@ -202,7 +215,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.index = e
         self.top.appendChild(e)
 
-    def scheduler(self):
+    def scheduler(self): # pylint: disable=too-many-branches
         """Send a new job if free and update the screen"""
         if self.state == 'started':
             return # Compiler is running
@@ -226,7 +239,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     delta = -delta
                 else:
                     message = "Fini dans"
-                print(delta)
                 if delta < 60:
                     delta = str(delta) + ' secondes'
                     if timer.className != 'done':
@@ -395,6 +407,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """When the worker die?"""
         print(event)
 
+    def reset(self):
+        """Reset the editor to the first displayed value"""
+        if confirm('Vous voulez vraiment revenir à la version de départ ?'):
+            self.set_editor_content(self.question_original[self.current_question])
+
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
@@ -448,11 +465,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # New question
             # Many \n at the bug (browser problem when inserting a final \n)
             message = value + '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
-            self.overlay_hide()
-            self.editor.innerText = message
-            self.editor.scrollTop = 0
-            # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
-            self.coloring()
+            if self.current_question not in self.question_original:
+                self.question_original[self.current_question] = message
+            self.set_editor_content(message)
         elif what in ('tester', 'compiler', 'question', 'time'):
             self.clear_if_needed(what) # pylint: disable=undefined-variable
             if what == 'time':
@@ -466,6 +481,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
         elif what == 'eval':
             eval(value) # pylint: disable=eval-used
+
+    def set_editor_content(self, message):
+        """Set the editor content (question change or reset)"""
+        self.overlay_hide()
+        self.editor.innerText = message
+        self.editor.scrollTop = 0
+        # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
+        self.coloring()
 
     def create_html(self):
         """Create the page content"""
