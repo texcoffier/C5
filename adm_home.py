@@ -14,6 +14,7 @@ def analyse(http_server):
     copy_ok = 0
     paste_bad = 0
     paste_ok = 0
+    nr_answered = 0
     last = -1
     for line in http_server.split('\n'):
         if len(line) == 0:
@@ -41,12 +42,18 @@ def analyse(http_server):
     for i in range(last+1):
         if answered[i]:
             text += '*'
+            nr_answered += 1
         else:
             text += '·'
     return {'questions': text, 'key_stroke': key_stroke, 'mouse_click': mouse_click,
             'copy_bad': copy_bad, 'copy_ok': copy_ok,
             'paste_bad': paste_bad, 'paste_ok': paste_ok,
+            'nr_answered': nr_answered
            }
+
+WHAT = ['nr_answered', 'key_stroke', 'mouse_click',
+        'copy_ok', 'copy_bad', 'paste_ok', 'paste_bad'
+       ]
 
 def display():
     """Create the admin home page"""
@@ -55,7 +62,12 @@ def display():
     for student in STUDENTS:
         students.append(student)
     students.sort()
-    text = ['<table border><tr><th>Login<th>Questions<th>Keys<th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Files</tr>']
+    sums = {}
+    for what in WHAT:
+        sums[what] = ''
+    text = [
+        '<table border><tr><th>Login<th colspan="2">Questions<th>Keys',
+        '<th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Files</tr>']
     for login in students:
         student = STUDENTS[login]
         stats = analyse(student.http_server)
@@ -63,18 +75,11 @@ def display():
         text.append(login)
         text.append('<td>')
         text.append(stats['questions'])
-        text.append('<td>')
-        text.append(stats['key_stroke'])
-        text.append('<td>')
-        text.append(stats['mouse_click'])
-        text.append('<td>')
-        text.append(stats['copy_ok'])
-        text.append('<td>')
-        text.append(stats['copy_bad'])
-        text.append('<td>')
-        text.append(stats['paste_ok'])
-        text.append('<td>')
-        text.append(stats['paste_bad'])
+        for what in WHAT:
+            text.append('<td>')
+            text.append(stats[what])
+            sums[what] += login + '\t' + stats[what] + '\n'
+
         text.append('<td>')
         for filename in student.files:
             text.append(' <a target="_blank" href="adm_get/' + COURSE + '/')
@@ -85,6 +90,12 @@ def display():
             text.append('">')
             text.append(filename)
             text.append('</a>')
+    text.append('<tr><td><td>')
+    for what in WHAT:
+        text.append('<td><textarea style="font-size:60%;width:10em;height:8em">'
+                    + sums[what] + '</textarea>')
+    text.append('</tr>')
+    text.append('</table>')
     document.body.innerHTML = text.join('')
 
 display()
