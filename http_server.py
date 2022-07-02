@@ -270,9 +270,10 @@ async def adm_home(request):
                <style>
                TABLE { border-spacing: 0px; border-collapse: collapse ; }
                TABLE TD { border: 1px solid #888; padding: 0px }
-               TABLE TD INPUT { margin: 0.5em }
-                TABLE TD TEXTAREA { border: 0px; height: 4em }
+               TABLE TD INPUT { margin: 0.5em ; margin-right: 0px }
+               TABLE TD TEXTAREA { border: 0px; height: 4em }
                TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
+               TD > A { margin-left: 5px ; margin-right: 5px }
                .done { background: #FDD }
                .running { background: #DFD }
                .running_tt { background: #FEB }
@@ -285,7 +286,7 @@ async def adm_home(request):
                <p>
                Changing the stop date will not update onscreen timers.
                <table>
-               <tr><th>Course logs<th>Try<th>Start<th>Stop<th>TT logins</tr>\n'''
+               <tr><th>Course logs<th>Try<th>Start<th>Stop<th>TT logins<th>ZIP</tr>\n'''
            ]
     for course in sorted(os.listdir('.')):
         if course.startswith('course_') and course.endswith('.js'):
@@ -304,15 +305,17 @@ async def adm_home(request):
             text.append(config.start)
             text.append('">')
             if status != 'running':
-                text.append(f' <a href="adm_config={course}=start?ticket={session.ticket}">Now</a>')
+                text.append(f'<a href="adm_config={course}=start?ticket={session.ticket}">Now</a>')
             text.append(f'<td><input onchange="window.location=\'adm_config={course}=stop:\'+this.value+\'?ticket={session.ticket}\'" value="')
             text.append(config.stop)
             text.append('">')
             if status != 'done':
-                text.append(f' <a href="adm_config={course}=stop?ticket={session.ticket}">Now</a>')
+                text.append(f'<a href="adm_config={course}=stop?ticket={session.ticket}">Now</a>')
             text.append(f'<td><textarea onchange="window.location=\'adm_config={course}=tt:\'+encodeURIComponent(this.value)+\'?ticket={session.ticket}\'">')
             text.append(html.escape(config.config['tt']))
-            text.append('</textarea>')
+            text.append('</textarea><td>')
+            if os.path.exists(course):
+                text.append(f'<a target="_blank" href="adm_get/{course}.zip?ticket={session.ticket}">ZIP</a>')
             text.append('</tr>\n')
     text.append('</table>')
     return web.Response(
@@ -329,6 +332,20 @@ async def adm_get(request):
     if '/.' in filename:
         content = 'Hacker'
     else:
+        if filename.endswith('.zip'):
+            response = web.StreamResponse()
+            response.content_type = 'application/zip'
+            await response.prepare(request)
+            course = filename[:-4]
+            process = await asyncio.create_subprocess_exec(
+                'zip', '-r', '-', course, course + '.py',  course + '.cf',
+                stdout=asyncio.subprocess.PIPE,
+                )
+            data = 'Go!'
+            while data:
+                data = await process.stdout.read(64 * 1024)
+                await response.write(data)
+            return response
         with open(filename, 'r') as file:
             content = file.read()
     return web.Response(
@@ -337,7 +354,6 @@ async def adm_get(request):
         charset='utf-8',
         headers={'Cache-Control': 'no-cache'}
     )
-
 
 APP = web.Application()
 APP.add_routes([web.get('/', handle()),
