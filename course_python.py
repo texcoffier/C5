@@ -3,7 +3,8 @@
 Demonstration of the system
 """
 
-Question = Question # # pylint: disable=undefined-variable,self-assigning-variable
+Question = Question # pylint: disable=undefined-variable,self-assigning-variable
+millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable
 
 def canonise(txt):
     return txt.lower().replace(' ', '')
@@ -13,7 +14,7 @@ class Q_print(Question):
     answer = ''
     def question(self):
         self.worker.post("eval", "self.allow_copy_paste = true")
-        self.answer = ["Salut !", "Au revoir", "Bonne nuit"][self.worker.millisecs() % 3]
+        self.answer = ["Salut !", "Au revoir", "Bonne nuit"][millisecs() % 3]
         return ("Modifiez le contenu de la grande zone blanche juste à droite "
                 + " pour afficher en bas à droite :<pre>"
                 + self.answer + "</pre>"
@@ -67,7 +68,7 @@ class Q_variable(Question):
         if self.all_tests_are_fine:
             self.next_question()
     def default_answer(self):
-        self.year = 2000 + self.worker.millisecs() % 20
+        self.year = 2000 + millisecs() % 20
         self.answer = str(self.year * 3.14)
         return """
 # Comment créer des "variables"
@@ -98,7 +99,7 @@ class Q_booleen(Question):
         if self.all_tests_are_fine:
             self.next_question()
     def default_answer(self):
-        self.min = 10 + self.worker.millisecs() % 80
+        self.min = 10 + millisecs() % 80
         self.max = self.min + 10
         return """
 minimum = """ + str(self.min) + """

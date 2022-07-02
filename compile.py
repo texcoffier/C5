@@ -2,6 +2,8 @@
 Base class for compiler
 """
 
+millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
+
 def onmessage(event):
     """Evaluate immediatly the function if in the worker"""
     if event.data.splice:

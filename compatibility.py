@@ -7,6 +7,7 @@ To be Python compatible
 Object = Object # pylint: disable=undefined-variable
 Array = Array # pylint: disable=undefined-variable
 String = String # pylint: disable=undefined-variable
+Date = Date # pylint: disable=undefined-variable
 
 def str(txt): # pylint: disable=redefined-builtin
     """Python like"""

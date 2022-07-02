@@ -29,6 +29,11 @@ try:
     hljs = hljs
     window = window
     confirm = confirm
+    Date = Date
+    Math = Math
+    JSON = JSON
+    LOGIN = LOGIN
+    encodeURIComponent = encodeURIComponent
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
         """Needed for rapydscript"""
@@ -287,7 +292,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def record(self, data):  # pylint: disable=no-self-use
         """Append event to record to 'record_to_send'"""
-        time = Math.floor(Date().getTime()/1000) # pylint: disable=undefined-variable
+        time = Math.floor(Date().getTime()/1000)
         if time != self.record_last_time:
             if len(self.record_to_send): # pylint: disable=len-as-condition
                 self.record_to_send.append(time - self.record_last_time)
@@ -301,7 +306,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             feedback = document.createElement('IMG')
             feedback.src = (
                 'log/' + self.course[:-3] + '/'
-                + encodeURIComponent(JSON.stringify(self.record_to_send) + '\n') # pylint: disable=undefined-variable
+                + encodeURIComponent(JSON.stringify(self.record_to_send) + '\n')
                 + "?ticket=" + TICKET) # pylint: disable=undefined-variable
             document.body.appendChild(feedback)
             self.record_to_send = []
@@ -469,9 +474,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.question_original[self.current_question] = message
             self.set_editor_content(message)
         elif what in ('tester', 'compiler', 'question', 'time'):
-            self.clear_if_needed(what) # pylint: disable=undefined-variable
+            self.clear_if_needed(what)
             if what == 'time':
-                value += ' ' + self.state + ' ' + LOGIN # pylint: disable=undefined-variable
+                value += ' ' + self.state + ' ' + LOGIN
             span = document.createElement('SPAN')
             span.innerHTML = value
             if '<error' in value:

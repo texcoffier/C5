@@ -5,7 +5,7 @@ Very limited.
 """
 
 self.window = window = {'document': 'fake'} # pylint: disable=undefined-variable,invalid-name
-importScripts('xxx-JSCPP.js') # pylint: disable=undefined-variable
+importScripts('xxx-JSCPP.js' + self.location.search) # pylint: disable=undefined-variable
 JSCPP = self.window.JSCPP # pylint: disable=undefined-variable
 
 

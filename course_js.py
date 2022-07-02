@@ -3,6 +3,8 @@
 Demonstration of the system
 """
 
+millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
+
 class Q0(Question): # pylint: disable=undefined-variable
     """Question 0"""
     def question(self):
@@ -43,7 +45,7 @@ class Q1(Question): # pylint: disable=undefined-variable
     """Question 1"""
     answer = None
     def question(self):
-        self.answer = str(self.worker.millisecs() % 100)
+        self.answer = str(millisecs() % 100)
         return """Pour afficher quelque chose, on tape :
 <pre>
 print(la_chose_a_afficher) ;

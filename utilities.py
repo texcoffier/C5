@@ -38,6 +38,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     def __init__(self, course):
         self.course = course
         self.filename = course + '.cf'
+        self.time = 0
         self.load()
         self.update()
         self.configs[course] = self

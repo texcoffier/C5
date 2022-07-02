@@ -52,7 +52,7 @@ xxx-highlight.js:
 ############# Compilers ############
 node_modules/brython:
 	-rm brython
-	npm install brython@3.10.6
+	npm install brython@3.10.5 # 3.10.6 not working (missing module_id)
 	ln -s node_modules/brython .
 xxx-JSCPP.js:
 	GET https://raw.githubusercontent.com/felixhao28/JSCPP/gh-pages/dist/JSCPP.es5.min.js >$@

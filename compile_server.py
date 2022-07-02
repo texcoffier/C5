@@ -133,7 +133,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             asyncio.ensure_future(self.runner())
         ]
 
-async def echo(websocket, path):
+async def echo(websocket, path): # pylint: disable=too-many-branches
     """Analyse the requests from one websocket connection"""
     print(path)
 
@@ -160,9 +160,11 @@ async def echo(websocket, path):
             action, data = json.loads(message)
             if not utilities.is_admin(login) and not process.course.running(login):
                 if action == 'compile':
-                    await process.websocket.send(json.dumps(['compiler', "La session est terminée"]))
+                    await process.websocket.send(json.dumps(
+                        ['compiler', "La session est terminée"]))
                 if action == 'run':
-                    await process.websocket.send(json.dumps(['return', "La session est terminée"]))
+                    await process.websocket.send(json.dumps(
+                        ['return', "La session est terminée"]))
                 continue
             if action == 'compile':
                 await process.compile(data)

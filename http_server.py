@@ -160,9 +160,12 @@ def handle(base=''):
     """Send the file content"""
     async def real_handle(request):
         print(('get', request.url), flush=True)
-        session = Session.get(request)
-        login = await session.get_login(str(request.url).split('?')[0])
-        print((login, request.url))
+        if base:
+            session = None # Not authenticated
+        else:
+            session = Session.get(request)
+            login = await session.get_login(str(request.url).split('?')[0])
+            print((login, request.url))
         filename = request.match_info.get('filename', "=course_js.js")
         course = None
         if base:
@@ -273,12 +276,17 @@ async def adm_home(request):
                TABLE TD INPUT { margin: 0.5em ; margin-right: 0px }
                TABLE TD TEXTAREA { border: 0px; height: 4em }
                TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
-               TD > A { margin-left: 5px ; margin-right: 5px }
+               TD > BUTTON { margin-left: 5px ; margin-right: 5px; height: 3em }
                .done { background: #FDD }
                .running { background: #DFD }
                .running_tt { background: #FEB }
                </style>
-               Colors:
+               <script>
+               function T(x) { return x + "?ticket=''', session.ticket, '''";}
+               function TV(self, x) { return T(x + encodeURIComponent(self.value));}
+               function J(x) { window.location = x; return undefined;}
+               </script>
+            Colors:
                <span class="done">The session is done</span>,
                <span class="running">The session is running</span>,
                <span class="running_tt">The session is running for tiers-temps</span>,
@@ -286,7 +294,7 @@ async def adm_home(request):
                <p>
                Changing the stop date will not update onscreen timers.
                <table>
-               <tr><th>Course logs<th>Try<th>Start<th>Stop<th>TT logins<th>ZIP</tr>\n'''
+               <tr><th>Course<th>Logs<th>Try<th>Start<th>Stop<th>TT logins<th>ZIP</tr>\n'''
            ]
     for course in sorted(os.listdir('.')):
         if course.startswith('course_') and course.endswith('.js'):
@@ -295,27 +303,27 @@ async def adm_home(request):
             course = course[:-3]
             config = utilities.CourseConfig.get(course)
             status = config.status('')
-            text.append(f'<tr class="{status}"><td>')
+            text.append(f'<tr class="{status}"><td><b>')
+            text.append(course.split('_', 1)[1])
+            text.append('</b><td>')
             if os.path.exists(course):
-                text.append(f'<a target="_blank" href="adm_course={course}?ticket={session.ticket}">{course}</a>')
-            else:
-                text.append(course)
-            text.append(f'<td><a target="_blank" href="={course}.js?ticket={session.ticket}">Try</a>')
-            text.append(f'<td><input onchange="window.location=\'adm_config={course}=start:\'+this.value+\'?ticket={session.ticket}\'" value="')
+                text.append(f'<button onclick="J(T(\'adm_course={course}\'))">Logs</a>')
+            text.append(f'<td><button onclick="J(T(\'={course}.js\'))">Try</a>')
+            text.append(f'<td><input onchange="J(TV(this,\'adm_config={course}=start:\'))" value="')
             text.append(config.start)
             text.append('">')
             if status != 'running':
-                text.append(f'<a href="adm_config={course}=start?ticket={session.ticket}">Now</a>')
-            text.append(f'<td><input onchange="window.location=\'adm_config={course}=stop:\'+this.value+\'?ticket={session.ticket}\'" value="')
+                text.append(f'<button onclick="J(T(\'adm_config={course}=start\'))">Now</button>')
+            text.append(f'<td><input onchange="J(TV(this,\'adm_config={course}=stop:\'))" value="')
             text.append(config.stop)
             text.append('">')
             if status != 'done':
-                text.append(f'<a href="adm_config={course}=stop?ticket={session.ticket}">Now</a>')
-            text.append(f'<td><textarea onchange="window.location=\'adm_config={course}=tt:\'+encodeURIComponent(this.value)+\'?ticket={session.ticket}\'">')
+                text.append(f'<button onclick="J(T(\'adm_config={course}=stop\'))">Now</button>')
+            text.append(f'<td><textarea onchange="J(TV(this,\'adm_config={course}=tt:\'))">')
             text.append(html.escape(config.config['tt']))
             text.append('</textarea><td>')
             if os.path.exists(course):
-                text.append(f'<a target="_blank" href="adm_get/{course}.zip?ticket={session.ticket}">ZIP</a>')
+                text.append(f'<button onclick="J(T(\'adm_get/{course}.zip\'))">ZIP</a>')
             text.append('</tr>\n')
     text.append('</table>')
     return web.Response(
@@ -338,7 +346,7 @@ async def adm_get(request):
             await response.prepare(request)
             course = filename[:-4]
             process = await asyncio.create_subprocess_exec(
-                'zip', '-r', '-', course, course + '.py',  course + '.cf',
+                'zip', '-r', '-', course, course + '.py', course + '.cf',
                 stdout=asyncio.subprocess.PIPE,
                 )
             data = 'Go!'
