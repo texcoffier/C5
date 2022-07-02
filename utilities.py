@@ -284,7 +284,8 @@ With Firefox:
     'stop': """#C5_LOGIN
         echo STOP SERVERS
         kill $(cat http_server.pid) $(cat compile_server.pid) || true
-        kill -1 $(cat http_server.pid) $(cat compile_server.pid) || true
+        # kill -1 $(cat http_server.pid) $(cat compile_server.pid) || true
+        rm http_server.pid compile_server.pid
         """,
     'open': f"""
         xdg-open https://{C5_URL}/=course_{sys.argv[2] if len(sys.argv) >= 3 else 'js'}.js

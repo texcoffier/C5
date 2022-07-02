@@ -6,10 +6,15 @@ Compiling and executing server
 import json
 import asyncio
 import os
+import sys
+import atexit
+import signal
 import time
 import resource
 import websockets
 import utilities
+
+PROCESSES = []
 
 def set_limits():
     """Do not allow big processes"""
@@ -110,6 +115,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         else:
             stderr = stderr.decode('utf-8')
         await self.websocket.send(json.dumps(['compiler', stderr]))
+        os.unlink(self.source_file)
     async def run(self):
         """Launch process"""
         if not os.path.exists(self.exec_file):
@@ -155,6 +161,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
     # assert _browser == client_browser
 
     process = Process(websocket, login, course)
+    PROCESSES.append(process)
     try:
         async for message in websocket:
             action, data = json.loads(message)
@@ -182,6 +189,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
     finally:
         process.log("STOP")
         process.cleanup(erase_executable=True)
+        PROCESSES.remove(process)
 
 async def main():
     """Answer compilation requests"""
@@ -191,6 +199,13 @@ async def main():
 
 CERT = utilities.get_certificate()
 if CERT:
+    signal.signal(signal.SIGINT, lambda signal, stack: sys.exit(0))
+    signal.signal(signal.SIGTERM, lambda signal, stack: sys.exit(0))
+    def clean():
+        """Erase executables"""
+        for process in PROCESSES:
+            process.cleanup(erase_executable=True)
+        atexit.register(clean)
     asyncio.run(main())
 
 print("""
