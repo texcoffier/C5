@@ -1,6 +1,7 @@
 
 TICKET = TICKET
 COURSES = COURSES
+MORE = MORE
 history = history
 RegExp = RegExp
 encodeURIComponent = encodeURIComponent
@@ -9,7 +10,7 @@ document = document
 def update_url():
     """Hide the last action from URL"""
     url = location.toString() # pylint: disable=undefined-variable
-    clean = url.replace(RegExp('(.*)/adm_.*([?]ticket=.*)'), "$1/adm_home$2")
+    clean = url.replace(RegExp('(.*)/(adm|upload)_.*([?]ticket=.*)'), "$1/adm_home$3")
     history.replaceState('_a_', '_t_', clean)
 
 def display():
@@ -24,10 +25,13 @@ def display():
         TABLE TD INPUT { margin: 0.5em ; margin-right: 0px }
         TABLE TD TEXTAREA { border: 0px; height: 4em }
         TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
-        TD > BUTTON { margin-left: 5px ; margin-right: 5px; height: 3em }
+        BUTTON { margin-left: 5px ; margin-right: 5px; height: 3em }
         .done { background: #FDD }
         .running { background: #DFD }
         .running_tt { background: #FEB }
+        .more { font-size: 150% ; border: 1px solid black ; background: #FFE;
+                padding: 1em ; margin: 1em
+              }
     </style>
     <p>
     Colors:
@@ -80,6 +84,16 @@ def display():
             add_button('adm_get/' + course.course + '.zip', 'ZIP')
         text.append('</tr>\n')
     text.append('</table>')
+    action = location.toString().replace('adm_home', 'upload_course')
+    text.append('''
+    <p>
+    <form id="upload_course" method="POST" enctype="multipart/form-data" action="''' + action + '''">
+    Upload a new course:
+    <input type="file" name="course">
+    <input type="submit">
+    </form>
+    ''' + MORE)
     document.body.innerHTML = text.join('')
+
 
 display()

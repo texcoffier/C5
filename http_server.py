@@ -273,7 +273,7 @@ async def adm_config(request):
 
     return await adm_home(request)
 
-async def adm_home(request):
+async def adm_home(request, more=''):
     """Home page for administrators"""
     session = await get_admin_login(request)
     courses = []
@@ -293,9 +293,13 @@ async def adm_home(request):
                 'tt': html.escape(config.config['tt']),
                 })
     return web.Response(
-        body=f"""
+        body=f"""<!DOCTYPE html>
             <html><body></body></html>
-            <script>TICKET = {json.dumps(session.ticket)}; COURSES = {json.dumps(courses)};</script>
+            <script>
+            TICKET = {json.dumps(session.ticket)};
+            COURSES = {json.dumps(courses)};
+            MORE = {json.dumps(more)};
+            </script>
             <script src="adm_home.js?ticket={session.ticket}"></script>
             """,
         content_type='text/html',
@@ -383,6 +387,29 @@ async def adm_answers(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def upload_course(request):
+    """Add a new course"""
+    session = await get_admin_login(request)
+    post = await request.post()
+    filehandle = post['course']
+    filename = filehandle.filename
+    if not filename.endswith('.py'):
+        more = "Only «.py» file allowed"
+    elif '/' in filename:
+        more = f"«{filename}» invalid name (/)"
+    elif os.path.exists(filename):
+        more = f"«{filename}» name is yet used"
+    else:
+        with open(filename, "wb") as file:
+            file.write(filehandle.file.read())
+        config = utilities.CourseConfig.get(filename.replace('.py', ''))
+        config.set_master(session.login)
+        process = await asyncio.create_subprocess_exec(
+            "make", filename.replace('.py', '.js'))
+        await process.wait()
+        more = f"Course «{filename}» added"
+    more = '<div class="more">' + more + '</div>'
+    return await adm_home(request, more)
 
 APP = web.Application()
 APP.add_routes([web.get('/', handle()),
@@ -394,6 +421,7 @@ APP.add_routes([web.get('/', handle()),
                 web.get('/brython/{filename}', handle('brython')),
                 web.get('/adm_get/{filename:.*}', adm_get),
                 web.get('/adm_answers/{course:.*}', adm_answers),
+                web.post('/upload_course', upload_course),
                 ])
 APP.on_startup.append(startup)
 

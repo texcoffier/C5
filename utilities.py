@@ -90,6 +90,11 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.config['tt'] = tt_list
         self.update()
         self.record()
+    def set_master(self, master):
+        """Set the tiers temps login list"""
+        self.config['master'] = master
+        self.update()
+        self.record()
     def get_stop(self, login):
         """Get stop date, taking login into account"""
         if login in self.tt_list:
