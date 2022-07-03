@@ -193,3 +193,17 @@ H2:hover .timer SPAN {
 .timer .minus300 {
     visibility: visible;
 }
+
+.popup {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    top: 10%;
+    bottom: 10%;
+    border: 1em solid #F00;
+    background: #FEE;
+    opacity: 0.9;
+    text-align: center;
+    font-size: 200%;
+    padding: 2em;
+}

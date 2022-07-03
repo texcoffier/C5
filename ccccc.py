@@ -77,7 +77,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     source_width = 40
     compiler_height = 30
     question = editor = overlay = tester = compiler = executor = time = None
-    index = reset_button = None # HTML elements
+    index = reset_button = popup_element = None # HTML elements
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -96,6 +96,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     record_to_send = []
     record_last_time = 0
     record_start = 0
+    popup_done = False
 
     def __init__(self):
         print("GUI: start")
@@ -337,8 +338,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         char.style.width = '1ch'
         self.overlay.appendChild(char)
 
-    def onmousedown(self, _event):
+    def onmousedown(self, event):
         """Mouse down"""
+        if self.close_popup(event):
+            return
         self.record('MouseDown')
         self.editor.focus()
     def oncopy(self, event):
@@ -372,6 +375,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def onkeydown(self, event):
         """Key down"""
+        if self.close_popup(event):
+            return
         if event.target.tagName == 'INPUT':
             return
         self.record(event.key)
@@ -533,5 +538,25 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_executor()
         self.create_time()
         self.create_index()
+
+    def close_popup(self, event):
+        """Returns True if the popup was closed"""
+        if not self.popup_element:
+            return False
+        self.popup_element.parentNode.removeChild(self.popup_element)
+        self.popup_element = None
+        self.popup_done = True
+        event.stopPropagation()
+        return True
+
+    def popup(self, content):
+        """Display a popup with html content"""
+        if self.popup_done:
+            return
+        div = document.createElement('DIV')
+        div.className = 'popup'
+        div.innerHTML = content
+        self.top.appendChild(div)
+        self.popup_element = div
 
 ccccc = CCCCC()

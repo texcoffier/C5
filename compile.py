@@ -4,6 +4,7 @@ Base class for compiler
 
 millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 Number = Number # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
+JSON = JSON # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 
 def onmessage(event):
     """Evaluate immediatly the function if in the worker"""
@@ -19,7 +20,7 @@ def onmessage(event):
             Compile.worker.shared_buffer[0] = 0
         Compile.worker.run(event.data.toString())
 
-class Compile: # pylint: disable=too-many-instance-attributes
+class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Create the GUI and launch worker"""
     questions = []
     current_question = 0
@@ -48,7 +49,18 @@ class Compile: # pylint: disable=too-many-instance-attributes
             self.post('default', [i, quest.default_answer()])
         self.start_question()
         self.post('language', self.language)
+        self.init()
         print("Worker: init done. current_question_max=", self.current_question_max)
+
+    def init(self):
+        """Your own compiler init, for example:
+
+             self.popup('Hello!')
+        """
+
+    def popup(self, message):
+        """Display a popup (only one per load)"""
+        self.post('eval', 'ccccc.popup(' + JSON.stringify(message) + ')')
 
     def set_config(self, config):
         """Record config, update old question answer, jump to the last question"""

@@ -73,7 +73,7 @@ TEXTAREA { border: 0px; min-height:10em; font-size:60%; width:10em; height:100% 
 BUTTON { width: 100% }
 </style>
 <table border>
-    <tr><th>Login<th colspan="2">Questions<th>Keys
+    <tr><th>Login<th colspan="2">Questions<br>Validated<th>Keys
         <th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Files</tr>
 """]
     for login in students:
@@ -105,7 +105,7 @@ BUTTON { width: 100% }
             text.append('''
             <br>
             <button onclick="window.location.pathname = 'adm_answers/' + COURSE + '.zip'"
-            >txt.ZIP</button>''')
+            >Sources<br>txt ZIP</button>''')
     text.append('</tr>')
     text.append('</table>')
     document.body.innerHTML = text.join('')

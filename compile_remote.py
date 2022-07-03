@@ -11,6 +11,19 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
     connecting = False
     stop_after_compile = False
 
+    def init(self):
+        """Your own compiler init"""
+        self.popup("""
+        <p>
+        ATTENTION
+        <p>
+        Tout ce que vous faites est enregistré et pourra être
+        retenu contre vous en cas de tricherie.
+        <p>
+        Si une autre personne a utilisé vos identifiants, c'est vous qui
+        serez tenu comme responsable de ses crimes.
+        """)
+
     def connect(self):
         """Connect to the remote compiler/executor with a WebSocket"""
         print('connect', self.connecting)
