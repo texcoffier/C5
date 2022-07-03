@@ -243,7 +243,7 @@ async def adm_course(request):
         body=f"""
             <html><body></body></html>
             <script>STUDENTS = {json.dumps(students)}; COURSE = '{course}';</script>
-            <script src="adm_home.js?ticket={session.ticket}"></script>
+            <script src="adm_course.js?ticket={session.ticket}"></script>
             """,
         content_type='text/html',
         charset='utf-8',
