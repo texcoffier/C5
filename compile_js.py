@@ -8,9 +8,10 @@ function _tmp_()
     Compile.worker.execution_result = '';
     function print()
         {
-            var txt = '';
+            var txt = [];
             for(var i in arguments)
-                txt += ' '  + arguments[i];
+                txt.push(arguments[i]);
+            txt = txt.join(' ');
             if ( txt )
                 txt = self.escape(txt) ;
             else
