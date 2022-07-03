@@ -213,11 +213,12 @@ async def startup(_app):
 
 async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
-    print(('log', request.url), flush=True)
     session = Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
     if not utilities.is_admin(login):
+        print(('notAdmin', request.url), flush=True)
         raise web.HTTPFound('..')
+    print(('Admin', request.url), flush=True)
     return session
 
 async def adm_course(request):
@@ -275,76 +276,28 @@ async def adm_config(request):
 async def adm_home(request):
     """Home page for administrators"""
     session = await get_admin_login(request)
-    text = ['''<!DOCTYPE html>
-<script>
-URL = location.toString();
-CLEAN = URL.replace(RegExp('(.*)/adm_.*([?]ticket=.*)'), "$1/adm_home$2");
-console.log(URL);
-console.log(CLEAN);
-window.history.replaceState('_a_', '_t_', CLEAN);
-</script>
-    <title>C5 Administration</title>
-               <h1>C5 Administration</h1>
-               <style>
-               TABLE { border-spacing: 0px; border-collapse: collapse ; }
-               TABLE TD { border: 1px solid #888; padding: 0px }
-               TABLE TD INPUT { margin: 0.5em ; margin-right: 0px }
-               TABLE TD TEXTAREA { border: 0px; height: 4em }
-               TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
-               TD > BUTTON { margin-left: 5px ; margin-right: 5px; height: 3em }
-               .done { background: #FDD }
-               .running { background: #DFD }
-               .running_tt { background: #FEB }
-               </style>
-               <script>
-               function T(x) { return x + "?ticket=''', session.ticket, '''";}
-               function TV(self, x) { return T(x + encodeURIComponent(self.value));}
-               function J(x) { window.location = x; return undefined;}
-               </script>
-            Colors:
-               <span class="done">The session is done</span>,
-               <span class="running">The session is running</span>,
-               <span class="running_tt">The session is running for tiers-temps</span>,
-               <span>The session has not yet started</span>.
-               <p>
-               Changing the stop date will not update onscreen timers.
-               <table>
-               <tr><th>Course<th>Master<th>Logs<th>Try<th>Start<th>Stop<th>TT logins<th>ZIP</tr>\n'''
-           ]
+    courses = []
     for course in sorted(os.listdir('.')):
         if course.startswith('course_') and course.endswith('.js'):
             if course in ('course_js_done.js', 'course_js_pending.js'):
                 continue
             course = course[:-3]
             config = utilities.CourseConfig.get(course)
-            status = config.status('')
-            text.append(f'<tr class="{status}"><td><b>')
-            text.append(course.split('_', 1)[1])
-            text.append('</b><td>')
-            text.append(config.master)
-            text.append('<td>')
-            if os.path.exists(course):
-                text.append(f'<button onclick="J(T(\'adm_course={course}\'))">Logs</a>')
-            text.append(f'<td><button onclick="J(T(\'={course}.js\'))">Try</a>')
-            text.append(f'<td><input onchange="J(TV(this,\'adm_config={course}=start:\'))" value="')
-            text.append(config.start)
-            text.append('">')
-            if status != 'running':
-                text.append(f'<button onclick="J(T(\'adm_config={course}=start\'))">Now</button>')
-            text.append(f'<td><input onchange="J(TV(this,\'adm_config={course}=stop:\'))" value="')
-            text.append(config.stop)
-            text.append('">')
-            if status != 'done':
-                text.append(f'<button onclick="J(T(\'adm_config={course}=stop\'))">Now</button>')
-            text.append(f'<td><textarea onchange="J(TV(this,\'adm_config={course}=tt:\'))">')
-            text.append(html.escape(config.config['tt']))
-            text.append('</textarea><td>')
-            if os.path.exists(course):
-                text.append(f'<button onclick="J(T(\'adm_get/{course}.zip\'))">ZIP</a>')
-            text.append('</tr>\n')
-    text.append('</table>')
+            courses.append({
+                'course': course,
+                'status': config.status(''),
+                'master': config.master,
+                'logs': os.path.exists(course),
+                'start': config.start,
+                'stop': config.stop,
+                'tt': html.escape(config.config['tt']),
+                })
     return web.Response(
-        body=''.join(text),
+        body=f"""
+            <html><body></body></html>
+            <script>TICKET = {json.dumps(session.ticket)}; COURSES = {json.dumps(courses)};</script>
+            <script src="adm_home.js?ticket={session.ticket}"></script>
+            """,
         content_type='text/html',
         charset='utf-8',
         headers={'Cache-Control': 'no-cache'}
