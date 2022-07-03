@@ -310,6 +310,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 + encodeURIComponent(JSON.stringify(self.record_to_send) + '\n')
                 + "?ticket=" + TICKET) # pylint: disable=undefined-variable
             document.body.appendChild(feedback)
+            feedback.style.marginLeft = '-100px'
             self.record_to_send = []
             self.record_last_time = 0
 
