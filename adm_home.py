@@ -65,7 +65,7 @@ def display():
     sums = {}
     for what in WHAT:
         sums[what] = ''
-    text = ["""
+    text = ["""<!DOCTYPE html>
 <style>
 TABLE { border-spacing: 0px; border-collapse: collapse }
 TABLE TD { vertical-align: top; border: 1px solid #888; padding: 0px}

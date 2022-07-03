@@ -275,7 +275,15 @@ async def adm_config(request):
 async def adm_home(request):
     """Home page for administrators"""
     session = await get_admin_login(request)
-    text = ['''<title>C5 Administration</title>
+    text = ['''<!DOCTYPE html>
+<script>
+URL = location.toString();
+CLEAN = URL.replace(RegExp('(.*)/adm_.*([?]ticket=.*)'), "$1/adm_home$2");
+console.log(URL);
+console.log(CLEAN);
+window.history.replaceState('_a_', '_t_', CLEAN);
+</script>
+    <title>C5 Administration</title>
                <h1>C5 Administration</h1>
                <style>
                TABLE { border-spacing: 0px; border-collapse: collapse ; }
@@ -301,7 +309,7 @@ async def adm_home(request):
                <p>
                Changing the stop date will not update onscreen timers.
                <table>
-               <tr><th>Course<th>Logs<th>Try<th>Start<th>Stop<th>TT logins<th>ZIP</tr>\n'''
+               <tr><th>Course<th>Master<th>Logs<th>Try<th>Start<th>Stop<th>TT logins<th>ZIP</tr>\n'''
            ]
     for course in sorted(os.listdir('.')):
         if course.startswith('course_') and course.endswith('.js'):
@@ -313,6 +321,8 @@ async def adm_home(request):
             text.append(f'<tr class="{status}"><td><b>')
             text.append(course.split('_', 1)[1])
             text.append('</b><td>')
+            text.append(config.master)
+            text.append('<td>')
             if os.path.exists(course):
                 text.append(f'<button onclick="J(T(\'adm_course={course}\'))">Logs</a>')
             text.append(f'<td><button onclick="J(T(\'={course}.js\'))">Try</a>')
