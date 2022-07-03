@@ -125,7 +125,7 @@ class Q3(Question): # pylint: disable=undefined-variable
     def tester(self):
         self.check(self.worker.source, [
             ['function carre\\(', "une fonction 'carre'"],
-            ['for *\\(.*;.*;.*\\)', "une boucle 'for(...;...,...)'"],
+            ['for *\\(.*;.*;.*\\)', "une boucle 'for(...;...;...)'"],
             ["print\\(", "un 'print' pour afficher le résultat"],
         ])
         good = True
@@ -143,7 +143,7 @@ class Q3(Question): # pylint: disable=undefined-variable
             self.next_question()
 
     def default_answer(self):
-        return self.worker.source
+        return self.worker.source # The last question content
 
 
 class QEnd(Question): # pylint: disable=undefined-variable

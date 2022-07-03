@@ -3,6 +3,7 @@ Base class for compiler
 """
 
 millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
+Number = Number # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 
 def onmessage(event):
     """Evaluate immediatly the function if in the worker"""
@@ -12,7 +13,7 @@ def onmessage(event):
         elif event.data[0] == 'array':
             Compile.worker.shared_buffer = event.data[1]
         elif event.data[0] == 'config':
-            Compile.worker.config = event.data[1]
+            Compile.worker.set_config(event.data[1])
     else:
         if Compile.worker.shared_buffer:
             Compile.worker.shared_buffer[0] = 0
@@ -33,6 +34,8 @@ class Compile: # pylint: disable=too-many-instance-attributes
     stop_after_compile = True
     previous_source = None
     shared_buffer = []
+    config = {}
+    current_question_max = 0
 
     def __init__(self, questions):
         print("Worker: start")
@@ -42,13 +45,23 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.allow_goto = True
         for quest in questions:
             quest.worker = self
-        if '127.0.0.1' in str(location): # pylint: disable=undefined-variable
-            self.current_question_max = len(questions)
-        else:
-            self.current_question_max = 0
         self.start_question()
         self.post('language', self.language)
         print("Worker: init done. current_question_max=", self.current_question_max)
+
+    def set_config(self, config):
+        """Record config, update old question answer, jump to the last question"""
+        self.config = config
+        for question in config['ANSWERS']:
+            question = Number(question)
+            if self.questions[question] and config['ANSWERS'][question]:
+                self.questions[question].last_answer = config['ANSWERS'][question]
+                if question >= self.current_question:
+                    self.current_question_max = question + 1
+        self.current_question = self.current_question_max
+        if self.current_question != 0:
+            self.source = self.questions[0].last_answer
+            self.start_question()
 
     def disable_goto(self):
         """Call to disable goto"""
@@ -121,10 +134,11 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.quest.all_tests_are_fine = True
         self.quest.tester()
         if (current_question != self.current_question
-                and self.current_question != self.current_question_max):
-            self.post("good", "")
-            if current_question >= self.current_question_max - 1:
-                self.start_question()
+                and self.current_question != self.current_question_max
+                and current_question >= self.current_question_max - 1
+           ):
+            self.post("good", self.source)
+            self.start_question()
 
 
     def read_input(self):

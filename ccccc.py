@@ -25,6 +25,7 @@ try:
     document = document
     setInterval = setInterval
     setTimeout = setTimeout
+    Number = Number
     bind = bind
     hljs = hljs
     window = window
@@ -33,6 +34,11 @@ try:
     Math = Math
     JSON = JSON
     LOGIN = LOGIN
+    ANSWERS = ANSWERS
+    TICKET = TICKET
+    ADMIN = ADMIN
+    SOCK = SOCK
+    STOP = STOP
     encodeURIComponent = encodeURIComponent
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
@@ -106,16 +112,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.worker.onmessageerror = bind(self.onerror, self)
         self.worker.onerror = bind(self.onerror, self)
         self.worker.postMessage(['config', {
-            'TICKET': TICKET, # pylint: disable=undefined-variable
-            'LOGIN': LOGIN, # pylint: disable=undefined-variable
-            'SOCK': SOCK, # pylint: disable=undefined-variable
-            'ADMIN': ADMIN, # pylint: disable=undefined-variable
-            'STOP': STOP, # pylint: disable=undefined-variable
+            'TICKET': TICKET,
+            'LOGIN': LOGIN,
+            'SOCK': SOCK,
+            'ADMIN': ADMIN,
+            'STOP': STOP,
+            'ANSWERS': ANSWERS,
             'COURSE': course,
             }])
         setInterval(bind(self.scheduler, self), 200)
         self.create_html()
-
+        for question in ANSWERS:
+            question = Number(question)
+            self.last_answer[question] = ANSWERS[question]
+            self.question_done[question] = True
         try:
             self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
         except: # pylint: disable=bare-except
@@ -427,10 +437,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if what == 'language':
             self.language = value
         elif what == 'current_question':
-            if (self.current_question >= 0
-                    and self.last_answer[self.current_question] != self.editor.innerText):
-                self.record(['answer', self.current_question, self.editor.innerText.strip()], True)
-                self.last_answer[self.current_question] = self.editor.innerText
+            self.do_not_clear = {}
+            source = self.editor.innerText.strip()
+            if (self.current_question >= 0 and value != self.current_question
+                    and self.last_answer[self.current_question] != source
+               ):
+                self.last_answer[self.current_question] = source
             self.current_question = value
             self.record(['question', self.current_question])
         elif what in ('error', 'warning'):
@@ -445,6 +457,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.state = "started"
         elif what == 'good':
             if self.current_question not in self.question_done:
+                self.record(['answer', self.current_question, value.strip()], True)
                 self.question_done[self.current_question] = True
                 popup_message('Bravo !')
         elif what == 'executor':
