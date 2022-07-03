@@ -65,9 +65,17 @@ def display():
     sums = {}
     for what in WHAT:
         sums[what] = ''
-    text = [
-        '<table border><tr><th>Login<th colspan="2">Questions<th>Keys',
-        '<th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Files</tr>']
+    text = ["""
+<style>
+TABLE { border-spacing: 0px; border-collapse: collapse }
+TABLE TD { vertical-align: top; border: 1px solid #888; padding: 0px}
+TEXTAREA { border: 0px; min-height:10em; font-size:60%; width:10em; height:100% }
+BUTTON { width: 100% }
+</style>
+<table border>
+    <tr><th>Login<th colspan="2">Questions<th>Keys
+        <th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Files</tr>
+"""]
     for login in students:
         student = STUDENTS[login]
         stats = analyse(student.http_server)
@@ -92,8 +100,12 @@ def display():
             text.append('</a>')
     text.append('<tr><td><td>')
     for what in WHAT:
-        text.append('<td><textarea style="font-size:60%;width:10em;height:8em">'
-                    + sums[what] + '</textarea>')
+        text.append('<td><textarea>' + sums[what] + '</textarea>')
+        if what == 'nr_answered':
+            text.append('''
+            <br>
+            <button onclick="window.location.pathname = 'adm_answers/' + COURSE + '.zip'"
+            >txt.ZIP</button>''')
     text.append('</tr>')
     text.append('</table>')
     document.body.innerHTML = text.join('')

@@ -6,6 +6,9 @@ Simple web server with session management
 import os
 import time
 import json
+import collections
+import tempfile
+import zipfile
 import urllib.request
 import html
 import asyncio
@@ -334,7 +337,7 @@ async def adm_home(request):
     )
 
 async def adm_get(request):
-    """Get a file"""
+    """Get a file or a ZIP"""
     _session = await get_admin_login(request)
     filename = request.match_info['filename']
     if '/.' in filename:
@@ -363,6 +366,51 @@ async def adm_get(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def adm_answers(request):
+    """Get students answers"""
+    _session = await get_admin_login(request)
+    course = request.match_info['course']
+    assert '/.' not in course and course.endswith('.zip')
+    course = course[:-4]
+    fildes, filename = tempfile.mkstemp()
+    try:
+        zipper = zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w")
+        for user in sorted(os.listdir(course)):
+            await asyncio.sleep(0)
+            answers = collections.defaultdict(list)
+            try:
+                with open(f'{course}/{user}/http_server.log') as file:
+                    for line in file:
+                        if ',["answer",' in line:
+                            for cell in json.loads(line)[1:]:
+                                if isinstance(cell, list) and cell[0] == 'answer':
+                                    answers[cell[1]].append(cell[2])
+                    zipper.writestr(
+                        f'{course}/{user}#answers',
+                        ''.join(
+                            '#' * 80 + '\n###################    '
+                            + f'{user}     Question {question+1}     Answer {i+1}\n'
+                            + '#' * 80 + '\n'
+                            + answer + '\n'
+                            for question in sorted(answers)
+                            for i, answer in enumerate(answers[question])),
+                        )
+            except IOError:
+                pass
+        zipper.close()
+        with open(filename, 'rb') as file:
+            data = file.read()
+    finally:
+        os.unlink(filename)
+        del zipper
+
+    return web.Response(
+        body=data,
+        content_type='application/zip',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
+
 APP = web.Application()
 APP.add_routes([web.get('/', handle()),
                 web.get('/adm_home', adm_home),
@@ -372,6 +420,7 @@ APP.add_routes([web.get('/', handle()),
                 web.get('/log/{course}/{data}', log),
                 web.get('/brython/{filename}', handle('brython')),
                 web.get('/adm_get/{filename:.*}', adm_get),
+                web.get('/adm_answers/{course:.*}', adm_answers),
                 ])
 APP.on_startup.append(startup)
 

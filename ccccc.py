@@ -428,7 +428,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif what == 'current_question':
             if (self.current_question >= 0
                     and self.last_answer[self.current_question] != self.editor.innerText):
-                self.record(['answer', self.current_question, self.editor.innerText], True)
+                self.record(['answer', self.current_question, self.editor.innerText.strip()], True)
                 self.last_answer[self.current_question] = self.editor.innerText
             self.current_question = value
             self.record(['question', self.current_question])
