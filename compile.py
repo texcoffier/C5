@@ -43,8 +43,9 @@ class Compile: # pylint: disable=too-many-instance-attributes
         self.questions = questions
         self.allow_tip = True
         self.allow_goto = True
-        for quest in questions:
+        for i, quest in enumerate(questions):
             quest.worker = self
+            self.post('default', [i, quest.default_answer()])
         self.start_question()
         self.post('language', self.language)
         print("Worker: init done. current_question_max=", self.current_question_max)

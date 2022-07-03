@@ -489,9 +489,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # New question
             # Many \n at the bug (browser problem when inserting a final \n)
             message = value + '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
-            if self.current_question not in self.question_original:
-                self.question_original[self.current_question] = message
             self.set_editor_content(message)
+        elif what == 'default':
+            self.question_original[value[0]] = value[1]
         elif what in ('tester', 'compiler', 'question', 'time'):
             self.clear_if_needed(what)
             if what == 'time':
