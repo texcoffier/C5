@@ -44,7 +44,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
                 self.post('compiler', message)
                 for line in data[1].split('\n'):
                     line = line.split(':')
-                    if line[0] == 'c.cpp':
+                    if line[0][-4:] == '.cpp':
                         try:
                             line_nr = int(line[1])
                             char_nr = int(line[2])
