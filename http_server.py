@@ -241,8 +241,12 @@ async def adm_course(request):
             pass
 
     return web.Response(
-        body=f"""
-            <html><body></body></html>
+        body=f"""<!DOCTYPE html>
+            <html>
+            <head>
+            <link REL="icon" HREF="favicon.ico?ticket={session.ticket}">
+            </head>
+            <body></body></html>
             <script>STUDENTS = {json.dumps(students)}; COURSE = '{course}';</script>
             <script src="adm_course.js?ticket={session.ticket}"></script>
             """,
@@ -294,7 +298,11 @@ async def adm_home(request, more=''):
                 })
     return web.Response(
         body=f"""<!DOCTYPE html>
-            <html><body></body></html>
+            <html>
+            <head>
+            <link REL="icon" HREF="favicon.ico?ticket={session.ticket}">
+            </head>
+            <body></body></html>
             <script>
             TICKET = {json.dumps(session.ticket)};
             COURSES = {json.dumps(courses)};
