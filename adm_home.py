@@ -26,7 +26,7 @@ def display():
         TABLE TD INPUT { margin: 0.5em ; margin-right: 0px }
         TABLE TD TEXTAREA { border: 0px; height: 4em }
         TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
-        BUTTON, TD INPUT[type="submit"], TD INPUT[type="file"] {
+        BUTTON {
             margin: 1px ; height: 3em; vertical-align: top;
             font-size: 100% ;
             }
@@ -36,7 +36,7 @@ def display():
         .more { font-size: 150% ; border: 1px solid black ; background: #FFE;
                 padding: 1em ; margin: 1em
               }
-        TD INPUT[type=submit] { width: 10em; white-space: normal; margin-right: 5px;}
+        TD INPUT[type=submit], TD INPUT[type=file] { margin: 0px }
     </style>
     <p>
     Colors:
@@ -47,7 +47,7 @@ def display():
     <p>
     Changing the stop date will not update onscreen timers.
     <table>
-    <tr><th>Course<th>Master<th>Logs<th>Try<th>Start<th>Stop<th>TT logins
+    <tr><th>Course<br>Master<th>Logs<th>Try<th>Start<th>Stop<th>TT logins
         <th>ZIP<th>Update<br>course source</tr>
     ''']
     def add_button(url, label):
@@ -78,7 +78,7 @@ def display():
     for course in COURSES:
         text.append('<tr class="' + course.status + '"><td><b>')
         text.append(course.course)
-        text.append('</b><td>')
+        text.append('</b><br>')
         text.append(course.master)
         text.append('<td>')
         if course.logs:
@@ -100,9 +100,9 @@ def display():
             add_button('adm_get/' + course.course + '.zip', 'ZIP')
         text.append('<td>')
         form(
-            '<input type="submit" value="'
-            + course.course.replace('_', ' ').replace('_', ' ')
-            + '" name="replace">',
+            '<div><input type="submit" value="Remplace «'
+            + course.course + '.js»'
+            + '" name="replace"></div>',
             LOGIN != course.master)
         text.append('</tr>\n')
     text.append('</table><p>')
