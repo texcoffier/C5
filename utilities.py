@@ -139,6 +139,7 @@ C5_WEBSOCKET = os.getenv('C5_WEBSOCKET', f'{C5_HOST}:{C5_SOCK}') # c5 public web
 C5_REDIRECT = os.getenv('C5_REDIRECT', '')
 # CAS login validation as:  'https://cas.univ-lyon1.fr/cas/validate?service=%s&ticket=%s'
 C5_VALIDATE = os.getenv('C5_VALIDATE', '')
+C5_LOCAL = int(os.getenv('C5_LOCAL', '0'))
 
 def print_state():
     """Print the current configuration"""
@@ -150,6 +151,7 @@ def print_state():
 {'C5_SOCK=' + str(C5_SOCK):<40}     # Port number for WebSocket
 {'C5_MAIL=' + str(C5_MAIL):<40}     # Mail address to create Let's Encrypt certificate
 {'C5_CERT=' + str(C5_CERT):<40}     # SS: C5/SSL directory, NGINX: NGINX
+{'C5_LOCAL=' + str(C5_LOCAL):<40}     # Run on local host
 {'C5_URL=' + str(C5_URL):<40}     # Browser visible address
 {'C5_WEBSOCKET=' + str(C5_WEBSOCKET):<40}     # Browser visible address for WebSocket
 {'C5_REDIRECT=' + str(C5_REDIRECT):<40} # CAS redirection
@@ -279,7 +281,7 @@ With Firefox:
     'start': r"""#C5_LOGIN
         set -e
         echo START SERVERS
-        cd C5
+        cd C5 2>/dev/null || true
         ./http_server.py >>http_server.log 2>&1 &
         echo \$! >http_server.pid
         ./compile_server.py >>compile_server.log 2>&1 &
@@ -288,10 +290,10 @@ With Firefox:
         tail -1 http_server.log
         tail -1 compile_server.log
         """,
-    'stop': """#C5_LOGIN
+    'stop': r"""#C5_LOGIN
         echo STOP SERVERS
-        kill $(cat http_server.pid) $(cat compile_server.pid) || true
-        # kill -1 $(cat http_server.pid) $(cat compile_server.pid) || true
+        cd C5 2>/dev/null || true
+        kill \$(cat http_server.pid) \$(cat compile_server.pid) || true
         rm http_server.pid compile_server.pid
         """,
     'open': f"""
@@ -320,12 +322,19 @@ export C5_CERT={C5_CERT}
 export C5_WEBSOCKET='{C5_WEBSOCKET}'
 export C5_REDIRECT='{C5_REDIRECT}'
 export C5_VALIDATE='{C5_VALIDATE}'
+export C5_LOCAL='{C5_LOCAL}'
 """ + ACTIONS[action]
     assert '"' not in action
     if '#C5_ROOT' in action:
-        action = f'ssh {C5_ROOT}@{C5_HOST} "' + action + '"'
+        if C5_LOCAL:
+            action = 'cd ..; sh -c "' + action + '"'
+        else:
+            action = f'ssh {C5_ROOT}@{C5_HOST} "' + action + '"'
     elif '#C5_LOGIN' in action:
-        action = f'ssh {C5_LOGIN}@{C5_HOST} "' + action + '"'
+        if C5_LOCAL:
+            action = 'cd ..; sh -c "' + action + '"'
+        else:
+            action = f'ssh {C5_LOGIN}@{C5_HOST} "' + action + '"'
     sys.exit(os.system(action))
 
 if __name__ == "__main__":
