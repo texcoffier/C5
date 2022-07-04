@@ -7,6 +7,7 @@ And some utilities
 import os
 import sys
 import re
+import json
 import socket
 import ssl
 import time
@@ -27,10 +28,6 @@ def get_certificate(server=True):
         cert.load_cert_chain(certfile="SSL/localhost.crt", keyfile="SSL/localhost.key")
         return cert
     return None
-
-def is_admin(login):
-    """Returns True if it is and admin login"""
-    return not login[-1].isdigit()
 
 class CourseConfig: # pylint: disable=too-many-instance-attributes
     """A course session"""
@@ -124,6 +121,41 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         if config:
             return config
         return CourseConfig(course)
+
+class Config:
+    """C5 configuration"""
+    def __init__(self):
+        try:
+            with open('c5.cf', 'r') as file:
+                self.config = json.loads(file.read())
+        except IOError:
+            self.config = {'masters': []}
+        self.masters = self.config['masters']
+    def json(self):
+        """For browser or to save"""
+        return json.dumps(self.config)
+    def save(self):
+        """Save the configuration"""
+        with open('c5.cf', 'w') as file:
+            file.write(self.json())
+    def add_master(self, login):
+        """Add a master"""
+        self.masters.append(login)
+        self.save()
+    def del_master(self, login):
+        """Remove a master"""
+        self.masters.remove(login)
+        self.save()
+    def is_admin(self, login):
+        """Returns True if it is and admin login"""
+        if login in self.masters:
+            return True
+        if self.masters:
+            return False
+        # No master, so check the login
+        return not login[-1].isdigit()
+
+CONFIG = Config()
 
 
 C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host

@@ -2,6 +2,7 @@ TICKET = TICKET
 COURSES = COURSES
 MORE = MORE
 LOGIN = LOGIN
+CONFIG = CONFIG
 history = history
 RegExp = RegExp
 encodeURIComponent = encodeURIComponent
@@ -26,7 +27,7 @@ def display():
         TABLE TD INPUT { margin: 0.5em ; margin-right: 0px }
         TABLE TD TEXTAREA { border: 0px; height: 4em }
         TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
-        BUTTON {
+        TD BUTTON {
             margin: 1px ; height: 3em; vertical-align: top;
             font-size: 100% ;
             }
@@ -107,6 +108,13 @@ def display():
         text.append('</tr>\n')
     text.append('</table><p>')
     form('<input type="submit" value="Add a new course">', False)
+    text.append('<hr>')
+    text.append('Masters: ')
+    for master in CONFIG.masters:
+        add_button('adm_del_master=' + master, '🗑')
+        text.append(' ' + master + ', ')
+    add_input('adm_add_master=', '')
+    text.append('<hr>')
     text.append(MORE)
     document.body.innerHTML = text.join('')
 

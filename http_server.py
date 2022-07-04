@@ -59,7 +59,7 @@ class File:
             content = self.content.replace('__LOGIN__', session.login)
             content = content.replace('__TICKET__', session.ticket)
             content = content.replace('__SOCK__', f"wss://{utilities.C5_WEBSOCKET}")
-            content = content.replace('__ADMIN__', str(int(utilities.is_admin(session.login))))
+            content = content.replace('__ADMIN__', str(int(utilities.CONFIG.is_admin(session.login))))
             answers = get_answers(course.course, session.login)
             for key, value in answers.items():
                 answers[key] = value[-1] # Only the last answer
@@ -184,7 +184,7 @@ def handle(base=''):
             if filename.startswith('course_'):
                 course = utilities.CourseConfig.get(filename[:-3])
                 status = course.status(login)
-                if not utilities.is_admin(login):
+                if not utilities.CONFIG.is_admin(login):
                     if status == 'done':
                         filename = "course_js_done.js"
                     elif status == 'pending':
@@ -215,7 +215,7 @@ async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
     session = Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
-    if not utilities.is_admin(login):
+    if not utilities.CONFIG.is_admin(login):
         print(('notAdmin', request.url), flush=True)
         raise web.HTTPFound('..')
     print(('Admin', request.url), flush=True)
@@ -277,6 +277,21 @@ async def adm_config(request):
 
     return await adm_home(request)
 
+async def adm_add_master(request):
+    """Add a C5 master"""
+    _session = await get_admin_login(request)
+    login = request.match_info['master']
+    utilities.CONFIG.add_master(login)
+    return await adm_home(request)
+
+async def adm_del_master(request):
+    """Remove a C5 master"""
+    _session = await get_admin_login(request)
+    login = request.match_info['master']
+    utilities.CONFIG.del_master(login)
+    return await adm_home(request)
+
+
 async def adm_home(request, more=''):
     """Home page for administrators"""
     session = await get_admin_login(request)
@@ -296,6 +311,7 @@ async def adm_home(request, more=''):
                 'stop': config.stop,
                 'tt': html.escape(config.config['tt']),
                 })
+
     return web.Response(
         body=f"""<!DOCTYPE html>
             <html>
@@ -308,6 +324,7 @@ async def adm_home(request, more=''):
             COURSES = {json.dumps(courses)};
             MORE = {json.dumps(more)};
             LOGIN = {json.dumps(session.login)};
+            CONFIG = {utilities.CONFIG.json()};
             </script>
             <script src="adm_home.js?ticket={session.ticket}"></script>
             """,
@@ -436,6 +453,8 @@ APP.add_routes([web.get('/', handle()),
                 web.get('/adm_home', adm_home),
                 web.get('/adm_course={course}', adm_course),
                 web.get('/adm_config={course}={action}', adm_config),
+                web.get('/adm_add_master={master}', adm_add_master),
+                web.get('/adm_del_master={master}', adm_del_master),
                 web.get('/{filename}', handle()),
                 web.get('/log/{course}/{data}', log),
                 web.get('/brython/{filename}', handle('brython')),
