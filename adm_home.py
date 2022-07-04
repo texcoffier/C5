@@ -1,7 +1,7 @@
-
 TICKET = TICKET
 COURSES = COURSES
 MORE = MORE
+LOGIN = LOGIN
 history = history
 RegExp = RegExp
 encodeURIComponent = encodeURIComponent
@@ -16,6 +16,7 @@ def update_url():
 def display():
     """Display adm home page"""
     update_url()
+    action = location.toString().replace('adm_home', 'upload_course')
     text = ['''
     <title>C5 Administration</title>
     <h1>C5 Administration</h1>
@@ -25,13 +26,17 @@ def display():
         TABLE TD INPUT { margin: 0.5em ; margin-right: 0px }
         TABLE TD TEXTAREA { border: 0px; height: 4em }
         TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
-        BUTTON { margin-left: 5px ; margin-right: 5px; height: 3em }
+        BUTTON, TD INPUT[type="submit"], TD INPUT[type="file"] {
+            margin: 1px ; height: 3em; vertical-align: top;
+            font-size: 100% ;
+            }
         .done { background: #FDD }
         .running { background: #DFD }
         .running_tt { background: #FEB }
         .more { font-size: 150% ; border: 1px solid black ; background: #FFE;
                 padding: 1em ; margin: 1em
               }
+        TD INPUT[type=submit] { width: 10em; white-space: normal; margin-right: 5px;}
     </style>
     <p>
     Colors:
@@ -42,22 +47,33 @@ def display():
     <p>
     Changing the stop date will not update onscreen timers.
     <table>
-    <tr><th>Course<th>Master<th>Logs<th>Try<th>Start<th>Stop<th>TT logins<th>ZIP</tr>
+    <tr><th>Course<th>Master<th>Logs<th>Try<th>Start<th>Stop<th>TT logins
+        <th>ZIP<th>Update<br>course source</tr>
     ''']
     def add_button(url, label):
-        return text.append(
+        text.append(
             '<button onclick="window.location = \'' + url + '?ticket=' + TICKET + '\'">'
             + label + '</button>')
     def add_input(url, value):
-        return text.append(
+        text.append(
             '<input onchange="window.location = \''
             + url + "'+encodeURIComponent(this.value)+" + '\'?ticket=' + TICKET + '\'"'
             + ' value="' + value + '">')
     def add_textarea(url, value):
-        return text.append(
+        text.append(
             '<textarea onchange="window.location = \''
             + url + "'+encodeURIComponent(this.textContent)+" + '\'?ticket=' + TICKET + '\'">'
             + encodeURIComponent(value)) + '</textarea>'
+    def form(content, disable):
+        value = (
+            '<form id="upload_course" method="POST" enctype="multipart/form-data" action="'
+            + action + '">'
+            + '<input type="file" name="course">'
+            + content
+            + '</form>')
+        if disable:
+            value = value.replace(RegExp("input ", "g"), "input disabled ")
+        text.append(value)
 
     for course in COURSES:
         text.append('<tr class="' + course.status + '"><td><b>')
@@ -82,17 +98,16 @@ def display():
         text.append('</textarea><td>')
         if course.logs:
             add_button('adm_get/' + course.course + '.zip', 'ZIP')
+        text.append('<td>')
+        form(
+            '<input type="submit" value="'
+            + course.course.replace('_', ' ').replace('_', ' ')
+            + '" name="replace">',
+            LOGIN != course.master)
         text.append('</tr>\n')
-    text.append('</table>')
-    action = location.toString().replace('adm_home', 'upload_course')
-    text.append('''
-    <p>
-    <form id="upload_course" method="POST" enctype="multipart/form-data" action="''' + action + '''">
-    Upload a new course:
-    <input type="file" name="course">
-    <input type="submit">
-    </form>
-    ''' + MORE)
+    text.append('</table><p>')
+    form('<input type="submit" value="Add a new course">', False)
+    text.append(MORE)
     document.body.innerHTML = text.join('')
 
 

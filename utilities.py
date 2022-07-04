@@ -48,7 +48,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.config = {'start': "2000-01-01 00:00:00",
                        'stop': "2100-01-01 00:00:00",
                        'tt': '',
-                       'master': 'thierry.excoffier',
+                       'master': 'nobody',
                       }
         self.time = time.time()
         try:

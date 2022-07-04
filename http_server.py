@@ -299,6 +299,7 @@ async def adm_home(request, more=''):
             TICKET = {json.dumps(session.ticket)};
             COURSES = {json.dumps(courses)};
             MORE = {json.dumps(more)};
+            LOGIN = {json.dumps(session.login)};
             </script>
             <script src="adm_home.js?ticket={session.ticket}"></script>
             """,
@@ -392,12 +393,20 @@ async def upload_course(request):
     session = await get_admin_login(request)
     post = await request.post()
     filehandle = post['course']
-    filename = filehandle.filename
-    if not filename.endswith('.py'):
+    if not hasattr(filehandle, 'filename'):
+        more = "You must select a file"
+    filename = getattr(filehandle, 'filename', None)
+    if filename:
+        compiler = '_'.join(filename.split('_')[:2]) + '.py'
+    if filename is None:
+        more = "You forgot to select a course file"
+    elif not filename.endswith('.py'):
         more = "Only «.py» file allowed"
     elif '/' in filename:
         more = f"«{filename}» invalid name (/)"
-    elif os.path.exists(filename):
+    elif not os.path.exists(compiler):
+        more = f"«{filename}» use a not defined compiler: «{compiler}»"
+    elif 'replace' not in post and os.path.exists(filename):
         more = f"«{filename}» name is yet used"
     else:
         with open(filename, "wb") as file:
@@ -407,7 +416,10 @@ async def upload_course(request):
         process = await asyncio.create_subprocess_exec(
             "make", filename.replace('.py', '.js'))
         await process.wait()
-        more = f"Course «{filename}» added"
+        if 'replace' in post:
+            more = f"Course «{filename}» replaced"
+        else:
+            more = f"Course «{filename}» added"
     more = '<div class="more">' + more + '</div>'
     return await adm_home(request, more)
 
