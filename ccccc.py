@@ -70,6 +70,32 @@ def two_digit(number):
     """ 6 → 06 """
     return ('0' + str(int(number)))[-2:]
 
+def do_post_data(dictionary, url, target=None):
+    """POST a dictionnary"""
+    form = document.createElement("form")
+    form.setAttribute("method", "post")
+    form.setAttribute("action", url)
+    form.setAttribute("enctype", "multipart/form-data")
+    form.setAttribute("encoding", "multipart/form-data") # For IE
+    if not target:
+        target = document.getElementById('do_post_data')
+        if not target:
+            target = document.createElement("IFRAME")
+            target.id = 'do_post_data'
+            target.setAttribute('name', 'do_post_data')
+            document.body.appendChild(target)
+        target = 'do_post_data'
+    form.setAttribute("target", target)
+
+    for key in dictionary:
+        hiddenField = document.createElement("input")
+        hiddenField.setAttribute("type", "hidden")
+        hiddenField.setAttribute("name", key)
+        hiddenField.setAttribute("value", dictionary[key])
+        form.appendChild(hiddenField)
+    document.body.appendChild(form)
+    form.submit()
+
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question_width = 30
@@ -313,15 +339,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.record_start = time
             self.record_last_time = time
         self.record_to_send.append(data)
-        if send_now or time - self.record_start > 60 or len(self.record_to_send) > 100:
+        if send_now or time - self.record_start > 60:
             # Record on the server
-            feedback = document.createElement('IMG')
-            feedback.src = (
-                'log/' + self.course[:-3] + '/'
-                + encodeURIComponent(JSON.stringify(self.record_to_send) + '\n')
-                + "?ticket=" + TICKET) # pylint: disable=undefined-variable
-            document.body.appendChild(feedback)
-            feedback.style.marginLeft = '-100px'
+            do_post_data(
+                {
+                    'course': self.course[:-3],
+                    'line': encodeURIComponent(JSON.stringify(self.record_to_send) + '\n'),
+                }, 'log?ticket=' + TICKET)
             self.record_to_send = []
             self.record_last_time = 0
 

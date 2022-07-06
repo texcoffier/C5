@@ -197,14 +197,17 @@ async def log(request):
     print(('log', request.url), flush=True)
     session = Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
-    course = utilities.CourseConfig.get(request.match_info['course'])
+    post = await request.post()
+    course = utilities.CourseConfig.get(post['course'])
     if not course.running(login):
         return
-    data = request.match_info['data']
+    line = post['line']
     if not os.path.exists(f'{course.course}/{login}'):
+        if not os.path.exists(course.course):
+            os.mkdir(course.course)
         os.mkdir(f'{course.course}/{login}')
     with open(f'{course.course}/{login}/http_server.log', "a") as file:
-        file.write(urllib.request.unquote(data))
+        file.write(urllib.request.unquote(line))
     return File('favicon.ico').response(session)
 
 async def startup(_app):
@@ -456,10 +459,10 @@ APP.add_routes([web.get('/', handle()),
                 web.get('/adm_add_master={master}', adm_add_master),
                 web.get('/adm_del_master={master}', adm_del_master),
                 web.get('/{filename}', handle()),
-                web.get('/log/{course}/{data}', log),
                 web.get('/brython/{filename}', handle('brython')),
                 web.get('/adm_get/{filename:.*}', adm_get),
                 web.get('/adm_answers/{course:.*}', adm_answers),
+                web.post('/log', log),
                 web.post('/upload_course', upload_course),
                 ])
 APP.on_startup.append(startup)
