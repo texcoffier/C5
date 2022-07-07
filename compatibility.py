@@ -28,3 +28,9 @@ Object.defineProperty(String.prototype, 'startswith',
 def millisecs():
     """Current time in milli seconds"""
     return Date().getTime()
+
+def join(table):
+    """Python join"""
+    return table.join(this) # pylint: disable=undefined-variable
+Object.defineProperty(String.prototype, 'join',
+                      {'enumerable': False, 'value': join})

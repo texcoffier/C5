@@ -165,7 +165,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
     try:
         async for message in websocket:
             action, data = json.loads(message)
-            if not utilities.is_admin(login) and not process.course.running(login):
+            if not utilities.CONFIG.is_admin(login) and not process.course.running(login):
                 if action == 'compile':
                     await process.websocket.send(json.dumps(
                         ['compiler', "La session est terminée"]))
