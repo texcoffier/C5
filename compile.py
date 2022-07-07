@@ -37,6 +37,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     shared_buffer = []
     config = {}
     current_question_max = 0
+    run_tester_after_exec = True
 
     def __init__(self, questions):
         print("Worker: start")
@@ -110,7 +111,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('executor', self.executor_initial_content())
         self.run_executor()
         self.post('tester', self.tester_initial_content())
-        self.run_tester()
+        if self.run_tester_after_exec:
+            self.run_tester()
         self.post('time', self.time_initial_content())
 
     def run_compiler(self, _source): # pylint: disable=no-self-use

@@ -16,6 +16,8 @@ def analyse(http_server):
     paste_ok = 0
     nr_answered = 0
     last = -1
+    if not http_server:
+        http_server = ''
     for line in http_server.split('\n'):
         if len(line) == 0:
             continue

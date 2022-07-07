@@ -10,6 +10,8 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
     socket = None
     connecting = False
     stop_after_compile = False
+    run_tester_after_exec = False
+    nr_errors = nr_warnings = 0
 
     def init(self):
         """Your own compiler init"""
@@ -24,7 +26,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
         serez tenu comme responsable de ses crimes.
         """)
 
-    def connect(self):
+    def connect(self): # pylint: disable=too-many-statements
         """Connect to the remote compiler/executor with a WebSocket"""
         print('connect', self.connecting)
         if self.connecting:
@@ -34,9 +36,11 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
         url = self.config.SOCK + "/" + self.config.TICKET + "/" + course  # pylint: disable=unused-variable
         socket = eval('new WebSocket(url, "1")')
 
-        def event_message(event):
+        def event_message(event): # pylint: disable=too-many-branches
             data = JSON.parse(event.data) # pylint: disable=undefined-variable
             if data[0] == 'compiler':
+                self.nr_errors = 0
+                self.nr_warnings = 0
                 self.run_after_compile()
                 message = data[1]
                 if 'Bravo, il' not in message:
@@ -50,16 +54,22 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
                             char_nr = int(line[2])
                             if 'error' in line[3]:
                                 self.post('error', [line_nr, char_nr])
+                                self.nr_errors += 1
                             elif 'warning' in line[3]:
                                 self.post('warning', [line_nr, char_nr])
+                                self.nr_warnings += 1
                         except: # pylint: disable=bare-except
                             pass
 
             elif data[0] in ('executor', 'return'):
                 self.post('executor', data[1])
-                self.execution_returns += data[1]
+                if data[0] == 'executor':
+                    self.execution_result += data[1]
+                else:
+                    self.execution_returns += data[1]
                 if data[0] == 'return':
                     self.post('state', "stopped")
+                    self.run_tester()
             elif data[0] == 'input':
                 try:
                     line = self.read_input()
