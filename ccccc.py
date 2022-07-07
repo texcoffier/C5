@@ -571,6 +571,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.popup_element = None
         self.popup_done = True
         event.stopPropagation()
+        event.preventDefault()
         return True
 
     def popup(self, content):
