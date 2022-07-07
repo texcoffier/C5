@@ -155,7 +155,7 @@ BUTTON { width: 100% }
             <br>
             <button onclick="window.location.pathname = 'adm_answers/' + COURSE + '.zip'"
             >Sources<br>txt ZIP</button>''')
-    text.append('<td><table style="font-size: 60%">')
+    text.append('<td><table style="font-size: 90%">')
     text.append('<tr><th>Question<th>Min<th>Average<th>Median<th>Max</tr>')
     for i, times in enumerate(question_times):
         times.sort()

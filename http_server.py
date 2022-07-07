@@ -233,7 +233,7 @@ async def adm_course(request):
         await asyncio.sleep(0)
         files = []
         students[user] = student = {'files': files}
-        for filename in os.listdir(f'{course}/{user}'):
+        for filename in sorted(os.listdir(f'{course}/{user}')):
             if '.' in filename:
                 # To not display executables
                 files.append(filename)
