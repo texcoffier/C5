@@ -55,7 +55,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             with open(self.filename, 'r') as file:
                 self.config.update(eval(file.read())) # pylint: disable=eval-used
         except IOError:
-            pass
+            if os.path.exists(self.filename.replace('.cf', '.js')):
+                self.record()
+                self.time = time.time()
 
     def update(self):
         """Compute some values"""
@@ -161,7 +163,8 @@ class Config:
 CONFIG = Config()
 
 
-C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host
+C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host (for SSH)
+C5_IP = os.getenv('C5_IP', local_ip())               # For Socket IP binding
 C5_ROOT = os.getenv('C5_ROOT', 'root')               # login allowed to sudo
 C5_LOGIN = os.getenv('C5_LOGIN', os.getlogin())      # c5 login
 C5_HTTP = int(os.getenv('C5_HTTP', '8000'))          # HTTP server port
@@ -180,6 +183,7 @@ def print_state():
     """Print the current configuration"""
     print(f"""Uses environment shell variables :
 {'C5_HOST=' + str(C5_HOST):<40}     # Production host (for SSH)
+{'C5_IP=' + str(C5_IP):<40}     # For Socket IP binding
 {'C5_ROOT=' + str(C5_ROOT):<40}     # login allowed to sudo
 {'C5_LOGIN=' + str(C5_LOGIN):<40}     # c5 login
 {'C5_HTTP=' + str(C5_HTTP):<40}     # Port number for HTTP
@@ -217,6 +221,7 @@ ACTIONS = {
             apt update
             apt -y install nginx certbot python3-websockets python3-aiohttp npm
             apt -y upgrade
+            # set-timezone Europe/Paris
             '
         """,
     'c5': f"""#C5_LOGIN
@@ -232,7 +237,7 @@ ACTIONS = {
         fi
         """,
     'cp': f"""
-        scp $(git ls-files) {C5_LOGIN}@{C5_HOST}:C5
+        scp $(git ls-files) favicon.ico {C5_LOGIN}@{C5_HOST}:C5
         """,
     'nginx': f"""#C5_ROOT
         sudo sh -c '
@@ -317,6 +322,8 @@ With Firefox:
         set -e
         echo START SERVERS
         cd C5 2>/dev/null || true
+        mkdir TICKETS 2>/dev/null || true
+        make prepare
         ./http_server.py >>http_server.log 2>&1 &
         echo \$! >http_server.pid
         ./compile_server.py >>compile_server.log 2>&1 &
@@ -347,6 +354,7 @@ def main():
         print_state()
     action = f"""
 export C5_HOST={C5_HOST}
+export C5_IP={C5_IP}
 export C5_ROOT={C5_ROOT}
 export C5_LOGIN={C5_LOGIN}
 export C5_HTTP={C5_HTTP}

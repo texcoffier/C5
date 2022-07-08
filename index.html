@@ -98,7 +98,7 @@
             </ul>
         </li>
         <li> Le copier/copier de sources extérieures est impossible.</li>
-        <li class="NI"> Toutes les actions clavier/souris sont mémorisées.</li>
+        <li> </li>Toutes les actions clavier/souris sont mémorisées.</li>
     </ul>
     <h2>Avoir un environnement TP immédiatement fonctionnel.</h2>
     <p>
@@ -218,7 +218,9 @@
         <li> C++: <tt>Compile_remote</tt> envoi des requêtes à
             <tt>compile_server.py</tt> pour compiler avec <tt>g++</tt>
             et exécuter. Supporte <tt>cin</tt> mais pas le graphique.
-            Aucune sécurité, donc pas utilisable en production.</li>
+            Tous les appels systèmes sont interdits, donc
+            pas de problème de sécurité.
+            Temps et espace limité pour la compilation et l'exécution.</li>
     </ul>
 
     <h2>Dévoloppements possibles</h2>
@@ -235,13 +237,45 @@
         Lancez ces commandes (Ubuntu) :
     </p>
     <pre>apt update
-apt install python3-websockets python3-aiohttp npm
+apt install python3-websockets python3-aiohttp npm # nginx certbot
 git clone https://github.com/texcoffier/C5.git
 make</pre>
     <p>
         Si tout s'est bien passé, une page web s'ouvre sur une copie
         de cette page qui est sur votre machine.
+        L'interface d'administration est <tt>.../adm_home</tt>
     </p>
+    <h3>Configuration NGINX</h3>
+    <p>
+        Il faut remplacer /WebSocket/, 4201, 4202 par les bonnes valeurs.
+    </p>
+    <pre>
+        server {
+            listen 443 ssl;
+            server_name c5.univ-lyon1.fr;
+            ssl_certificate /etc/letsencrypt/live/c5.univ-lyon1.fr/fullchain.pem; # managed by Certbot
+            ssl_certificate_key /etc/letsencrypt/live/c5.univ-lyon1.fr/privkey.pem; # managed by Certbot
+            location ~ /WebSocket/ {
+                rewrite ^/WebSocket/(.*) /$1 break;
+                proxy_pass http://127.0.0.1:4202;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection Upgrade;
+                proxy_set_header Host $host;
+                }
+            location ~ {
+            proxy_pass http://127.0.0.1:4201;
+            }
+          }
+    </pre>
+    <h2>TODO</h2>
+    <p>
+        Fonctionnalités manquantes:
+    </p>
+    <ul>
+        <li> Ménage ticket CAS. </li>
+        <li> Ménage fichiers log. </li>
+    </ul>
 
     <div class="right">
         <div>

@@ -104,6 +104,9 @@ class Session:
         """Return a validated login"""
         if self.login:
             return self.login
+        service = service.replace(
+            f'http://{utilities.C5_IP}:{utilities.C5_HTTP}/',
+            f'https://{utilities.C5_URL}/')
         if utilities.C5_VALIDATE:
             async with aiohttp.ClientSession() as session:
                 url = utilities.C5_VALIDATE % (urllib.request.quote(service),
@@ -466,6 +469,5 @@ APP.add_routes([web.get('/', handle()),
                 web.post('/upload_course', upload_course),
                 ])
 APP.on_startup.append(startup)
-
-web.run_app(APP, host=utilities.local_ip(), port=utilities.C5_HTTP,
+web.run_app(APP, host=utilities.C5_IP, port=utilities.C5_HTTP,
             ssl_context=utilities.get_certificate(False))

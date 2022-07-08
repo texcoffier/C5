@@ -42,6 +42,8 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.course = utilities.CourseConfig.get(course)
         self.dir = f"{course}/{login}"
         if not os.path.exists(self.dir):
+            if not os.path.exists(course):
+                os.mkdir(course)
             os.mkdir(f"{course}/{login}")
         self.log_file = f"{self.dir}/compile_server.log"
         self.exec_file = f"{self.dir}/{self.conid}"
@@ -193,27 +195,16 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
 
 async def main():
     """Answer compilation requests"""
-    async with websockets.serve(echo, utilities.local_ip(), utilities.C5_SOCK, ssl=CERT):
+    async with websockets.serve(echo, utilities.C5_IP, utilities.C5_SOCK, ssl=CERT):
         print("compile_server running", flush=True)
         await asyncio.Future()  # run forever
 
 CERT = utilities.get_certificate()
-if CERT:
-    signal.signal(signal.SIGINT, lambda signal, stack: sys.exit(0))
-    signal.signal(signal.SIGTERM, lambda signal, stack: sys.exit(0))
-    def clean():
-        """Erase executables"""
-        for process in PROCESSES:
-            process.cleanup(erase_executable=True)
-        atexit.register(clean)
-    asyncio.run(main())
-
-print("""
-======================================================
-The remote compiling works only on secure connection.
-To create the certificate, use one of the two commands:
-
-    * ./utilities.py SSL-SS
-    * ./utilities.py SSL-LE
-======================================================
-""")
+signal.signal(signal.SIGINT, lambda signal, stack: sys.exit(0))
+signal.signal(signal.SIGTERM, lambda signal, stack: sys.exit(0))
+def clean():
+    """Erase executables"""
+    for process in PROCESSES:
+        process.cleanup(erase_executable=True)
+    atexit.register(clean)
+asyncio.run(main())
