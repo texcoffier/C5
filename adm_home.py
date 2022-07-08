@@ -28,7 +28,7 @@ def display():
         TABLE TD TEXTAREA { border: 0px; height: 4em }
         TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
         TD BUTTON {
-            margin: 1px ; height: 3em; vertical-align: top;
+            margin: 1px ; height: 2.5em; vertical-align: top;
             font-size: 100% ;
             }
         .done { background: #FDD }
