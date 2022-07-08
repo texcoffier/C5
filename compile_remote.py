@@ -44,7 +44,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
                 self.run_after_compile()
                 message = data[1]
                 if 'Bravo, il' not in message:
-                    message = '<error>' + message + '<error>'
+                    message = '<error>' + self.escape(message) + '<error>'
                 self.post('compiler', message)
                 for line in data[1].split('\n'):
                     line = line.split(':')
@@ -62,7 +62,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
                             pass
 
             elif data[0] in ('executor', 'return'):
-                self.post('executor', data[1])
+                self.post('executor', self.escape(data[1]))
                 if data[0] == 'executor':
                     self.execution_result += data[1]
                 else:
@@ -112,7 +112,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
             def retry():
                 print('retry')
                 self.run_compiler(source)
-            setTimeout(retry, 100) # pylint: disable=undefined-variable
+            setTimeout(retry, 500) # pylint: disable=undefined-variable
             return None
         try:
             self.socket.send(JSON.stringify( # pylint: disable=undefined-variable
