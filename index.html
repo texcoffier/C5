@@ -3,27 +3,11 @@
     <title>C5 : C5 is Compiler Course Class in the Cloud</title>
     <style>
         BODY {
-            --body: 40em;
+            --body: 50em;
             max-width: var(--body);
             font-family: sans-serif;
             background: #F8F8F8;
             line-height: 1.3em;
-        }
-
-        .right {
-            position: fixed;
-            left: calc(var(--body) + 1em);
-            top: 0px;
-            right: 0px;
-            bottom: 0px;
-            overflow: scroll;
-        }
-
-        IFRAME {
-            width: 50vw;
-            height: 27vw;
-            box-sizing: border-box;
-            border: 2px solid #000;
         }
 
         H1 {
@@ -94,11 +78,10 @@
                 <li> Éditeur de code pour répondre.</li>
                 <li> Résultat de compilation.</li>
                 <li> Résultat de l'exécution.</li>
-                <li class="NI"> Rendu de l'examen.</li>
             </ul>
         </li>
         <li> Le copier/copier de sources extérieures est impossible.</li>
-        <li> </li>Toutes les actions clavier/souris sont mémorisées.</li>
+        <li> Toutes les actions clavier/souris sont mémorisées.</li>
     </ul>
     <h2>Avoir un environnement TP immédiatement fonctionnel.</h2>
     <p>
@@ -110,7 +93,7 @@
         <li> Coloration syntaxique.</li>
         <li> Recompilation et exécution temps-réel.</li>
         <li> Indices pour guider l'étudiant vers la solution.</li>
-        <li> Ne nécessite pas de serveur pour fonctionner :
+        <li> Ne nécessite pas de serveur pour fonctionner (sauf pour la compilation distante) :
             <ul>
                 <li> Pas de panne possible.</li>
                 <li> Pas de surcharge du serveur.</li>
@@ -210,9 +193,9 @@
         Il est nécessaire d'avoir un compilateur du langage écrit en JavaScript :
     </p>
     <ul>
-        <li> JavaScript: <tt>Compile_JS</tt> (<a href="=course_js.js">démo</a>)</li>
-        <li> Python: <tt>Compile_Python</tt> (<a href="=course_python.js">démo</a>)</li>
-        <li> C++: <tt>Compile_CCP</tt> (<a href="=course_cpp.js">démo</a>)
+        <li> JavaScript: <tt>Compile_JS</tt></li>
+        <li> Python: <tt>Compile_Python</tt></li>
+        <li> C++: <tt>Compile_CCP</tt>)
             ATTENTION : pas de classe, de structure ni de passage par référence.
         </li>
         <li> C++: <tt>Compile_remote</tt> envoi des requêtes à
@@ -276,15 +259,4 @@ make</pre>
         <li> Ménage ticket CAS. </li>
         <li> Ménage fichiers log. </li>
     </ul>
-
-    <div class="right">
-        <div>
-            <h3>Exercices Javascript : ceci est fonctionnel, essayez-les !</h3>
-            <iframe src="=course_js.js"></iframe>
-            <h3>Exercices Python : ceci est fonctionnel, essayez-les !</h3>
-            <iframe src="=course_python.js"></iframe>
-            <h3>Exercices C++ : ceci est fonctionnel, essayez-les !</h3>
-            <iframe src="=course_cpp.js"></iframe>
-        </div>
-    </div>
 </body>

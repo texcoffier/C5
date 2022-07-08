@@ -172,6 +172,7 @@ C5_SOCK = int(os.getenv('C5_SOCK', '4200'))          # WebSocket server port
 C5_MAIL = os.getenv('C5_MAIL', f'root@{C5_ROOT}')    # For Let's encrypt certificate
 C5_CERT = os.getenv('C5_CERT', 'SS')                 # Encrypt by self or NGINX
 C5_URL = os.getenv('C5_URL', f'{C5_HOST}:{C5_HTTP}') # c5 public URL
+C5_DIR = os.getenv('C5_DIR', 'C5')                   # c5 install directory name
 C5_WEBSOCKET = os.getenv('C5_WEBSOCKET', f'{C5_HOST}:{C5_SOCK}') # c5 public websocket
 # CAS redirection as: 'https://cas.univ-lyon1.fr/login?service='
 C5_REDIRECT = os.getenv('C5_REDIRECT', '')
@@ -192,6 +193,7 @@ def print_state():
 {'C5_CERT=' + str(C5_CERT):<40}     # SS: C5/SSL directory, NGINX: NGINX
 {'C5_LOCAL=' + str(C5_LOCAL):<40}     # Run on local host
 {'C5_URL=' + str(C5_URL):<40}     # Browser visible address
+{'C5_DIR=' + str(C5_DIR):<40}     # c5 install directory name
 {'C5_WEBSOCKET=' + str(C5_WEBSOCKET):<40}     # Browser visible address for WebSocket
 {'C5_REDIRECT=' + str(C5_REDIRECT):<40} # CAS redirection
 {'C5_VALIDATE=' + str(C5_VALIDATE):<40} # CAS get login
@@ -226,18 +228,18 @@ ACTIONS = {
         """,
     'c5': f"""#C5_LOGIN
         set -e
-        if [ -d C5 ]
+        if [ -d {C5_DIR} ]
         then
-            cd C5
+            cd {C5_DIR}
             git pull
         else
             git clone https://github.com/texcoffier/C5.git
             git config pull.ff only
-            cd C5
+            cd {C5_DIR}
         fi
         """,
     'cp': f"""
-        scp $(git ls-files) favicon.ico {C5_LOGIN}@{C5_HOST}:C5
+        scp $(git ls-files) favicon.ico {C5_LOGIN}@{C5_HOST}:{C5_DIR}
         """,
     'nginx': f"""#C5_ROOT
         sudo sh -c '
@@ -274,7 +276,7 @@ server {{
         """,
     'SSL-SS': f"""#C5_LOGIN
         set -e
-        cd C5
+        cd {C5_DIR}
         if [ -d SSL ]
             then
             exit 0
@@ -318,23 +320,26 @@ With Firefox:
 ********************************************************************
         '
     """,
-    'start': r"""#C5_LOGIN
+    'start': fr"""#C5_LOGIN
         set -e
         echo START SERVERS
-        cd C5 2>/dev/null || true
+        cd {C5_DIR} 2>/dev/null || true
         mkdir TICKETS 2>/dev/null || true
         make prepare
-        ./http_server.py >>http_server.log 2>&1 &
-        echo \$! >http_server.pid
-        ./compile_server.py >>compile_server.log 2>&1 &
-        echo \$! >compile_server.pid
-        sleep 0.5
-        tail -1 http_server.log
-        tail -1 compile_server.log
+        if [ '' != '{C5_URL}' ]
+        then
+            ./http_server.py >>http_server.log 2>&1 &
+            echo \$! >http_server.pid
+            ./compile_server.py >>compile_server.log 2>&1 &
+            echo \$! >compile_server.pid
+            sleep 0.5
+            tail -1 http_server.log
+            tail -1 compile_server.log
+        fi
         """,
-    'stop': r"""#C5_LOGIN
+    'stop': fr"""#C5_LOGIN
         echo STOP SERVERS
-        cd C5 2>/dev/null || true
+        cd {C5_DIR}
         kill \$(cat http_server.pid) \$(cat compile_server.pid) || true
         rm http_server.pid compile_server.pid
         """,
@@ -359,6 +364,7 @@ export C5_ROOT={C5_ROOT}
 export C5_LOGIN={C5_LOGIN}
 export C5_HTTP={C5_HTTP}
 export C5_URL={C5_URL}
+export C5_DIR={C5_DIR}
 export C5_SOCK={C5_SOCK}
 export C5_MAIL={C5_MAIL}
 export C5_CERT={C5_CERT}
