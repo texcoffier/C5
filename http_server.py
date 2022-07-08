@@ -115,7 +115,7 @@ class Session:
                     lines = await data.text()
                     lines = lines.split('\n')
                     if lines[0] == 'yes':
-                        self.login = lines[1]
+                        self.login = lines[1].lower()
                         self.record()
             if not self.login:
                 print(('?', service))
