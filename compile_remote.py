@@ -34,7 +34,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
         # pylint: disable=eval-used
         course = self.config.COURSE[:-3]
         url = self.config.SOCK + "/" + self.config.TICKET + "/" + course  # pylint: disable=unused-variable
-        socket = eval('new WebSocket(url, "1")')
+        socket = eval('new WebSocket(url)')
 
         def event_message(event): # pylint: disable=too-many-branches
             data = JSON.parse(event.data) # pylint: disable=undefined-variable
