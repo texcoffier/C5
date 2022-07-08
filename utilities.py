@@ -345,7 +345,8 @@ With Firefox:
         """,
     'open': f"""
         xdg-open https://{C5_URL}/=course_{sys.argv[2] if len(sys.argv) >= 3 else 'js'}.js
-        """
+        """,
+    'load': "./load_testing.py"
 }
 ACTIONS['restart'] = ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
 

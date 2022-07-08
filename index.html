@@ -238,6 +238,7 @@ make</pre>
             server_name c5.univ-lyon1.fr;
             ssl_certificate /etc/letsencrypt/live/c5.univ-lyon1.fr/fullchain.pem; # managed by Certbot
             ssl_certificate_key /etc/letsencrypt/live/c5.univ-lyon1.fr/privkey.pem; # managed by Certbot
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             location ~ /WebSocket/ {
                 rewrite ^/WebSocket/(.*) /$1 break;
                 proxy_pass http://127.0.0.1:4202;
