@@ -365,9 +365,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
             self.oldScrollTop = self.editor.scrollTop
-            # Do not want <br> inserted, so prevent default
-            document.execCommand('insertHTML', False, '\n')
-            event.preventDefault(True)
+            if 'Firefox' in navigator.userAgent: # pylint: disable=undefined-variable
+                # Do not want <br> inserted, so prevent default
+                document.execCommand('insertHTML', False, '\n')
+                event.preventDefault(True)
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
         self.overlay_hide()
