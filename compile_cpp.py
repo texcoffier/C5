@@ -13,7 +13,10 @@ class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
     """CPP compiler and evaluator"""
     execution_result = ''
     execution_returns = None
-    language = 'cpp'
+
+    def init(self):
+        """Initialisations"""
+        self.set_options({'language': 'cpp'})
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""

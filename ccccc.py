@@ -20,6 +20,7 @@ def html(txt):
                       ).replace(RegExp('<', 'g'), '&lt;'
                                ).replace(RegExp('>', 'g'), '&gt;')
 
+
 # Hide pylint warnings
 try:
     document = document
@@ -107,7 +108,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
-    language = 'javascript' # For highlighting
     oldScrollTop = None
     highlight_errors = {}
     question_done = {}
@@ -118,11 +118,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
     state = "uninitalised"
     input_index = -1 # The input number needed
     current_question = -1 # The question on screen
-    allow_copy_paste = False # The question set this to True or False
     record_to_send = []
     record_last_time = 0
     record_start = 0
     popup_done = False
+    options = {} # sent by the compiler
 
     def __init__(self):
         print("GUI: start")
@@ -320,7 +320,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def coloring(self):
         """Coloring of the text editor with an overlay."""
         self.overlay.innerHTML = html(self.editor.innerText)
-        self.overlay.className = 'overlay language-' + self.language
+        self.overlay.className = 'overlay language-' + self.options['language']
         hljs.highlightElement(self.overlay)
         for line_char in self.highlight_errors:
             what = self.highlight_errors[line_char]
@@ -370,13 +370,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.focus()
     def oncopy(self, event):
         """Copy"""
-        if self.allow_copy_paste:
+        if self.options.allow_copy_paste:
             self.record('Copy')
             return
         text = window.getSelection().toString()
         if text not in self.editor.innerText:
             self.record('CopyRejected')
-            popup_message("Interdit !")
+            popup_message(self.options['forbiden'])
             event.preventDefault(True)
             return
         self.record('CopyAllowed')
@@ -384,7 +384,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def onpaste(self, event):
         """Mouse down"""
-        if self.allow_copy_paste:
+        if self.options.allow_copy_paste:
             self.record('Paste')
             return
         text = (event.clipboardData or event.dataTransfer).getData("text")
@@ -394,7 +394,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             setTimeout(bind(self.coloring, self), 100)
             return # auto paste allowed
         self.record('PasteRejected')
-        popup_message("Interdit !")
+        popup_message(self.options['forbiden'])
         event.preventDefault(True)
 
     def onkeydown(self, event):
@@ -463,8 +463,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         what = event.data[0]
         # print(self.state, what, str(event.data[1])[:10])
         value = event.data[1]
-        if what == 'language':
-            self.language = value
+        if what == 'options':
+            self.options = value
+            if value['display_reset']:
+                self.reset_button.style.display = 'block'
+            else:
+                self.reset_button.style.display = 'none'
         elif what == 'current_question':
             self.do_not_clear = {}
             source = self.editor.innerText.strip()

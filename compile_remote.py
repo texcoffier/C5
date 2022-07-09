@@ -6,7 +6,6 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None
-    language = 'cpp'
     socket = None
     connecting = False
     stop_after_compile = False
@@ -15,6 +14,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def init(self):
         """Your own compiler init"""
+        self.set_options({'language': 'cpp'})
         self.popup("""
         <p>
         ATTENTION

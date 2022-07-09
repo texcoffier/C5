@@ -31,7 +31,10 @@ class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None
-    language = 'python'
+
+    def init(self):
+        """Initialisations"""
+        self.set_options({'language': 'python'})
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""

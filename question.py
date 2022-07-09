@@ -27,6 +27,9 @@ class Question:
     def set_question(self, index):
         """Change question"""
         self.worker.current_question = index
+    def set_options(self, options):
+        """Change options"""
+        self.worker.set_options(options)
     def next_question(self):
         """Next question"""
         self.set_question(self.worker.current_question + 1)

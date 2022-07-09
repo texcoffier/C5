@@ -180,10 +180,17 @@
             Affiche les messages vert/rouge en fonction de la présence
             de <tt>re</tt> dans <tt>text</tt>
         </li>
-        <li> <tt>self.worker.post("eval", "self.allow_copy_paste = true")</tt>
-            Autorise le copier/coller</li>
-        <li> <tt>self.worker.post("eval", "self.reset_button.style.display = 'none'")</tt>
-            Fait disparaître le bouton 🗑 de réinitialisation d'éditeur.</li>
+        <li> <pre>self.set_options(
+    {
+        'language': 'javascript',
+        'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
+        'allow_copy_paste': False,
+        'display_reset': True,
+    })
+        </pre>
+        Il faut mettre seulement les options qui changent.
+        Les options restent les mêmes tant qu'elles ne sont pas modifiées.
+    </li>
     </ul>
 
 
