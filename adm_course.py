@@ -170,8 +170,12 @@ E { font-family: emoji }
             text.append('</a>')
     text.append('''
         <tr><td><td>
-        <button onclick="window.location.pathname = 'adm_answers/' + COURSE + '.zip'"
-        >Sources<br>txt ZIP</button>''')
+        Sources :<br>
+        <button onclick="window.location.pathname = 'adm_answers/0/' + COURSE + '.zip'"
+        >Validated questions<br>txt ZIP</button><br>
+        <button onclick="window.location.pathname = 'adm_answers/1/' + COURSE + '.zip'"
+        >Saved questions<br>txt ZIP</button>
+        ''')
     for what in WHAT:
         text.append('<td><textarea>' + sums[what] + '</textarea>')
     text.append('<td><table style="font-size: 90%">')

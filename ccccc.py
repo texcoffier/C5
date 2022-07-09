@@ -86,7 +86,7 @@ def do_post_data(dictionary, url, target=None):
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
-    index = reset_button = popup_element = None # HTML elements
+    index = reset_button = popup_element = save_button = None # HTML elements
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -104,6 +104,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     record_last_time = 0
     record_start = 0
     popup_done = False
+    last_save = ''
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -119,6 +120,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'time': [80, 20, 98, 2, '#0000'],
             'index': [0, 1, 0, 100, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
+            'save_button': [66, 2, 0, 2, '#0000'],
             }
     }
 
@@ -148,8 +150,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_html()
         for question in ANSWERS:
             question = Number(question)
-            self.last_answer[question] = ANSWERS[question]
-            self.question_done[question] = True
+            self.last_answer[question] = ANSWERS[question][0]
+            if ANSWERS[question][1]:
+                self.question_done[question] = True
         try:
             self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
         except: # pylint: disable=bare-except
@@ -211,6 +214,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.reset_button.textContent = '🗑'
         self.reset_button.style.fontFamily = 'emoji'
         self.reset_button.onclick = bind(self.reset, self)
+
+        self.save_button.textContent = '📩'
+        self.save_button.onclick = bind(self.save, self)
 
     def scheduler(self): # pylint: disable=too-many-branches
         """Send a new job if free and update the screen"""
@@ -412,6 +418,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Reset the editor to the first displayed value"""
         if confirm('Vous voulez vraiment revenir à la version de départ ?'):
             self.set_editor_content(self.question_original[self.current_question])
+
+    def save(self):
+        """Save the editor content"""
+        source = self.editor.innerText.strip()
+        if source != self.last_save:
+            self.save_button.style.transition = ''
+            self.save_button.style.transform = 'scale(8)'
+            self.save_button.style.opacity = 0.1
+            def stop():
+                self.save_button.style.transition = 'transform 1s, opacity 1s'
+                self.save_button.style.transform = 'scale(1)'
+                self.save_button.style.opacity = 1
+            setTimeout(stop, 100)
+            self.record(['save', self.current_question, source], send_now=True)
+            self.last_save = source
 
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
         """Interprete messages from the worker: update self.messages"""

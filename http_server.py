@@ -60,7 +60,7 @@ class File:
             content = content.replace('__TICKET__', session.ticket)
             content = content.replace('__SOCK__', f"wss://{utilities.C5_WEBSOCKET}")
             content = content.replace('__ADMIN__', str(int(utilities.CONFIG.is_admin(session.login))))
-            answers = get_answers(course.course, session.login)
+            answers = get_answers(course.course, session.login, saved=True)
             for key, value in answers.items():
                 answers[key] = value[-1] # Only the last answer
             content = content.replace('__ANSWERS__', json.dumps(answers))
@@ -369,16 +369,19 @@ async def adm_get(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
-def get_answers(course, user):
+def get_answers(course, user, saved=False):
     """Get question answers"""
     answers = collections.defaultdict(list)
     try:
         with open(f'{course}/{user}/http_server.log') as file:
             for line in file:
-                if ',["answer",' in line:
+                if ',["answer",' in line  or  saved and ',["save",' in line:
                     for cell in json.loads(line)[1:]:
-                        if isinstance(cell, list) and cell[0] == 'answer':
-                            answers[cell[1]].append(cell[2])
+                        if isinstance(cell, list):
+                            if cell[0] == 'answer':
+                                answers[cell[1]].append([cell[2], 1])
+                            elif saved and cell[0] == 'save':
+                                answers[cell[1]].append([cell[2], 0])
     except IOError:
         return {}
     return answers
@@ -387,6 +390,7 @@ async def adm_answers(request):
     """Get students answers"""
     _session = await get_admin_login(request)
     course = request.match_info['course']
+    saved = int(request.match_info['saved'])
     assert '/.' not in course and course.endswith('.zip')
     course = course[:-4]
     fildes, filename = tempfile.mkstemp()
@@ -394,15 +398,15 @@ async def adm_answers(request):
         zipper = zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w")
         for user in sorted(os.listdir(course)):
             await asyncio.sleep(0)
-            answers = get_answers(course, user)
+            answers = get_answers(course, user, saved)
             if answers:
                 zipper.writestr(
                     f'{course}/{user}#answers',
                     ''.join(
                         '#' * 80 + '\n###################    '
-                        + f'{user}     Question {question+1}     Answer {i+1}\n'
+                        + f'{user}     Question {question+1}     Answer {i+1}   Good {answer[1]}\n'
                         + '#' * 80 + '\n'
-                        + answer + '\n'
+                        + answer[0] + '\n'
                         for question in sorted(answers)
                         for i, answer in enumerate(answers[question])),
                     )
@@ -464,7 +468,7 @@ APP.add_routes([web.get('/', handle()),
                 web.get('/{filename}', handle()),
                 web.get('/brython/{filename}', handle('brython')),
                 web.get('/adm_get/{filename:.*}', adm_get),
-                web.get('/adm_answers/{course:.*}', adm_answers),
+                web.get('/adm_answers/{saved}/{course:.*}', adm_answers),
                 web.post('/log', log),
                 web.post('/upload_course', upload_course),
                 ])
