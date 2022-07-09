@@ -66,7 +66,7 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
     text = ''
     for i in range(last+1):
         if answered[i]:
-            text += '*'
+            text += '|'
             nr_answered += 1
         else:
             text += '·'
@@ -79,13 +79,13 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             'time_sum': time_sum,
            }
 
-WHAT = ['nr_answered', 'key_stroke', 'mouse_click',
+WHAT = ['nr_answered', 'time', 'key_stroke', 'mouse_click',
         'copy_ok', 'copy_bad', 'paste_ok', 'paste_bad'
        ]
 
 COLORS = ["888", "F44", "FF0", "0F0", "0FF", "88F", "F0F", "CCC"]
 
-def display(): # pylint: disable=too-many-locals
+def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Create the admin home page"""
     document.title = "C5 " + COURSE
     students = []
@@ -112,7 +112,7 @@ E { font-family: emoji }
 </style>
 <p>
 <table border>
-    <tr><th>Login<th colspan="2">Questions<br>Validated<th>Keys
+    <tr><th>Login<th colspan="2">Questions<br>Validated<th>Time<br>in sec.<th>Keys
         <th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Time per question<br>
         <E>🐌</E> : clipped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
 """)
@@ -143,6 +143,7 @@ E { font-family: emoji }
         text.append(login)
         text.append('<td>')
         text.append(stats['questions'])
+        stats['time'] = sum(stats['time_sum'])
         for what in WHAT:
             text.append('<td>')
             text.append(stats[what])
@@ -167,14 +168,12 @@ E { font-family: emoji }
             text.append('">')
             text.append(filename)
             text.append('</a>')
-    text.append('<tr><td><td>')
+    text.append('''
+        <tr><td><td>
+        <button onclick="window.location.pathname = 'adm_answers/' + COURSE + '.zip'"
+        >Sources<br>txt ZIP</button>''')
     for what in WHAT:
         text.append('<td><textarea>' + sums[what] + '</textarea>')
-        if what == 'nr_answered':
-            text.append('''
-            <br>
-            <button onclick="window.location.pathname = 'adm_answers/' + COURSE + '.zip'"
-            >Sources<br>txt ZIP</button>''')
     text.append('<td><table style="font-size: 90%">')
     text.append('<tr><th>Question<th>Students<th>Min<th>Average<th>Median<th>Max</tr>')
     for i, times in enumerate(question_times):
