@@ -6,6 +6,16 @@ Demonstration of the system
 class QEnd(Question): # pylint: disable=undefined-variable
     """Question Finale"""
     def question(self):
+        self.set_options({'positions': {
+            'question': [1, 29, 0, 30, '#EFE'],
+            'tester': [1, 29, 30, 70, '#EFE'],
+            'editor': [30, 40, 0, 80, '#FFF'],
+            'compiler': [30, 70, 80, 20, '#EEF'],
+            'executor': [70, 30, 0, 80, '#EEF'],
+            'time': [80, 20, 98, 2, '#0000'],
+            'index': [0, 1, 0, 100, '#0000'],
+            'reset_button': [68, 2, 0, 2, '#0000'],
+            }})
         return "Plus de questions"
     def tester(self):
         self.display('FINI !')

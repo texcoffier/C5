@@ -37,12 +37,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     config = {}
     current_question_max = 0
     run_tester_after_exec = True
-    options = {
-        'language': 'javascript',
-        'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
-        'allow_copy_paste': False,
-        'display_reset': True,
-    }
 
     def __init__(self, questions):
         print("Worker: start")
@@ -54,7 +48,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             quest.worker = self
             self.post('default', [i, quest.default_answer()])
         self.start_question()
-        self.post('options', self.options)
         self.init()
         print("Worker: init done. current_question_max=", self.current_question_max)
 
@@ -66,9 +59,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def set_options(self, options):
         """Set course options and send them"""
-        for key in options:
-            self.options[key] = options[key]
-        self.post('options', self.options)
+        self.post('options', options)
 
     def popup(self, message):
         """Display a popup (only one per load)"""

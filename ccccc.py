@@ -53,20 +53,6 @@ def popup_message(txt):
     """OK popup with the message"""
     alert(txt) # pylint: disable=undefined-variable
 
-def new_element(htmltype, htmlclass, left, width, top, height, background):
-    """Create a DOM element"""
-    e = document.createElement(htmltype)
-    e.className = htmlclass
-    e.style.position = 'absolute'
-    e.style.left = left + '%'
-    e.style.right = (100 - left - width) + '%'
-    e.style.top = top + '%'
-    e.style.bottom = (100 - top - height) + '%'
-    e.style.background = background
-    e.style.overflow = 'auto'
-    e.background = background
-    return e
-
 def two_digit(number):
     """ 6 → 06 """
     return ('0' + str(int(number)))[-2:]
@@ -99,10 +85,6 @@ def do_post_data(dictionary, url, target=None):
 
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
-    question_width = 30
-    question_height = 30
-    source_width = 40
-    compiler_height = 30
     question = editor = overlay = tester = compiler = executor = time = None
     index = reset_button = popup_element = None # HTML elements
     top = None # Top page HTML element
@@ -122,7 +104,22 @@ class CCCCC: # pylint: disable=too-many-public-methods
     record_last_time = 0
     record_start = 0
     popup_done = False
-    options = {} # sent by the compiler
+    options = {
+        'language': 'javascript',
+        'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
+        'allow_copy_paste': False,
+        'display_reset': True,
+        'positions' : {
+            'question': [1, 29, 0, 30, '#EFE'],
+            'tester': [1, 29, 30, 70, '#EFE'],
+            'editor': [30, 40, 0, 100, '#FFF'],
+            'compiler': [70, 30, 0, 30, '#EEF'],
+            'executor': [70, 30, 30, 70, '#EEF'],
+            'time': [80, 20, 98, 2, '#0000'],
+            'index': [0, 1, 0, 100, '#0000'],
+            'reset_button': [68, 2, 0, 2, '#0000'],
+            }
+    }
 
     def __init__(self):
         print("GUI: start")
@@ -147,7 +144,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'ANSWERS': ANSWERS,
             'COURSE': course,
             }])
-        setInterval(bind(self.scheduler, self), 200)
         self.create_html()
         for question in ANSWERS:
             question = Number(question)
@@ -174,89 +170,46 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.shared_buffer[len(string) + 1] = -1 # String end
         self.shared_buffer[0] = 1
 
-    def create_question(self):
-        """The question text container: course and exercise"""
-        e = new_element('DIV', 'question',
-                        1, self.question_width - 1,
-                        0, self.question_height,
-                        '#EFE')
-        self.question = e
-        self.top.appendChild(e)
+    def update_gui(self):
+        """Set the bloc position and background"""
+        self.options['positions']['overlay'] = self.options['positions']['editor']
+        self.options['positions']['overlay'][4] = '#0000'
+        for key in self.options['positions']:
+            left, width, top, height, background = self.options['positions'][key]
+            e = self[key] # pylint: disable=unsubscriptable-object
+            e.style.left = left + '%'
+            e.style.right = (100 - left - width) + '%'
+            e.style.top = top + '%'
+            e.style.bottom = (100 - top - height) + '%'
+            e.style.background = background
+            e.style.overflow = 'auto'
+            e.background = background
+        if self.options['display_reset']:
+            self.reset_button.style.display = 'block'
+        else:
+            self.reset_button.style.display = 'none'
 
-    def create_tester(self):
-        """The regression test container"""
-        e = new_element('DIV', 'regtests',
-                        1, self.question_width - 1,
-                        self.question_height, 100 - self.question_height,
-                        '#EFE')
-        self.tester = e
-        self.top.appendChild(e)
-
-    def create_editor(self):
+    def create_gui(self):
         """The text editor container"""
-        e = new_element('DIV', 'editor',
-                        self.question_width, self.source_width,
-                        0, 100,
-                        '#FFF')
-        e.contentEditable = True
-        e.spellcheck = False
-        e.autocorrect = False
-        e.autocapitalize = False
-        e.autocomplete = False
-        e.onscroll = bind(self.onscroll, self)
+        self.options['positions']['overlay'] = self.options['positions']['editor']
+        for key in self.options['positions']:
+            e = document.createElement('DIV')
+            e.className = key
+            e.style.position = 'absolute'
+            self.top.appendChild(e)
+            self[key] = e # pylint: disable=unsupported-assignment-operation
 
-        self.editor = e
-        self.top.appendChild(e)
+        self.editor.contentEditable = True
+        self.editor.spellcheck = False
+        self.editor.autocorrect = False
+        self.editor.autocapitalize = False
+        self.editor.autocomplete = False
+        self.editor.onscroll = bind(self.onscroll, self)
         self.editor.focus()
-        # The overlay with coloring
-        e = new_element('DIV', 'overlay',
-                        self.question_width, self.source_width,
-                        0, 100,
-                        '#0000')
-        self.overlay = e
-        self.top.appendChild(e)
 
-        e = new_element('DIV', 'reset',
-                        self.question_width + self.source_width - 2, 2,
-                        0, 2,
-                        '#0000')
-        e.textContent = '🗑'
-        e.style.fontFamily = 'emoji'
-        e.onclick = bind(self.reset, self)
-        self.reset_button = e
-        self.top.appendChild(e)
-
-    def create_compiler(self):
-        """The compiler result container"""
-        e = new_element('DIV', 'compiler',
-                        self.question_width + self.source_width,
-                        100 - self.question_width - self.source_width,
-                        0, self.compiler_height,
-                        '#EEF')
-        self.compiler = e
-        self.top.appendChild(e)
-
-    def create_executor(self):
-        """The execution result container"""
-        e = new_element('DIV', 'executor',
-                        self.question_width + self.source_width,
-                        100 - self.question_width - self.source_width,
-                        self.compiler_height, 100 - self.compiler_height,
-                        '#EEF')
-        self.executor = e
-        self.top.appendChild(e)
-
-    def create_time(self):
-        """The worker time displayer"""
-        e = new_element('DIV', 'time', 80, 20, 98, 2, '#0000')
-        self.time = e
-        self.top.appendChild(e)
-
-    def create_index(self):
-        """The question list displayer"""
-        e = new_element('DIV', 'index', 0, 1, 0, 100, '#0000')
-        self.index = e
-        self.top.appendChild(e)
+        self.reset_button.textContent = '🗑'
+        self.reset_button.style.fontFamily = 'emoji'
+        self.reset_button.onclick = bind(self.reset, self)
 
     def scheduler(self): # pylint: disable=too-many-branches
         """Send a new job if free and update the screen"""
@@ -370,7 +323,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.focus()
     def oncopy(self, event):
         """Copy"""
-        if self.options.allow_copy_paste:
+        if self.options['allow_copy_paste']:
             self.record('Copy')
             return
         text = window.getSelection().toString()
@@ -384,7 +337,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def onpaste(self, event):
         """Mouse down"""
-        if self.options.allow_copy_paste:
+        if self.options['allow_copy_paste']:
             self.record('Paste')
             return
         text = (event.clipboardData or event.dataTransfer).getData("text")
@@ -464,11 +417,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         # print(self.state, what, str(event.data[1])[:10])
         value = event.data[1]
         if what == 'options':
-            self.options = value
-            if value['display_reset']:
-                self.reset_button.style.display = 'block'
-            else:
-                self.reset_button.style.display = 'none'
+            for key in value:
+                self.options[key] = value[key]
+            self.update_gui()
         elif what == 'current_question':
             self.do_not_clear = {}
             source = self.editor.innerText.strip()
@@ -559,13 +510,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.top.onkeyup = bind(self.onkeyup, self)
         self.top.onkeypress = bind(self.onkeypress, self)
         document.getElementsByTagName('BODY')[0].appendChild(self.top)
-        self.create_question()
-        self.create_tester()
-        self.create_editor()
-        self.create_compiler()
-        self.create_executor()
-        self.create_time()
-        self.create_index()
+        self.create_gui()
+        setInterval(bind(self.scheduler, self), 200)
 
     def close_popup(self, event):
         """Returns True if the popup was closed"""

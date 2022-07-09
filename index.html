@@ -186,10 +186,20 @@
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
         'allow_copy_paste': False,
         'display_reset': True,
-    })
-        </pre>
+        'positions' : { # [X, Largeur, Y, Hauteur, Couleur] en pourcentage écran
+            'question': [1, 29, 0, 30, '#EFE'],
+            'tester': [1, 29, 30, 70, '#EFE'],
+            'editor': [30, 40, 0, 100, '#FFF'],
+            'compiler': [70, 30, 0, 30, '#EEF'],
+            'executor': [70, 30, 30, 70, '#EEF'],
+            'time': [80, 20, 98, 2, '#0000'],
+            'index': [0, 1, 0, 100, '#0000'],
+            'reset_button': [68, 2, 0, 2, '#0000'],
+            }
+    })</pre>
         Il faut mettre seulement les options qui changent.
         Les options restent les mêmes tant qu'elles ne sont pas modifiées.
+        La disposition de l'écran peut changer d'une question à l'autre.
     </li>
     </ul>
 
