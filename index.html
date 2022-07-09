@@ -184,6 +184,9 @@
     {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
+        # Affichage dépend du navigateur
+        # Mettre une chaine vide pour désactiver la confirmation (pendant le débugage)
+        'close': "Voulez-vous vraiment quitter cette page ?",
         'allow_copy_paste': False,
         'display_reset': True,
         'positions' : { # [X, Largeur, Y, Hauteur, Couleur] en pourcentage écran

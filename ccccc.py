@@ -107,6 +107,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
+        'close': "Voulez-vous vraiment quitter cette page ?",
         'allow_copy_paste': False,
         'display_reset': True,
         'positions' : {
@@ -498,6 +499,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
         self.coloring()
 
+    def onbeforeunload(self, event):
+        """Prevent page closing"""
+        if self.options['close'] == '':
+            return
+        self.record("Close", send_now=True)
+        event.preventDefault()
+        event.returnValue = self.options['close']
+        return event.returnValue
+
     def create_html(self):
         """Create the page content"""
         self.top = document.createElement('DIV')
@@ -509,6 +519,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.top.onkeydown = bind(self.onkeydown, self)
         self.top.onkeyup = bind(self.onkeyup, self)
         self.top.onkeypress = bind(self.onkeypress, self)
+        window.onbeforeunload = bind(self.onbeforeunload, self)
         document.getElementsByTagName('BODY')[0].appendChild(self.top)
         self.create_gui()
         setInterval(bind(self.scheduler, self), 200)
