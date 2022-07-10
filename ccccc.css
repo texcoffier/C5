@@ -207,3 +207,5 @@ H2:hover .timer SPAN {
     font-size: 200%;
     padding: 2em;
 }
+
+LABEL, .index DIV, .save_button, .reset_button { cursor: pointer }
