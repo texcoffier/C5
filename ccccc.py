@@ -524,7 +524,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onbeforeunload(self, event):
         """Prevent page closing"""
         if self.options['close'] == '':
-            return
+            return None
         self.record("Close", send_now=True)
         event.preventDefault()
         event.returnValue = self.options['close']
@@ -544,6 +544,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         window.onbeforeunload = bind(self.onbeforeunload, self)
         document.getElementsByTagName('BODY')[0].appendChild(self.top)
         self.create_gui()
+        self.update_gui()
         setInterval(bind(self.scheduler, self), 200)
 
     def close_popup(self, event):
