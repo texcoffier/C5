@@ -6,6 +6,7 @@ Demonstration of the system
 class QEnd(Question): # pylint: disable=undefined-variable
     """Question Finale"""
     def question(self):
+        self.set_options({'automatic_compilation': False})
         return "Plus de questions"
     def tester(self):
         self.display('FINI !')

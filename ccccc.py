@@ -98,7 +98,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question_original = {}
     last_answer = {}
     copied = None # Copy with ^C ou ^X
-    automatic_compile = True
     state = "uninitalised"
     input_index = -1 # The input number needed
     current_question = -1 # The question on screen
@@ -107,12 +106,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
     record_start = 0
     popup_done = False
     last_save = ''
+    compile_now = False
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
         'close': "Voulez-vous vraiment quitter cette page ?",
         'allow_copy_paste': False,
         'display_reset': True,
+        'automatic_compilation': True,
         'positions' : {
             'question': [1, 29, 0, 30, '#EFE'],
             'tester': [1, 29, 30, 70, '#EFE'],
@@ -225,7 +226,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.state == 'started':
             return # Compiler is running
         source = self.editor.innerText
-        if self.automatic_compile and source != self.old_source:
+        if (self.options['automatic_compilation'] or self.compile_now) and source != self.old_source:
+            self.compile_now = False
             self.old_source = source # Do not recompile the same thing
             self.clear_highlight_errors()
             self.unlock_worker()
@@ -259,6 +261,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 else:
                     delta = int(delta/86400) + ' jours'
                 timer.innerHTML = message + '<br>' + delta
+
+    def compilation_toggle(self):
+        """Toggle the automatic compilation flag"""
+        self.options['automatic_compilation'] = not self.options['automatic_compilation']
+
+    def compilation_run(self):
+        """Run one compilation"""
+        self.options['automatic_compilation'] = True
+        self.scheduler()
+        self.options['automatic_compilation'] = False
 
     def unlock_worker(self):
         """ Unlock worker on input waiting to finish MessageEvent"""
@@ -370,6 +382,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
             event.preventDefault(True)
+        elif event.key == 'F9':
+            if self.options['automatic_compilation'] == False:
+                self.compilation_run()
+            elif self.options['automatic_compilation']:
+                document.getElementById('automatic_compilation').checked = True
+                self.options['automatic_compilation'] = None
+            else:
+                document.getElementById('automatic_compilation').checked = False
+                self.options['automatic_compilation'] = True
+
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
             self.oldScrollTop = self.editor.scrollTop
@@ -446,6 +468,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.options[key] = value[key]
             self.update_gui()
         elif what == 'current_question':
+            self.compile_now = True
             self.do_not_clear = {}
             source = self.editor.innerText.strip()
             if (self.current_question >= 0 and value != self.current_question

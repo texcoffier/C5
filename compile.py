@@ -37,6 +37,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     config = {}
     current_question_max = 0
     run_tester_after_exec = True
+    options = {'automatic_compilation': True}
 
     def __init__(self, questions):
         print("Worker: start")
@@ -60,6 +61,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def set_options(self, options):
         """Set course options and send them"""
         self.post('options', options)
+        for key in options:
+            self.options[key] = options[key]
 
     def popup(self, message):
         """Display a popup (only one per load)"""
@@ -201,11 +204,14 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         return "<h2>Exécution</h2>"
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return ('<h2>Compilation <label>'
-                + '<input type="checkbox" '
-                + ' onchange="ccccc.automatic_compile = !ccccc.automatic_compile">'
-                + '<span>Désactivée</span>'
-                + '</label></h2>')
+        if self.options['automatic_compilation']:
+            return ('<h2>Compilation <label>'
+                    + '<input type="checkbox" id="automatic_compilation" '
+                    + ' onchange="ccccc.compilation_toggle()">'
+                    + '<span>Désactivée (F9)</span>'
+                    + '</label></h2>')
+        return ('<h2>Compile <label><div style="font-size: 80%" onclick="ccccc.compilation_run()">'
+            + 'Maintenant ! (F9)</div></label></h2>')
     def time_initial_content(self):
         """The message terminate the job. It indicates the worker time"""
         more = ' ' + self.current_question_max
