@@ -70,6 +70,8 @@ def do_post_data(dictionary, url, target=None):
             target = document.createElement("IFRAME")
             target.id = 'do_post_data'
             target.setAttribute('name', 'do_post_data')
+            target.style.position = 'absolute'
+            target.style.left = '-1000px'
             document.body.appendChild(target)
         target = 'do_post_data'
     form.setAttribute("target", target)
