@@ -27,7 +27,10 @@ sandbox:
     (cd libseccomp && ./configure --enable-shared=no && make) ; \
 	make libsandbox.so)
 
-prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js adm_home.js adm_course.js sandbox course_js_done.js course_js_pending.js
+favicon.ico:c5.svg
+	inkscape --export-area-drawing --export-png=$@ $?
+
+prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js adm_home.js adm_course.js sandbox course_js_done.js course_js_pending.js favicon.ico
 	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')
 
 all:prepare

@@ -106,7 +106,7 @@
         L'ensemble de l'environnement est programmé en Python.
     </p>
     <p>
-        Chaque sujet contient un ensemble de question s'enchaînant successivement.
+        Chaque sujet contient un ensemble de questions s'enchaînant successivement.
     </p>
     <ul>
         <li> Le sujet est dans un fichier avec comme nom :<br>
@@ -167,7 +167,7 @@
             par les fonctions utilitaires.
         </li>
         <li> <tt>self.worker.current_question_max = 42</tt>
-            Donne le droit d'accès aux 42 premières questions.
+            donne le droit d'accès aux 42 premières questions.
         </li>
     </ul>
 
@@ -178,9 +178,9 @@
         <li> <tt>self.worker.escape(text)</tt> échappe les balises HTML</li>
         <li> <tt>self.next_question()</tt> passage à la question suivante</li>
         <li> <tt>self.message(bool, message)</tt>
-            Affiche le message vert si <tt>bool</tt> est vrai, sinon rouge.</li>
+            affiche le message vert si <tt>bool</tt> est vrai, sinon rouge.</li>
         <li> <tt>self.check(text, [ [re, message], ...])</tt>
-            Affiche les messages vert/rouge en fonction de la présence
+            affiche les messages vert/rouge en fonction de la présence
             de <tt>re</tt> dans <tt>text</tt>
         </li>
         <li> <pre>self.set_options(
@@ -225,8 +225,8 @@
         <li> C++: <tt>Compile_remote</tt> envoi des requêtes à
             <tt>compile_server.py</tt> pour compiler avec <tt>g++</tt>
             et exécuter. Supporte <tt>cin</tt> mais pas le graphique.
-            Tous les appels systèmes sont interdits, donc
-            pas de problème de sécurité.
+            Tous les appels systèmes sont interdits (sauf <tt>fstat</tt>, <tt>write</tt>, <tt>read, </tt><tt>lseek</tt>, <tt>exit_group</tt>),
+            donc pas de problème de sécurité.
             Temps et espace limité pour la compilation et l'exécution.</li>
     </ul>
 
