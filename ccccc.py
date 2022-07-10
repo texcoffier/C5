@@ -264,7 +264,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def compilation_toggle(self):
         """Toggle the automatic compilation flag"""
-        self.options['automatic_compilation'] = not self.options['automatic_compilation']
+        if self.options['automatic_compilation']:
+            # The False value is for course deactivated automatic compilation
+            self.options['automatic_compilation'] = None
+        else:
+            self.options['automatic_compilation'] = True
 
     def compilation_run(self):
         """Run one compilation"""

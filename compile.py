@@ -211,7 +211,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                     + '<span>Désactivée (F9)</span>'
                     + '</label></h2>')
         return ('<h2>Compile <label><div style="font-size: 80%" onclick="ccccc.compilation_run()">'
-            + 'Maintenant ! (F9)</div></label></h2>')
+                + 'Maintenant ! (F9)</div></label></h2>')
     def time_initial_content(self):
         """The message terminate the job. It indicates the worker time"""
         more = ' ' + self.current_question_max
