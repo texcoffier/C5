@@ -113,7 +113,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'close': "Voulez-vous vraiment quitter cette page ?",
         'allow_copy_paste': False,
         'display_reset': True,
-        'automatic_compilation': True,
+        # 'automatic_compilation': True, Defined by compiler or course
         'positions' : {
             'question': [1, 29, 0, 30, '#EFE'],
             'tester': [1, 29, 30, 70, '#EFE'],

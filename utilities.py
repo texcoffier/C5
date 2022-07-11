@@ -11,6 +11,7 @@ import json
 import socket
 import ssl
 import time
+from aiohttp import web
 
 def local_ip():
     """Get the local IP"""
@@ -130,12 +131,19 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
 class Config:
     """C5 configuration"""
     def __init__(self):
-        try:
+        self.config = {
+            'masters': [],
+            'ticket_ttl': 86400,
+        }
+        if os.path.exists('c5.cf'):
             with open('c5.cf', 'r') as file:
-                self.config = json.loads(file.read())
-        except IOError:
-            self.config = {'masters': []}
+                self.config.update(json.loads(file.read()))
+        self.update()
+
+    def update(self):
+        """Update configuration attributes"""
         self.masters = self.config['masters']
+        self.ticket_ttl = self.config['ticket_ttl']
     def json(self):
         """For browser or to save"""
         return json.dumps(self.config)
@@ -143,14 +151,12 @@ class Config:
         """Save the configuration"""
         with open('c5.cf', 'w') as file:
             file.write(self.json())
-    def add_master(self, login):
-        """Add a master"""
-        self.masters.append(login)
+    def set_value(self, key, value):
+        """Update the configuration"""
+        self.config[key] = value
         self.save()
-    def del_master(self, login):
-        """Remove a master"""
-        self.masters.remove(login)
-        self.save()
+        self.update()
+
     def is_admin(self, login):
         """Returns True if it is and admin login"""
         if login in self.masters:
@@ -162,6 +168,107 @@ class Config:
 
 CONFIG = Config()
 
+class Session:
+    """Session management"""
+    session_cache = {}
+    def __init__(self, ticket, client_ip, browser, login=None, creation_time=None):
+        self.ticket = ticket
+        self.client_ip = client_ip
+        self.browser = browser
+        self.login = login
+        if creation_time is None:
+            creation_time = time.time()
+        self.creation_time = creation_time
+    async def get_login(self, service):
+        """Return a validated login"""
+        if self.login:
+            return self.login
+        service = service.replace(f'http://{C5_IP}:{C5_HTTP}/', f'https://{C5_URL}/')
+        if C5_VALIDATE:
+            async with aiohttp.ClientSession() as session:
+                url = C5_VALIDATE % (urllib.request.quote(service),
+                                               urllib.request.quote(self.ticket))
+                async with session.get(url) as data:
+                    lines = await data.text()
+                    lines = lines.split('\n')
+                    if lines[0] == 'yes':
+                        self.login = lines[1].lower()
+                        self.record()
+            if not self.login:
+                print(('?', service))
+                raise web.HTTPFound(C5_REDIRECT + urllib.request.quote(service))
+        else:
+            if self.ticket and self.ticket.isdigit():
+                self.login = f'Anon#{self.ticket}'
+                self.record()
+            else:
+                raise web.HTTPFound(
+                    service + f'?ticket={int(time.time())}{len(self.session_cache)}')
+
+        return self.login
+    def record(self):
+        """Record the ticket for the compile server"""
+        with open(f'TICKETS/{self.ticket}', 'w') as file:
+            file.write(str(self))
+    def __str__(self):
+        return repr((self.client_ip, self.browser, self.login, self.creation_time))
+    def too_old(self):
+        if time.time() - self.creation_time > CONFIG.ticket_ttl:
+            try:
+                os.unlink(f'TICKETS/{self.ticket}')
+            except FileNotFoundError:
+                # Yet removed by another process
+                pass
+            if self.ticket in self.session_cache:
+                del self.session_cache[self.ticket]
+            return True
+        return False
+    def check(self, request, client_ip, browser):
+        """Check for hacker"""
+        if self.client_ip != client_ip or self.browser != browser or self.too_old():
+            raise web.HTTPFound(str(request.url).split('?')[0])
+
+    @classmethod
+    def load_ticket_file(cls, ticket):
+        """Load the ticket from file"""
+        with open(f'TICKETS/{ticket}', 'r') as file:
+            session = Session(ticket, *eval(file.read())) # pylint: disable=eval-used
+        cls.session_cache[ticket] = session
+        return session
+
+    @classmethod
+    def get(cls, request, ticket=None):
+        """Get or create a session.
+        Raise an error if hacker.
+        """
+        if not ticket:
+            ticket = request.query.get('ticket', '')
+        try:
+            # aiohttp
+            headers = request.headers
+            client_ip, _port = request.transport.get_extra_info('peername')
+        except AttributeError:
+            # websocket
+            headers = request.request_headers
+            client_ip, _port = request.remote_address
+        forward = headers.get('x-forwarded-for', '')
+        if forward:
+            client_ip = forward.split(",")[0]
+        browser = headers.get('user-agent', '')
+        if ticket in cls.session_cache:
+            session = cls.session_cache[ticket]
+            session.check(request, client_ip, browser)
+        elif ticket and os.path.exists(f'TICKETS/{ticket}'):
+            session = cls.load_ticket_file(ticket)
+            session.check(request, client_ip, browser)
+        else:
+            session = Session(ticket, client_ip, browser)
+            if ticket:
+                cls.session_cache[ticket] = session
+        return session
+    def is_admin(self):
+        """The user is admin"""
+        return CONFIG.is_admin(self.login)
 
 C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host (for SSH)
 C5_IP = os.getenv('C5_IP', local_ip())               # For Socket IP binding

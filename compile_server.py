@@ -55,6 +55,10 @@ class Process: # pylint: disable=too-many-instance-attributes
         with open(self.log_file, "a") as file:
             file.write(repr((int(time.time()), self.conid, more)) + '\n')
 
+    def course_running(self):
+        """Check if the course is running for the user"""
+        return self.course.running(self.login)
+
     def cleanup(self, erase_executable=False):
         """Close connection"""
         print("cleanup")
@@ -146,28 +150,18 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
     print(path)
 
     _, ticket, course = path.split('/')
-    ticket = 'TICKETS/' + ticket
-    if not os.path.exists(ticket):
+    if not os.path.exists('TICKETS/' + ticket):
         return
-    with open(ticket, 'r') as file:
-        the_ip, _browser, login = eval(file.read()) # pylint: disable=eval-used
 
-    client_ip = websocket.request_headers.get('x-forwarded-for', '')
-    if client_ip:
-        client_ip = client_ip.split(",")[0]
-    else:
-        client_ip, _port = websocket.remote_address
-    assert the_ip == client_ip
-
-    # client_browser = websocket.headers.get('user-agent', '')
-    # assert _browser == client_browser
+    session = utilities.Session.get(websocket, ticket)
+    login = session.login
 
     process = Process(websocket, login, course)
     PROCESSES.append(process)
     try:
         async for message in websocket:
             action, data = json.loads(message)
-            if not utilities.CONFIG.is_admin(login) and not process.course.running(login):
+            if not session.is_admin() and not process.course_running():
                 if action == 'compile':
                     await process.websocket.send(json.dumps(
                         ['compiler', "La session est terminée"]))

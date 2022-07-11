@@ -37,7 +37,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     config = {}
     current_question_max = 0
     run_tester_after_exec = True
-    options = {'automatic_compilation': True}
+    options = {
+        'automatic_compilation': True,
+        }
 
     def __init__(self, questions):
         print("Worker: start")
@@ -48,6 +50,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         for i, quest in enumerate(questions):
             quest.worker = self
             self.post('default', [i, quest.default_answer()])
+        self.set_options(self.options)
         self.start_question()
         self.init()
         print("Worker: init done. current_question_max=", self.current_question_max)
@@ -198,7 +201,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         return '<h2>Question <div class="timer"><span id="timer"></span>⏱</div></h2>'
     def tester_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "<h2>Les buts de vous devez atteindre</h2>"
+        return "<h2>Les buts que vous devez atteindre</h2>"
     def executor_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "<h2>Exécution</h2>"

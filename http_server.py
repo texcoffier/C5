@@ -12,7 +12,6 @@ import zipfile
 import urllib.request
 import html
 import asyncio
-import aiohttp
 from aiohttp import web
 import utilities
 
@@ -89,83 +88,6 @@ class File:
             cls.file_cache[filename] = File(filename)
         return cls.file_cache[filename]
 
-# Sauvegarde disque
-# Menage temporel
-
-class Session:
-    """Session management"""
-    session_cache = {}
-    def __init__(self, ticket, client_ip, browser, login=None):
-        self.ticket = ticket
-        self.client_ip = client_ip
-        self.browser = browser
-        self.login = login
-    async def get_login(self, service):
-        """Return a validated login"""
-        if self.login:
-            return self.login
-        service = service.replace(
-            f'http://{utilities.C5_IP}:{utilities.C5_HTTP}/',
-            f'https://{utilities.C5_URL}/')
-        if utilities.C5_VALIDATE:
-            async with aiohttp.ClientSession() as session:
-                url = utilities.C5_VALIDATE % (urllib.request.quote(service),
-                                               urllib.request.quote(self.ticket))
-                async with session.get(url) as data:
-                    lines = await data.text()
-                    lines = lines.split('\n')
-                    if lines[0] == 'yes':
-                        self.login = lines[1].lower()
-                        self.record()
-            if not self.login:
-                print(('?', service))
-                raise web.HTTPFound(
-                    utilities.C5_REDIRECT + urllib.request.quote(service))
-        else:
-            if self.ticket and self.ticket.isdigit():
-                self.login = f'Anon#{self.ticket}'
-                self.record()
-            else:
-                raise web.HTTPFound(
-                    service + f'?ticket={int(time.time())}{len(self.session_cache)}')
-
-        return self.login
-    def record(self):
-        """Record the ticket for the compile server"""
-        with open(f'TICKETS/{self.ticket}', 'w') as file:
-            file.write(str(self))
-    def __str__(self):
-        return repr((self.client_ip, self.browser, self.login))
-    def check(self, request, client_ip, browser):
-        """Check for hacker"""
-        if self.client_ip != client_ip or self.browser != browser:
-            raise web.HTTPFound(str(request.url).split('?')[0])
-
-    @classmethod
-    def get(cls, request):
-        """Get or create a session.
-        Raise an error if hacker.
-        """
-        ticket = request.query.get('ticket', '')
-        client_ip = request.headers.get('x-forwarded-for', '')
-        if client_ip:
-            client_ip = client_ip.split(",")[0]
-        else:
-            client_ip, _port = request.transport.get_extra_info('peername')
-        browser = request.headers.get('user-agent', '')
-        if ticket in cls.session_cache:
-            session = cls.session_cache[ticket]
-            session.check(request, client_ip, browser)
-        elif ticket and os.path.exists(f'TICKETS/{ticket}'):
-            with open(f'TICKETS/{ticket}', 'r') as file:
-                session = Session(ticket, *eval(file.read())) # pylint: disable=eval-used
-            session.check(request, client_ip, browser)
-        else:
-            session = Session(ticket, client_ip, browser)
-            if ticket:
-                cls.session_cache[ticket] = session
-        return session
-
 def handle(base=''):
     """Send the file content"""
     async def real_handle(request):
@@ -173,7 +95,7 @@ def handle(base=''):
         if base:
             session = None # Not authenticated
         else:
-            session = Session.get(request)
+            session = utilities.Session.get(request)
             login = await session.get_login(str(request.url).split('?')[0])
             print((login, request.url))
         filename = request.match_info.get('filename', "=course_js.js")
@@ -198,7 +120,7 @@ def handle(base=''):
 async def log(request):
     """Log user actions"""
     print(('log', request.url), flush=True)
-    session = Session.get(request)
+    session = utilities.Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
     post = await request.post()
     course = utilities.CourseConfig.get(post['course'])
@@ -219,7 +141,7 @@ async def startup(_app):
 
 async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
-    session = Session.get(request)
+    session = utilities.Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
     if not utilities.CONFIG.is_admin(login):
         print(('notAdmin', request.url), flush=True)
@@ -283,23 +205,45 @@ async def adm_config(request):
 
     return await adm_home(request)
 
-async def adm_add_master(request):
-    """Add a C5 master"""
-    _session = await get_admin_login(request)
-    login = request.match_info['master']
-    utilities.CONFIG.add_master(login)
-    return await adm_home(request)
-
-async def adm_del_master(request):
+async def adm_c5(request):
     """Remove a C5 master"""
     _session = await get_admin_login(request)
-    login = request.match_info['master']
-    utilities.CONFIG.del_master(login)
-    return await adm_home(request)
-
+    action = request.match_info['action']
+    value = request.match_info['value']
+    more = "Nothing to do"
+    if action == 'add_master':
+        if value not in utilities.CONFIG.masters:
+            utilities.CONFIG.masters.append(value)
+            utilities.CONFIG.set_value('masters', utilities.CONFIG.masters)
+            more = f"Master «{value}» added"
+    elif action == 'del_master':
+        if value in utilities.CONFIG.masters:
+            utilities.CONFIG.masters.remove(value)
+            utilities.CONFIG.set_value('masters', utilities.CONFIG.masters)
+            more = f"Master «{value}» removed"
+    elif action == 'ticket_ttl':
+        try:
+            utilities.CONFIG.set_value(action, int(value))
+            more = f"Ticket TTL updated to {value} seconds"
+        except ValueError:
+            more = "Invalid ticket TTL"
+    elif action == 'remove_old_tickets':
+        # Load in order to remove!
+        nr_deleted = 0
+        for ticket in os.listdir('TICKETS'):
+            session = utilities.Session.load_ticket_file(ticket)
+            if session.too_old():
+                nr_deleted += 1
+        more = f"{nr_deleted} tickets deleted."
+    else:
+        more = "You are a hacker!"
+    return await adm_home(request, more)
 
 async def adm_home(request, more=''):
     """Home page for administrators"""
+    if more:
+        more = '<div class="more">' + more + '</div>'
+
     session = await get_admin_login(request)
     courses = []
     for course in sorted(os.listdir('.')):
@@ -455,7 +399,6 @@ async def upload_course(request):
             more = f"Course «{filename}» replaced"
         else:
             more = f"Course «{filename}» added"
-    more = '<div class="more">' + more + '</div>'
     return await adm_home(request, more)
 
 APP = web.Application()
@@ -463,8 +406,7 @@ APP.add_routes([web.get('/', handle()),
                 web.get('/adm_home', adm_home),
                 web.get('/adm_course={course}', adm_course),
                 web.get('/adm_config={course}={action}', adm_config),
-                web.get('/adm_add_master={master}', adm_add_master),
-                web.get('/adm_del_master={master}', adm_del_master),
+                web.get('/adm_c5={action}={value}', adm_c5),
                 web.get('/{filename}', handle()),
                 web.get('/brython/{filename}', handle('brython')),
                 web.get('/adm_get/{filename:.*}', adm_get),
