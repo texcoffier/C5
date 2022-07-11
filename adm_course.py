@@ -6,7 +6,7 @@ window = window
 isNaN = isNaN
 Math = Math
 
-MAX_WIDTH = 600
+MAX_WIDTH = 400
 SNAIL = 4
 
 def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -98,7 +98,7 @@ def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-stat
     text = ["""<!DOCTYPE html>
 <style>
 TABLE { border-spacing: 0px; border-collapse: collapse }
-TABLE TD { vertical-align: top; border: 1px solid #888; padding: 0px}
+TABLE TD { vertical-align: top; border: 1px solid #888; padding: 0px; white-space: pre}
 TEXTAREA { border: 0px; min-height:10em; font-size:60%; width:10em; height:100% }
 BUTTON { width: 100% }
 E { font-family: emoji }
@@ -134,7 +134,7 @@ E { font-family: emoji }
         else:
             median = (times[middle-1] + times[middle]) / 2
         question_medians[i] = median
-    max_time = Math.min(MAX_WIDTH, sum(question_medians))
+    max_time = Math.max(MAX_WIDTH, sum(question_medians))
 
     for login in students:
         student = STUDENTS[login]
@@ -169,13 +169,12 @@ E { font-family: emoji }
             text.append(filename)
             text.append('</a>')
     text.append('''
-        <tr><td><td>
-        Sources :<br>
-        <button onclick="window.location.pathname = 'adm_answers/0/' + COURSE + '.zip'"
-        >Validated questions<br>txt ZIP</button><br>
-        <button onclick="window.location.pathname = 'adm_answers/1/' + COURSE + '.zip'"
-        >Saved questions<br>txt ZIP</button>
-        ''')
+<tr><td><td>Sources:
+<button onclick="window.location.pathname = 'adm_answers/0/' + COURSE + '.zip'"
+>Validated questions<br>txt ZIP</button>
+<button onclick="window.location.pathname = 'adm_answers/1/' + COURSE + '.zip'"
+>Saved questions<br>txt ZIP</button>
+''')
     for what in WHAT:
         text.append('<td><textarea>' + sums[what] + '</textarea>')
     text.append('<td><table style="font-size: 90%">')
