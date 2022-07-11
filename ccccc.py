@@ -226,7 +226,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.state == 'started':
             return # Compiler is running
         source = self.editor.innerText
-        if (self.options['automatic_compilation'] or self.compile_now) and source != self.old_source:
+        if (self.options['automatic_compilation'] or self.compile_now
+           ) and source != self.old_source:
             self.compile_now = False
             self.old_source = source # Do not recompile the same thing
             self.clear_highlight_errors()
@@ -386,8 +387,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
             event.preventDefault(True)
+        elif event.key == 's' and event.ctrlKey:
+            self.save()
+            event.preventDefault(True)
         elif event.key == 'F9':
-            if self.options['automatic_compilation'] == False:
+            if self.options['automatic_compilation'] == False: # pylint: disable=singleton-comparison
                 self.compilation_run()
             elif self.options['automatic_compilation']:
                 document.getElementById('automatic_compilation').checked = True
