@@ -39,6 +39,23 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     run_tester_after_exec = True
     options = {
         'automatic_compilation': True,
+        'question_title': 'Question',
+        'tester_title': 'Les buts que vous devez atteindre',
+        'compiler_title': 'Compilation',
+        'compiler_title_toggle': 'Désactivée (F9)',
+        'compiler_title_button': 'Maintenant ! (F9)',
+        'executor_title': 'Exécution',
+        'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
+        'icon_reset': '🗑',
+        'icon_save': '📩',
+        'reset_confirm': 'Vous voulez vraiment revenir à la version de départ ?',
+        'time_running': 'Fini dans',
+        'time_done': "Fini depuis",
+        'time_seconds': " secondes",
+        'time_days': " jours",
+        'time_d': " j ",
+        'time_m': " m ",
+        'time_h': " h ",
         }
 
     def __init__(self, questions):
@@ -198,23 +215,25 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return '<h2>Question <div class="timer"><span id="timer"></span>⏱</div></h2>'
+        return ('<h2>' + self.options['question_title']
+                + ' <div class="timer"><span id="timer"></span>⏱</div></h2>')
     def tester_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "<h2>Les buts que vous devez atteindre</h2>"
+        return "<h2>" + self.options['tester_title'] + "</h2>"
     def executor_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "<h2>Exécution</h2>"
+        return "<h2>" + self.options['executor_title'] + "</h2>"
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         if self.options['automatic_compilation']:
-            return ('<h2>Compilation <label>'
-                    + '<input type="checkbox" id="automatic_compilation" '
-                    + ' onchange="ccccc.compilation_toggle()">'
-                    + '<span>Désactivée (F9)</span>'
-                    + '</label></h2>')
-        return ('<h2>Compile <label><div style="font-size: 80%" onclick="ccccc.compilation_run()">'
-                + 'Maintenant ! (F9)</div></label></h2>')
+            more = ('<input type="checkbox" id="automatic_compilation" '
+                    + ' onchange="ccccc.compilation_toggle()"><span>'
+                    + self.options['compiler_title_toggle'] + '</span>')
+        else:
+            more = ('<div style="font-size: 80%" onclick="ccccc.compilation_run()">'
+                    + self.options['compiler_title_button'] + '</div>')
+        return ('<h2>' + self.options['compiler_title'] + ' <label>'
+                + more + '</label></h2>')
     def time_initial_content(self):
         """The message terminate the job. It indicates the worker time"""
         more = ' ' + self.current_question_max

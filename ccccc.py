@@ -31,6 +31,7 @@ try:
     hljs = hljs
     window = window
     confirm = confirm
+    millisecs = millisecs
     Date = Date
     Math = Math
     JSON = JSON
@@ -113,7 +114,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'close': "Voulez-vous vraiment quitter cette page ?",
         'allow_copy_paste': False,
         'display_reset': True,
-        # 'automatic_compilation': True, Defined by compiler or course
         'positions' : {
             'question': [1, 29, 0, 30, '#EFE'],
             'tester': [1, 29, 30, 70, '#EFE'],
@@ -164,7 +164,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         self.inputs = {} # Indexed by the question number
         self.do_not_clear = {}
-        self.seconds = int(millisecs() / 1000) # pylint: disable=undefined-variable
+        self.seconds = int(millisecs() / 1000)
         print("GUI: init done")
 
     def send_input(self, string):
@@ -195,6 +195,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.reset_button.style.display = 'block'
         else:
             self.reset_button.style.display = 'none'
+        self.reset_button.textContent = self.options['icon_reset']
+        self.save_button.textContent = self.options['icon_save']
 
     def create_gui(self):
         """The text editor container"""
@@ -214,11 +216,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.onscroll = bind(self.onscroll, self)
         self.editor.focus()
 
-        self.reset_button.textContent = '🗑'
         self.reset_button.style.fontFamily = 'emoji'
         self.reset_button.onclick = bind(self.reset, self)
-
-        self.save_button.textContent = '📩'
+        self.save_button.style.fontFamily = 'emoji'
         self.save_button.onclick = bind(self.save, self)
 
     def scheduler(self): # pylint: disable=too-many-branches
@@ -235,7 +235,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.state = 'started'
             print("send to compiler")
             self.worker.postMessage(source) # Start compile/execute/test
-        seconds = int(millisecs() / 1000) # pylint: disable=undefined-variable
+        seconds = int(millisecs() / 1000)
         if self.seconds != seconds:
             self.seconds = seconds
             timer = document.getElementById('timer')
@@ -243,24 +243,29 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 delta = STOP - seconds # pylint: disable=undefined-variable
                 if delta < 0:
                     timer.className = "done"
-                    message = "Fini depuis"
+                    message = self.options['time_done']
                     delta = -delta
                 else:
-                    message = "Fini dans"
+                    message = self.options['time_running']
+                secs = two_digit(delta % 60)
+                mins = two_digit((delta/60) % 60)
+                hours = two_digit((delta/3600) % 24)
+                days = int(delta/86400)
+                opts = self.options
                 if delta < 60:
-                    delta = str(delta) + ' secondes'
+                    delta = str(delta) + ' ' + opts['time_seconds']
                     if timer.className != 'done':
                         timer.className = "minus60"
                 elif delta < 3600:
                     if delta < 300 and timer.className != 'done':
                         timer.className = "minus300"
-                    delta = int(delta/60) + ' m ' + two_digit(delta % 60) + ' s'
+                    delta = mins + opts['time_m'] + secs
                 elif delta < 24*60*60:
-                    delta = int(delta/3600) + ' h ' + two_digit((delta/60) % 60) + ' m'
+                    delta = hours + opts['time_h'] + mins + opts['time_m']
                 elif delta < 10*24*60*60:
-                    delta = int(delta/86400) + ' j ' + two_digit((delta/3600) % 24) + ' h'
+                    delta = days + opts['time_d'] + hours + opts['time_h']
                 else:
-                    delta = int(delta/86400) + ' jours'
+                    delta = days + opts['time_days']
                 timer.innerHTML = message + '<br>' + delta
 
     def compilation_toggle(self):
@@ -449,7 +454,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def reset(self):
         """Reset the editor to the first displayed value"""
-        if confirm('Vous voulez vraiment revenir à la version de départ ?'):
+        if confirm(self.options['reset_confirm']):
             self.set_editor_content(self.question_original[self.current_question])
 
     def save(self):
@@ -500,7 +505,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.current_question not in self.question_done:
                 self.record(['answer', self.current_question, value.strip()], True)
                 self.question_done[self.current_question] = True
-                popup_message('Bravo !')
+                messages = self.options['good']
+                popup_message(messages[millisecs() % len(messages)])
         elif what == 'executor':
             self.clear_if_needed(what)
             if value == '\000INPUT':

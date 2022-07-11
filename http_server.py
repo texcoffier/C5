@@ -9,7 +9,6 @@ import json
 import collections
 import tempfile
 import zipfile
-import urllib.request
 import html
 import asyncio
 from aiohttp import web

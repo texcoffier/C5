@@ -77,10 +77,11 @@ PRE {
 }
 
 H2 {
-    text-align: center;
+    text-align: left;
     font-size: 120%;
     margin-top: 0em;
     margin-bottom: 0.3em;
+    padding-left: 0.5em;
     padding-top: 0.3em;
     padding-bottom: 0.3em;
     position: sticky;
