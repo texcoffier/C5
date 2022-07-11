@@ -427,6 +427,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if event.target.run_on_change:
                 self.old_source = ''
                 self.unlock_worker()
+                self.compilation_run() # Force run even if deactivated
             else:
                 self.send_input(event.target.value)
                 event.target.run_on_change = True

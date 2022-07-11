@@ -56,7 +56,7 @@ DIV.overlay {
 }
 
 .executor INPUT {
-    width: 100%;
+    width: calc(100% - 0.3em);
     font-size: 100%;
 }
 
