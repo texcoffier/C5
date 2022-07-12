@@ -36,6 +36,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.websocket = websocket
         self.conid = str(id(websocket))
         self.process = None
+        self.allowed = None
         self.tasks = ()
         self.wait_input = False
         self.login = login
@@ -105,21 +106,35 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.cleanup()
     async def compile(self, data):
         """Compile"""
-        _course, _question, source = data
+        _course, _question, compiler, compile_options, ld_options, allowed, source = data
         self.log(("COMPILE", data))
         self.cleanup(erase_executable=True)
         with open(self.source_file, "w") as file:
             file.write(source)
-        self.process = await asyncio.create_subprocess_exec(
-            'g++', '-Wall', self.source_file, '-o', self.exec_file,
-            stderr=asyncio.subprocess.PIPE,
-            preexec_fn=set_compiler_limits,
-            )
-        stderr = await self.process.stderr.read()
+        stderr = ''
+        if compiler not in ('gcc', 'g++'):
+            stderr += f'Compilateur non autorisé : «{compiler}»\n'
+        for option in compile_options:
+            if option not in ('-Wall', '-pedantic', '-pthread'):
+                stderr += f'Option de compilation non autorisée : «{option}»\n'
+        for option in ld_options:
+            if option not in ():
+                stderr += f"Option d'édition des liens non autorisée : «{option}»\n"
+        for option in allowed:
+            if option not in ('brk',):
+                stderr += f"Appel système non autorisé : «{option}»\n"
         if not stderr:
-            stderr = "Bravo, il n'y a aucune erreur"
-        else:
-            stderr = stderr.decode('utf-8')
+            self.allowed = ':'.join(["fstat", "write", "read", "lseek", "exit_group"] + allowed)
+            self.process = await asyncio.create_subprocess_exec(
+                compiler, *compile_options, self.source_file, *ld_options, '-o', self.exec_file,
+                stderr=asyncio.subprocess.PIPE,
+                preexec_fn=set_compiler_limits,
+                )
+            stderr = await self.process.stderr.read()
+            if not stderr:
+                stderr = "Bravo, il n'y a aucune erreur"
+            else:
+                stderr = stderr.decode('utf-8')
         await self.websocket.send(json.dumps(['compiler', stderr]))
         os.unlink(self.source_file)
     async def run(self):
@@ -135,7 +150,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             stdin=asyncio.subprocess.PIPE,
             # stderr=subprocess.PIPE,
             env={'LD_PRELOAD': 'sandbox/libsandbox.so',
-                 'SECCOMP_SYSCALL_ALLOW': "fstat:write:read:lseek:exit_group" # brk
+                 'SECCOMP_SYSCALL_ALLOW': self.allowed,
                 },
             close_fds=True,
             preexec_fn=set_limits,

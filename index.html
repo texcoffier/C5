@@ -218,7 +218,13 @@
             'index': [0, 1, 0, 100, '#0000'],
             'save_button': [66, 2, 0, 2, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
-            }
+            },
+        # For compile_remote. The values must be allowed by the server.
+        'compiler': 'g++', # or 'gcc'
+        'compile_options': ['-Wall'], # -pedantic
+        'ld_options': [],
+        'allowed': [], # system call allowed 'brk'
+
     })</pre>
         Il faut mettre seulement les options qui changent.
         Les options restent les mêmes tant qu'elles ne sont pas modifiées.

@@ -14,7 +14,13 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def init(self):
         """Your own compiler init"""
-        self.set_options({'language': 'cpp'})
+        self.set_options({
+            'compiler': 'g++', # or 'gcc'
+            'compile_options': ['-Wall'], # -pedantic
+            'ld_options': [],
+            'allowed': [],
+            'language': 'cpp',
+            })
         self.popup("""
         <p>
         ATTENTION
@@ -116,7 +122,14 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
             return None
         try:
             self.socket.send(JSON.stringify( # pylint: disable=undefined-variable
-                ['compile', [self.config.COURSE, self.current_question, source]]))
+                ['compile', [
+                    self.config.COURSE,
+                    self.current_question,
+                    self.options['compiler'],
+                    self.options['compile_options'],
+                    self.options['ld_options'],
+                    self.options['allowed'],
+                    source]]))
             return None
         except Error as err: # pylint: disable=undefined-variable
             self.post(
