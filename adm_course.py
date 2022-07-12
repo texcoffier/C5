@@ -19,6 +19,7 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
     paste_bad = 0
     paste_ok = 0
     nr_answered = 0
+    nr_blurs = 0
     time_start = 0
     time_sum = []
     last = -1
@@ -45,6 +46,8 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
                     paste_ok += 1
                 elif cell.startswith('Copy'):
                     copy_ok += 1
+                elif cell.startswith('Blur'):
+                    nr_blurs += 1
                 else:
                     key_stroke += 1
                 continue
@@ -76,11 +79,12 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             'copy_bad': copy_bad, 'copy_ok': copy_ok,
             'paste_bad': paste_bad, 'paste_ok': paste_ok,
             'nr_answered': nr_answered,
+            'nr_blurs': nr_blurs,
             'time_sum': time_sum,
            }
 
 WHAT = ['nr_answered', 'time', 'key_stroke', 'mouse_click',
-        'copy_ok', 'copy_bad', 'paste_ok', 'paste_bad'
+        'copy_ok', 'copy_bad', 'paste_ok', 'paste_bad', 'nr_blurs'
        ]
 
 COLORS = ["888", "F44", "FF0", "0F0", "0FF", "88F", "F0F", "CCC"]
@@ -113,7 +117,7 @@ E { font-family: emoji }
 <p>
 <table border>
     <tr><th>Login<th colspan="2">Questions<br>Validated<th>Time<br>in sec.<th>Keys
-        <th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Time per question<br>
+        <th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Time per question<br>
         <E>🐌</E> : clipped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
 """)
     cache = {}

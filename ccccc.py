@@ -421,6 +421,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.coloring()
     def onkeypress(self, event):
         """Key press"""
+    def onblur(self, event):
+        """Window blur"""
+        self.record('Blur')
     def onscroll(self, _event=None):
         """To synchronize syntax highlighting"""
         if self.oldScrollTop is not None:
@@ -582,6 +585,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.top.onkeyup = bind(self.onkeyup, self)
         self.top.onkeypress = bind(self.onkeypress, self)
         window.onbeforeunload = bind(self.onbeforeunload, self)
+        window.onblur = bind(self.onblur, self)
         document.getElementsByTagName('BODY')[0].appendChild(self.top)
         self.create_gui()
         self.update_gui()
