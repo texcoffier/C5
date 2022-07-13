@@ -287,7 +287,7 @@ C5_WEBSOCKET = os.getenv('C5_WEBSOCKET', f'{C5_HOST}:{C5_SOCK}') # c5 public web
 C5_REDIRECT = os.getenv('C5_REDIRECT', '')
 # CAS login validation as:  'https://cas.univ-lyon1.fr/cas/validate?service=%s&ticket=%s'
 C5_VALIDATE = os.getenv('C5_VALIDATE', '')
-C5_LOCAL = int(os.getenv('C5_LOCAL', '0'))
+C5_LOCAL = int(os.getenv('C5_LOCAL', '1'))
 
 def print_state():
     """Print the current configuration"""
