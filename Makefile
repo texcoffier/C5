@@ -32,6 +32,7 @@ favicon.ico:c5.svg
 
 prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js ccccc.js adm_home.js adm_course.js sandbox course_js_done.js course_js_pending.js favicon.ico
 	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')
+	@if [ ! -d SSL ] ; then ./utilities.py SSL-SS ; fi
 
 all:prepare
 	@echo
