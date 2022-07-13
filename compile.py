@@ -96,7 +96,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             if self.questions[question] and config['ANSWERS'][question]:
                 self.questions[question].last_answer = config['ANSWERS'][question][0]
                 if question >= self.current_question and config['ANSWERS'][question][1]:
-                    self.current_question_max = question + 1
+                    if self.questions[question + 1]:
+                        # Only if not after the last question
+                        self.current_question_max = question + 1
         self.current_question = self.current_question_max
         if self.current_question != 0 or self.questions[0].last_answer:
             self.source = self.questions[0].last_answer
