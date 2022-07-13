@@ -102,7 +102,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             await self.websocket.send(json.dumps(['executor', line.decode("utf-8")]))
         if self.process:
             await self.websocket.send(json.dumps(
-                ['return', "Code de fin d'exécution = " + str(await self.process.wait())]))
+                ['return', "\nCode de fin d'exécution = " + str(await self.process.wait())]))
             self.cleanup()
     async def compile(self, data):
         """Compile"""
@@ -175,6 +175,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
     PROCESSES.append(process)
     try:
         async for message in websocket:
+            print(message, flush=True)
             action, data = json.loads(message)
             if not session.is_admin() and not process.course_running():
                 if action == 'compile':
