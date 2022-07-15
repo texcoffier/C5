@@ -148,10 +148,6 @@ div:hover>.i {
     visibility: visible;
 }
 
-H2 {
-    position: relative;
-}
-
 LABEL, .timer {
     position: absolute;
     background: #DDF;
