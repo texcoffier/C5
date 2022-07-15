@@ -2,10 +2,12 @@ BODY {
     font-family: sans-serif;
     font-size: 1vw;
     --pad: 0.5em;
+    overflow: hidden;
 }
 
 DIV.question {
     text-align: justify;
+    overflow: auto;
 }
 
 DIV.compiler,
@@ -16,6 +18,7 @@ DIV.overlay {
     overflow-wrap: anywhere;
     font-family: monospace, monospace;
     line-height: 1.18vw;
+    overflow: auto;
 }
 
 .error,

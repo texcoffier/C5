@@ -189,7 +189,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             e.style.top = top + '%'
             e.style.bottom = (100 - top - height) + '%'
             e.style.background = background
-            e.style.overflow = 'auto'
             e.background = background
         if self.options['display_reset']:
             self.reset_button.style.display = 'block'
