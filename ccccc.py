@@ -108,6 +108,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     popup_done = False
     last_save = ''
     compile_now = False
+    need_editor_cleanup = False
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -302,6 +303,28 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.overlay.removeChild(self.overlay.lastChild)
     def coloring(self):
         """Coloring of the text editor with an overlay."""
+        if self.need_editor_cleanup:
+            # The Enter key insert DIV in place of BR when inserting at the beginning
+            self.need_editor_cleanup = False
+            children = [i for i in self.editor.childNodes] # pylint: disable=unnecessary-comprehension
+            for child in children:
+                if child.tagName == 'DIV':
+                    # Must be removed and the children must go up
+                    element = child.nextSibling
+                    self.editor.removeChild(child)
+                    need_br = len(child.childNodes) == 1 and not child.firstChild.tagName
+                    for kid in child.childNodes:
+                        if element:
+                            self.editor.insertBefore(kid, element)
+                        else:
+                            self.editor.appendChild(kid)
+                    if need_br:
+                        # FireFox case
+                        kid = document.createElement('BR')
+                        if element:
+                            self.editor.insertBefore(kid, element)
+                        else:
+                            self.editor.appendChild(kid)
         self.overlay.innerHTML = html(self.editor.innerText)
         self.overlay.className = 'overlay language-' + self.options['language']
         hljs.highlightElement(self.overlay)
@@ -407,10 +430,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
             self.oldScrollTop = self.editor.scrollTop
-            if 'Firefox' in navigator.userAgent: # pylint: disable=undefined-variable
-                # Do not want <br> inserted, so prevent default
-                document.execCommand('insertHTML', False, '\n')
-                event.preventDefault(True)
+            self.need_editor_cleanup = True
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
         self.overlay_hide()
@@ -420,7 +440,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.coloring()
     def onkeypress(self, event):
         """Key press"""
-    def onblur(self, event):
+    def onblur(self, _event):
         """Window blur"""
         self.record('Blur')
     def onscroll(self, _event=None):
