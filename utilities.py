@@ -132,16 +132,20 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
 
 class Config:
     """C5 configuration"""
+    masters = []
+    ticket_ttl = 86400
     def __init__(self):
         self.config = {
-            'masters': [],
-            'ticket_ttl': 86400,
+            'masters': self.masters,
+            'ticket_ttl': self.ticket_ttl,
         }
+        self.load()
+    def load(self):
+        """Load configuration from file"""
         if os.path.exists('c5.cf'):
             with open('c5.cf', 'r') as file:
                 self.config.update(json.loads(file.read()))
         self.update()
-
     def update(self):
         """Update configuration attributes"""
         self.masters = self.config['masters']
@@ -158,9 +162,8 @@ class Config:
         self.config[key] = value
         self.save()
         self.update()
-
     def is_admin(self, login):
-        """Returns True if it is and admin login"""
+        """Returns True if it is an admin login"""
         if login in self.masters:
             return True
         if self.masters:

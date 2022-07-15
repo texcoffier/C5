@@ -565,7 +565,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.clear_if_needed(what)
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
-            span = document.createElement('SPAN')
+            span = document.createElement('DIV')
             span.innerHTML = value
             if '<error' in value:
                 self[what].style.background = '#FAA' # pylint: disable=unsubscriptable-object

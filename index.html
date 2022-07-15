@@ -300,13 +300,28 @@ server {
         }
   }
             </pre>
+    <h3>Tests de régression</h3>
+    <p>
+        Installer les paquets :
+    </p>
+    <pre>apt install python3-selenium chromium-chromedriver firefox-geckodriver xnest xvfb</pre>
+    <p>
+        Lancer les tests :
+    </p>
+    <ul>
+        <li> <tt>./tests.py</tt> : sur l'écran sans jamais s'arrêter.</li>
+        <li> <tt>./tests.py hidden</tt> : caché (xvfb).</li>
+        <li> <tt>./tests.py FF</tt> : seulement FireFox.</li>
+        <li> <tt>./tests.py 1</tt> : une seule fois (sinon ils ne s'arrêtent pas).</li>
+    </ul>
+    <p>
+        Le résumé est dans <tt>tests.log</tt>
+    </p>
     <h2>TODO</h2>
     <p>
         Fonctionnalités manquantes:
     </p>
     <ul>
-        <li> Sauvegarde quand la page est fermée. </li>
-        <li> Ménage ticket CAS. </li>
         <li> Ménage fichiers log. </li>
     </ul>
 </body>

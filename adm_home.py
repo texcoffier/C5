@@ -51,20 +51,21 @@ def display():
     <tr><th>Course<br>Master<th>Logs<th>Try<th>Start<th>Stop<th>TT logins
         <th>ZIP<th>Update<br>course source</tr>
     ''']
-    def add_button(url, label):
+    def add_button(url, label, name=''):
         text.append(
-            '<button onclick="window.location = \'' + url + '?ticket=' + TICKET + '\'">'
+            '<button onclick="window.location = \'' + url + '?ticket=' + TICKET
+            + '\'" class="' + name + '">'
             + label + '</button>')
-    def add_input(url, value):
+    def add_input(url, value, name=''):
         text.append(
             '<input onchange="window.location = \''
             + url + "'+encodeURIComponent(this.value)+" + '\'?ticket=' + TICKET + '\'"'
-            + ' value="' + value + '">')
+            + ' value="' + value + '" class="' + name + '">')
     def add_textarea(url, value):
         text.append(
             '<textarea onchange="window.location = \''
             + url + "'+encodeURIComponent(this.textContent)+" + '\'?ticket=' + TICKET + '\'">'
-            + encodeURIComponent(value)) + '</textarea>'
+            + encodeURIComponent(value) + '</textarea>')
     def form(content, disable):
         value = (
             '<form id="upload_course" method="POST" enctype="multipart/form-data" action="'
@@ -77,7 +78,7 @@ def display():
         text.append(value)
 
     for course in COURSES:
-        text.append('<tr class="' + course.status + '"><td><b>')
+        text.append('<tr class="' + course.status + ' ' + course.course.split('.')[0] + '"><td><b>')
         text.append(course.course)
         text.append('</b><br>')
         text.append(course.master)
@@ -101,7 +102,7 @@ def display():
             add_button('adm_get/' + course.course + '.zip', 'ZIP')
         text.append('<td>')
         form(
-            '<div><input type="submit" value="Remplace «'
+            '<div><input type="submit" value="Replace «'
             + course.course + '.js»'
             + '" name="replace"></div>',
             LOGIN != course.master)
@@ -111,14 +112,15 @@ def display():
     text.append('<hr>')
     text.append('Masters: ')
     for master in CONFIG.masters:
-        add_button('adm_c5=del_master=' + master, '🗑')
+        add_button('adm_c5=del_master=' + master, '🗑',
+                   name='del_master_' + master.replace('.', '_')) # For regtests
         text.append(' ' + master + ', ')
-    add_input('adm_c5=add_master=', '')
+    add_input('adm_c5=add_master=', '', name="add_master")
     text.append('<hr>')
     text.append('Session ticket time to live in seconds: ')
-    add_input('adm_c5=ticket_ttl=', CONFIG.ticket_ttl)
+    add_input('adm_c5=ticket_ttl=', CONFIG.ticket_ttl, name="ticket_ttl")
     text.append(' ')
-    add_button('adm_c5=remove_old_tickets=0', 'Remove old tickets now')
+    add_button('adm_c5=remove_old_tickets=0', 'Remove old tickets now', name="remove_olds")
     text.append('<hr>')
     text.append(MORE)
     document.body.innerHTML = text.join('')

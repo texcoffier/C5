@@ -3,6 +3,7 @@
 # Call utilities.py with the configuration defined.
 
 export C5_HOST="127.0.0.1"
+export C5_IP="127.0.0.1"
 export C5_ROOT="debian"
 export C5_LOGIN="exco"
 export C5_HTTP="4201"

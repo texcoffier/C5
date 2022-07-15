@@ -197,13 +197,16 @@ async def adm_config(request):
         config.set_stop(more)
         if config.start > more:
             config.set_start(more)
+        feedback = f"«{course}» Stop date updated"
     elif action == 'start':
         config.set_start(more)
         config.set_stop('2100-01-01 00:00:00')
+        feedback = f"«{course}» Start date updated"
     elif action == 'tt':
         config.set_tt(more)
+        feedback = f"«{course}» TT list updated"
 
-    return await adm_home(request)
+    return await adm_home(request, feedback)
 
 async def adm_c5(request):
     """Remove a C5 master"""
@@ -401,6 +404,17 @@ async def upload_course(request):
             more = f"Course «{filename}» added"
     return await adm_home(request, more)
 
+async def config_reload(request):
+    """For regression tests"""
+    session = utilities.Session.get(request)
+    login = await session.get_login(str(request.url).split('?')[0])
+    print(('LoadConfig', login), flush=True)
+    utilities.CONFIG.load()
+    return web.Response(
+        body='done',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
 APP = web.Application()
 APP.add_routes([web.get('/', handle()),
                 web.get('/adm_home', adm_home),
@@ -411,6 +425,7 @@ APP.add_routes([web.get('/', handle()),
                 web.get('/brython/{filename}', handle('brython')),
                 web.get('/adm_get/{filename:.*}', adm_get),
                 web.get('/adm_answers/{saved}/{course:.*}', adm_answers),
+                web.get('/config/reload', config_reload),
                 web.post('/log', log),
                 web.post('/upload_course', upload_course),
                 ])
