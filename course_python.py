@@ -240,8 +240,8 @@ class Q_exo1(Question):
             self.next_question()
     def default_answer(self):
         return """# Rien pour vous aider
-# Vous pouvez retourner sur les questions précédentes en cliquant
-# sur la colonne de nombres qui est tout à gauche.
+# Vous pouvez retourner sur les questions précédentes en
+# cliquant sur la colonne de nombres qui est tout à gauche.
 
 
 """

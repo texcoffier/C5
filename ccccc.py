@@ -357,16 +357,32 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
+        box = document.createRange()
+        def insert(element, class_name):
+            """Set the element to the same place than the range"""
+            rect = box.getBoundingClientRect()
+            element.style.top = (rect.top - self.editor.offsetTop) + 'px'
+            element.style.height = rect.height + 'px'
+            element.style.left = 'calc(' + (rect.left - self.editor.offsetLeft) + 'px - var(--pad))'
+            element.style.width = rect.width + 'px'
+            element.className = class_name
+            self.overlay.appendChild(element)
+
+        br = self.editor.children[line_nr - 1]
+        if br.previousSibling and br.previousSibling.tagName != 'BR':
+            line = br.previousSibling
+        else:
+            line = br # empty line
+        box.selectNode(line)
         error = document.createElement('DIV')
-        error.className = 'ERROR ' + what
-        error.style.top = (line_nr - 1) * 1.18 + 'vw'
-        self.overlay.appendChild(error)
-        char = document.createElement('DIV')
-        char.className = what + ' char ERROR'
-        char.style.top = error.style.top
-        char.style.left = (char_nr - 1) + 'ch'
-        char.style.width = '1ch'
-        self.overlay.appendChild(char)
+        insert(error, 'ERROR ' + what)
+        try:
+            box.setStart(line, char_nr-1)
+            box.setEnd(line, char_nr)
+            char = document.createElement('DIV')
+            insert(char, what + ' char ERROR')
+        except: # pylint: disable=bare-except
+            pass
 
     def onmousedown(self, event):
         """Mouse down"""
