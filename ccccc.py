@@ -408,6 +408,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Mouse down"""
         if self.options['allow_copy_paste']:
             self.record('Paste')
+            self.overlay_hide()
+            setTimeout(bind(self.coloring, self), 100)
             return
         text = (event.clipboardData or event.dataTransfer).getData("text")
         if text in self.editor.innerText or text == self.copied:
