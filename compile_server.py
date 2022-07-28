@@ -118,7 +118,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             if option not in ('-Wall', '-pedantic', '-pthread'):
                 stderr += f'Option de compilation non autorisée : «{option}»\n'
         for option in ld_options:
-            if option not in ():
+            if option not in ('-lm',):
                 stderr += f"Option d'édition des liens non autorisée : «{option}»\n"
         for option in allowed:
             if option not in ('brk',):

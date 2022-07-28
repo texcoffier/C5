@@ -396,7 +396,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record('Copy')
             return
         text = window.getSelection().toString()
-        if text not in self.editor.innerText:
+        if text not in self.editor.innerText and text not in self.question.innerText:
             self.record('CopyRejected')
             popup_message(self.options['forbiden'])
             event.preventDefault(True)
@@ -412,7 +412,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             setTimeout(bind(self.coloring, self), 100)
             return
         text = (event.clipboardData or event.dataTransfer).getData("text")
-        if text in self.editor.innerText or text == self.copied:
+        if text in self.editor.innerText or text in self.question.innerText or text == self.copied:
             self.record('PasteOk')
             self.overlay_hide()
             setTimeout(bind(self.coloring, self), 100)

@@ -16,7 +16,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
         """Your own compiler init"""
         self.set_options({
             'compiler': 'g++', # or 'gcc'
-            'compile_options': ['-Wall'], # -pedantic
+            'compile_options': ['-Wall'], # -pedantic -pthread
             'ld_options': [],
             'allowed': [],
             'language': 'cpp',
