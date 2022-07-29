@@ -131,13 +131,16 @@ E { font-family: emoji }
             question_times[i].append(seconds)
     question_medians = []
     for i, times in enumerate(question_times):
-        times.sort()
-        middle = Math.floor(len(times) // 2)
-        if len(times) % 2 == 1:
-            median = times[middle]
+        sortable = [1000000000 + time for time in times] # JS can't sort numbers
+        sortable.sort()
+        middle = Math.floor(len(sortable) // 2)
+        if len(sortable) % 2 == 1:
+            median = sortable[middle]
         else:
-            median = (times[middle-1] + times[middle]) / 2
-        question_medians[i] = median
+            median = (sortable[middle-1] + sortable[middle]) / 2
+        if len(sortable) < 3:
+            median = 1000000010 # Seconds if not 3 samples
+        question_medians[i] = median - 1000000000
     max_time = Math.max(MAX_WIDTH, sum(question_medians))
 
     for login in students:
@@ -157,7 +160,8 @@ E { font-family: emoji }
         for i, seconds in enumerate(stats['time_sum']):
             if seconds > question_medians[i] * SNAIL:
                 seconds = question_medians[i] * SNAIL
-                more = '<E>🐌</E>'
+                if question_medians[i] != 10:
+                    more = '<E>🐌</E>'
             else:
                 more = ''
             text.append('<span style="width:' + (MAX_WIDTH*seconds)/max_time
