@@ -52,6 +52,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'stop': "2100-01-01 00:00:00",
                        'tt': '',
                        'teachers': 'nobody',
+                       'copy_paste': '0',
                       }
         self.time = time.time()
         try:
@@ -79,25 +80,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         with open(self.course + '.cf', 'w') as file:
             file.write(repr(self.config))
         self.time = time.time()
-
-    def set_start(self, date):
-        """Set the start date"""
-        self.config['start'] = date
-        self.update()
-        self.record()
-    def set_stop(self, date):
-        """Set the stop date"""
-        self.config['stop'] = date
-        self.update()
-        self.record()
-    def set_tt(self, tt_list):
-        """Set the tiers temps login list"""
-        self.config['tt'] = tt_list
-        self.update()
-        self.record()
-    def set_teachers(self, teachers):
-        """Set the teachers of the course"""
-        self.config['teachers'] = teachers
+    def set_parameter(self, parameter, value):
+        """Set one of the parameters"""
+        self.config[parameter] = value
         self.update()
         self.record()
     def get_stop(self, login):

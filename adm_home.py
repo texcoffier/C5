@@ -54,7 +54,7 @@ def display():
     <p>
     Changing the stop date will not update onscreen timers.
     <table>
-    <tr><th>Course<br>Master<th>Logs<th>Try<th>Start<th>Stop<th>TT logins
+    <tr><th>Course<br>Master<th>Logs<th>Try<th>Start<th>Stop<th>Options<th>TT logins
         <th>ZIP<th>Update<br>course source<th>Teachers</tr>
     ''']
     def add_button(url, label, name=''):
@@ -69,6 +69,14 @@ def display():
             + ' value="' + value + '" class="' + name + '"'
             + (disable and ' disabled' or '')
             + '>')
+    def add_toggle(url, value, name='', disable=False):
+        text.append(
+            '<label><input type="checkbox" onchange="window.location = \''
+            + url + "'+(this.checked ? 1 : 0)+" + '\'?ticket=' + TICKET + '\'"'
+            + ((value == '1') and ' checked' or '')
+            + ' class="' + name + '"'
+            + (disable and ' disabled' or '')
+            + '>Copy/Paste</label>')
     def add_textarea(url, value, disable=False):
         text.append(
             '<textarea onchange="window.location = \''
@@ -104,6 +112,8 @@ def display():
         add_input('adm_config=' + course.course + '=stop:', course.stop)
         if course.status != 'done':
             add_button('adm_config=' + course.course + '=stop', 'Now')
+        text.append('<td>')
+        add_toggle('adm_config=' + course.course + '=copy_paste:', course.copy_paste)
         text.append('<td>')
         add_textarea('adm_config=' + course.course + '=tt:', course.tt)
         text.append('</textarea><td>')

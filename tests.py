@@ -90,8 +90,8 @@ class Tests: # pylint: disable=too-many-public-methods
         self.driver = driver
         for course_name in ('course_remote', 'course_js'):
             course = utilities.CourseConfig(course_name)
-            course.set_start('2000-01-01 00:00:01')
-            course.set_stop('2100-01-01 00:00:01')
+            course.set_parameter('start', '2000-01-01 00:00:01')
+            course.set_parameter('stop', '2100-01-01 00:00:01')
             course.record()
 
         start = time.time()

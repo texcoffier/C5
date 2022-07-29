@@ -59,6 +59,7 @@ class File:
             content = content.replace('__TICKET__', session.ticket)
             content = content.replace('__SOCK__', f"wss://{utilities.C5_WEBSOCKET}")
             content = content.replace('__ADMIN__', str(int(utilities.CONFIG.is_admin(session.login))))
+            content = content.replace('__CP__', course.config['copy_paste'])
             answers = get_answers(course.course, session.login, saved=True)
             for key, value in answers.items():
                 answers[key] = value[-1] # Only the last answer
@@ -194,20 +195,23 @@ async def adm_config(request):
     else:
         more = time.strftime('%Y-%m-%d %H:%M:%S')
     if action == 'stop':
-        config.set_stop(more)
+        config.set_parameter('stop', more)
         if config.start > more:
-            config.set_start(more)
+            config.set_parameter('start', more)
         feedback = f"«{course}» Stop date updated to «{more}"
     elif action == 'start':
-        config.set_start(more)
-        config.set_stop('2100-01-01 00:00:00')
+        config.set_parameter('start', more)
+        config.set_parameter('stop', '2100-01-01 00:00:00')
         feedback = f"«{course}» Start date updated to «{more}»"
     elif action == 'tt':
-        config.set_tt(more)
+        config.set_parameter('tt', more)
         feedback = f"«{course}» TT list updated with «{more}»"
     elif action == 'teachers':
-        config.set_teachers(more)
+        config.set_parameter('teachers', more)
         feedback = f"«{course}» Teachers list updated with «{more}»"
+    elif action == 'copy_paste':
+        config.set_parameter('copy_paste', more)
+        feedback = f"«{course}» Copy Paste «{'not' if more == '0' else ''} allowed»"
 
     return await adm_home(request, feedback)
 
@@ -266,6 +270,7 @@ async def adm_home(request, more=''):
                 'start': config.start,
                 'stop': config.stop,
                 'tt': html.escape(config.config['tt']),
+                'copy_paste': config.config['copy_paste'],
                 })
 
     return web.Response(

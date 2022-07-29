@@ -41,6 +41,7 @@ try:
     ADMIN = ADMIN
     SOCK = SOCK
     STOP = STOP
+    CP = CP
     encodeURIComponent = encodeURIComponent
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
@@ -113,7 +114,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
         'close': "Voulez-vous vraiment quitter cette page ?",
-        'allow_copy_paste': False,
+        'allow_copy_paste': CP == '1',
         'display_reset': True,
         'positions' : {
             'question': [1, 29, 0, 30, '#EFE'],
