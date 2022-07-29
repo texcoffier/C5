@@ -197,14 +197,17 @@ async def adm_config(request):
         config.set_stop(more)
         if config.start > more:
             config.set_start(more)
-        feedback = f"«{course}» Stop date updated"
+        feedback = f"«{course}» Stop date updated to «{more}"
     elif action == 'start':
         config.set_start(more)
         config.set_stop('2100-01-01 00:00:00')
-        feedback = f"«{course}» Start date updated"
+        feedback = f"«{course}» Start date updated to «{more}»"
     elif action == 'tt':
         config.set_tt(more)
-        feedback = f"«{course}» TT list updated"
+        feedback = f"«{course}» TT list updated with «{more}»"
+    elif action == 'teachers':
+        config.set_teachers(more)
+        feedback = f"«{course}» Teachers list updated with «{more}»"
 
     return await adm_home(request, feedback)
 
@@ -258,7 +261,7 @@ async def adm_home(request, more=''):
             courses.append({
                 'course': course,
                 'status': config.status(''),
-                'master': config.master,
+                'teachers': config.config['teachers'],
                 'logs': os.path.exists(course),
                 'start': config.start,
                 'stop': config.stop,

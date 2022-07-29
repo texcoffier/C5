@@ -14,6 +14,12 @@ def update_url():
     clean = url.replace(RegExp('(.*)/(adm|upload)_.*([?]ticket=.*)'), "$1/adm_home$3")
     history.replaceState('_a_', '_t_', clean)
 
+def html(txt):
+    """Escape < > &"""
+    # pylint: disable=undefined-variable
+    return txt.replace(RegExp('&', 'g'), '&amp;'
+                      ).replace(RegExp('<', 'g'), '&lt;').replace(RegExp('>', 'g'), '&gt;')
+
 def display():
     """Display adm home page"""
     update_url()
@@ -49,23 +55,27 @@ def display():
     Changing the stop date will not update onscreen timers.
     <table>
     <tr><th>Course<br>Master<th>Logs<th>Try<th>Start<th>Stop<th>TT logins
-        <th>ZIP<th>Update<br>course source</tr>
+        <th>ZIP<th>Update<br>course source<th>Teachers</tr>
     ''']
     def add_button(url, label, name=''):
         text.append(
             '<button onclick="window.location = \'' + url + '?ticket=' + TICKET
             + '\'" class="' + name + '">'
             + label + '</button>')
-    def add_input(url, value, name=''):
+    def add_input(url, value, name='', disable=False):
         text.append(
             '<input onchange="window.location = \''
             + url + "'+encodeURIComponent(this.value)+" + '\'?ticket=' + TICKET + '\'"'
-            + ' value="' + value + '" class="' + name + '">')
-    def add_textarea(url, value):
+            + ' value="' + value + '" class="' + name + '"'
+            + (disable and ' disabled' or '')
+            + '>')
+    def add_textarea(url, value, disable=False):
         text.append(
             '<textarea onchange="window.location = \''
-            + url + "'+encodeURIComponent(this.textContent)+" + '\'?ticket=' + TICKET + '\'">'
-            + encodeURIComponent(value) + '</textarea>')
+            + url + "'+encodeURIComponent(this.value)+" + '\'?ticket=' + TICKET + '\'" '
+            + (disable and ' disabled' or '')
+            + '>'
+            + html(value) + '</textarea>')
     def form(content, disable):
         value = (
             '<form id="upload_course" method="POST" enctype="multipart/form-data" action="'
@@ -78,10 +88,9 @@ def display():
         text.append(value)
 
     for course in COURSES:
-        text.append('<tr class="' + course.status + ' ' + course.course.split('.')[0] + '"><td><b>')
-        text.append(course.course)
-        text.append('</b><br>')
-        text.append(course.master)
+        text.append('<tr class="' + course.status + ' ' + course.course.split('.')[0] + '"><td>')
+        text.append(course.course.replace('course_', 'course_<br><b>'))
+        text.append('</b>')
         text.append('<td>')
         if course.logs:
             add_button('adm_course=' + course.course, 'Logs')
@@ -105,7 +114,10 @@ def display():
             '<div><input type="submit" value="Replace «'
             + course.course + '.js»'
             + '" name="replace"></div>',
-            LOGIN != course.master)
+            LOGIN not in course.teachers.split(' '))
+        text.append('<td>')
+        add_textarea('adm_config=' + course.course + '=teachers:', course.teachers,
+                     disable=LOGIN not in course.teachers.split(' '))
         text.append('</tr>\n')
     text.append('</table><p>')
     form('<input type="submit" value="Add a new course">', False)

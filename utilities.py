@@ -51,7 +51,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.config = {'start': "2000-01-01 00:00:00",
                        'stop': "2100-01-01 00:00:00",
                        'tt': '',
-                       'master': 'nobody',
+                       'teachers': 'nobody',
                       }
         self.time = time.time()
         try:
@@ -73,7 +73,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.stop_tt = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.stop_tt_timestamp))
         self.tt_list = set(re.split('[ \n\r\t]+', self.config['tt']))
         self.tt_list.add('')
-        self.master = self.config['master']
+        self.teachers = set(re.split('[ \n\r\t]+', self.config['teachers']))
     def record(self):
         """Record option on disk"""
         with open(self.course + '.cf', 'w') as file:
@@ -95,9 +95,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.config['tt'] = tt_list
         self.update()
         self.record()
-    def set_master(self, master):
-        """Set the tiers temps login list"""
-        self.config['master'] = master
+    def set_teachers(self, teachers):
+        """Set the teachers of the course"""
+        self.config['teachers'] = teachers
         self.update()
         self.record()
     def get_stop(self, login):
