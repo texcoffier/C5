@@ -413,7 +413,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.more', {'innerText': Contains(expect)})
 
         with self.admin_rights():
-            self.goto('adm_home')
+            self.goto('adm/home')
             set_date('.course_js TD:nth-child(4) INPUT',
                      "2000-01-01 00:00:0", 'Start date updated')
             set_date('.course_js TD:nth-child(5) INPUT',
@@ -431,7 +431,7 @@ class Tests: # pylint: disable=too-many-public-methods
     def test_master_change(self):
         """Test add and remove master"""
         with self.admin_rights():
-            self.goto('adm_home')
+            self.goto('adm/home')
             self.check('.add_master').send_keys('john.doe')
             self.check('.add_master').send_keys(Keys.ENTER)
             self.check('.more', {'innerText': Contains('Master «john.doe» added')})
@@ -448,7 +448,7 @@ class Tests: # pylint: disable=too-many-public-methods
             file.write(f"('1.1.1.1', 'Browser', 'john.doe', {time.time() - ttl + 60})")
 
         with self.admin_rights():
-            self.goto('adm_home')
+            self.goto('adm/home')
             self.select_all('.ticket_ttl')
             self.check('.ticket_ttl').send_keys('X')
             self.check('.ticket_ttl').send_keys(Keys.ENTER)

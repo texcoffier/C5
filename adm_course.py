@@ -168,7 +168,7 @@ E { font-family: emoji }
                         + 'px" class="sec' + i % len(COLORS) + '">' + more + '</span>')
         text.append('<td>')
         for filename in student.files:
-            text.append(' <a target="_blank" href="adm_get/' + COURSE + '/')
+            text.append(' <a target="_blank" href="/adm/get/' + COURSE + '/')
             text.append(login)
             text.append('/')
             text.append(filename)

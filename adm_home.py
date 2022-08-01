@@ -11,7 +11,7 @@ document = document
 def update_url():
     """Hide the last action from URL"""
     url = location.toString() # pylint: disable=undefined-variable
-    clean = url.replace(RegExp('(.*)/(adm|upload)_.*([?]ticket=.*)'), "$1/adm_home$3")
+    clean = url.replace(RegExp('(.*)/(adm|upload).*([?]ticket=.*)'), "$1/adm/home$3")
     history.replaceState('_a_', '_t_', clean)
 
 def html(txt):
@@ -101,24 +101,24 @@ def display():
         text.append('</b>')
         text.append('<td>')
         if course.logs:
-            add_button('adm_course=' + course.course, 'Logs')
+            add_button('/adm/course/' + course.course, 'Logs')
         text.append('<td>')
         add_button('=' + course.course + '.js', 'Try')
         text.append('<td>')
-        add_input('adm_config=' + course.course + '=start:', course.start)
+        add_input('/adm/config/' + course.course + '/start/', course.start)
         if course.status != 'running':
-            add_button('adm_config=' + course.course + '=start', 'Now')
+            add_button('/adm/config/' + course.course + '/start/now', 'Now')
         text.append('<td>')
-        add_input('adm_config=' + course.course + '=stop:', course.stop)
+        add_input('/adm/config/' + course.course + '/stop/', course.stop)
         if course.status != 'done':
-            add_button('adm_config=' + course.course + '=stop', 'Now')
+            add_button('/adm/config/' + course.course + '/stop/now', 'Now')
         text.append('<td>')
-        add_toggle('adm_config=' + course.course + '=copy_paste:', course.copy_paste)
+        add_toggle('/adm/config/' + course.course + '/copy_paste/', course.copy_paste)
         text.append('<td>')
-        add_textarea('adm_config=' + course.course + '=tt:', course.tt)
+        add_textarea('/adm/config/' + course.course + '/tt/', course.tt)
         text.append('</textarea><td>')
         if course.logs:
-            add_button('adm_get/' + course.course + '.zip', 'ZIP')
+            add_button('/adm/get/' + course.course + '.zip', 'ZIP')
         text.append('<td>')
         form(
             '<div><input type="submit" value="Replace «'
@@ -126,7 +126,7 @@ def display():
             + '" name="replace"></div>',
             LOGIN not in course.teachers.split(' '))
         text.append('<td>')
-        add_textarea('adm_config=' + course.course + '=teachers:', course.teachers,
+        add_textarea('/adm/config/' + course.course + '/teachers/', course.teachers,
                      disable=LOGIN not in course.teachers.split(' '))
         text.append('</tr>\n')
     text.append('</table><p>')
@@ -134,15 +134,15 @@ def display():
     text.append('<hr>')
     text.append('Masters: ')
     for master in CONFIG.masters:
-        add_button('adm_c5=del_master=' + master, '🗑',
+        add_button('/adm/c5/del_master/' + master, '🗑',
                    name='del_master_' + master.replace('.', '_')) # For regtests
         text.append(' ' + master + ', ')
-    add_input('adm_c5=add_master=', '', name="add_master")
+    add_input('/adm/c5/add_master/', '', name="add_master")
     text.append('<hr>')
     text.append('Session ticket time to live in seconds: ')
-    add_input('adm_c5=ticket_ttl=', CONFIG.ticket_ttl, name="ticket_ttl")
+    add_input('/adm/c5/ticket_ttl/', CONFIG.ticket_ttl, name="ticket_ttl")
     text.append(' ')
-    add_button('adm_c5=remove_old_tickets=0', 'Remove old tickets now', name="remove_olds")
+    add_button('/adm/c5/remove_old_tickets/0', 'Remove old tickets now', name="remove_olds")
     text.append('<hr>')
     text.append(MORE)
     document.body.innerHTML = text.join('')

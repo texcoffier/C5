@@ -571,7 +571,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
             if ADMIN: # pylint: disable=undefined-variable
-                value += '<br><a href="javascript:window.location.pathname=\'adm_home\'">#</a>'
+                value += '<br><a href="javascript:window.location.pathname=\'/adm/home\'">#</a>'
             self[what].innerHTML = value # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question

@@ -28,9 +28,8 @@ class File:
         self.filename = filename
         self.mtime = 0
         self.content = ''
-        self.safe = filename.startswith(('compile.', 'ccccc.', 'course_', 'favicon'))
         if '/.' in filename:
-            self.safe = False
+            raise ValueError('Hacker')
         self.charset = 'utf-8'
         if filename.endswith('.html'):
             self.mime = 'text/html'
@@ -44,7 +43,7 @@ class File:
         else:
             print(filename)
             self.mime = 'text/plain'
-    def get_content(self, session, course=None):
+    def get_content(self):
         """Check file date and returns content"""
         mtime = os.path.getmtime(self.filename)
         if mtime != self.mtime:
@@ -54,25 +53,11 @@ class File:
                 if self.charset is not None:
                     content = content.decode(self.charset)
                 self.content = content
-        if self.filename == 'ccccc.html':
-            content = self.content.replace('__LOGIN__', session.login)
-            content = content.replace('__TICKET__', session.ticket)
-            content = content.replace('__SOCK__', f"wss://{utilities.C5_WEBSOCKET}")
-            content = content.replace('__ADMIN__', str(int(utilities.CONFIG.is_admin(session.login))))
-            content = content.replace('__CP__', course.config['copy_paste'])
-            answers = get_answers(course.course, session.login, saved=True)
-            for key, value in answers.items():
-                answers[key] = value[-1] # Only the last answer
-            content = content.replace('__ANSWERS__', json.dumps(answers))
-            if course:
-                content = content.replace('__STOP__', str(course.get_stop(session.login)))
-            return content
-
         return self.content
-    def response(self, session, course=None):
+    def response(self, content=''):
         """Get the response to send"""
         return web.Response(
-            body=self.get_content(session, course),
+            body=content or self.get_content(),
             content_type=self.mime,
             charset=self.charset,
             headers={
@@ -106,7 +91,27 @@ def handle(base=''):
         else:
             if filename.startswith("="):
                 course = utilities.CourseConfig.get(filename[1:-3])
-                filename = 'ccccc.html'
+                answers = get_answers(course.course, session.login, saved=True)
+                for key, value in answers.items():
+                    answers[key] = value[-1] # Only the last answer
+                if course:
+                    stop = course.get_stop(session.login)
+                else:
+                    stop = ''
+                return File.get('ccccc.html').response(
+                    session.header() + f'''
+                    <title>C5 is Compiler Course Class in the Cloud</title>
+                    <link rel="stylesheet" href="/xxx-highlight.css?ticket={session.ticket}">
+                    <link rel="stylesheet" href="/ccccc.css?ticket={session.ticket}">
+                    <script src="/xxx-highlight.js?ticket={session.ticket}"></script>
+                    <script>
+                        SOCK = "wss://{utilities.C5_WEBSOCKET}";
+                        ADMIN = "{int(utilities.CONFIG.is_admin(session.login))}";
+                        STOP = "{stop}";
+                        CP = "{course.config['copy_paste']}",
+                        ANSWERS = {json.dumps(answers)};
+                    </script>
+                    <script src="/ccccc.js?ticket={session.ticket}"></script>''')
             if filename.startswith('course_'):
                 course = utilities.CourseConfig.get(filename[:-3])
                 status = course.status(login)
@@ -115,7 +120,7 @@ def handle(base=''):
                         filename = "course_js_done.js"
                     elif status == 'pending':
                         filename = "course_js_pending.js"
-        return File(filename).response(session, course)
+        return File.get(filename).response()
     return real_handle
 
 async def log(request):
@@ -134,7 +139,7 @@ async def log(request):
         os.mkdir(f'{course.course}/{login}')
     with open(f'{course.course}/{login}/http_server.log', "a") as file:
         file.write(urllib.request.unquote(line))
-    return File('favicon.ico').response(session)
+    return File('favicon.ico').response()
 
 async def startup(_app):
     """For the log"""
@@ -170,14 +175,9 @@ async def adm_course(request):
             pass
 
     return web.Response(
-        body=f"""<!DOCTYPE html>
-            <html>
-            <head>
-            <link REL="icon" HREF="favicon.ico?ticket={session.ticket}">
-            </head>
-            <body></body></html>
+        body=session.header() + f"""
             <script>STUDENTS = {json.dumps(students)}; COURSE = '{course}';</script>
-            <script src="adm_course.js?ticket={session.ticket}"></script>
+            <script src="/adm_course.js?ticket={session.ticket}"></script>
             """,
         content_type='text/html',
         charset='utf-8',
@@ -190,28 +190,27 @@ async def adm_config(request):
     course = request.match_info['course']
     config = utilities.CourseConfig.get(course)
     action = request.match_info['action']
-    if ':' in action:
-        action, more = action.split(':', 1)
-    else:
-        more = time.strftime('%Y-%m-%d %H:%M:%S')
+    value = request.match_info['value']
+    if value == 'now':
+        value = time.strftime('%Y-%m-%d %H:%M:%S')
     if action == 'stop':
-        config.set_parameter('stop', more)
-        if config.start > more:
-            config.set_parameter('start', more)
-        feedback = f"«{course}» Stop date updated to «{more}"
+        config.set_parameter('stop', value)
+        if config.start > value:
+            config.set_parameter('start', value)
+        feedback = f"«{course}» Stop date updated to «{value}"
     elif action == 'start':
-        config.set_parameter('start', more)
+        config.set_parameter('start', value)
         config.set_parameter('stop', '2100-01-01 00:00:00')
-        feedback = f"«{course}» Start date updated to «{more}»"
+        feedback = f"«{course}» Start date updated to «{value}»"
     elif action == 'tt':
-        config.set_parameter('tt', more)
-        feedback = f"«{course}» TT list updated with «{more}»"
+        config.set_parameter('tt', value)
+        feedback = f"«{course}» TT list updated with «{value}»"
     elif action == 'teachers':
-        config.set_parameter('teachers', more)
-        feedback = f"«{course}» Teachers list updated with «{more}»"
+        config.set_parameter('teachers', value)
+        feedback = f"«{course}» Teachers list updated with «{value}»"
     elif action == 'copy_paste':
-        config.set_parameter('copy_paste', more)
-        feedback = f"«{course}» Copy Paste «{'not' if more == '0' else ''} allowed»"
+        config.set_parameter('copy_paste', value)
+        feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
 
     return await adm_home(request, feedback)
 
@@ -274,21 +273,8 @@ async def adm_home(request, more=''):
                 })
 
     return web.Response(
-        body=f"""<!DOCTYPE html>
-            <html>
-            <head>
-            <link REL="icon" HREF="favicon.ico?ticket={session.ticket}">
-            </head>
-            <body></body></html>
-            <script>
-            TICKET = {json.dumps(session.ticket)};
-            COURSES = {json.dumps(courses)};
-            MORE = {json.dumps(more)};
-            LOGIN = {json.dumps(session.login)};
-            CONFIG = {utilities.CONFIG.json()};
-            </script>
-            <script src="adm_home.js?ticket={session.ticket}"></script>
-            """,
+        body=session.header(courses, more)
+        + f'<script src="/adm_home.js?ticket={session.ticket}"></script>',
         content_type='text/html',
         charset='utf-8',
         headers={'Cache-Control': 'no-cache'}
@@ -425,17 +411,18 @@ async def config_reload(request):
 
 APP = web.Application()
 APP.add_routes([web.get('/', handle()),
-                web.get('/adm_home', adm_home),
-                web.get('/adm_course={course}', adm_course),
-                web.get('/adm_config={course}={action}', adm_config),
-                web.get('/adm_c5={action}={value}', adm_c5),
                 web.get('/{filename}', handle()),
                 web.get('/brython/{filename}', handle('brython')),
-                web.get('/adm_get/{filename:.*}', adm_get),
-                web.get('/adm_answers/{saved}/{course:.*}', adm_answers),
+                web.get('/adm/get/{filename:.*}', adm_get),
+                web.get('/adm/answers/{saved}/{course:.*}', adm_answers),
+                web.get('/adm/home', adm_home),
+                web.get('/adm/course/{course}', adm_course),
+                web.get('/adm/config/{course}/{action}/{value}', adm_config),
+                web.get('/adm/c5/{action}/{value}', adm_c5),
                 web.get('/config/reload', config_reload),
-                web.post('/log', log),
+
                 web.post('/upload_course', upload_course),
+                web.post('/log', log),
                 ])
 APP.on_startup.append(startup)
 web.run_app(APP, host=utilities.C5_IP, port=utilities.C5_HTTP,

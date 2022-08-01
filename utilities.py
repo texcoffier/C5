@@ -260,6 +260,27 @@ class Session:
         """The user is admin"""
         return CONFIG.is_admin(self.login)
 
+    def header(self, courses=(), more=''):
+        """Standard header"""
+        return f"""<!DOCTYPE html>
+            <html>
+            <head>
+            <base href="https://{C5_URL}/">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+            <meta charset="utf-8">
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+            <link REL="icon" href="/favicon.ico?ticket={self.ticket}">
+            </head>
+            <body></body></html>
+            <script>
+            TICKET = {json.dumps(self.ticket)};
+            COURSES = {json.dumps(courses)};
+            MORE = {json.dumps(more)};
+            LOGIN = {json.dumps(self.login)};
+            CONFIG = {CONFIG.json()};
+            </script>
+            """
+
 C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host (for SSH)
 C5_IP = os.getenv('C5_IP', local_ip())               # For Socket IP binding
 C5_ROOT = os.getenv('C5_ROOT', 'root')               # login allowed to sudo
