@@ -265,7 +265,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.move_cursor('.editor')
         recompile_done = False
         for _ in range(3):
-            # XXX Not a normal failure, a bug must be somewhere.
+            # Not a normal failure, a bug must be somewhere.
             # Rarely F9 is not working, so retry it
             self.check('.editor').send_keys('\n\n\n')
             self.check('.editor').send_keys(Keys.F9)

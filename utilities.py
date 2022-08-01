@@ -179,7 +179,7 @@ CONFIG = Config()
 class Session:
     """Session management"""
     session_cache = {}
-    def __init__(self, ticket, client_ip, browser, login=None, creation_time=None):
+    def __init__(self, ticket, client_ip, browser, login=None, creation_time=None): # pylint: disable=too-many-arguments
         self.ticket = ticket
         self.client_ip = client_ip
         self.browser = browser
@@ -195,7 +195,7 @@ class Session:
         if C5_VALIDATE:
             async with aiohttp.ClientSession() as session:
                 url = C5_VALIDATE % (urllib.request.quote(service),
-                                               urllib.request.quote(self.ticket))
+                                     urllib.request.quote(self.ticket))
                 async with session.get(url) as data:
                     lines = await data.text()
                     lines = lines.split('\n')
@@ -221,6 +221,7 @@ class Session:
     def __str__(self):
         return repr((self.client_ip, self.browser, self.login, self.creation_time))
     def too_old(self):
+        """Return True if the ticket is too old"""
         if time.time() - self.creation_time > CONFIG.ticket_ttl:
             try:
                 os.unlink(f'TICKETS/{self.ticket}')

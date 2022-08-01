@@ -14,7 +14,7 @@ Ne rien changer après le début de l'examen car cela casse tout.
 #   9: message incompréhensible
 
 ERRORS = [
-"""5 Bon endroit mais message faux 
+    """5 Bon endroit mais message faux
 using namespace std
 #include <iostream>
 int main()
@@ -22,7 +22,7 @@ int main()
     cout << "Bonjour\\n";
 }
 """,
-"""0
+    """0
 using namespace std;
 #include <iostream>
 int main()
@@ -30,7 +30,7 @@ int main()
     cout << "Bonjour\\n"
 }
 """,
-"""5 Méthode non trouvable
+    """5 Méthode non trouvable
 using namespace std;
 #include <iostream>
 
@@ -39,7 +39,7 @@ int main()
     cout >> "Bonjour\\n";
 }
 """,
-"""3 warning: character constant too long for its type
+    """3 warning: character constant too long for its type
 using namespace std;
 #include <iostream>
 
@@ -48,7 +48,7 @@ int main()
     cout << 'Bonjour\\n';
 }
 """,
-"""5 Méthode non trouvable
+    """5 Méthode non trouvable
 using namespace std;
 #include <iostream>
 
@@ -57,7 +57,7 @@ int main()
     cin << "Bonjour\\n";
 }
 """,
-"""9 Message qui n'aide pas
+    """9 Message qui n'aide pas
 using namespace std;
 #include <iostream>
 
@@ -66,25 +66,25 @@ int main()
     cout << "Bonjour\\n";
 )
 """,
-"""10
+    """10
 using namespace std;
 #include <iostream>
 
 int main() { cout << "Bonjour\\n" }
 """,
-"""13
+    """13
 using namespace std;
 #include <iostream>
 
 int main() { cout << 'Bonjour\\n'; }
 """,
-"""17
+    """17
 using namespace std;
 #include <iostream>
 
 int maine() { cout << "Bonjour\\n"; }
 """,
-"""7
+    """7
 using namespace std;
 #include <iostream>
 
@@ -93,19 +93,19 @@ int maine()
     cout << "Bonjour\\n";
 }
 """,
-"""3
+    """3
 using namespace std;
 #include <iostream>;
 
 int main() { cout << "Bonjour\\n"; }
 """,
-"""3
+    """3
 using namespace std;
 #include <iostream>
 
 int main() ( cout << "Bonjour\\n"; )
 """,
-"""9
+    """9
 using name space std;
 #include <iostream>
 
@@ -114,7 +114,7 @@ int main()
     cout << "Bonjour\\n";
 }
 """,
-"""7
+    """7
 use namespace std;
 #include <iostream>
 
@@ -123,7 +123,7 @@ int main()
     cout << "Bonjour\\n";
 }
 """,
-"""7
+    """7
 using namespace <std>;
 #include <iostream>
 
@@ -132,7 +132,7 @@ int main()
     cout << "Bonjour\\n";
 }
 """,
-"""0a
+    """0a
 using namespace std;
 #include iostream
 
@@ -141,7 +141,7 @@ int main()
     cout << "Bonjour\\n";
 }
 """,
-"""2
+    """2
 using namespace "std";
 #include <iostream>
 
@@ -150,7 +150,7 @@ int main()
     cout << "Bonjour\\n";
 }
 """,
-"""0
+    """0
 using namespace std;
 #include 'iostream'
 
@@ -159,7 +159,7 @@ int main()
     cout << "Bonjour\\n";
 }
 """,
-"""4
+    """4
 using namespace std;
 #include <iostream>
 
@@ -168,7 +168,7 @@ int main
     cout << "Bonjour\\n";
 }
 """,
-"""0
+    """0
 using namespace std;
 #include <iostream>
 
@@ -177,7 +177,7 @@ Int main()
     cout << "Bonjour\\n";
 }
 """,
-"""25
+    """25
 using namespace std;
 #include <iostream>
 
@@ -186,7 +186,7 @@ int main();
     cout << "Bonjour\\n";
 }
 """,
-"""0
+    """0
 using namespace std:
 #include <iostream>
 
@@ -195,7 +195,7 @@ int main()
     cout << "Bonjour\\n";
 }
 """,
-"""0
+    """0
 using namespace std;
 #include <iostream>
 
@@ -204,7 +204,7 @@ int main()
     cout << "Bonjour\\n":
 }
 """,
-"""100
+    """100
 using namespace std
 ;
 #include <iostream>
@@ -220,17 +220,17 @@ cout
 ;
 }
 """,
-"""100
+    """100
 using namespace std;
 #include<iostream>
 int main(){cout<<'Bonjour\\n';}
 """,
-"""100
+    """100
 using namespace std;
 #include<iostream>
 int main(){cout«"Bonjour\\n";}
 """,
-"""100
+    """100
 using namespace std;
 #include <iostream>
 

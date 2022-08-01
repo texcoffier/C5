@@ -1,12 +1,19 @@
-TICKET = TICKET
-COURSES = COURSES
-MORE = MORE
-LOGIN = LOGIN
-CONFIG = CONFIG
-history = history
-RegExp = RegExp
-encodeURIComponent = encodeURIComponent
-document = document
+"""Home page for the C5 administrator"""
+
+try:
+    # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
+    TICKET = TICKET
+    COURSES = COURSES
+    MORE = MORE
+    LOGIN = LOGIN
+    CONFIG = CONFIG
+    history = history
+    RegExp = RegExp
+    encodeURIComponent = encodeURIComponent
+    document = document
+except ValueError:
+    pass
+
 
 def update_url():
     """Hide the last action from URL"""
@@ -152,7 +159,7 @@ def display(): # pylint: disable=too-many-statements
     add_button('/adm/c5/remove_old_tickets/0', 'Remove old tickets now', name="remove_olds")
     text.append('<hr>')
     text.append(MORE)
-    document.body.innerHTML = text.join('')
+    document.body.innerHTML = text.join('') # pylint: disable=no-member
 
 
 display()

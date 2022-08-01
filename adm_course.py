@@ -1,10 +1,16 @@
-
-STUDENTS = STUDENTS
-COURSE = COURSE
-document = document
-window = window
-isNaN = isNaN
-Math = Math
+"""
+Generate the home page for a course.
+"""
+try:
+    # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
+    STUDENTS = STUDENTS
+    COURSE = COURSE
+    document = document
+    window = window
+    isNaN = isNaN
+    Math = Math
+except ValueError:
+    pass
 
 MAX_WIDTH = 400
 SNAIL = 4

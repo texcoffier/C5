@@ -76,7 +76,7 @@ class File:
 
 def handle(base=''):
     """Send the file content"""
-    async def real_handle(request):
+    async def real_handle(request): # pylint: disable=too-many-branches
         print(('get', request.url), flush=True)
         if base:
             session = None # Not authenticated
@@ -453,7 +453,8 @@ async def checkpoint(request):
         old_room = course.active_teacher_room[student][2]
         if old_room:
             old_room = '(' + course.active_teacher_room[student][2] + ')'
-        return f'<a href="/checkpoint/{course.course}/{student}/{room}?ticket={session.ticket}">{student}</a>{old_room}'
+        return f'''<a href="/checkpoint/{course.course}/{student}/{room}?ticket={session.ticket}"
+                   >{student}</a>{old_room}'''
     return web.Response(
         body=session.header() + f'''<h1>{course.course}</h1>
 <p>
