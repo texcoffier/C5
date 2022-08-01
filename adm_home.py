@@ -20,23 +20,24 @@ def html(txt):
     return txt.replace(RegExp('&', 'g'), '&amp;'
                       ).replace(RegExp('<', 'g'), '&lt;').replace(RegExp('>', 'g'), '&gt;')
 
-def display():
+def display(): # pylint: disable=too-many-statements
     """Display adm home page"""
     update_url()
-    action = location.toString().replace('adm_home', 'upload_course')
+    action = location.toString().replace('adm_home', 'upload_course') # pylint: disable=undefined-variable
     text = ['''
     <title>C5 Administration</title>
     <h1>C5 Administration</h1>
     <style>
         TABLE { border-spacing: 0px; border-collapse: collapse ; }
         TABLE TD { border: 1px solid #888; padding: 0px }
-        TABLE TD INPUT { margin: 0.5em ; margin-right: 0px }
+        TABLE TD > INPUT { margin: 0.5em ; margin-right: 0px }
         TABLE TD TEXTAREA { border: 0px; height: 4em }
         TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
         TD BUTTON {
             margin: 1px ; height: 2.5em; vertical-align: top;
             font-size: 100% ;
             }
+        LABEL { display: block }
         .done { background: #FDD }
         .running { background: #DFD }
         .running_tt { background: #FEB }
@@ -69,14 +70,13 @@ def display():
             + ' value="' + value + '" class="' + name + '"'
             + (disable and ' disabled' or '')
             + '>')
-    def add_toggle(url, value, name='', disable=False):
+    def add_toggle(url, value, label, disable=False):
         text.append(
             '<label><input type="checkbox" onchange="window.location = \''
             + url + "'+(this.checked ? 1 : 0)+" + '\'?ticket=' + TICKET + '\'"'
             + ((value == '1') and ' checked' or '')
-            + ' class="' + name + '"'
             + (disable and ' disabled' or '')
-            + '>Copy/Paste</label>')
+            + '>' + label + '</label>')
     def add_textarea(url, value, disable=False):
         text.append(
             '<textarea onchange="window.location = \''
@@ -96,6 +96,7 @@ def display():
         text.append(value)
 
     for course in COURSES:
+        i_am_a_teacher = LOGIN in course.teachers.split(' ')
         text.append('<tr class="' + course.status + ' ' + course.course.split('.')[0] + '"><td>')
         text.append(course.course.replace('course_', 'course_<br><b>'))
         text.append('</b>')
@@ -113,7 +114,13 @@ def display():
         if course.status != 'done':
             add_button('/adm/config/' + course.course + '/stop/now', 'Now')
         text.append('<td>')
-        add_toggle('/adm/config/' + course.course + '/copy_paste/', course.copy_paste)
+        add_toggle('/adm/config/' + course.course + '/copy_paste/', course.copy_paste, 'Copy/Paste')
+        label = 'Checkpoint'
+        if course.checkpoint != '0': # and i_am_a_teacher:
+            label = ('<a href="/checkpoint/' + course.course
+                     + '?ticket=' + TICKET + '">' + label + '</a>')
+        add_toggle('/adm/config/' + course.course + '/checkpoint/', course.checkpoint,
+                   label, disable=not i_am_a_teacher)
         text.append('<td>')
         add_textarea('/adm/config/' + course.course + '/tt/', course.tt)
         text.append('</textarea><td>')
@@ -124,10 +131,10 @@ def display():
             '<div><input type="submit" value="Replace «'
             + course.course + '.js»'
             + '" name="replace"></div>',
-            LOGIN not in course.teachers.split(' '))
+            not i_am_a_teacher)
         text.append('<td>')
         add_textarea('/adm/config/' + course.course + '/teachers/', course.teachers,
-                     disable=LOGIN not in course.teachers.split(' '))
+                     disable=not i_am_a_teacher)
         text.append('</tr>\n')
     text.append('</table><p>')
     form('<input type="submit" value="Add a new course">', False)

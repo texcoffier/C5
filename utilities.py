@@ -53,6 +53,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'tt': '',
                        'teachers': 'nobody',
                        'copy_paste': '0',
+                       'checkpoint': '0',
+                       # For each student login :
+                       #   * True is the examination is possible.
+                       #   * the teacher who checkpointed  (or '')
+                       #   * the room and the place
+                       'active_teacher_room': {},
                       }
         self.time = time.time()
         try:
@@ -75,6 +81,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.tt_list = set(re.split('[ \n\r\t]+', self.config['tt']))
         self.tt_list.add('')
         self.teachers = set(re.split('[ \n\r\t]+', self.config['teachers']))
+        self.checkpoint = int(self.config['checkpoint'])
+        self.active_teacher_room = self.config['active_teacher_room']
     def record(self):
         """Record option on disk"""
         with open(self.course + '.cf', 'w') as file:
@@ -98,6 +106,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         now = time.strftime('%Y-%m-%d %H:%M:%S')
         if now < self.start:
             return 'pending'
+        if self.checkpoint and login:
+            active_teacher_room = self.active_teacher_room.get(login, None)
+            if active_teacher_room is None:
+                # Add to the checkpoint room
+                self.config['active_teacher_room'][login] = [False, '', '']
+                self.record()
+                return 'checkpoint'
+            if not active_teacher_room[0]:
+                # Always in the checkpoint or examination is done
+                return 'checkpoint'
         if now < self.stop:
             return 'running'
         if login in self.tt_list and now < self.stop_tt:

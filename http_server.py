@@ -120,6 +120,8 @@ def handle(base=''):
                         filename = "course_js_done.js"
                     elif status == 'pending':
                         filename = "course_js_pending.js"
+                    elif status == 'checkpoint':
+                        filename = "course_js_checkpoint.js"
         return File.get(filename).response()
     return real_handle
 
@@ -154,6 +156,17 @@ async def get_admin_login(request):
         session.redirect('=course_js_not_admin.js')
     print(('Admin', request.url), flush=True)
     return session
+
+async def get_teacher_login_and_course(request):
+    """Get the teacher login or redirect to home page if it isn't one"""
+    session = utilities.Session.get(request)
+    login = await session.get_login(str(request.url).split('?')[0])
+    course = utilities.CourseConfig.get(request.match_info['course'])
+    if login not in course.teachers:
+        print(('notTeacher', request.url), flush=True)
+        session.redirect('=course_js_not_teacher.js')
+    print(('Teacher', request.url), flush=True)
+    return session, course
 
 async def adm_course(request):
     """Course details page for administrators"""
@@ -211,6 +224,12 @@ async def adm_config(request):
     elif action == 'copy_paste':
         config.set_parameter('copy_paste', value)
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
+    elif action == 'checkpoint':
+        config.set_parameter('checkpoint', value)
+        if value == '0':
+            feedback = f"«{course}» Automatic access to the courses"
+        else:
+            feedback = f"«{course}» Need teacher approval to start"
 
     return await adm_home(request, feedback)
 
@@ -270,6 +289,7 @@ async def adm_home(request, more=''):
                 'stop': config.stop,
                 'tt': html.escape(config.config['tt']),
                 'copy_paste': config.config['copy_paste'],
+                'checkpoint': config.config['checkpoint'],
                 })
 
     return web.Response(
@@ -409,6 +429,43 @@ async def config_reload(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def checkpoint(request):
+    """Display the students waiting checkpoint"""
+    session, course = await get_teacher_login_and_course(request)
+    student = request.match_info.get('student', None)
+    if student:
+        room = request.match_info['room']
+        if room == 'STOP':
+            course.active_teacher_room[student][0] = False
+        else:
+            course.active_teacher_room[student] = [True, session.login, room]
+        course.record()
+
+    waiting = []
+    yours = []
+    for student, (active, teacher, _room) in course.active_teacher_room.items():
+        if active:
+            if teacher == session.login:
+                yours.append(student)
+        else:
+            waiting.append(student)
+    def link(student, room):
+        old_room = course.active_teacher_room[student][2]
+        if old_room:
+            old_room = '(' + course.active_teacher_room[student][2] + ')'
+        return f'<a href="/checkpoint/{course.course}/{student}/{room}?ticket={session.ticket}">{student}</a>{old_room}'
+    return web.Response(
+        body=session.header() + f'''<h1>{course.course}</h1>
+<p>
+Student waiting : {' '.join(link(student, 'NoRoom') for student in waiting)}
+<p>
+Your students : {' '.join(link(student, 'STOP') for student in yours)}
+''',
+        content_type='text/html',
+        charset='utf-8',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
 APP = web.Application()
 APP.add_routes([web.get('/', handle()),
                 web.get('/{filename}', handle()),
@@ -423,6 +480,8 @@ APP.add_routes([web.get('/', handle()),
 
                 web.post('/upload_course', upload_course),
                 web.post('/log', log),
+                web.get('/checkpoint/{course}', checkpoint),
+                web.get('/checkpoint/{course}/{student}/{room}', checkpoint),
                 ])
 APP.on_startup.append(startup)
 web.run_app(APP, host=utilities.C5_IP, port=utilities.C5_HTTP,

@@ -92,6 +92,7 @@ class Tests: # pylint: disable=too-many-public-methods
             course = utilities.CourseConfig(course_name)
             course.set_parameter('start', '2000-01-01 00:00:01')
             course.set_parameter('stop', '2100-01-01 00:00:01')
+            course.set_parameter('checkpoint', '0')
             course.record()
 
         start = time.time()
