@@ -281,6 +281,10 @@ class Session:
             </script>
             """
 
+    def redirect(self, where):
+        """In case of problem redirect to an error page"""
+        raise web.HTTPFound(f'https://{C5_URL}/{where}?ticket={self.ticket}')
+
 C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host (for SSH)
 C5_IP = os.getenv('C5_IP', local_ip())               # For Socket IP binding
 C5_ROOT = os.getenv('C5_ROOT', 'root')               # login allowed to sudo

@@ -151,7 +151,7 @@ async def get_admin_login(request):
     login = await session.get_login(str(request.url).split('?')[0])
     if not utilities.CONFIG.is_admin(login):
         print(('notAdmin', request.url), flush=True)
-        raise web.HTTPFound('..')
+        session.redirect('=course_js_not_admin.js')
     print(('Admin', request.url), flush=True)
     return session
 
