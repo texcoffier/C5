@@ -143,8 +143,9 @@ async def log(request):
         file.write(urllib.request.unquote(line))
     return File('favicon.ico').response()
 
-async def startup(_app):
+async def startup(app):
     """For the log"""
+    app['ldap'] = asyncio.create_task(utilities.LDAP.start())
     print('http serveur running!', flush=True)
 
 async def get_admin_login(request):
@@ -441,26 +442,37 @@ async def checkpoint(request):
             course.active_teacher_room[student] = [True, session.login, room]
         course.record()
 
+    async def link(student, room):
+        old_room = course.active_teacher_room[student][2]
+        infos = await utilities.LDAP.infos(student)
+        return f'''
+<div class="name"
+     onclick="location = '/checkpoint/{course.course}/{student}/{room}?ticket={session.ticket}'">
+    <span>{student}</span>
+    <div>{infos['fn']}</div>
+    <div>{infos['sn']}</div>
+    <span>{old_room}</span>
+</div>'''
+
     waiting = []
     yours = []
     for student, (active, teacher, _room) in course.active_teacher_room.items():
         if active:
             if teacher == session.login:
-                yours.append(student)
+                yours.append(await link(student, 'STOP'))
         else:
-            waiting.append(student)
-    def link(student, room):
-        old_room = course.active_teacher_room[student][2]
-        if old_room:
-            old_room = '(' + course.active_teacher_room[student][2] + ')'
-        return f'''<a href="/checkpoint/{course.course}/{student}/{room}?ticket={session.ticket}"
-                   >{student}</a>{old_room}'''
+            waiting.append(await link(student, 'a_room'))
     return web.Response(
         body=session.header() + f'''<h1>{course.course}</h1>
+<style>
+.name {{ display: inline-block; background: #EEE; vertical-align: top; cursor: pointer }}
+.name:hover {{ background: #DFD }}
+.name SPAN {{ color: #888 }}
+</style>
 <p>
-Student waiting : {' '.join(link(student, 'NoRoom') for student in waiting)}
+Student waiting : {' '.join(waiting)}
 <p>
-Your students : {' '.join(link(student, 'STOP') for student in yours)}
+Your students : {' '.join(yours)}
 ''',
         content_type='text/html',
         charset='utf-8',

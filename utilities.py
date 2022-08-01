@@ -12,6 +12,7 @@ import socket
 import ssl
 import time
 import urllib.request
+import asyncio
 import aiohttp
 from aiohttp import web
 
@@ -34,6 +35,43 @@ def get_certificate(server=True):
         cert.load_cert_chain(certfile="SSL/localhost.crt", keyfile="SSL/localhost.key")
         return cert
     return None
+
+
+class LDAP_process:
+    """Create a LDAP process and get information from it.
+    It is more simple than using an asyncio LDAP library.
+    """
+    ldap_cache = {}
+    process = None
+
+    async def start(self):
+        """
+        Start a process reading login on stdin and write information on stdout
+        """
+        self.process = await asyncio.create_subprocess_shell(
+            "exec ./infos_server.py",
+            stdout=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.PIPE,
+            )
+        asyncio.ensure_future(self.reader())
+
+    async def reader(self):
+        """Parse infos from LDAP process"""
+        while True:
+            infos = await self.process.stdout.readline()
+            infos = json.loads(infos)
+            self.ldap_cache[infos[0]] = infos[1]
+
+    async def infos(self, login):
+        """Get the informations about login"""
+        if login in self.ldap_cache:
+            return self.ldap_cache[login]
+        self.process.stdin.write(login.encode('utf-8') + b'\n')
+        while login not in self.ldap_cache:
+            await asyncio.sleep(0.1)
+        return self.ldap_cache[login]
+
+LDAP = LDAP_process()
 
 class CourseConfig: # pylint: disable=too-many-instance-attributes
     """A course session"""
@@ -179,11 +217,13 @@ CONFIG = Config()
 class Session:
     """Session management"""
     session_cache = {}
-    def __init__(self, ticket, client_ip, browser, login=None, creation_time=None): # pylint: disable=too-many-arguments
+    def __init__(self, ticket, client_ip, browser, # pylint: disable=too-many-arguments
+                 login=None, creation_time=None, infos=None):
         self.ticket = ticket
         self.client_ip = client_ip
         self.browser = browser
         self.login = login
+        self.infos = infos
         if creation_time is None:
             creation_time = time.time()
         self.creation_time = creation_time
@@ -201,6 +241,7 @@ class Session:
                     lines = lines.split('\n')
                     if lines[0] == 'yes':
                         self.login = lines[1].lower()
+                        self.infos = await LDAP.infos(self.login)
                         self.record()
             if not self.login:
                 print(('?', service))
@@ -219,7 +260,7 @@ class Session:
         with open(f'TICKETS/{self.ticket}', 'w') as file:
             file.write(str(self))
     def __str__(self):
-        return repr((self.client_ip, self.browser, self.login, self.creation_time))
+        return repr((self.client_ip, self.browser, self.login, self.creation_time, self.infos))
     def too_old(self):
         """Return True if the ticket is too old"""
         if time.time() - self.creation_time > CONFIG.ticket_ttl:
@@ -320,6 +361,11 @@ C5_REDIRECT = os.getenv('C5_REDIRECT', '')
 # CAS login validation as:  'https://cas.univ-lyon1.fr/cas/validate?service=%s&ticket=%s'
 C5_VALIDATE = os.getenv('C5_VALIDATE', '')
 C5_LOCAL = int(os.getenv('C5_LOCAL', '1'))
+C5_LDAP = os.getenv('C5_LDAP')
+C5_LDAP_LOGIN = os.getenv('C5_LDAP_LOGIN')
+C5_LDAP_PASSWORD = os.getenv('C5_LDAP_PASSWORD')
+C5_LDAP_BASE = os.getenv('C5_LDAP_BASE')
+C5_LDAP_ENCODING = os.getenv('C5_LDAP_ENCODING', 'utf-8')
 
 def print_state():
     """Print the current configuration"""
@@ -338,6 +384,11 @@ def print_state():
 {'C5_WEBSOCKET=' + str(C5_WEBSOCKET):<40}     # Browser visible address for WebSocket
 {'C5_REDIRECT=' + str(C5_REDIRECT):<40} # CAS redirection
 {'C5_VALIDATE=' + str(C5_VALIDATE):<40} # CAS get login
+{'C5_LDAP=' + str(C5_LDAP):<40}     # LDAP URL
+{'C5_LDAP_LOGIN=' + str(C5_LDAP_LOGIN):<40}     # LDAP reader login
+{'C5_LDAP_PASSWORD=' + str(C5_LDAP_PASSWORD):<40}     # LDAP reader password
+{'C5_LDAP_BASE=' + str(C5_LDAP_BASE):<40}     # LDAP user search base
+{'C5_LDAP_ENCODING=' + str(C5_LDAP_ENCODING):<40}     # LDAP character encoding
 """)
 
 def print_help():
@@ -362,7 +413,7 @@ ACTIONS = {
         sudo sh -c '
             set -e
             apt update
-            apt -y install nginx certbot python3-websockets python3-aiohttp npm
+            apt -y install nginx certbot python3-websockets python3-ldap python3-aiohttp npm
             apt -y upgrade
             # set-timezone Europe/Paris
             '
@@ -514,6 +565,12 @@ export C5_WEBSOCKET='{C5_WEBSOCKET}'
 export C5_REDIRECT='{C5_REDIRECT}'
 export C5_VALIDATE='{C5_VALIDATE}'
 export C5_LOCAL='{C5_LOCAL}'
+export C5_LDAP='{C5_LDAP}'
+export C5_LDAP_LOGIN='{C5_LDAP_LOGIN}'
+export C5_LDAP_PASSWORD='{C5_LDAP_PASSWORD}'
+export C5_LDAP_BASE='{C5_LDAP_BASE}'
+export C5_LDAP_ENCODING='{C5_LDAP_ENCODING}'
+
 """ + ACTIONS[action]
     assert '"' not in action
     if '#C5_ROOT' in action:

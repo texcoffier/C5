@@ -15,6 +15,10 @@ export C5_WEBSOCKET="$C5_HOST:4202"
 export C5_REDIRECT=''
 export C5_VALIDATE=''
 export C5_LOCAL="1"
+export C5_LDAP="ldaps://192.168.0.1:636"
+export C5_LDAP_LOGIN="admin"
+export C5_LDAP_PASSWORD="admin"
+export C5_LDAP_BASE="DC=univ-lyon1,DC=fr"
 
 ./utilities.py $@
 
