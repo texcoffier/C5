@@ -30,7 +30,6 @@ def html(txt):
 def display(): # pylint: disable=too-many-statements
     """Display adm home page"""
     update_url()
-    action = location.toString().replace('adm_home', 'upload_course') # pylint: disable=undefined-variable
     text = ['''
     <title>C5 Administration</title>
     <h1>C5 Administration</h1>
@@ -93,8 +92,8 @@ def display(): # pylint: disable=too-many-statements
             + html(value) + '</textarea>')
     def form(content, disable):
         value = (
-            '<form id="upload_course" method="POST" enctype="multipart/form-data" action="'
-            + action + '">'
+            '<form id="upload_course" method="POST" enctype="multipart/form-data" '
+            + 'action="/upload_course?ticket=' + TICKET + '">'
             + '<input type="file" name="course">'
             + content
             + '</form>')

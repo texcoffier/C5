@@ -337,6 +337,9 @@ class Session:
     def is_admin(self):
         """The user is admin"""
         return CONFIG.is_admin(self.login)
+    def is_student(self):
+        """The user is a student"""
+        return self.login[1:].isdigit()
 
     def header(self, courses=(), more=''):
         """Standard header"""

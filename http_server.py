@@ -84,7 +84,7 @@ def handle(base=''):
             session = utilities.Session.get(request)
             login = await session.get_login(str(request.url).split('?')[0])
             print((login, request.url))
-        filename = request.match_info.get('filename', "=course_js.js")
+        filename = request.match_info['filename']
         course = None
         if base:
             filename = base + '/' + filename
@@ -106,7 +106,7 @@ def handle(base=''):
                     <script src="/xxx-highlight.js?ticket={session.ticket}"></script>
                     <script>
                         SOCK = "wss://{utilities.C5_WEBSOCKET}";
-                        ADMIN = "{int(utilities.CONFIG.is_admin(session.login))}";
+                        ADMIN = "{int(session.is_admin())}";
                         STOP = "{stop}";
                         CP = "{course.config['copy_paste']}",
                         ANSWERS = {json.dumps(answers)};
@@ -115,7 +115,7 @@ def handle(base=''):
             if filename.startswith('course_'):
                 course = utilities.CourseConfig.get(filename[:-3])
                 status = course.status(login)
-                if not utilities.CONFIG.is_admin(login):
+                if not session.is_admin():
                     if status == 'done':
                         filename = "course_js_done.js"
                     elif status == 'pending':
@@ -152,7 +152,7 @@ async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
     session = utilities.Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
-    if not utilities.CONFIG.is_admin(login):
+    if not session.is_admin():
         print(('notAdmin', request.url), flush=True)
         session.redirect('=course_js_not_admin.js')
     print(('Admin', request.url), flush=True)
@@ -405,7 +405,7 @@ async def upload_course(request):
         with open(filename, "wb") as file:
             file.write(filehandle.file.read())
         config = utilities.CourseConfig.get(filename.replace('.py', ''))
-        config.set_master(session.login)
+        config.set_parameter('teachers', session.login)
         process = await asyncio.create_subprocess_exec(
             "make", filename.replace('.py', '.js'))
         await process.wait()
@@ -516,8 +516,31 @@ async def checkpoint(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def home(request):
+    """Test the user rights to display the good home page"""
+    session = utilities.Session.get(request)
+    if session.is_admin():
+        return await adm_home(request)
+    if not session.is_student():
+        return await checkpoint_list(request)
+    utilities.CourseConfig.load_all_configs()
+    now = time.strftime('%Y-%m-%d %H:%M:%S')
+    content = [session.header()]
+    for course_name, course in sorted(utilities.CourseConfig.configs.items()):
+        if now > course.stop_tt or now < course.start:
+            continue # Not running
+        content.append(
+            f'<li> <a href="/={course_name}.js?ticket={session.ticket}">{course_name}</a>')
+
+    return web.Response(
+        body=''.join(content),
+        content_type='text/html',
+        charset='utf-8',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
 APP = web.Application()
-APP.add_routes([web.get('/', handle()),
+APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
                 web.get('/brython/{filename}', handle('brython')),
                 web.get('/adm/get/{filename:.*}', adm_get),
@@ -527,12 +550,11 @@ APP.add_routes([web.get('/', handle()),
                 web.get('/adm/config/{course}/{action}/{value}', adm_config),
                 web.get('/adm/c5/{action}/{value}', adm_c5),
                 web.get('/config/reload', config_reload),
-
-                web.post('/upload_course', upload_course),
-                web.post('/log', log),
                 web.get('/checkpoint/*', checkpoint_list),
                 web.get('/checkpoint/{course}', checkpoint),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint),
+                web.post('/upload_course', upload_course),
+                web.post('/log', log),
                 ])
 APP.on_startup.append(startup)
 web.run_app(APP, host=utilities.C5_IP, port=utilities.C5_HTTP,
