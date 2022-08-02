@@ -30,8 +30,8 @@ sandbox:
 favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
-prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js \
-	ccccc.js adm_home.js adm_course.js checkpoint.js sandbox \
+prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js sandbox \
+	ccccc.js adm_home.js adm_course.js checkpoint.js \
 	course_js_done.js course_js_pending.js course_js_not_admin.js \
 	course_js_checkpoint.js course_js_not_teacher.js \
 	favicon.ico

@@ -125,6 +125,15 @@ def handle(base=''):
         return File.get(filename).response()
     return real_handle
 
+def student_log(course_name, login, data):
+    """Add a line to the student log"""
+    if not os.path.exists(f'{course_name}/{login}'):
+        if not os.path.exists(course_name):
+            os.mkdir(course_name)
+        os.mkdir(f'{course_name}/{login}')
+    with open(f'{course_name}/{login}/http_server.log', "a") as file:
+        file.write(data)
+
 async def log(request):
     """Log user actions"""
     print(('log', request.url), flush=True)
@@ -134,13 +143,8 @@ async def log(request):
     course = utilities.CourseConfig.get(post['course'])
     if not course.running(login):
         return
-    line = post['line']
-    if not os.path.exists(f'{course.course}/{login}'):
-        if not os.path.exists(course.course):
-            os.mkdir(course.course)
-        os.mkdir(f'{course.course}/{login}')
-    with open(f'{course.course}/{login}/http_server.log', "a") as file:
-        file.write(urllib.request.unquote(line))
+    # XXX Must do sanity check
+    student_log(course.course, login, urllib.request.unquote(post['line']))
     return File('favicon.ico').response()
 
 async def startup(app):
@@ -482,36 +486,53 @@ async def checkpoint_list(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def get_students(session, course):
+    """Get the student in checkpoint + teacher ones"""
+    return [
+        [student, active_teacher_room, await utilities.LDAP.infos(student)]
+        for student, active_teacher_room in course.active_teacher_room.items()
+        if not active_teacher_room[0] or active_teacher_room[1] == session.login
+        ]
+
 async def checkpoint(request):
     """Display the students waiting checkpoint"""
     session, course = await get_teacher_login_and_course(request)
-    student = request.match_info.get('student', None)
+    return web.Response(
+        body=session.header() + f'''
+        <script>
+        COURSE = {json.dumps(course.course)};
+        STUDENTS = {json.dumps(await get_students(session, course))};
+        </script>
+        <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
+        <script src="/checkpoint.js?ticket={session.ticket}"></script>''',
+        content_type='text/html',
+        charset='utf-8',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
+async def checkpoint_student(request):
+    """Display the students waiting checkpoint"""
+    session, course = await get_teacher_login_and_course(request)
+    student = request.match_info['student']
     if student:
         room = request.match_info['room']
         seconds = int(time.time())
         if room == 'STOP':
             course.active_teacher_room[student][0] = False
-            with open(f'{course.course}/{student}/http_server.log', "a") as file:
-                file.write(f'[{seconds},"checkpoint_out"]\n')
+            student_log(course.course, student, f'[{seconds},"checkpoint_stop"]\n')
+        elif room == 'EJECT':
+            course.active_teacher_room[student][0] = False
+            course.active_teacher_room[student] = [False, '', '', int(time.time())]
+            student_log(course.course, student, f'[{seconds},"checkpoint_eject"]\n')
         else:
             course.active_teacher_room[student] = [True, session.login, room]
-            with open(f'{course.course}/{student}/http_server.log', "a") as file:
-                file.write(f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
+            student_log(course.course, student,
+                f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
         course.record()
 
-    students = [
-        [student, active_teacher_room, await utilities.LDAP.infos(student)]
-        for student, active_teacher_room in course.active_teacher_room.items()
-        if not active_teacher_room[0] or active_teacher_room[1] == session.login
-        ]
     return web.Response(
-        body=session.header() + f'''
-        <script>
-        COURSE = {json.dumps(course.course)};
-        STUDENTS = {json.dumps(students)};
-        </script>
-        <script src="/checkpoint.js?ticket={session.ticket}"></script>''',
-        content_type='text/html',
+        body=f'STUDENTS = {json.dumps(await get_students(session, course))};',
+        content_type='application/javascript',
         charset='utf-8',
         headers={'Cache-Control': 'no-cache'}
     )
@@ -539,6 +560,20 @@ async def home(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def checkpoint_buildings(request):
+    """Building list"""
+    _ = utilities.Session.get(request)
+    buildings = {}
+    for filename in os.listdir('BUILDINGS'):
+        with open('BUILDINGS/' + filename) as file:
+            buildings[filename] = file.read()
+    return web.Response(
+        body=f'BUILDINGS = {json.dumps(buildings)};',
+        content_type='application/javascript',
+        charset='utf-8',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
@@ -551,8 +586,9 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/c5/{action}/{value}', adm_c5),
                 web.get('/config/reload', config_reload),
                 web.get('/checkpoint/*', checkpoint_list),
+                web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
                 web.get('/checkpoint/{course}', checkpoint),
-                web.get('/checkpoint/{course}/{student}/{room}', checkpoint),
+                web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
                 web.post('/upload_course', upload_course),
                 web.post('/log', log),
                 ])
