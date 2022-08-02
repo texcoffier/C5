@@ -436,44 +436,29 @@ async def checkpoint(request):
     student = request.match_info.get('student', None)
     if student:
         room = request.match_info['room']
+        seconds = int(time.time())
         if room == 'STOP':
             course.active_teacher_room[student][0] = False
+            with open(f'{course.course}/{student}/http_server.log', "a") as file:
+                file.write(f'[{seconds},"checkpoint_out"]\n')
         else:
             course.active_teacher_room[student] = [True, session.login, room]
+            with open(f'{course.course}/{student}/http_server.log', "a") as file:
+                file.write(f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
         course.record()
 
-    async def link(student, room):
-        old_room = course.active_teacher_room[student][2]
-        infos = await utilities.LDAP.infos(student)
-        return f'''
-<div class="name"
-     onclick="location = '/checkpoint/{course.course}/{student}/{room}?ticket={session.ticket}'">
-    <span>{student}</span>
-    <div>{infos['fn']}</div>
-    <div>{infos['sn']}</div>
-    <span>{old_room}</span>
-</div>'''
-
-    waiting = []
-    yours = []
-    for student, (active, teacher, _room) in course.active_teacher_room.items():
-        if active:
-            if teacher == session.login:
-                yours.append(await link(student, 'STOP'))
-        else:
-            waiting.append(await link(student, 'a_room'))
+    students = [
+        [student, active_teacher_room, await utilities.LDAP.infos(student)]
+        for student, active_teacher_room in course.active_teacher_room.items()
+        if not active_teacher_room[0] or active_teacher_room[1] == session.login
+        ]
     return web.Response(
-        body=session.header() + f'''<h1>{course.course}</h1>
-<style>
-.name {{ display: inline-block; background: #EEE; vertical-align: top; cursor: pointer }}
-.name:hover {{ background: #DFD }}
-.name SPAN {{ color: #888 }}
-</style>
-<p>
-Student waiting : {' '.join(waiting)}
-<p>
-Your students : {' '.join(yours)}
-''',
+        body=session.header() + f'''
+        <script>
+        COURSE = {json.dumps(course.course)};
+        STUDENTS = {json.dumps(students)};
+        </script>
+        <script src="/checkpoint.js?ticket={session.ticket}"></script>''',
         content_type='text/html',
         charset='utf-8',
         headers={'Cache-Control': 'no-cache'}

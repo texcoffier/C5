@@ -147,9 +147,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         if self.checkpoint and login:
             active_teacher_room = self.active_teacher_room.get(login, None)
             if active_teacher_room is None:
+                seconds = int(time.time())
                 # Add to the checkpoint room
-                self.config['active_teacher_room'][login] = [False, '', '']
+                self.config['active_teacher_room'][login] = [False, '', '', seconds]
                 self.record()
+                with open(f'{self.course}/{login}/http_server.log', "a") as file:
+                    file.write(f'[{seconds},"checkpoint_in"]\n')
                 return 'checkpoint'
             if not active_teacher_room[0]:
                 # Always in the checkpoint or examination is done
