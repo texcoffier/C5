@@ -273,25 +273,21 @@ async def adm_home(request, more=''):
     if more:
         more = '<div class="more">' + more + '</div>'
 
+    utilities.CourseConfig.load_all_configs()
     session = await get_admin_login(request)
     courses = []
-    for course in sorted(os.listdir('.')):
-        if course.startswith('course_') and course.endswith('.js'):
-            if course in ('course_js_done.js', 'course_js_pending.js'):
-                continue
-            course = course[:-3]
-            config = utilities.CourseConfig.get(course)
-            courses.append({
-                'course': course,
-                'status': config.status(''),
-                'teachers': config.config['teachers'],
-                'logs': os.path.exists(course),
-                'start': config.start,
-                'stop': config.stop,
-                'tt': html.escape(config.config['tt']),
-                'copy_paste': config.config['copy_paste'],
-                'checkpoint': config.config['checkpoint'],
-                })
+    for config in utilities.CourseConfig.configs.values():
+        courses.append({
+            'course': config.course,
+            'status': config.status(''),
+            'teachers': config.config['teachers'],
+            'logs': os.path.exists(config.course),
+            'start': config.start,
+            'stop': config.stop,
+            'tt': html.escape(config.config['tt']),
+            'copy_paste': config.config['copy_paste'],
+            'checkpoint': config.config['checkpoint'],
+            })
 
     return web.Response(
         body=session.header(courses, more)
@@ -430,6 +426,62 @@ async def config_reload(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def checkpoint_list(request):
+    """Liste all checkpoints"""
+    session = utilities.Session.get(request)
+    content = [
+        session.header(),
+        '''
+        <style>
+        TABLE { border-collapse: collapse }
+        TABLE TD, TABLE TH { border: 1px solid #AAA ; }
+        </style>
+        <table>
+        <tr><th>Course<th>Students<th>Waiting<th>Working<th>Done<th>With me</tr>
+        '''
+        ]
+    utilities.CourseConfig.load_all_configs()
+    now = time.strftime('%Y-%m-%d %H:%M:%S')
+    for course_name, course in sorted(utilities.CourseConfig.configs.items()):
+        if not course.checkpoint:
+            continue
+        if now > course.stop_tt:
+            continue # Exam done
+        waiting = []
+        working = []
+        with_me = []
+        done = []
+        for student, (active, teacher, room) in course.active_teacher_room.items():
+            if active:
+                working.append(student)
+                if teacher == session.login:
+                    with_me.append(student)
+            else:
+                if room:
+                    done.append(student)
+                else:
+                    waiting.append(student)
+        if session.login in course.teachers:
+            checkurl = f'<a href="/checkpoint/{course_name}?ticket={session.ticket}">Checkpoint</a>'
+        else:
+            checkurl = ' '.join(course.teachers)
+        content.append(f'''
+        <tr>
+        <td>{course_name}
+        <td>{len(course.active_teacher_room)}
+        <td>{len(waiting)}
+        <td>{len(working)}
+        <td>{len(done)}
+        <td>{len(with_me)}
+        <td>{checkurl}
+        </tr>''')
+    return web.Response(
+        body=''.join(content),
+        content_type='text/html',
+        charset='utf-8',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
 async def checkpoint(request):
     """Display the students waiting checkpoint"""
     session, course = await get_teacher_login_and_course(request)
@@ -478,6 +530,7 @@ APP.add_routes([web.get('/', handle()),
 
                 web.post('/upload_course', upload_course),
                 web.post('/log', log),
+                web.get('/checkpoint/*', checkpoint_list),
                 web.get('/checkpoint/{course}', checkpoint),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint),
                 ])

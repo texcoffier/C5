@@ -174,6 +174,21 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             return config
         return CourseConfig(course)
 
+    @classmethod
+    def load_all_configs(cls):
+        """Read all configuration from disk"""
+        for course in sorted(os.listdir('.')):
+            if course.startswith('course_') and course.endswith('.js'):
+                if course in (
+                        'course_js_checkpoint.js',
+                        'course_js_done.js',
+                        'course_js_not_admin.js',
+                        'course_js_not_teacher.js',
+                        'course_js_pending.js',
+                    ):
+                    continue
+                cls.get(course[:-3])
+
 class Config:
     """C5 configuration"""
     masters = []
