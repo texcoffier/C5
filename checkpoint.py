@@ -13,18 +13,18 @@ try:
     window = window
     Math = Math
     bind = bind
+    Date = Date
 except ValueError:
     pass
 
 SCALE = 25
 LEFT = 10
 TOP = 120
+BOLD_TIME = 180 # In seconds for new students in checking room
 
-try:
-    # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-    document = document
-except ValueError:
-    pass
+def seconds():
+    """Number of second as Unix"""
+    return int(Date().getTime() / 1000)
 
 class Room: # pylint: disable=too-many-instance-attributes
     """Graphic display off rooms"""
@@ -307,9 +307,13 @@ class Student: # pylint: disable=too-many-instance-attributes
 
     def box(self):
         """A nice box clickable and draggable"""
+        if seconds() - self.checkpoint_time < BOLD_TIME:
+            more = ' style="font-weight: bold"'
+        else:
+            more = ''
         return ''.join([
             '<div class="name" onmousedown="start_move_student(event)" login="',
-            self.login, '">',
+            self.login, '"', more, '>',
             # '<span>', self.login, '</span>',
             '<div>', self.firstname, '</div>',
             '<div>', self.surname, '</div>',
