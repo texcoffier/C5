@@ -154,7 +154,10 @@ class Room: # pylint: disable=too-many-instance-attributes
             ctx.fillRect(x_pos, y_pos - self.scale/2, size + 2, self.scale + 2)
             ctx.fillStyle = "#8F8"
             ctx.fillRect(x_pos, y_pos - self.scale/2, self.scale, self.scale + 2)
-            ctx.fillStyle = "#000"
+            if student.with_me():
+                ctx.fillStyle = "#000"
+            else:
+                ctx.fillStyle = "#888"
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
             ctx.fillText(student.surname, x_pos, y_pos + self.scale/2)
@@ -363,7 +366,7 @@ def update_page():
 
     content = []
     for student in students:
-        if not student.with_me():
+        if not student.active and not student.with_me():
             content.append(student.box())
     document.getElementById('waiting').innerHTML = ' '.join(content)
 

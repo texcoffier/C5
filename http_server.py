@@ -488,10 +488,13 @@ async def checkpoint_list(request):
 
 async def get_students(session, course):
     """Get the student in checkpoint + teacher ones"""
+    is_admin = session.is_admin()
     return [
         [student, active_teacher_room, await utilities.LDAP.infos(student)]
         for student, active_teacher_room in course.active_teacher_room.items()
-        if not active_teacher_room[0] or active_teacher_room[1] == session.login
+        if not active_teacher_room[0]
+        or active_teacher_room[1] == session.login
+        or is_admin
         ]
 
 async def checkpoint(request):
