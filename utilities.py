@@ -305,7 +305,7 @@ class Session:
         return session
 
     @classmethod
-    def get(cls, request, ticket=None):
+    async def get(cls, request, ticket=None):
         """Get or create a session.
         Raise an error if hacker.
         """
@@ -333,6 +333,8 @@ class Session:
             session = Session(ticket, client_ip, browser)
             if ticket:
                 cls.session_cache[ticket] = session
+        if not session.login:
+            await session.get_login(str(request.url).split('?')[0])
         return session
     def is_admin(self):
         """The user is admin"""

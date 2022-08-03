@@ -81,7 +81,7 @@ def handle(base=''):
         if base:
             session = None # Not authenticated
         else:
-            session = utilities.Session.get(request)
+            session = await utilities.Session.get(request)
             login = await session.get_login(str(request.url).split('?')[0])
             print((login, request.url))
         filename = request.match_info['filename']
@@ -137,7 +137,7 @@ def student_log(course_name, login, data):
 async def log(request):
     """Log user actions"""
     print(('log', request.url), flush=True)
-    session = utilities.Session.get(request)
+    session = await utilities.Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
     post = await request.post()
     course = utilities.CourseConfig.get(post['course'])
@@ -154,8 +154,7 @@ async def startup(app):
 
 async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
-    session = utilities.Session.get(request)
-    login = await session.get_login(str(request.url).split('?')[0])
+    session = await utilities.Session.get(request)
     if not session.is_admin():
         print(('notAdmin', request.url), flush=True)
         session.redirect('=course_js_not_admin.js')
@@ -164,10 +163,9 @@ async def get_admin_login(request):
 
 async def get_teacher_login_and_course(request):
     """Get the teacher login or redirect to home page if it isn't one"""
-    session = utilities.Session.get(request)
-    login = await session.get_login(str(request.url).split('?')[0])
+    session = await utilities.Session.get(request)
     course = utilities.CourseConfig.get(request.match_info['course'])
-    if login not in course.teachers:
+    if session.login not in course.teachers:
         print(('notTeacher', request.url), flush=True)
         session.redirect('=course_js_not_teacher.js')
     print(('Teacher', request.url), flush=True)
@@ -421,9 +419,8 @@ async def upload_course(request):
 
 async def config_reload(request):
     """For regression tests"""
-    session = utilities.Session.get(request)
-    login = await session.get_login(str(request.url).split('?')[0])
-    print(('LoadConfig', login), flush=True)
+    session = await utilities.Session.get(request)
+    print(('LoadConfig', session.login), flush=True)
     utilities.CONFIG.load()
     return web.Response(
         body='done',
@@ -432,7 +429,7 @@ async def config_reload(request):
 
 async def checkpoint_list(request):
     """Liste all checkpoints"""
-    session = utilities.Session.get(request)
+    session = await utilities.Session.get(request)
     content = [
         session.header(),
         '''
@@ -542,7 +539,7 @@ async def checkpoint_student(request):
 
 async def home(request):
     """Test the user rights to display the good home page"""
-    session = utilities.Session.get(request)
+    session = await utilities.Session.get(request)
     if session.is_admin():
         return await adm_home(request)
     if not session.is_student():
@@ -565,7 +562,7 @@ async def home(request):
 
 async def checkpoint_buildings(request):
     """Building list"""
-    _ = utilities.Session.get(request)
+    _ = await utilities.Session.get(request)
     buildings = {}
     for filename in os.listdir('BUILDINGS'):
         with open('BUILDINGS/' + filename) as file:

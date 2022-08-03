@@ -168,7 +168,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
     if not os.path.exists('TICKETS/' + ticket):
         return
 
-    session = utilities.Session.get(websocket, ticket)
+    session = await utilities.Session.get(websocket, ticket)
     login = session.login
 
     process = Process(websocket, login, course)
