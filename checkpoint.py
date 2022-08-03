@@ -296,13 +296,10 @@ class Room: # pylint: disable=too-many-instance-attributes
             if column != -1:
                 if self.moving.column_start != column or self.moving.line_start != line:
                     record('/checkpoint/' + COURSE + '/' + self.moving.login + '/'
-                           + ROOM.building + ',' + column + ',' + line
-                           + '?ticket=' + TICKET)
+                           + ROOM.building + ',' + column + ',' + line)
             else:
-                record('/checkpoint/' + COURSE + '/' + self.moving.login
-                       + '/EJECT?ticket=' + TICKET)
-                #record('/checkpoint/' + COURSE + '/' + self.moving.login
-                #       + '/STOP?ticket=' + TICKET)
+                record('/checkpoint/' + COURSE + '/' + self.moving.login + '/EJECT')
+                #record('/checkpoint/' + COURSE + '/' + self.moving.login + '/STOP')
         else:
             if ((self.drag_x_start - event.clientX) ** 2
                     + (self.drag_y_start - event.clientY) ** 2) < 10:
@@ -312,7 +309,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                            + self.selected_computer[0] + '/'
                            + self.selected_computer[1] + '/'
                            + self.selected_computer[2] + '/'
-                           + self.selected_item + '?ticket=' + TICKET)
+                           + self.selected_item)
                     self.selected_item = None
                     self.draw()
                 if column != -1 and self.lines[line][column] == 's':
@@ -358,8 +355,7 @@ def stop_move_student(event):
     pos = ROOM.get_coord(event)
     if pos[0] != -1:
         record('/checkpoint/' + COURSE + '/' + Student.moving_student.login + '/'
-               + ROOM.building + ',' + pos[0] + ',' + pos[1]
-               + '?ticket=' + TICKET)
+               + ROOM.building + ',' + pos[0] + ',' + pos[1])
 
     document.body.onmousemove = None
     window.onmouseup = None
@@ -374,7 +370,7 @@ def stop_move_student(event):
 def record(action):
     """Do an action and get data"""
     script = document.createElement('SCRIPT')
-    script.src = action
+    script.src = action + '?ticket=' + TICKET
     script.onload = update_page
     document.body.append(script)
 
@@ -438,8 +434,10 @@ def create_page():
         #top {z-index: 2; position: absolute;
               top: 0px; left: 0px; width: 100%; height: 5em;
               background: #EEE; opacity: 0.95}
+        .reload { font-family: emoji; font-size: 200%; cursor: pointer; }
         </style>
-        <div id="top">''',
+        <div id="top"><span class="reload" onclick="record('/update/' + COURSE)">⟳</span>''',
+
         COURSE,
         ' <select onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
         ''.join(['<option'

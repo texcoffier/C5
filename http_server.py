@@ -522,25 +522,29 @@ async def update_browser_data(session, course):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def update_browser(request):
+    """Send update values"""
+    session, course = await get_teacher_login_and_course(request)
+    return await update_browser_data(session, course)
+
 async def checkpoint_student(request):
     """Display the students waiting checkpoint"""
     session, course = await get_teacher_login_and_course(request)
     student = request.match_info['student']
-    if student:
-        room = request.match_info['room']
-        seconds = int(time.time())
-        if room == 'STOP':
-            course.active_teacher_room[student][0] = False
-            student_log(course.course, student, f'[{seconds},"checkpoint_stop"]\n')
-        elif room == 'EJECT':
-            course.active_teacher_room[student][0] = False
-            course.active_teacher_room[student] = [False, '', '', int(time.time())]
-            student_log(course.course, student, f'[{seconds},"checkpoint_eject"]\n')
-        else:
-            course.active_teacher_room[student] = [True, session.login, room]
-            student_log(course.course, student,
-                f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
-        course.record()
+    room = request.match_info['room']
+    seconds = int(time.time())
+    if room == 'STOP':
+        course.active_teacher_room[student][0] = False
+        student_log(course.course, student, f'[{seconds},"checkpoint_stop"]\n')
+    elif room == 'EJECT':
+        course.active_teacher_room[student][0] = False
+        course.active_teacher_room[student] = [False, '', '', int(time.time())]
+        student_log(course.course, student, f'[{seconds},"checkpoint_eject"]\n')
+    else:
+        course.active_teacher_room[student] = [True, session.login, room]
+        student_log(course.course, student,
+            f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
+    course.record()
     return await update_browser_data(session, course)
 
 async def home(request):
@@ -609,6 +613,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/checkpoint/{course}', checkpoint),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
+                web.get('/update/{course}', update_browser),
                 web.post('/upload_course', upload_course),
                 web.post('/log', log),
                 ])
