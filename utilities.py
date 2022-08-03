@@ -423,6 +423,7 @@ def print_help():
    * start : servers
    * stop : servers
    * restart : servers
+   * compile : create JS
    * open : launch web browser (second argument may be js|python|cpp|remote)
 """)
     print_state()
@@ -560,7 +561,14 @@ With Firefox:
     'open': f"""
         xdg-open https://{C5_URL}/=course_{sys.argv[2] if len(sys.argv) >= 3 else 'js'}.js
         """,
-    'load': "./load_testing.py"
+    'load': "./load_testing.py",
+    'compile': fr"""#C5_LOGIN
+        set -e
+        echo START SERVERS
+        cd {C5_DIR} 2>/dev/null || true
+        mkdir TICKETS 2>/dev/null || true
+        make prepare
+        """,
 }
 ACTIONS['restart'] = ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
 
