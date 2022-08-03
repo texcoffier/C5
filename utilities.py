@@ -193,10 +193,12 @@ class Config:
     """C5 configuration"""
     masters = []
     ticket_ttl = 86400
+    computers = []
     def __init__(self):
         self.config = {
             'masters': self.masters,
             'ticket_ttl': self.ticket_ttl,
+            'computers': [],
         }
         self.load()
     def load(self):
@@ -209,6 +211,7 @@ class Config:
         """Update configuration attributes"""
         self.masters = self.config['masters']
         self.ticket_ttl = self.config['ticket_ttl']
+        self.computers = self.config['computers']
     def json(self):
         """For browser or to save"""
         return json.dumps(self.config)

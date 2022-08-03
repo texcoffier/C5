@@ -9,6 +9,7 @@ try:
     COURSE = COURSE
     STUDENTS = STUDENTS
     BUILDINGS = BUILDINGS
+    CONFIG = CONFIG
     document = document
     window = window
     Math = Math
@@ -21,6 +22,9 @@ SCALE = 25
 LEFT = 10
 TOP = 120
 BOLD_TIME = 180 # In seconds for new students in checking room
+MENU_WIDTH = 9
+MENU_HEIGHT = 9
+MENU_LINE = 0.6
 
 def seconds():
     """Number of second as Unix"""
@@ -35,6 +39,8 @@ class Room: # pylint: disable=too-many-instance-attributes
     x_max = 0
     moving = False
     students = []
+    selected_computer = None
+    selected_item = None
     def __init__(self):
         self.change('Nautibus_1er')
     def change(self, building):
@@ -94,7 +100,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                     draw_line(x_pos, start-0.5, x_pos, y_pos-0.5)
                     start = -1
                 last_char = char
-    def draw(self):
+    def draw(self, event=None): # pylint: disable=too-many-locals,too-many-statements
         """Display on canvas"""
         canvas = document.getElementById('canvas')
         ctx = canvas.getContext("2d")
@@ -162,12 +168,74 @@ class Room: # pylint: disable=too-many-instance-attributes
             ctx.fillText(student.firstname, x_pos, y_pos)
             ctx.fillText(student.surname, x_pos, y_pos + self.scale/2)
 
+        ctx.fillStyle = "#F00"
+        ctx.globalAlpha = 0.5
+        messages = []
+        for building, column, line, message in CONFIG.computers:
+            if building == self.building:
+                x_pos = self.left + self.scale * (column - 0.5)
+                y_pos = self.top + self.scale * (line - 0.5)
+                ctx.fillRect(x_pos, y_pos, self.scale, self.scale)
+                if (self.selected_computer
+                        and self.selected_computer[1] == column
+                        and self.selected_computer[2] == line):
+                    messages.append(message)
+        ctx.globalAlpha = 1
+
+        if self.selected_computer and self.selected_computer[0] == self.building:
+            x_pos = self.left + self.scale * (self.selected_computer[1] - 0.5)
+            y_pos = self.top + self.scale * (self.selected_computer[2] - 0.5)
+            ctx.fillStyle = "#FFF"
+            ctx.globalAlpha = 0.9
+            ctx.fillRect(x_pos, y_pos, self.scale, self.scale)
+            ctx.fillRect(x_pos + self.scale, y_pos, MENU_WIDTH*self.scale, MENU_HEIGHT*self.scale)
+            ctx.globalAlpha = 1
+            ctx.fillStyle = "#000"
+            self.selected_item = None
+            for i, message in enumerate([
+                    "Les câbles sont branchés mais :",
+                    "",
+                    "Machine: ne se lance pas",
+                    "Machine: problème clavier",
+                    "Machine: problème souris",
+                    "Machine: problème écran",
+                    "",
+                    "Windows: ne se lance pas",
+                    "Windows: connexion impossible",
+                    "Windows: pas de fichiers",
+                    "",
+                    "Linux: ne se lance pas",
+                    "Linux: connexion impossible",
+                    "Linux: pas de fichier",
+                ]):
+                y_item = y_pos + MENU_LINE * self.scale * i
+                if message in messages:
+                    ctx.fillStyle = "#FDD"
+                    ctx.fillRect(x_pos + self.scale, y_item,
+                                 MENU_WIDTH*self.scale, MENU_LINE*self.scale)
+                    ctx.fillStyle = "#000"
+                if (event
+                        and i > 1
+                        and message != ''
+                        and event.clientX > x_pos + self.scale*1.5
+                        and event.clientX < x_pos + self.scale + MENU_WIDTH*self.scale
+                        and event.clientY > y_item
+                        and event.clientY < y_item + MENU_LINE * self.scale
+                   ):
+                    ctx.fillStyle = "#FF0"
+                    ctx.fillRect(x_pos + self.scale, y_item,
+                                 MENU_WIDTH*self.scale, MENU_LINE*self.scale)
+                    ctx.fillStyle = "#000"
+                    self.selected_item = message
+                ctx.fillText(message, x_pos + self.scale*1.5, y_item + (MENU_LINE - 0.1)*self.scale)
+
+
     def get_column_row(self, event):
         """Return character position (float) in the character map"""
         if event.target.tagName != 'CANVAS':
             return [-1, -1]
-        column = (event.clientX - event.target.offsetLeft - self.left) / self.scale
-        line = (event.clientY - event.target.offsetTop - self.top) / self.scale
+        column = (event.clientX - self.left) / self.scale
+        line = (event.clientY - self.top) / self.scale
         if 0 <= column and column <= self.x_max and 0 <= line and line < len(self.lines):
             return [column, line]
         return [-1, -1]
@@ -194,6 +262,8 @@ class Room: # pylint: disable=too-many-instance-attributes
         for student in self.students:
             if student.column == column and student.line == line:
                 self.moving = student
+                student.column_start = student.column
+                student.line_start = student.line
                 return
         self.drag_x_start = self.drag_x_current = event.clientX
         self.drag_y_start = self.drag_y_current = event.clientY
@@ -201,6 +271,8 @@ class Room: # pylint: disable=too-many-instance-attributes
     def drag_move(self, event):
         """Moving the map"""
         if not self.moving:
+            if self.selected_computer:
+                self.draw(event)
             return
         if self.moving == True:
             self.left += event.clientX - self.drag_x_current
@@ -218,23 +290,45 @@ class Room: # pylint: disable=too-many-instance-attributes
         self.draw()
     def drag_stop(self, event):
         """Stop moving the map"""
-        window.onmousemove = None
-        window.onmouseup = None
         document.getElementById('top').style.background = "#EEE"
+        column, line = self.get_coord(event)
         if self.moving != True:
-            column, line = self.get_coord(event)
             if column != -1:
-                record('/checkpoint/' + COURSE + '/' + self.moving.login + '/'
-                       + ROOM.building + ',' + column + ',' + line
-                       + '?ticket=' + TICKET)
+                if self.moving.column_start != column or self.moving.line_start != line:
+                    record('/checkpoint/' + COURSE + '/' + self.moving.login + '/'
+                           + ROOM.building + ',' + column + ',' + line
+                           + '?ticket=' + TICKET)
             else:
                 record('/checkpoint/' + COURSE + '/' + self.moving.login
                        + '/EJECT?ticket=' + TICKET)
                 #record('/checkpoint/' + COURSE + '/' + self.moving.login
                 #       + '/STOP?ticket=' + TICKET)
-
+        else:
+            if ((self.drag_x_start - event.clientX) ** 2
+                    + (self.drag_y_start - event.clientY) ** 2) < 10:
+                # Simple click
+                if self.selected_item:
+                    record('/computer/' + COURSE + '/'
+                           + self.selected_computer[0] + '/'
+                           + self.selected_computer[1] + '/'
+                           + self.selected_computer[2] + '/'
+                           + self.selected_item + '?ticket=' + TICKET)
+                    self.selected_item = None
+                    self.draw()
+                if column != -1 and self.lines[line][column] == 's':
+                    select = [self.building, column, line]
+                    if self.selected_computer != select:
+                        self.selected_computer = select
+                        self.draw()
+                        self.moving = False
+                        return
+                if self.selected_computer:
+                    self.selected_computer = None
+                    self.draw()
+        if not self.selected_computer:
+            window.onmousemove = None
+        window.onmouseup = None
         self.moving = False
-
 
 def start_move_student(event):
     """Move student bloc"""

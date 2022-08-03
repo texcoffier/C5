@@ -510,6 +510,18 @@ async def checkpoint(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def update_browser_data(session, course):
+    """Send update values"""
+    return web.Response(
+        body=f'''
+        STUDENTS = {json.dumps(await get_students(session, course))};
+        CONFIG.computers = {json.dumps(utilities.CONFIG.computers)};
+        ''',
+        content_type='application/javascript',
+        charset='utf-8',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
 async def checkpoint_student(request):
     """Display the students waiting checkpoint"""
     session, course = await get_teacher_login_and_course(request)
@@ -529,13 +541,7 @@ async def checkpoint_student(request):
             student_log(course.course, student,
                 f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
         course.record()
-
-    return web.Response(
-        body=f'STUDENTS = {json.dumps(await get_students(session, course))};',
-        content_type='application/javascript',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return await update_browser_data(session, course)
 
 async def home(request):
     """Test the user rights to display the good home page"""
@@ -574,6 +580,19 @@ async def checkpoint_buildings(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def computer(request):
+    """Set value for computer"""
+    session = await utilities.Session.get(request)
+    course = utilities.CourseConfig.get(request.match_info['course'])
+    utilities.CONFIG.computers.append([
+        request.match_info['building'],
+        int(request.match_info['column']),
+        int(request.match_info['line']),
+        request.match_info['message'],
+        ])
+    utilities.CONFIG.save()
+    return await update_browser_data(session, course)
+
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
@@ -589,6 +608,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
                 web.get('/checkpoint/{course}', checkpoint),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
+                web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
                 web.post('/upload_course', upload_course),
                 web.post('/log', log),
                 ])
