@@ -23,7 +23,7 @@ LEFT = 10
 TOP = 120
 BOLD_TIME = 180 # In seconds for new students in checking room
 MENU_WIDTH = 9
-MENU_HEIGHT = 9
+MENU_HEIGHT = 10
 MENU_LINE = 0.6
 
 def seconds():
@@ -207,6 +207,8 @@ class Room: # pylint: disable=too-many-instance-attributes
                     "Linux: ne se lance pas",
                     "Linux: connexion impossible",
                     "Linux: pas de fichier",
+                    "",
+                    "Réparé: tout fonctionne !"
                 ]):
                 y_item = y_pos + MENU_LINE * self.scale * i
                 if message in messages:
@@ -305,6 +307,8 @@ class Room: # pylint: disable=too-many-instance-attributes
                     + (self.drag_y_start - event.clientY) ** 2) < 10:
                 # Simple click
                 if self.selected_item:
+                    if self.selected_item[-1] == '!':
+                        self.selected_item = ''
                     record('/computer/' + COURSE + '/'
                            + self.selected_computer[0] + '/'
                            + self.selected_computer[1] + '/'

@@ -543,7 +543,7 @@ async def checkpoint_student(request):
     else:
         course.active_teacher_room[student] = [True, session.login, room]
         student_log(course.course, student,
-            f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
+                    f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
     course.record()
     return await update_browser_data(session, course)
 
@@ -588,12 +588,18 @@ async def computer(request):
     """Set value for computer"""
     session = await utilities.Session.get(request)
     course = utilities.CourseConfig.get(request.match_info['course'])
-    utilities.CONFIG.computers.append([
-        request.match_info['building'],
-        int(request.match_info['column']),
-        int(request.match_info['line']),
-        request.match_info['message'],
-        ])
+    message = request.match_info.get('message', '')
+    building = request.match_info['building']
+    column = int(request.match_info['column'])
+    line = int(request.match_info['line'])
+    if message:
+        utilities.CONFIG.computers.append([building, column, line, message])
+    else:
+        utilities.CONFIG.computers = utilities.CONFIG.config['computers'] = [
+            bug
+            for bug in utilities.CONFIG.computers
+            if bug[0] != building or bug[1] != column or bug[2] != line
+            ]
     utilities.CONFIG.save()
     return await update_browser_data(session, course)
 
@@ -613,6 +619,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/checkpoint/{course}', checkpoint),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
+                web.get('/computer/{course}/{building}/{column}/{line}', computer),
                 web.get('/update/{course}', update_browser),
                 web.post('/upload_course', upload_course),
                 web.post('/log', log),
