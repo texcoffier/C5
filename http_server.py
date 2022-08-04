@@ -110,7 +110,7 @@ def handle(base=''):
                         STOP = "{stop}";
                         CP = "{course.config['copy_paste']}";
                         ANSWERS = {json.dumps(answers)};
-                        WHERE = {json.dumps(course.active_teacher_room.get(login,[False,'?','?,0,0']))};
+                        WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0)))};
                     </script>
                     <script src="/ccccc.js?ticket={session.ticket}"></script>''')
             if filename.startswith('course_'):
@@ -138,13 +138,17 @@ def student_log(course_name, login, data):
 async def log(request):
     """Log user actions"""
     session = await utilities.Session.get(request)
-    login = await session.get_login(str(request.url).split('?')[0])
     post = await request.post()
     course = utilities.CourseConfig.get(post['course'])
-    if not course.running(login):
+    if not course.running(session.login):
         return
+    data = urllib.request.unquote(post['line'])
     # XXX Must do sanity check
-    student_log(course.course, login, urllib.request.unquote(post['line']))
+    student_log(course.course, session.login, data)
+    if session.login in course.active_teacher_room:
+        infos = course.active_teacher_room[session.login]
+        infos[3] = int(time.time())
+        infos[4] += data.count('Blur')
     return File('favicon.ico').response()
 
 async def startup(app):
@@ -163,32 +167,33 @@ async def get_teacher_login_and_course(request):
     """Get the teacher login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
     course = utilities.CourseConfig.get(request.match_info['course'])
-    if session.login not in course.teachers:
+    if session.is_student():
         session.redirect('=course_js_not_teacher.js')
+    # if session.login not in course.teachers:
+    #     session.redirect('=course_js_not_teacher.js')
     return session, course
 
 async def adm_course(request):
     """Course details page for administrators"""
-    session = await get_admin_login(request)
-    course = request.match_info['course']
+    session, course = await get_teacher_login_and_course(request)
     students = {}
-    for user in sorted(os.listdir(course)):
+    for user in sorted(os.listdir(course.course)):
         await asyncio.sleep(0)
         files = []
         students[user] = student = {'files': files}
-        for filename in sorted(os.listdir(f'{course}/{user}')):
+        for filename in sorted(os.listdir(f'{course.course}/{user}')):
             if '.' in filename:
                 # To not display executables
                 files.append(filename)
         try:
-            with open(f'{course}/{user}/http_server.log') as file:
+            with open(f'{course.course}/{user}/http_server.log') as file:
                 student['http_server'] = file.read()
         except IOError:
             pass
 
     return web.Response(
         body=session.header() + f"""
-            <script>STUDENTS = {json.dumps(students)}; COURSE = '{course}';</script>
+            <script>STUDENTS = {json.dumps(students)}; COURSE = '{course.course}';</script>
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """,
         content_type='text/html',
@@ -447,13 +452,13 @@ async def checkpoint_list(request):
         working = []
         with_me = []
         done = []
-        for student, (active, teacher, room) in course.active_teacher_room.items():
-            if active:
+        for student, active_teacher_room in course.active_teacher_room.items():
+            if active_teacher_room[0]:
                 working.append(student)
-                if teacher == session.login:
+                if active_teacher_room[1] == session.login:
                     with_me.append(student)
             else:
-                if room:
+                if active_teacher_room[2]:
                     done.append(student)
                 else:
                     waiting.append(student)
@@ -528,15 +533,19 @@ async def checkpoint_student(request):
     student = request.match_info['student']
     room = request.match_info['room']
     seconds = int(time.time())
+    old = course.active_teacher_room[student]
     if room == 'STOP':
-        course.active_teacher_room[student][0] = False
+        old[0] = False
         student_log(course.course, student, f'[{seconds},"checkpoint_stop"]\n')
     elif room == 'EJECT':
-        course.active_teacher_room[student][0] = False
-        course.active_teacher_room[student] = [False, '', '', int(time.time())]
+        old[0] = False
+        old[1] = old[2] = False
+        old[3] = seconds
         student_log(course.course, student, f'[{seconds},"checkpoint_eject"]\n')
     else:
-        course.active_teacher_room[student] = [True, session.login, room]
+        old[0] = True
+        old[1] = session.login
+        old[2] = room
         student_log(course.course, student,
                     f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
     course.record()

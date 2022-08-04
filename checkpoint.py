@@ -162,6 +162,10 @@ class Room: # pylint: disable=too-many-instance-attributes
             ctx.fillRect(x_pos, y_pos - self.scale/2, size + 2, self.scale + 2)
             ctx.fillStyle = "#8F8"
             ctx.fillRect(x_pos, y_pos - self.scale/2, self.scale, self.scale + 2)
+            if student.blur:
+                ctx.fillStyle = "#F00"
+                ctx.fillRect(x_pos, y_pos - self.scale/2,
+                             student.blur / 10 * self.scale, self.scale + 2)
             if student.with_me():
                 ctx.fillStyle = "#000"
             else:
@@ -406,6 +410,7 @@ class Student: # pylint: disable=too-many-instance-attributes
             self.column = int(room[1])
             self.line = int(room[2])
         self.checkpoint_time = data[1][3]
+        self.blur = data[1][4]
         self.firstname = data[2]['fn']
         self.surname = data[2]['sn']
         self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
