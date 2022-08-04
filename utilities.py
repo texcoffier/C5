@@ -155,8 +155,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                     file.write(f'[{seconds},"checkpoint_in"]\n')
                 return 'checkpoint'
             if not active_teacher_room[0]:
-                # Always in the checkpoint or examination is done
-                return 'checkpoint'
+                if active_teacher_room[1] == '':
+                    # Always in the checkpoint or examination is done
+                    return 'checkpoint'
+                return 'done'
         if now < self.stop:
             return 'running'
         if login in self.tt_list and now < self.stop_tt:

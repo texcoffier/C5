@@ -537,13 +537,18 @@ async def checkpoint_student(request):
     if room == 'STOP':
         old[0] = False
         student_log(course.course, student, f'[{seconds},"checkpoint_stop"]\n')
+    elif room == 'RESTART':
+        old[0] = True
+        old[1] = session.login
+        student_log(course.course, student, f'[{seconds},"checkpoint_eject"]\n')
     elif room == 'EJECT':
         old[0] = False
-        old[1] = old[2] = False
-        old[3] = seconds
+        old[1] = old[2] = ''
+        old[3] = seconds # Make it bold for other teachers
         student_log(course.course, student, f'[{seconds},"checkpoint_eject"]\n')
     else:
-        old[0] = True
+        if old[1] == '':
+            old[0] = True # A moved STOPed student must not be reactivated
         old[1] = session.login
         old[2] = room
         student_log(course.course, student,

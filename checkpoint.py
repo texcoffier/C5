@@ -2,6 +2,8 @@
 Display checkpoint page
 
 """
+# pylint: disable=chained-comparison
+
 try:
     # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
     TICKET = TICKET
@@ -12,6 +14,7 @@ try:
     CONFIG = CONFIG
     document = document
     window = window
+    confirm = confirm
     Math = Math
     bind = bind
     Date = Date
@@ -22,6 +25,7 @@ SCALE = 25
 LEFT = 10
 TOP = 120
 BOLD_TIME = 180 # In seconds for new students in checking room
+BOLD_TIME_ACTIVE = 300 # In seconds for last activity
 MENU_WIDTH = 9
 MENU_HEIGHT = 10
 MENU_LINE = 0.6
@@ -43,6 +47,7 @@ class Room: # pylint: disable=too-many-instance-attributes
     students = []
     selected_computer = None
     selected_item = None
+    moved = False
     def __init__(self):
         self.change('Nautibus_1er')
     def change(self, building):
@@ -102,12 +107,13 @@ class Room: # pylint: disable=too-many-instance-attributes
                     draw_line(x_pos, start-0.5, x_pos, y_pos-0.5)
                     start = -1
                 last_char = char
-    def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements
+    def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """Display on canvas"""
         canvas = document.getElementById('canvas')
         ctx = canvas.getContext("2d")
         width = canvas.offsetWidth
         height = canvas.offsetHeight
+        now = seconds()
         canvas.setAttribute('width', width)
         canvas.setAttribute('height', height)
 
@@ -141,7 +147,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                      'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' '}
         for y_pos, line in enumerate(self.lines):
             for x_pos, char in enumerate(line):
-                if char in translate:
+                if char in translate: # pylint: disable=consider-using-get
                     char = translate[char]
                 if char == ' ':
                     continue
@@ -160,16 +166,26 @@ class Room: # pylint: disable=too-many-instance-attributes
             ctx.fillStyle = "#FFF"
             ctx.globalAlpha = 0.5
             ctx.fillRect(x_pos, y_pos - self.scale/2, size + 2, self.scale + 2)
-            ctx.fillStyle = "#8F8"
-            ctx.fillRect(x_pos, y_pos - self.scale/2, self.scale, self.scale + 2)
+            if student.active:
+                ctx.fillStyle = "#8F8"
+                ctx.fillRect(x_pos, y_pos - self.scale/2, self.scale, self.scale + 2)
             if student.blur:
-                ctx.fillStyle = "#F00"
+                ctx.fillStyle = "#800"
                 ctx.fillRect(x_pos, y_pos - self.scale/2,
                              student.blur / 10 * self.scale, self.scale + 2)
             if student.with_me():
-                ctx.fillStyle = "#000"
+                if student.active:
+                    if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
+                        ctx.fillStyle = "#000"
+                    else:
+                        ctx.fillStyle = "#00F"
+                else:
+                    ctx.fillStyle = "#080"
             else:
-                ctx.fillStyle = "#888"
+                if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
+                    ctx.fillStyle = "#888"
+                else:
+                    ctx.fillStyle = "#008"
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
             ctx.fillText(student.surname, x_pos, y_pos + self.scale/2)
@@ -222,7 +238,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                     ctx.fillRect(x_pos + self.scale, y_item,
                                  MENU_WIDTH*self.scale, MENU_LINE*self.scale)
                     ctx.fillStyle = "#000"
-                if (event
+                if (event # pylint: disable=too-many-boolean-expressions
                         and i > 1
                         and message != ''
                         and event.clientX > x_pos + self.scale
@@ -245,14 +261,13 @@ class Room: # pylint: disable=too-many-instance-attributes
             ctx.fillRect(self.left + column * self.scale,
                          self.top + line * self.scale, self.scale, self.scale)
             ctx.globalAlpha = 1
-
     def get_column_row(self, event):
         """Return character position (float) in the character map"""
         if event.target.tagName != 'CANVAS':
             return [-1, -1]
         column = (event.clientX - self.left) / self.scale
         line = (event.clientY - self.top) / self.scale
-        if 0 <= column and column <= self.x_max and 0 <= line and line < len(self.lines):
+        if column >= 0 and column <= self.x_max and line >= 0 and line < len(self.lines):
             return [column, line]
         return [-1, -1]
     def get_coord(self, event):
@@ -275,6 +290,7 @@ class Room: # pylint: disable=too-many-instance-attributes
         window.onmousemove = bind(self.drag_move, self)
         window.onmouseup = bind(self.drag_stop, self)
         column, line = self.get_coord(event)
+        self.moved = False
         for student in self.students:
             if student.column == column and student.line == line:
                 self.moving = student
@@ -290,7 +306,9 @@ class Room: # pylint: disable=too-many-instance-attributes
             if self.selected_computer:
                 self.draw(event)
             return
-        if self.moving == True:
+        self.moved = self.moved or ((self.drag_x_start - event.clientX) ** 2
+                                    + (self.drag_y_start - event.clientY) ** 2) > 10
+        if self.moving == True: # pylint: disable=singleton-comparison
             self.left += event.clientX - self.drag_x_current
             self.top += event.clientY - self.drag_y_current
             self.drag_x_current = event.clientX
@@ -304,42 +322,51 @@ class Room: # pylint: disable=too-many-instance-attributes
             else:
                 document.getElementById('top').style.background = TOP_ACTIVE
         self.draw()
-    def drag_stop(self, event):
+    def drag_stop(self, event): # pylint: disable=too-many-branches
         """Stop moving the map"""
+        if not self.moving:
+            print('bug')
+            return
         document.getElementById('top').style.background = TOP_INACTIVE
         column, line = self.get_coord(event)
-        if self.moving != True:
+        if self.moving != True: # pylint: disable=singleton-comparison
             if column != -1:
                 if self.moving.column_start != column or self.moving.line_start != line:
                     record('/checkpoint/' + COURSE + '/' + self.moving.login + '/'
                            + ROOM.building + ',' + column + ',' + line)
+                elif not self.moved:
+                    if self.moving.active:
+                        if confirm("Terminer l'examen pour "
+                                   + self.moving.firstname + ' ' + self.moving.surname):
+                            record('/checkpoint/' + COURSE + '/' + self.moving.login + '/STOP')
+                    else:
+                        if confirm("Rouvrir l'examen pour "
+                                   + self.moving.firstname + ' ' + self.moving.surname):
+                            record('/checkpoint/' + COURSE + '/' + self.moving.login + '/RESTART')
             else:
                 record('/checkpoint/' + COURSE + '/' + self.moving.login + '/EJECT')
-                #record('/checkpoint/' + COURSE + '/' + self.moving.login + '/STOP')
-        else:
-            if ((self.drag_x_start - event.clientX) ** 2
-                    + (self.drag_y_start - event.clientY) ** 2) < 10:
-                # Simple click
-                if self.selected_item:
-                    if self.selected_item[-1] == '!':
-                        self.selected_item = ''
-                    record('/computer/' + COURSE + '/'
-                           + self.selected_computer[0] + '/'
-                           + self.selected_computer[1] + '/'
-                           + self.selected_computer[2] + '/'
-                           + self.selected_item)
-                    self.selected_item = None
+        elif not self.moved:
+            # Simple click
+            if self.selected_item:
+                if self.selected_item[-1] == '!':
+                    self.selected_item = ''
+                record('/computer/' + COURSE + '/'
+                       + self.selected_computer[0] + '/'
+                       + self.selected_computer[1] + '/'
+                       + self.selected_computer[2] + '/'
+                       + self.selected_item)
+                self.selected_item = None
+                self.draw()
+            elif column != -1 and self.lines[line][column] == 's':
+                select = [self.building, column, line]
+                if self.selected_computer != select:
+                    self.selected_computer = select
                     self.draw()
-                elif column != -1 and self.lines[line][column] == 's':
-                    select = [self.building, column, line]
-                    if self.selected_computer != select:
-                        self.selected_computer = select
-                        self.draw()
-                        self.moving = False
-                        return
-                if self.selected_computer:
-                    self.selected_computer = None
-                    self.draw()
+                    self.moving = False
+                    return
+            if self.selected_computer:
+                self.selected_computer = None
+                self.draw()
         if not self.selected_computer:
             window.onmousemove = None
         window.onmouseup = None
@@ -433,7 +460,7 @@ class Student: # pylint: disable=too-many-instance-attributes
 
     def with_me(self):
         """The student is in my room"""
-        return self.teacher == LOGIN and self.active
+        return self.teacher == LOGIN
 
 def cmp_student(student_a, student_b):
     """Compare 2 students names"""
