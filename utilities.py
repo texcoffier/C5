@@ -265,7 +265,6 @@ class Session:
                         self.infos = await LDAP.infos(self.login)
                         self.record()
             if not self.login:
-                print(('?', service))
                 raise web.HTTPFound(C5_REDIRECT + urllib.request.quote(service))
         else:
             if self.ticket and self.ticket.isdigit():

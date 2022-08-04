@@ -11,8 +11,10 @@ import tempfile
 import zipfile
 import html
 import asyncio
+import logging
 import urllib.request
 from aiohttp import web
+from aiohttp.abc import AbstractAccessLogger
 import utilities
 
 # To make casauth work we should not use a proxy
@@ -41,7 +43,7 @@ class File:
         elif filename.endswith('.css'):
             self.mime = 'text/css'
         else:
-            print(filename)
+            print('Unknow mimetype', filename)
             self.mime = 'text/plain'
     def get_content(self):
         """Check file date and returns content"""
@@ -77,13 +79,11 @@ class File:
 def handle(base=''):
     """Send the file content"""
     async def real_handle(request): # pylint: disable=too-many-branches
-        print(('get', request.url), flush=True)
         if base:
             session = None # Not authenticated
         else:
             session = await utilities.Session.get(request)
             login = await session.get_login(str(request.url).split('?')[0])
-            print((login, request.url))
         filename = request.match_info['filename']
         course = None
         if base:
@@ -136,7 +136,6 @@ def student_log(course_name, login, data):
 
 async def log(request):
     """Log user actions"""
-    print(('log', request.url), flush=True)
     session = await utilities.Session.get(request)
     login = await session.get_login(str(request.url).split('?')[0])
     post = await request.post()
@@ -150,15 +149,13 @@ async def log(request):
 async def startup(app):
     """For the log"""
     app['ldap'] = asyncio.create_task(utilities.LDAP.start())
-    print('http serveur running!', flush=True)
+    print("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
 
 async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
     if not session.is_admin():
-        print(('notAdmin', request.url), flush=True)
         session.redirect('=course_js_not_admin.js')
-    print(('Admin', request.url), flush=True)
     return session
 
 async def get_teacher_login_and_course(request):
@@ -166,9 +163,7 @@ async def get_teacher_login_and_course(request):
     session = await utilities.Session.get(request)
     course = utilities.CourseConfig.get(request.match_info['course'])
     if session.login not in course.teachers:
-        print(('notTeacher', request.url), flush=True)
         session.redirect('=course_js_not_teacher.js')
-    print(('Teacher', request.url), flush=True)
     return session, course
 
 async def adm_course(request):
@@ -420,7 +415,6 @@ async def upload_course(request):
 async def config_reload(request):
     """For regression tests"""
     session = await utilities.Session.get(request)
-    print(('LoadConfig', session.login), flush=True)
     utilities.CONFIG.load()
     return web.Response(
         body='done',
@@ -603,6 +597,7 @@ async def computer(request):
     utilities.CONFIG.save()
     return await update_browser_data(session, course)
 
+
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
@@ -625,5 +620,17 @@ APP.add_routes([web.get('/', home),
                 web.post('/log', log),
                 ])
 APP.on_startup.append(startup)
+logging.basicConfig(level=logging.DEBUG)
+
+class AccessLogger(AbstractAccessLogger):
+    def log(self, request, response, run_time):
+        path = request.path.replace('\n', '\\n')
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
+              f"{run_time:5.3f} {request.method[0]} "
+              f"{request.query_string.replace('ticket=ST-', '').split('-')[0]:>8}"
+              f"{path}",
+              flush=True)
+
 web.run_app(APP, host=utilities.C5_IP, port=utilities.C5_HTTP,
+            access_log_format="%t %s %D %r", access_log_class=AccessLogger,
             ssl_context=utilities.get_certificate(False))
