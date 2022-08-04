@@ -107,16 +107,111 @@ class Room: # pylint: disable=too-many-instance-attributes
                     draw_line(x_pos, start-0.5, x_pos, y_pos-0.5)
                     start = -1
                 last_char = char
-    def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements,too-many-branches
-        """Display on canvas"""
-        canvas = document.getElementById('canvas')
-        ctx = canvas.getContext("2d")
+    def draw_computer_menu(self, ctx, event, messages):
+        """The computer problems menu"""
+        x_pos = self.left + self.scale * (self.selected_computer[1] - 0.5)
+        y_pos = self.top + self.scale * (self.selected_computer[2] - 0.5)
+        ctx.fillStyle = "#FFF"
+        ctx.globalAlpha = 0.9
+        ctx.fillRect(x_pos, y_pos, self.scale, self.scale)
+        ctx.fillRect(x_pos + self.scale, y_pos, MENU_WIDTH*self.scale, MENU_HEIGHT*self.scale)
+        ctx.globalAlpha = 1
+        ctx.fillStyle = "#000"
+        self.selected_item = None
+        for i, message in enumerate([
+                "Les câbles sont branchés mais :",
+                "",
+                "Machine: ne se lance pas",
+                "Machine: problème clavier",
+                "Machine: problème souris",
+                "Machine: problème écran",
+                "",
+                "Windows: ne se lance pas",
+                "Windows: connexion impossible",
+                "Windows: pas de fichiers",
+                "",
+                "Linux: ne se lance pas",
+                "Linux: connexion impossible",
+                "Linux: pas de fichier",
+                "",
+                "Réparé: tout fonctionne !"
+            ]):
+            y_item = y_pos + MENU_LINE * self.scale * i
+            if message in messages:
+                ctx.fillStyle = "#FDD"
+                ctx.fillRect(x_pos + self.scale, y_item,
+                                MENU_WIDTH*self.scale, MENU_LINE*self.scale)
+                ctx.fillStyle = "#000"
+            if (event # pylint: disable=too-many-boolean-expressions
+                    and i > 1
+                    and message != ''
+                    and event.clientX > x_pos + self.scale
+                    and event.clientX < x_pos + self.scale + MENU_WIDTH*self.scale
+                    and event.clientY > y_item
+                    and event.clientY < y_item + MENU_LINE * self.scale
+                ):
+                ctx.fillStyle = "#FF0"
+                ctx.fillRect(x_pos + self.scale, y_item,
+                                MENU_WIDTH*self.scale, MENU_LINE*self.scale)
+                ctx.fillStyle = "#000"
+                self.selected_item = message
+            ctx.fillText(message, x_pos + self.scale*1.5, y_item + (MENU_LINE - 0.1)*self.scale)
+    def draw_computer_problems(self, ctx):
+        """Draw a red square on computer with problems"""
+        ctx.fillStyle = "#F00"
+        ctx.globalAlpha = 0.5
+        messages = []
+        for building, column, line, message in CONFIG.computers:
+            if building == self.building:
+                x_pos = self.left + self.scale * (column - 0.5)
+                y_pos = self.top + self.scale * (line - 0.5)
+                ctx.fillRect(x_pos, y_pos, self.scale, self.scale)
+                if (self.selected_computer
+                        and self.selected_computer[1] == column
+                        and self.selected_computer[2] == line):
+                    messages.append(message)
+        ctx.globalAlpha = 1
+        return messages
+    def draw_students(self, ctx):
+        """Draw students names"""
+        now = seconds()
+        for student in self.students:
+            x_pos = self.left + self.scale * (student.column - 0.5)
+            y_pos = self.top + self.scale * student.line + 2
+            size = max(ctx.measureText(student.firstname).width,
+                       ctx.measureText(student.surname).width)
+            ctx.fillStyle = "#FFF"
+            ctx.globalAlpha = 0.5
+            ctx.fillRect(x_pos, y_pos - self.scale/2, size + 2, self.scale + 2)
+            if student.active:
+                ctx.fillStyle = "#8F8"
+                ctx.fillRect(x_pos, y_pos - self.scale/2, self.scale, self.scale + 2)
+            if student.blur:
+                ctx.fillStyle = "#800"
+                ctx.fillRect(x_pos, y_pos - self.scale/2,
+                             student.blur / 10 * self.scale, self.scale + 2)
+            if student.with_me():
+                if student.active:
+                    if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
+                        ctx.fillStyle = "#000"
+                    else:
+                        ctx.fillStyle = "#00F"
+                else:
+                    ctx.fillStyle = "#080"
+            else:
+                if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
+                    ctx.fillStyle = "#888"
+                else:
+                    ctx.fillStyle = "#008"
+            ctx.globalAlpha = 1
+            ctx.fillText(student.firstname, x_pos, y_pos)
+            ctx.fillText(student.surname, x_pos, y_pos + self.scale/2)
+    def draw_map(self, ctx, canvas):
+        """Draw the character map"""
         width = canvas.offsetWidth
         height = canvas.offsetHeight
-        now = seconds()
         canvas.setAttribute('width', width)
         canvas.setAttribute('height', height)
-
         ctx.fillStyle = "#EEE"
         ctx.fillRect(0, 0, width, height)
 
@@ -156,111 +251,27 @@ class Room: # pylint: disable=too-many-instance-attributes
                     char,
                     self.left + self.scale*x_pos - size.width/2,
                     self.top + self.scale*y_pos + size.actualBoundingBoxAscent/2)
-
-        ctx.font = self.scale/2 + "px sans-serif"
-        for student in self.students:
-            x_pos = self.left + self.scale * (student.column - 0.5)
-            y_pos = self.top + self.scale * student.line + 2
-            size = max(ctx.measureText(student.firstname).width,
-                       ctx.measureText(student.surname).width)
-            ctx.fillStyle = "#FFF"
-            ctx.globalAlpha = 0.5
-            ctx.fillRect(x_pos, y_pos - self.scale/2, size + 2, self.scale + 2)
-            if student.active:
-                ctx.fillStyle = "#8F8"
-                ctx.fillRect(x_pos, y_pos - self.scale/2, self.scale, self.scale + 2)
-            if student.blur:
-                ctx.fillStyle = "#800"
-                ctx.fillRect(x_pos, y_pos - self.scale/2,
-                             student.blur / 10 * self.scale, self.scale + 2)
-            if student.with_me():
-                if student.active:
-                    if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
-                        ctx.fillStyle = "#000"
-                    else:
-                        ctx.fillStyle = "#00F"
-                else:
-                    ctx.fillStyle = "#080"
-            else:
-                if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
-                    ctx.fillStyle = "#888"
-                else:
-                    ctx.fillStyle = "#008"
-            ctx.globalAlpha = 1
-            ctx.fillText(student.firstname, x_pos, y_pos)
-            ctx.fillText(student.surname, x_pos, y_pos + self.scale/2)
-
-        ctx.fillStyle = "#F00"
+    def draw_square_feedback(self, ctx):
+        """Single squere feedback"""
+        column = int((event.clientX - self.left) / self.scale - 0.5) + 0.5
+        line = int((event.clientY - self.top) / self.scale - 0.5) + 0.5
+        ctx.fillStyle = "#0F0"
         ctx.globalAlpha = 0.5
-        messages = []
-        for building, column, line, message in CONFIG.computers:
-            if building == self.building:
-                x_pos = self.left + self.scale * (column - 0.5)
-                y_pos = self.top + self.scale * (line - 0.5)
-                ctx.fillRect(x_pos, y_pos, self.scale, self.scale)
-                if (self.selected_computer
-                        and self.selected_computer[1] == column
-                        and self.selected_computer[2] == line):
-                    messages.append(message)
+        ctx.fillRect(self.left + column * self.scale,
+                     self.top + line * self.scale, self.scale, self.scale)
         ctx.globalAlpha = 1
-
+    def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements,too-many-branches
+        """Display on canvas"""
+        canvas = document.getElementById('canvas')
+        ctx = canvas.getContext("2d")
+        self.draw_map(ctx, canvas)
+        ctx.font = self.scale/2 + "px sans-serif"
+        self.draw_students(ctx)
+        messages = self.draw_computer_problems(ctx)
         if self.selected_computer and self.selected_computer[0] == self.building:
-            x_pos = self.left + self.scale * (self.selected_computer[1] - 0.5)
-            y_pos = self.top + self.scale * (self.selected_computer[2] - 0.5)
-            ctx.fillStyle = "#FFF"
-            ctx.globalAlpha = 0.9
-            ctx.fillRect(x_pos, y_pos, self.scale, self.scale)
-            ctx.fillRect(x_pos + self.scale, y_pos, MENU_WIDTH*self.scale, MENU_HEIGHT*self.scale)
-            ctx.globalAlpha = 1
-            ctx.fillStyle = "#000"
-            self.selected_item = None
-            for i, message in enumerate([
-                    "Les câbles sont branchés mais :",
-                    "",
-                    "Machine: ne se lance pas",
-                    "Machine: problème clavier",
-                    "Machine: problème souris",
-                    "Machine: problème écran",
-                    "",
-                    "Windows: ne se lance pas",
-                    "Windows: connexion impossible",
-                    "Windows: pas de fichiers",
-                    "",
-                    "Linux: ne se lance pas",
-                    "Linux: connexion impossible",
-                    "Linux: pas de fichier",
-                    "",
-                    "Réparé: tout fonctionne !"
-                ]):
-                y_item = y_pos + MENU_LINE * self.scale * i
-                if message in messages:
-                    ctx.fillStyle = "#FDD"
-                    ctx.fillRect(x_pos + self.scale, y_item,
-                                 MENU_WIDTH*self.scale, MENU_LINE*self.scale)
-                    ctx.fillStyle = "#000"
-                if (event # pylint: disable=too-many-boolean-expressions
-                        and i > 1
-                        and message != ''
-                        and event.clientX > x_pos + self.scale
-                        and event.clientX < x_pos + self.scale + MENU_WIDTH*self.scale
-                        and event.clientY > y_item
-                        and event.clientY < y_item + MENU_LINE * self.scale
-                   ):
-                    ctx.fillStyle = "#FF0"
-                    ctx.fillRect(x_pos + self.scale, y_item,
-                                 MENU_WIDTH*self.scale, MENU_LINE*self.scale)
-                    ctx.fillStyle = "#000"
-                    self.selected_item = message
-                ctx.fillText(message, x_pos + self.scale*1.5, y_item + (MENU_LINE - 0.1)*self.scale)
-
+            self.draw_computer_menu(ctx, event, messages)
         if square_feedback:
-            column = int((event.clientX - self.left) / self.scale - 0.5) + 0.5
-            line = int((event.clientY - self.top) / self.scale - 0.5) + 0.5
-            ctx.fillStyle = "#0F0"
-            ctx.globalAlpha = 0.5
-            ctx.fillRect(self.left + column * self.scale,
-                         self.top + line * self.scale, self.scale, self.scale)
-            ctx.globalAlpha = 1
+            self.draw_square_feedback(ctx)
     def get_column_row(self, event):
         """Return character position (float) in the character map"""
         if event.target.tagName != 'CANVAS':
@@ -381,7 +392,6 @@ def start_move_student(event):
     document.body.onmousemove = move_student
     window.onmouseup = stop_move_student
     move_student(event)
-
 def move_student(event):
     """To put the student on the map"""
     Student.moving_element.style.left = event.clientX + 'px'
@@ -395,7 +405,6 @@ def move_student(event):
         Student.moving_element.style.background = "#FFF"
         document.getElementById('top').style.background = TOP_ACTIVE
     ROOM.draw(event, square_feedback=True)
-
 def stop_move_student(event):
     """Drop the student"""
     pos = ROOM.get_coord(event)
@@ -413,7 +422,6 @@ def stop_move_student(event):
     Student.moving_element = None
     if pos[0] == -1:
         update_page()
-
 def record(action):
     """Do an action and get data"""
     script = document.createElement('SCRIPT')
