@@ -21,9 +21,9 @@ try:
 except ValueError:
     pass
 
-SCALE = 25
+SCALE = 30
 LEFT = 10
-TOP = 120
+TOP = 160
 BOLD_TIME = 180 # In seconds for new students in checking room
 BOLD_TIME_ACTIVE = 300 # In seconds for last activity
 MENU_WIDTH = 9
@@ -260,6 +260,59 @@ class Room: # pylint: disable=too-many-instance-attributes
         ctx.fillRect(self.left + column * self.scale,
                      self.top + line * self.scale, self.scale, self.scale)
         ctx.globalAlpha = 1
+    def draw_help(self, ctx):
+        """Display documentation"""
+        ctx.fillStyle = "#000"
+        line = self.top - 2.5 * self.scale
+        column = self.left + 11 * self.scale
+        ctx.fillText("Couleurs des noms d'étudiants : ", column, line)
+        line += self.scale / 2
+        column += self.scale
+        ctx.fillStyle = "#888"
+        ctx.fillText("Avec un autre enseignant.", column, line)
+        line += self.scale / 2
+        ctx.fillStyle = "#000"
+        ctx.fillText("Travaille avec vous.", column, line)
+        line += self.scale / 2
+        ctx.fillStyle = "#00F"
+        ctx.fillText("N'a rien fait depuis " + BOLD_TIME_ACTIVE/60 + " minutes.", column, line)
+        line += self.scale / 2
+        ctx.fillStyle = "#080"
+        ctx.fillText("Examen terminé.", column, line)
+
+        line = self.top - 2.5 * self.scale
+        column = self.left + 20 * self.scale
+        ctx.fillStyle = "#000"
+        ctx.fillText("Concernant les ordinateurs :", column, line)
+        column += self.scale
+        line += self.scale / 2
+        ctx.fillText("Plus il est rouge, plus il y a des pannes.", column, line)
+        line += self.scale / 2
+        ctx.fillText("Cliquez dessus pour indiquer une panne.", column, line)
+        line += self.scale / 2
+
+        line = self.top - 2.5 * self.scale
+        column = self.left + 32 * self.scale
+        ctx.fillText("Le carré vert des étudiants :", column, line)
+        column += self.scale
+        line += self.scale / 2
+        ctx.fillText("Tirez-le pour déplacer l'étudiant.", column, line)
+        line += self.scale / 2
+        ctx.fillText("Tirez-le tout en haut pour l'expulser de la salle.", column, line)
+        line += self.scale / 2
+        ctx.fillText("Cliquez dessus pour terminer l'examen.", column, line)
+        line += self.scale / 2
+        ctx.fillText("Il se remplit de rouge quand l'étudiant change de fenêtre.", column, line)
+
+        line = self.top - 2.5 * self.scale
+        column = self.left + 0 * self.scale
+        ctx.fillText("Navigation sur le plan :", column, line)
+        column += self.scale
+        line += self.scale / 2
+        ctx.fillText("Utilisez la molette pour zoomer.", column, line)
+        line += self.scale / 2
+        ctx.fillText("Tirez le fond d'écran pour le déplacer.", column, line)
+
     def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """Display on canvas"""
         canvas = document.getElementById('canvas')
@@ -272,6 +325,7 @@ class Room: # pylint: disable=too-many-instance-attributes
             self.draw_computer_menu(ctx, event, messages)
         if square_feedback:
             self.draw_square_feedback(ctx)
+        self.draw_help(ctx)
     def get_column_row(self, event):
         """Return character position (float) in the character map"""
         if event.target.tagName != 'CANVAS':
