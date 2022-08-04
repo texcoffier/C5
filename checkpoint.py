@@ -21,6 +21,7 @@ try:
 except ValueError:
     pass
 
+RELOAD_INTERVAL = 60 # Number of seconds between update data
 SCALE = 30
 LEFT = 10
 TOP = 160
@@ -36,6 +37,13 @@ def seconds():
     """Number of second as Unix"""
     return int(Date().getTime() / 1000)
 
+def mouse_enter():
+    """Manage window.mouse_is_inside"""
+    window.mouse_is_inside = True
+def mouse_leave():
+    """Manage window.mouse_is_inside"""
+    window.mouse_is_inside = False
+
 class Room: # pylint: disable=too-many-instance-attributes
     """Graphic display off rooms"""
     drag_x_current = drag_x_start = drag_y_current = drag_y_start = None
@@ -50,6 +58,9 @@ class Room: # pylint: disable=too-many-instance-attributes
     moved = False
     def __init__(self):
         self.change('Nautibus_1er')
+        window.onblur = mouse_leave
+        window.onfocus = mouse_enter
+        setInterval(reload_page, RELOAD_INTERVAL * 1000)
     def change(self, building):
         """Initialise with a new building"""
         self.building = building
@@ -312,7 +323,6 @@ class Room: # pylint: disable=too-many-instance-attributes
         ctx.fillText("Utilisez la molette pour zoomer.", column, line)
         line += self.scale / 2
         ctx.fillText("Tirez le fond d'écran pour le déplacer.", column, line)
-
     def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """Display on canvas"""
         canvas = document.getElementById('canvas')
@@ -551,7 +561,7 @@ def create_page():
         #top .drag_and_drop { display: inline-block }
         #top .reload { font-family: emoji; font-size: 300%; cursor: pointer; }
         </style>
-        <div id="top"><span class="reload" onclick="record('/update/' + COURSE)">⟳</span>''',
+        <div id="top"><span class="reload" onclick="reload_page()">⟳</span>''',
 
         '<span class="course">', COURSE, '</span>',
         ' <select onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
@@ -588,6 +598,10 @@ def update_page():
             ROOM.students.append(student)
 
     ROOM.draw()
+
+def reload_page():
+    if document.body.onmousemove is None and window.mouse_is_inside:
+        record('/update/' + COURSE)
 
 ROOM = Room()
 
