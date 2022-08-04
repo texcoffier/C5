@@ -17,7 +17,12 @@ class QEnd(Question): # pylint: disable=undefined-variable
             'save_button': [66, 2, 0, 2, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
             }})
-        return "Plus de questions"
+        batiment, coord_x, coord_y = self.placement()
+        return ("<p>Plus de questions."
+                + "<p>Surveillant :" + self.teacher()
+                + "<p>Bâtiment : " + batiment
+                + "<p>Poste X : " + coord_x
+                + "<p>Poste Y : " + coord_y)
     def tester(self):
         self.display('FINI !')
     def default_answer(self):

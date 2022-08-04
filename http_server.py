@@ -108,8 +108,9 @@ def handle(base=''):
                         SOCK = "wss://{utilities.C5_WEBSOCKET}";
                         ADMIN = "{int(session.is_admin())}";
                         STOP = "{stop}";
-                        CP = "{course.config['copy_paste']}",
+                        CP = "{course.config['copy_paste']}";
                         ANSWERS = {json.dumps(answers)};
+                        WHERE = {json.dumps(course.active_teacher_room.get(login,[False,'?','?,0,0']))};
                     </script>
                     <script src="/ccccc.js?ticket={session.ticket}"></script>''')
             if filename.startswith('course_'):

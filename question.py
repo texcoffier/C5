@@ -45,3 +45,9 @@ class Question:
     def append_to_source_code(self): # pylint: disable=no-self-use
         """Add this to the user source code"""
         return ""
+    def placement(self):
+        """Return [Building, coord_x, coord_y]"""
+        return self.worker.config.WHERE[2].split(',')
+    def teacher(self):
+        """Room managing Teacher"""
+        return self.worker.config.WHERE[1]

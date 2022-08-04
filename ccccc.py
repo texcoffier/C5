@@ -42,6 +42,7 @@ try:
     SOCK = SOCK
     STOP = STOP
     CP = CP
+    WHERE = WHERE
     encodeURIComponent = encodeURIComponent
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
@@ -151,6 +152,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'STOP': STOP,
             'ANSWERS': ANSWERS,
             'COURSE': course,
+            'WHERE': WHERE,
             }])
         self.create_html()
         for question in ANSWERS:
