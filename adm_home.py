@@ -102,7 +102,7 @@ def display(): # pylint: disable=too-many-statements
         text.append(value)
 
     for course in COURSES:
-        i_am_a_teacher = LOGIN in course.teachers.split(' ')
+        i_am_a_teacher = LOGIN in course.teachers.replace('\n', ' ').split(' ')
         text.append('<tr class="' + course.status + ' ' + course.course.split('.')[0] + '"><td>')
         text.append(course.course.replace('course_', 'course_<br><b>'))
         text.append('</b>')
