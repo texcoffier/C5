@@ -25,6 +25,8 @@ BOLD_TIME = 180 # In seconds for new students in checking room
 MENU_WIDTH = 9
 MENU_HEIGHT = 10
 MENU_LINE = 0.6
+TOP_INACTIVE = 'linear-gradient(to bottom, #FFFF, #FFFE, #FFFE, #FFF0)'
+TOP_ACTIVE = 'linear-gradient(to bottom, #8F8F, #8F87)'
 
 def seconds():
     """Number of second as Unix"""
@@ -100,7 +102,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                     draw_line(x_pos, start-0.5, x_pos, y_pos-0.5)
                     start = -1
                 last_char = char
-    def draw(self, event=None): # pylint: disable=too-many-locals,too-many-statements
+    def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements
         """Display on canvas"""
         canvas = document.getElementById('canvas')
         ctx = canvas.getContext("2d")
@@ -219,7 +221,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                 if (event
                         and i > 1
                         and message != ''
-                        and event.clientX > x_pos + self.scale*1.5
+                        and event.clientX > x_pos + self.scale
                         and event.clientX < x_pos + self.scale + MENU_WIDTH*self.scale
                         and event.clientY > y_item
                         and event.clientY < y_item + MENU_LINE * self.scale
@@ -231,6 +233,14 @@ class Room: # pylint: disable=too-many-instance-attributes
                     self.selected_item = message
                 ctx.fillText(message, x_pos + self.scale*1.5, y_item + (MENU_LINE - 0.1)*self.scale)
 
+        if square_feedback:
+            column = int((event.clientX - self.left) / self.scale - 0.5) + 0.5
+            line = int((event.clientY - self.top) / self.scale - 0.5) + 0.5
+            ctx.fillStyle = "#0F0"
+            ctx.globalAlpha = 0.5
+            ctx.fillRect(self.left + column * self.scale,
+                         self.top + line * self.scale, self.scale, self.scale)
+            ctx.globalAlpha = 1
 
     def get_column_row(self, event):
         """Return character position (float) in the character map"""
@@ -286,13 +296,13 @@ class Room: # pylint: disable=too-many-instance-attributes
             if column != -1:
                 self.moving.line = line
                 self.moving.column = column
-                document.getElementById('top').style.background = "#EEE"
+                document.getElementById('top').style.background = TOP_INACTIVE
             else:
-                document.getElementById('top').style.background = "#8F8"
+                document.getElementById('top').style.background = TOP_ACTIVE
         self.draw()
     def drag_stop(self, event):
         """Stop moving the map"""
-        document.getElementById('top').style.background = "#EEE"
+        document.getElementById('top').style.background = TOP_INACTIVE
         column, line = self.get_coord(event)
         if self.moving != True:
             if column != -1:
@@ -316,7 +326,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                            + self.selected_item)
                     self.selected_item = None
                     self.draw()
-                if column != -1 and self.lines[line][column] == 's':
+                elif column != -1 and self.lines[line][column] == 's':
                     select = [self.building, column, line]
                     if self.selected_computer != select:
                         self.selected_computer = select
@@ -349,10 +359,11 @@ def move_student(event):
     pos = ROOM.get_column_row(event)
     if pos[0] != -1:
         Student.moving_element.style.background = "#0F0"
-        document.getElementById('top').style.background = "#EEE"
+        document.getElementById('top').style.background = TOP_INACTIVE
     else:
         Student.moving_element.style.background = "#FFF"
-        document.getElementById('top').style.background = "#8F8"
+        document.getElementById('top').style.background = TOP_ACTIVE
+    ROOM.draw(event, square_feedback=True)
 
 def stop_move_student(event):
     """Drop the student"""
@@ -366,10 +377,11 @@ def stop_move_student(event):
     del Student.moving_element.style.position
     del Student.moving_element.style.background
     del Student.moving_element.style.pointerEvents
-    document.getElementById('top').style.background = "#EEE"
+    document.getElementById('top').style.background = TOP_INACTIVE
     Student.moving_student = None
     Student.moving_element = None
-    update_page()
+    if pos[0] == -1:
+        update_page()
 
 def record(action):
     """Do an action and get data"""
@@ -431,24 +443,30 @@ def create_page():
         .name { display: inline-block; background: #EEE; vertical-align: top;
             cursor: pointer; user-select: none;
         }
+        BODY { font-family: sans-serif }
         .name:hover { background: #FFF }
         .name SPAN { color: #888 }
         CANVAS { position: absolute; left: 0px; width: 100vw; top: 0px; height: 100vh }
         #waiting { display: inline-block }
         #top {z-index: 2; position: absolute;
               top: 0px; left: 0px; width: 100%; height: 5em;
-              background: #EEE; opacity: 0.95}
-        .reload { font-family: emoji; font-size: 200%; cursor: pointer; }
+              background: ''', TOP_INACTIVE, '''}
+        #top * { vertical-align: middle }
+        #top .course { font-size: 200%; }
+        #top SELECT { font-size: 150%; }
+        #top .drag_and_drop { display: inline-block }
+        #top .reload { font-family: emoji; font-size: 300%; cursor: pointer; }
         </style>
         <div id="top"><span class="reload" onclick="record('/update/' + COURSE)">⟳</span>''',
 
-        COURSE,
+        '<span class="course">', COURSE, '</span>',
         ' <select onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
         ''.join(['<option'
                  + (building == ROOM.building and ' selected' or '')
                  + '>'+building+'</option>' for building in BUILDINGS]),
         '''</select>
-        Drag and drop: <div id="waiting"></div>
+        <div class="drag_and_drop">Drag and drop names<br>from and to the map</div>
+        <div id="waiting"></div>
         </div>
         <canvas
             id="canvas"
