@@ -142,11 +142,11 @@ class Room: # pylint: disable=too-many-instance-attributes
                 "Windows : connexion impossible",
                 "Windows : pas de fichiers",
                 "",
-                "Linux: ne se lance pas",
-                "Linux: connexion impossible",
-                "Linux: pas de fichiers",
+                "Linux : ne se lance pas",
+                "Linux : connexion impossible",
+                "Linux : pas de fichiers",
                 "",
-                "Réparé: tout fonctionne !"
+                "Réparé : tout fonctionne !"
             ]):
             y_item = y_pos + MENU_LINE * self.scale * i
             if message in messages:
@@ -214,7 +214,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                 if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
                     ctx.fillStyle = "#888"
                 else:
-                    ctx.fillStyle = "#008"
+                    ctx.fillStyle = "#88F"
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
             ctx.fillText(student.surname, x_pos, y_pos + self.scale/2)

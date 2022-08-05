@@ -37,7 +37,7 @@ def get_certificate(server=True):
     return None
 
 
-class LDAP_process:
+class LDAP_process: # pylint: disable=invalid-name
     """Create a LDAP process and get information from it.
     It is more simple than using an asyncio LDAP library.
     """
@@ -136,7 +136,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         if login in self.tt_list:
             return self.stop_tt_timestamp
         return self.stop_timestamp
-    def status(self, login):
+    def status(self, login): # pylint: disable: too-many-return-statements
         """Status of the course"""
         if os.path.getmtime(self.filename) > self.time:
             self.load()
@@ -167,6 +167,14 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     def running(self, login):
         """If the session running for the user"""
         return self.status(login).startswith('running')
+
+    async def get_students(self):
+        """Get all the students"""
+        # XXX Clearly not efficient
+        return [
+            [student, active_teacher_room, await LDAP.infos(student)]
+            for student, active_teacher_room in self.active_teacher_room.items()
+            ]
 
     @classmethod
     def get(cls, course):

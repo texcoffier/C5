@@ -483,17 +483,6 @@ async def checkpoint_list(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
-async def get_students(session, course):
-    """Get the student in checkpoint + teacher ones"""
-    is_admin = session.is_admin()
-    return [
-        [student, active_teacher_room, await utilities.LDAP.infos(student)]
-        for student, active_teacher_room in course.active_teacher_room.items()
-        if not active_teacher_room[0]
-        or active_teacher_room[1] == session.login
-        or is_admin
-        ]
-
 async def checkpoint(request):
     """Display the students waiting checkpoint"""
     session, course = await get_teacher_login_and_course(request)
@@ -501,7 +490,7 @@ async def checkpoint(request):
         body=session.header() + f'''
         <script>
         COURSE = {json.dumps(course.course)};
-        STUDENTS = {json.dumps(await get_students(session, course))};
+        STUDENTS = {json.dumps(await course.get_students())};
         </script>
         <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
         <script src="/checkpoint.js?ticket={session.ticket}"></script>''',
@@ -514,7 +503,7 @@ async def update_browser_data(session, course):
     """Send update values"""
     return web.Response(
         body=f'''
-        STUDENTS = {json.dumps(await get_students(session, course))};
+        STUDENTS = {json.dumps(await course.get_students())};
         CONFIG.computers = {json.dumps(utilities.CONFIG.computers)};
         ''',
         content_type='application/javascript',
