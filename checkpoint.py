@@ -262,7 +262,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                 ctx.fillText(
                     char,
                     self.left + self.scale*x_pos - size.width/2,
-                    self.top + self.scale*y_pos + size.actualBoundingBoxAscent/2)
+                    self.top + self.scale*y_pos + (size.actualBoundingBoxAscent or self.scale)/2)
     def draw_square_feedback(self, ctx):
         """Single squere feedback"""
         column = int((event.clientX - self.left) / self.scale - 0.5) + 0.5
