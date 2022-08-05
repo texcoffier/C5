@@ -18,11 +18,12 @@ try:
     Math = Math
     bind = bind
     Date = Date
+    setInterval = setInterval
 except ValueError:
     pass
 
 RELOAD_INTERVAL = 60 # Number of seconds between update data
-SCALE = 30
+SCALE = 10
 LEFT = 10
 TOP = 160
 BOLD_TIME = 180 # In seconds for new students in checking room
@@ -57,7 +58,7 @@ class Room: # pylint: disable=too-many-instance-attributes
     selected_item = None
     moved = False
     def __init__(self):
-        self.change('Nautibus_1er')
+        self.change('Nautibus')
         window.onblur = mouse_leave
         window.onfocus = mouse_enter
         setInterval(reload_page, RELOAD_INTERVAL * 1000)
@@ -132,18 +133,18 @@ class Room: # pylint: disable=too-many-instance-attributes
         for i, message in enumerate([
                 "Les câbles sont branchés mais :",
                 "",
-                "Machine: ne se lance pas",
-                "Machine: problème clavier",
-                "Machine: problème souris",
-                "Machine: problème écran",
+                "Machine : ne se lance pas",
+                "Machine : problème clavier",
+                "Machine : problème souris",
+                "Machine : problème écran",
                 "",
-                "Windows: ne se lance pas",
-                "Windows: connexion impossible",
-                "Windows: pas de fichiers",
+                "Windows : ne se lance pas",
+                "Windows : connexion impossible",
+                "Windows : pas de fichiers",
                 "",
                 "Linux: ne se lance pas",
                 "Linux: connexion impossible",
-                "Linux: pas de fichier",
+                "Linux: pas de fichiers",
                 "",
                 "Réparé: tout fonctionne !"
             ]):
@@ -233,7 +234,7 @@ class Room: # pylint: disable=too-many-instance-attributes
             ctx.stroke()
 
         ctx.lineCap = 'round'
-        ctx.lineWidth = self.scale / 4
+        ctx.lineWidth = self.scale / 8
         ctx.strokeStyle = "#000"
         self.draw_horizontals("+-wd", 1, line)
         self.draw_verticals("+|wd", 1, line)
@@ -242,14 +243,14 @@ class Room: # pylint: disable=too-many-instance-attributes
         self.draw_horizontals("w", 1, line)
         self.draw_verticals("w", 1, line)
 
-        ctx.strokeStyle = "#fff"
+        ctx.strokeStyle = "#ff0"
         self.draw_horizontals("d", 1, line)
         self.draw_verticals("d", 1, line)
 
         ctx.strokeStyle = "#000"
         ctx.fillStyle = "#000"
         ctx.font = self.scale + "px sans-serif,emoji"
-        translate = {'c': '🪑', 's': '💻',
+        translate = {'c': '🪑', 's': '💻', 'p': '🖨', 'l': '🛗', 'r': '🚻', 'h': '♿',
                      'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' '}
         for y_pos, line in enumerate(self.lines):
             for x_pos, char in enumerate(line):
@@ -273,55 +274,57 @@ class Room: # pylint: disable=too-many-instance-attributes
         ctx.globalAlpha = 1
     def draw_help(self, ctx):
         """Display documentation"""
+        size = self.scale * 1.5
+        ctx.font = size + "px sans-serif"
         ctx.fillStyle = "#000"
-        line = self.top - 2.5 * self.scale
-        column = self.left + 11 * self.scale
+        line = self.top - 2.5 * size * 2
+        column = self.left + 11 * size * 2
         ctx.fillText("Couleurs des noms d'étudiants : ", column, line)
-        line += self.scale / 2
+        line += size
         column += self.scale
         ctx.fillStyle = "#888"
         ctx.fillText("Avec un autre enseignant.", column, line)
-        line += self.scale / 2
+        line += size
         ctx.fillStyle = "#000"
         ctx.fillText("Travaille avec vous.", column, line)
-        line += self.scale / 2
+        line += size
         ctx.fillStyle = "#00F"
         ctx.fillText("N'a rien fait depuis " + BOLD_TIME_ACTIVE/60 + " minutes.", column, line)
-        line += self.scale / 2
+        line += size
         ctx.fillStyle = "#080"
         ctx.fillText("Examen terminé.", column, line)
 
-        line = self.top - 2.5 * self.scale
-        column = self.left + 20 * self.scale
+        line = self.top - 2.5 * size * 2
+        column = self.left + 20 * size * 2
         ctx.fillStyle = "#000"
         ctx.fillText("Concernant les ordinateurs :", column, line)
         column += self.scale
-        line += self.scale / 2
+        line += size
         ctx.fillText("Plus il est rouge, plus il y a des pannes.", column, line)
-        line += self.scale / 2
+        line += size
         ctx.fillText("Cliquez dessus pour indiquer une panne.", column, line)
-        line += self.scale / 2
+        line += size
 
-        line = self.top - 2.5 * self.scale
-        column = self.left + 32 * self.scale
+        line = self.top - 2.5 * size * 2
+        column = self.left + 32 * size * 2
         ctx.fillText("Le carré vert des étudiants :", column, line)
         column += self.scale
-        line += self.scale / 2
+        line += size
         ctx.fillText("Tirez-le pour déplacer l'étudiant.", column, line)
-        line += self.scale / 2
-        ctx.fillText("Tirez-le tout en haut pour l'expulser de la salle.", column, line)
-        line += self.scale / 2
+        line += size
+        ctx.fillText("Tirez-le tout en haut pour le remettre en salle d'attente.", column, line)
+        line += size
         ctx.fillText("Cliquez dessus pour terminer l'examen.", column, line)
-        line += self.scale / 2
+        line += size
         ctx.fillText("Il se remplit de rouge quand l'étudiant change de fenêtre.", column, line)
 
-        line = self.top - 2.5 * self.scale
-        column = self.left + 0 * self.scale
+        line = self.top - 2.5 * size * 2
+        column = self.left + 0 * size * 2
         ctx.fillText("Navigation sur le plan :", column, line)
         column += self.scale
-        line += self.scale / 2
+        line += size
         ctx.fillText("Utilisez la molette pour zoomer.", column, line)
-        line += self.scale / 2
+        line += size
         ctx.fillText("Tirez le fond d'écran pour le déplacer.", column, line)
     def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """Display on canvas"""
@@ -569,7 +572,7 @@ def create_page():
                  + (building == ROOM.building and ' selected' or '')
                  + '>'+building+'</option>' for building in BUILDINGS]),
         '''</select>
-        <div class="drag_and_drop">Drag and drop names<br>from and to the map</div>
+        <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
         </div>
         <canvas
