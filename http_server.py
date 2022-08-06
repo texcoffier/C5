@@ -149,6 +149,7 @@ async def log(request):
         infos = course.active_teacher_room[session.login]
         infos[3] = int(time.time())
         infos[4] += data.count('Blur')
+        infos[5] += data.count('["answer",')
     return File('favicon.ico').response()
 
 async def startup(app):

@@ -196,12 +196,16 @@ class Room: # pylint: disable=too-many-instance-attributes
             ctx.globalAlpha = 0.5
             ctx.fillRect(x_pos, y_pos - self.scale/2, size + 2, self.scale + 2)
             if student.active:
-                ctx.fillStyle = "#8F8"
+                ctx.fillStyle = "#FF0"
                 ctx.fillRect(x_pos, y_pos - self.scale/2, self.scale, self.scale + 2)
             if student.blur:
-                ctx.fillStyle = "#800"
+                ctx.fillStyle = "#F00"
                 ctx.fillRect(x_pos, y_pos - self.scale/2,
-                             student.blur / 10 * self.scale, self.scale + 2)
+                             student.blur / 10 * self.scale, self.scale/2)
+            if student.nr_questions_done:
+                ctx.fillStyle = "#0C0"
+                ctx.fillRect(x_pos, y_pos + 1,
+                             student.nr_questions_done / 10 * self.scale, self.scale/2)
             if student.with_me():
                 if student.active:
                     if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
@@ -277,7 +281,8 @@ class Room: # pylint: disable=too-many-instance-attributes
         size = self.scale * 1.5
         ctx.font = size + "px sans-serif"
         ctx.fillStyle = "#000"
-        line = self.top - 2.5 * size * 2
+        line_top = self.top - 2.7 * size * 2
+        line = line_top
         column = self.left + 11 * size * 2
         ctx.fillText("Couleurs des noms d'étudiants : ", column, line)
         line += size
@@ -294,7 +299,7 @@ class Room: # pylint: disable=too-many-instance-attributes
         ctx.fillStyle = "#080"
         ctx.fillText("Examen terminé.", column, line)
 
-        line = self.top - 2.5 * size * 2
+        line = line_top
         column = self.left + 20 * size * 2
         ctx.fillStyle = "#000"
         ctx.fillText("Concernant les ordinateurs :", column, line)
@@ -305,9 +310,9 @@ class Room: # pylint: disable=too-many-instance-attributes
         ctx.fillText("Cliquez dessus pour indiquer une panne.", column, line)
         line += size
 
-        line = self.top - 2.5 * size * 2
+        line = line_top
         column = self.left + 32 * size * 2
-        ctx.fillText("Le carré vert des étudiants :", column, line)
+        ctx.fillText("Le carré jaune des étudiants :", column, line)
         column += self.scale
         line += size
         ctx.fillText("Tirez-le pour déplacer l'étudiant.", column, line)
@@ -317,8 +322,10 @@ class Room: # pylint: disable=too-many-instance-attributes
         ctx.fillText("Cliquez dessus pour terminer l'examen.", column, line)
         line += size
         ctx.fillText("Il se remplit de rouge quand l'étudiant change de fenêtre.", column, line)
+        line += size
+        ctx.fillText("Il se remplit de vert avec les bonnes réponses.", column, line)
 
-        line = self.top - 2.5 * size * 2
+        line = line_top
         column = self.left + 0 * size * 2
         ctx.fillText("Navigation sur le plan :", column, line)
         column += self.scale
@@ -513,6 +520,7 @@ class Student: # pylint: disable=too-many-instance-attributes
             self.line = int(room[2])
         self.checkpoint_time = data[1][3]
         self.blur = data[1][4]
+        self.nr_questions_done = data[1][5] or 0
         self.firstname = data[2]['fn']
         self.surname = data[2]['sn']
         self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
