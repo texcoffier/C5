@@ -173,7 +173,7 @@ class Room: # pylint: disable=too-many-instance-attributes
         ctx.fillStyle = "#F00"
         ctx.globalAlpha = 0.5
         messages = []
-        for building, column, line, message in CONFIG.computers:
+        for building, column, line, message, _time in CONFIG.computers:
             if building == self.building:
                 x_pos = self.left + self.scale * (column - 0.5)
                 y_pos = self.top + self.scale * (line - 0.5)
@@ -263,7 +263,7 @@ class Room: # pylint: disable=too-many-instance-attributes
                     char,
                     self.left + self.scale*x_pos - size.width/2,
                     self.top + self.scale*y_pos + (size.actualBoundingBoxAscent or self.scale)/2)
-    def draw_square_feedback(self, ctx):
+    def draw_square_feedback(self, ctx, event):
         """Single squere feedback"""
         column = int((event.clientX - self.left) / self.scale - 0.5) + 0.5
         line = int((event.clientY - self.top) / self.scale - 0.5) + 0.5
@@ -337,7 +337,7 @@ class Room: # pylint: disable=too-many-instance-attributes
         if self.selected_computer and self.selected_computer[0] == self.building:
             self.draw_computer_menu(ctx, event, messages)
         if square_feedback:
-            self.draw_square_feedback(ctx)
+            self.draw_square_feedback(ctx, event)
         self.draw_help(ctx)
     def get_column_row(self, event):
         """Return character position (float) in the character map"""

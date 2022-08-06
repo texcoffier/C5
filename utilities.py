@@ -170,7 +170,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
 
     async def get_students(self):
         """Get all the students"""
-        # XXX Clearly not efficient
+        # Clearly not efficient
         return [
             [student, active_teacher_room, await LDAP.infos(student)]
             for student, active_teacher_room in self.active_teacher_room.items()

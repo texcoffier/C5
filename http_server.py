@@ -143,7 +143,7 @@ async def log(request):
     if not course.running(session.login):
         return
     data = urllib.request.unquote(post['line'])
-    # XXX Must do sanity check
+    # Must do sanity check on logged data
     student_log(course.course, session.login, data)
     if session.login in course.active_teacher_room:
         infos = course.active_teacher_room[session.login]
@@ -420,7 +420,7 @@ async def upload_course(request):
 
 async def config_reload(request):
     """For regression tests"""
-    session = await utilities.Session.get(request)
+    _session = await utilities.Session.get(request)
     utilities.CONFIG.load()
     return web.Response(
         body='done',
@@ -499,7 +499,7 @@ async def checkpoint(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
-async def update_browser_data(session, course):
+async def update_browser_data(course):
     """Send update values"""
     return web.Response(
         body=f'''
@@ -513,8 +513,8 @@ async def update_browser_data(session, course):
 
 async def update_browser(request):
     """Send update values"""
-    session, course = await get_teacher_login_and_course(request)
-    return await update_browser_data(session, course)
+    _session, course = await get_teacher_login_and_course(request)
+    return await update_browser_data(course)
 
 async def checkpoint_student(request):
     """Display the students waiting checkpoint"""
@@ -543,7 +543,7 @@ async def checkpoint_student(request):
         student_log(course.course, student,
                     f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
     course.record()
-    return await update_browser_data(session, course)
+    return await update_browser_data(course)
 
 async def home(request):
     """Test the user rights to display the good home page"""
@@ -584,14 +584,14 @@ async def checkpoint_buildings(request):
 
 async def computer(request):
     """Set value for computer"""
-    session = await utilities.Session.get(request)
+    _session = await utilities.Session.get(request)
     course = utilities.CourseConfig.get(request.match_info['course'])
     message = request.match_info.get('message', '')
     building = request.match_info['building']
     column = int(request.match_info['column'])
     line = int(request.match_info['line'])
     if message:
-        utilities.CONFIG.computers.append([building, column, line, message])
+        utilities.CONFIG.computers.append([building, column, line, message, int(time.time())])
     else:
         utilities.CONFIG.computers = utilities.CONFIG.config['computers'] = [
             bug
@@ -599,7 +599,7 @@ async def computer(request):
             if bug[0] != building or bug[1] != column or bug[2] != line
             ]
     utilities.CONFIG.save()
-    return await update_browser_data(session, course)
+    return await update_browser_data(course)
 
 
 APP = web.Application()
@@ -626,8 +626,9 @@ APP.add_routes([web.get('/', home),
 APP.on_startup.append(startup)
 logging.basicConfig(level=logging.DEBUG)
 
-class AccessLogger(AbstractAccessLogger):
-    def log(self, request, response, run_time):
+class AccessLogger(AbstractAccessLogger): # pylint: disable=too-few-public-methods
+    """Logger for aiohttp"""
+    def log(self, request, response, run_time): # pylint: disable=arguments-differ
         path = request.path.replace('\n', '\\n')
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
               f"{run_time:5.3f} {request.method[0]} "
