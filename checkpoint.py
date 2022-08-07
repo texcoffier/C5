@@ -19,6 +19,7 @@ try:
     bind = bind
     Date = Date
     setInterval = setInterval
+    setTimeout = setTimeout
 except ValueError:
     pass
 
@@ -33,6 +34,7 @@ MENU_HEIGHT = 10
 MENU_LINE = 0.6
 TOP_INACTIVE = 'linear-gradient(to bottom, #FFFF, #FFFE, #FFFE, #FFF0)'
 TOP_ACTIVE = 'linear-gradient(to bottom, #8F8F, #8F87)'
+ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 
 def seconds():
     """Number of second as Unix"""
@@ -57,6 +59,7 @@ class Room: # pylint: disable=too-many-instance-attributes
     selected_computer = None
     selected_item = None
     moved = False
+    transitions = []
     def __init__(self):
         self.change('Nautibus')
         window.onblur = mouse_leave
@@ -333,6 +336,8 @@ class Room: # pylint: disable=too-many-instance-attributes
         ctx.fillText("Utilisez la molette pour zoomer.", column, line)
         line += size
         ctx.fillText("Tirez le fond d'écran pour le déplacer.", column, line)
+        line += size
+        ctx.fillText("Cliquez sur le sol d'un salle pour zoomer.", column, line)
     def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """Display on canvas"""
         canvas = document.getElementById('canvas')
@@ -449,6 +454,42 @@ class Room: # pylint: disable=too-many-instance-attributes
                     self.draw()
                     self.moving = False
                     return
+            elif column != -1 and self.lines[line][column] not in 'cs' and self.scale < SCALE * 2:
+                # Zoom on room
+                col_end = column
+                while self.lines[line][col_end] not in ROOM_BORDER:
+                    col_end += 1
+                col_start = column
+                while self.lines[line][col_start] not in ROOM_BORDER:
+                    col_start -= 1
+                room_width = col_end - col_start
+
+                line_end = line
+                while self.lines[line_end][column] not in ROOM_BORDER:
+                    line_end += 1
+                line_start = line
+                while self.lines[line_start][column] not in ROOM_BORDER:
+                    line_start -= 1
+                room_height = line_end - line_start
+
+                nr_frame = 10
+                def linear(start, end, i):
+                    return (start*i + end*(nr_frame-i)) / nr_frame
+                final_scale = Math.min(event.target.offsetWidth / room_width,
+                                      event.target.offsetHeight / room_height) / 2
+                final_left = -(col_start + room_width/2) * final_scale + event.target.offsetWidth/2
+                final_top = -(line_start + room_height/2) * final_scale + event.target.offsetHeight/2
+                self.transitions = [
+                    [
+                        linear(self.scale, final_scale, i),
+                        linear(self.left, final_left, i),
+                        linear(self.top, final_top, i)
+                    ]
+                    for i in range(0, nr_frame + 1)
+                ]
+                setTimeout(bind(self.animate_zoom, self), 40)
+                self.animate_zoom()
+
             if self.selected_computer:
                 self.selected_computer = None
                 self.draw()
@@ -456,6 +497,14 @@ class Room: # pylint: disable=too-many-instance-attributes
             window.onmousemove = None
         window.onmouseup = None
         self.moving = False
+
+    def animate_zoom(self):
+        """Transition from zoom"""
+        if len(self.transitions):
+            self.scale, self.left, self.top = self.transitions.pop()
+            self.draw()
+            setTimeout(bind(self.animate_zoom, self), 50)
+
 
 def start_move_student(event):
     """Move student bloc"""
