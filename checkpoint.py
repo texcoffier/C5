@@ -683,7 +683,7 @@ def create_page():
         .name:hover { background: #FFF }
         .name SPAN { color: #888 }
         CANVAS { position: absolute; left: 0px; width: 100vw; top: 0px; height: 100vh }
-        #waiting { display: inline-block }
+        #waiting { display: inline }
         #top {z-index: 2; position: absolute;
               top: 0px; left: 0px; width: 100%; height: 5em;
               background: ''', TOP_INACTIVE, '''}
