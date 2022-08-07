@@ -63,6 +63,7 @@ class Room: # pylint: disable=too-many-instance-attributes
     lines_y = []
     columns_width = []
     lines_height = []
+    rooms = {}
     def __init__(self):
         self.change('Nautibus')
         window.onblur = mouse_leave
@@ -109,12 +110,62 @@ class Room: # pylint: disable=too-many-instance-attributes
         self.moving = False
         self.update_sizes(0.5)
         self.update_visible()
+        self.search_rooms()
+    def get_room_by_name(self, name):
+        """From the room name, compute its top left and size"""
+        spaced = name + ' '
+        for line, chars in enumerate(self.lines):
+            column = chars.indexOf(spaced)
+            if column != -1:
+                return self.get_room(column, line)
+        return None
+    def search_rooms(self):
+        """Extract [room] positions"""
+        self.rooms = {}
+        for line, chars in enumerate(self.lines):
+            column = 0
+            length = len(chars)
+            while column < length:
+                while column < length and chars[column] != '[':
+                    column += 1
+                if column == length:
+                    break
+                start = column
+                replace = ' '
+                while column < length and chars[column] != ']':
+                    column += 1
+                    replace += ' '
+                if column == length:
+                    break
+                name = chars[start+1:column]
+                self.rooms[name] = {'label': [start-1, line],
+                                    'position': self.get_room_by_name(name)[:4]
+                                   }
+                chars = chars[:start] + replace + chars[column+1:]
+            self.lines[line] = chars
+    def put_students_in_rooms(self):
+        """Create the list of student per room"""
+        for room_name in self.rooms:
+            room = self.rooms[room_name]
+            left, top, width, height = room.position
+            right = left + width
+            bottom = top + height
+            room['students'] = []
+            teachers = []
+            for student in self.students:
+                if (student.active
+                        and student.column >= left and student.column <= right
+                        and student.line >= top and student.line <= bottom):
+                    room['students'].append(student)
+                    if student.teacher not in teachers:
+                        teachers.append(student.teacher)
+            teachers.sort()
+            room['teachers'] = ' '.join(teachers)
 
     def update_sizes(self, size):
         """Fix the width and heights of all columns"""
         self.columns_width = [size for i in range(2 * self.x_max)]
         self.lines_height = [size for i in range(2 * len(self.lines))]
-
     def only_my_students(self):
         """Hide columns without my students"""
         self.update_sizes(0.1)
@@ -127,7 +178,6 @@ class Room: # pylint: disable=too-many-instance-attributes
                 for i in range(line_start, 2*(line_start + room_height)):
                     self.lines_height[i] = 0.5
         self.update_visible()
-
     def update_visible(self):
         """Update lines/columns positions from their heights/widths"""
         position = 0
@@ -140,7 +190,6 @@ class Room: # pylint: disable=too-many-instance-attributes
         for height in self.lines_height:
             self.lines_y.append(position)
             position += height
-
     def get_room(self, column, line):
         """Get room position : col_min, lin_min, width, height, center_x, center_y"""
         col_end = column
@@ -161,7 +210,6 @@ class Room: # pylint: disable=too-many-instance-attributes
         room_height = line_end - line_start
         center_y = self.lines_y[2*line_start + room_height]
         return col_start, line_start, room_width, room_height, center_x, center_y
-
     def draw_horizontals(self, chars, min_size, draw_line):
         """Horizontal line"""
         for y_pos, line in enumerate(self.lines):
@@ -429,6 +477,17 @@ class Room: # pylint: disable=too-many-instance-attributes
         ctx.fillText("Tirez le fond d'écran pour le déplacer.", column, line)
         line += size
         ctx.fillText("Cliquez sur le sol d'un salle pour zoomer.", column, line)
+    def draw_teachers(self, ctx):
+        """Display teacher names in front of rooms"""
+        size = self.scale * 0.6
+        ctx.font = size + "px sans-serif"
+        for room_name in self.rooms:
+            room = self.rooms[room_name]
+            if room['teachers']:
+                column, line = room['label']
+                x_pos, y_pos, _size = self.xys(column, line)
+                ctx.fillText(room['teachers'], x_pos, y_pos + self.scale/3)
+
     def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """Display on canvas"""
         canvas = document.getElementById('canvas')
@@ -451,6 +510,7 @@ class Room: # pylint: disable=too-many-instance-attributes
         if square_feedback:
             self.draw_square_feedback(ctx, event)
         self.draw_help(ctx)
+        self.draw_teachers(ctx)
     def zoom(self, event):
         """Zooming on the map"""
         column, line = self.get_column_row(event)
@@ -730,7 +790,7 @@ def update_page():
     for student in students:
         if student.building == ROOM.building:
             ROOM.students.append(student)
-
+    ROOM.put_students_in_rooms()
     ROOM.draw()
 
 def reload_page():
