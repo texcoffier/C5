@@ -95,7 +95,14 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        # For each student login :
                        #   * True is the examination is possible.
                        #   * the teacher who checkpointed  (or '')
-                       #   * the room and the place
+                       #   * the building and the place
+                       #   * timestamp of last student interaction
+                       #   * Number of window blur
+                       #   * Number of questions
+                       #   * IP address
+                       # Active : examination is running
+                       # Inactive & Room=='' : wait access to examination
+                       # Inactive & Room!='' : examination done
                        'active_teacher_room': {},
                       }
         self.time = time.time()
@@ -136,7 +143,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         if login in self.tt_list:
             return self.stop_tt_timestamp
         return self.stop_timestamp
-    def status(self, login): # pylint: disable: too-many-return-statements
+    def status(self, login, client_ip=None): # pylint: disable: too-many-return-statements
         """Status of the course"""
         if os.path.getmtime(self.filename) > self.time:
             self.load()
@@ -149,11 +156,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             if active_teacher_room is None:
                 seconds = int(time.time())
                 # Add to the checkpoint room
-                self.config['active_teacher_room'][login] = [False, '', '', seconds, 0, 0]
+                self.config['active_teacher_room'][login] = [
+                    False, '', '', seconds, 0, 0, client_ip]
                 self.record()
                 with open(f'{self.course}/{login}/http_server.log', "a") as file:
                     file.write(f'[{seconds},"checkpoint_in"]\n')
                 return 'checkpoint'
+            if client_ip:
+                # XXX Connecté à 2 IP différentes en même temps
+                active_teacher_room[6] = client_ip # Update
             if not active_teacher_room[0]:
                 if active_teacher_room[1] == '':
                     # Always in the checkpoint or examination is done
@@ -209,6 +220,7 @@ class Config:
             'masters': self.masters,
             'ticket_ttl': self.ticket_ttl,
             'computers': [],
+            'ips_per_room': {"Nautibus,TP3": "192.168.0.1 192.168.0.2"},
         }
         self.load()
     def load(self):

@@ -51,6 +51,7 @@ def display(): # pylint: disable=too-many-statements
                 padding: 1em ; margin: 1em
               }
         TD INPUT[type=submit], TD INPUT[type=file] { margin: 0px }
+        BODY > TEXTAREA { width: 100%; height: 10em }
     </style>
     <p>
     Colors:
@@ -156,6 +157,11 @@ def display(): # pylint: disable=too-many-statements
     add_input('/adm/c5/ticket_ttl/', CONFIG.ticket_ttl, name="ticket_ttl")
     text.append(' ')
     add_button('/adm/c5/remove_old_tickets/0', 'Remove old tickets now', name="remove_olds")
+    text.append('<hr>')
+    content = []
+    for room in CONFIG.ips_per_room:
+        content.append(room + ' ' + CONFIG.ips_per_room[room])
+    add_textarea('/adm/c5/ips_per_room/', '\n'.join(content))
     text.append('<hr>')
     text.append(MORE)
     document.body.innerHTML = text.join('') # pylint: disable=no-member

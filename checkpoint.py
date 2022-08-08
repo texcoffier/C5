@@ -46,7 +46,7 @@ def mouse_leave():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = False
 
-class Room: # pylint: disable=too-many-instance-attributes
+class Room: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Graphic display off rooms"""
     drag_x_current = drag_x_start = drag_y_current = drag_y_start = None
     scale = min_scale = 0
@@ -64,11 +64,20 @@ class Room: # pylint: disable=too-many-instance-attributes
     columns_width = []
     lines_height = []
     rooms = {}
+    rooms_on_screen = {}
+    width = height = 0
+    waiting_students = []
     def __init__(self):
         self.change('Nautibus')
         window.onblur = mouse_leave
         window.onfocus = mouse_enter
         setInterval(reload_page, RELOAD_INTERVAL * 1000)
+
+        self.ips = {}
+        for room_name in CONFIG.ips_per_room:
+            for ip in CONFIG.ips_per_room[room_name].split(' '):
+                if ip != '':
+                    self.ips[ip] = room_name
     def xys(self, column, line):
         """Change coordinates system"""
         return [self.left + self.scale * self.columns_x[2*column],
@@ -161,7 +170,6 @@ class Room: # pylint: disable=too-many-instance-attributes
                         teachers.append(student.teacher)
             teachers.sort()
             room['teachers'] = ' '.join(teachers)
-
     def update_sizes(self, size):
         """Fix the width and heights of all columns"""
         self.columns_width = [size for i in range(2 * self.x_max)]
@@ -358,12 +366,10 @@ class Room: # pylint: disable=too-many-instance-attributes
             ctx.fillText(student.surname, x_pos, y_pos + size/2)
     def draw_map(self, ctx, canvas):
         """Draw the character map"""
-        width = canvas.offsetWidth
-        height = canvas.offsetHeight
-        canvas.setAttribute('width', width)
-        canvas.setAttribute('height', height)
+        canvas.setAttribute('width', self.width)
+        canvas.setAttribute('height', self.height)
         ctx.fillStyle = "#EEE"
-        ctx.fillRect(0, 0, width, height)
+        ctx.fillRect(0, 0, self.width, self.height)
 
         def line(x_start, y_start, x_end, y_end):
             x_start, y_start, _ = self.xys(x_start, y_start)
@@ -487,10 +493,11 @@ class Room: # pylint: disable=too-many-instance-attributes
                 column, line = room['label']
                 x_pos, y_pos, _size = self.xys(column, line)
                 ctx.fillText(room['teachers'], x_pos, y_pos + self.scale/3)
-
-    def draw(self, event=None, square_feedback=False): # pylint: disable=too-many-locals,too-many-statements,too-many-branches
+    def draw(self, event=None, square_feedback=False):
         """Display on canvas"""
         canvas = document.getElementById('canvas')
+        self.width = canvas.offsetWidth
+        self.height = canvas.offsetHeight
         if self.scale == 0:
             if document.getElementById('my_rooms').checked:
                 self.only_my_students()
@@ -557,7 +564,74 @@ class Room: # pylint: disable=too-many-instance-attributes
             else:
                 document.getElementById('top').style.background = TOP_ACTIVE
         self.draw()
-    def drag_stop(self, event): # pylint: disable=too-many-branches,too-many-locals,too-many-statements
+    def drag_stop_student(self, column, line):
+        """Stop moving a student"""
+        if column != -1:
+            if self.moving.column_start != column or self.moving.line_start != line:
+                record('/checkpoint/' + COURSE + '/' + self.moving.login + '/'
+                       + ROOM.building + ',' + column + ',' + line)
+            elif not self.moved:
+                # Simple click
+                if self.moving.active:
+                    if confirm("Terminer l'examen pour "
+                               + self.moving.firstname + ' ' + self.moving.surname):
+                        record('/checkpoint/' + COURSE + '/' + self.moving.login + '/STOP')
+                else:
+                    if confirm("Rouvrir l'examen pour "
+                               + self.moving.firstname + ' ' + self.moving.surname):
+                        record('/checkpoint/' + COURSE + '/' + self.moving.login + '/RESTART')
+        else:
+            record('/checkpoint/' + COURSE + '/' + self.moving.login + '/EJECT')
+    def drag_stop_click_on_computer_menu(self):
+        """Select a compulter malfunction"""
+        if self.selected_item:
+            if self.selected_item[-1] == '!':
+                self.selected_item = ''
+            record('/computer/' + COURSE + '/'
+                   + self.selected_computer[0] + '/'
+                   + self.selected_computer[1] + '/'
+                   + self.selected_computer[2] + '/'
+                   + self.selected_item)
+            self.selected_item = None
+            self.draw()
+            return True
+        return False
+    def drag_stop_click_on_computer(self, column, line):
+        """Click on computer"""
+        if column != -1 and self.lines[line][column] == 's':
+            select = [self.building, column, line]
+            if self.selected_computer != select:
+                self.selected_computer = select
+                self.draw()
+                self.moving = False
+            return True
+        return False
+    def drag_stop_click_on_room(self, event, column, line):
+        """Click on a room to zoom"""
+        if (column != -1
+                and self.lines[line][column] not in 'cs'
+                and self.scale < self.min_scale * 2):
+            # Zoom on room
+            (_col_start, _line_start, room_width, room_height, center_x, center_y
+            ) = self.get_room(column, line)
+            nr_frame = 10
+            def linear(start, end, i):
+                return (start*i + end*(nr_frame-i)) / nr_frame
+            final_scale = Math.min(event.target.offsetWidth / room_width,
+                                   event.target.offsetHeight / room_height) / 2
+            final_left = event.target.offsetWidth/2 - center_x * final_scale
+            final_top = event.target.offsetHeight/2 - center_y * final_scale
+            self.transitions = [
+                [
+                    linear(self.scale, final_scale, i),
+                    linear(self.left, final_left, i),
+                    linear(self.top, final_top, i)
+                ]
+                for i in range(0, nr_frame + 1)
+            ]
+            setTimeout(bind(self.animate_zoom, self), 40)
+            self.animate_zoom()
+    def drag_stop(self, event):
         """Stop moving the map"""
         if not self.moving:
             print('bug')
@@ -565,67 +639,21 @@ class Room: # pylint: disable=too-many-instance-attributes
         document.getElementById('top').style.background = TOP_INACTIVE
         column, line = self.get_coord(event)
         if self.moving != True: # pylint: disable=singleton-comparison
-            if column != -1:
-                if self.moving.column_start != column or self.moving.line_start != line:
-                    record('/checkpoint/' + COURSE + '/' + self.moving.login + '/'
-                           + ROOM.building + ',' + column + ',' + line)
-                elif not self.moved:
-                    if self.moving.active:
-                        if confirm("Terminer l'examen pour "
-                                   + self.moving.firstname + ' ' + self.moving.surname):
-                            record('/checkpoint/' + COURSE + '/' + self.moving.login + '/STOP')
-                    else:
-                        if confirm("Rouvrir l'examen pour "
-                                   + self.moving.firstname + ' ' + self.moving.surname):
-                            record('/checkpoint/' + COURSE + '/' + self.moving.login + '/RESTART')
-            else:
-                record('/checkpoint/' + COURSE + '/' + self.moving.login + '/EJECT')
+            self.drag_stop_student(column, line)
         elif not self.moved:
             # Simple click
-            if self.selected_item:
-                if self.selected_item[-1] == '!':
-                    self.selected_item = ''
-                record('/computer/' + COURSE + '/'
-                       + self.selected_computer[0] + '/'
-                       + self.selected_computer[1] + '/'
-                       + self.selected_computer[2] + '/'
-                       + self.selected_item)
-                self.selected_item = None
-                self.draw()
-            elif column != -1 and self.lines[line][column] == 's':
-                select = [self.building, column, line]
-                if self.selected_computer != select:
-                    self.selected_computer = select
+            if (not self.drag_stop_click_on_computer_menu()
+                    and not self.drag_stop_click_on_computer(column, line)
+                    and not self.drag_stop_click_on_room(event, column, line)
+               ):
+                # No special click
+                if self.selected_computer:
+                    self.selected_computer = None
                     self.draw()
-                    self.moving = False
-                    return
-            elif (column != -1
-                  and self.lines[line][column] not in 'cs'
-                  and self.scale < self.min_scale * 2):
-                # Zoom on room
-                (_col_start, _line_start, room_width, room_height, center_x, center_y
-                ) = self.get_room(column, line)
-                nr_frame = 10
-                def linear(start, end, i):
-                    return (start*i + end*(nr_frame-i)) / nr_frame
-                final_scale = Math.min(event.target.offsetWidth / room_width,
-                                       event.target.offsetHeight / room_height) / 2
-                final_left = event.target.offsetWidth/2 - center_x * final_scale
-                final_top = event.target.offsetHeight/2 - center_y * final_scale
-                self.transitions = [
-                    [
-                        linear(self.scale, final_scale, i),
-                        linear(self.left, final_left, i),
-                        linear(self.top, final_top, i)
-                    ]
-                    for i in range(0, nr_frame + 1)
-                ]
-                setTimeout(bind(self.animate_zoom, self), 40)
-                self.animate_zoom()
-
-            if self.selected_computer:
-                self.selected_computer = None
-                self.draw()
+        else:
+            # Panning: recompute waiting room list
+            self.compute_rooms_on_screen()
+            self.update_waiting_room()
         if not self.selected_computer:
             window.onmousemove = None
         window.onmouseup = None
@@ -636,6 +664,34 @@ class Room: # pylint: disable=too-many-instance-attributes
             self.scale, self.left, self.top = self.transitions.pop()
             self.draw()
             setTimeout(bind(self.animate_zoom, self), 50)
+        else:
+            self.compute_rooms_on_screen()
+            self.update_waiting_room()
+    def compute_rooms_on_screen(self):
+        """Compute the list of rooms on screen"""
+        self.rooms_on_screen = {}
+        for room_name in self.rooms:
+            room = self.rooms[room_name]
+            left, top, width, height = room['position'][:4]
+            right, bottom, _size = self.xys(left + width, top + height)
+            left, top, _size = self.xys(left, top)
+            if left > 0 and top > 0 and right < self.width and bottom < self.height:
+                self.rooms_on_screen[room_name] = True
+
+    def update_waiting_room(self):
+        """Update HTML with the current waiting student for the rooms on screen"""
+        content = []
+        for student in self.waiting_students:
+            if student.room == '':
+                room = self.ips[student.client_ip]
+                if room:
+                    building, room_name = room.split(',')
+                    if building != self.building:
+                        continue
+                    if not self.rooms_on_screen[room_name]:
+                        continue
+                content.append(student.box())
+        document.getElementById('waiting').innerHTML = ' '.join(content)
 
 
 def start_move_student(event):
@@ -702,6 +758,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.checkpoint_time = data[1][3]
         self.blur = data[1][4]
         self.nr_questions_done = data[1][5] or 0
+        self.client_ip = data[1][6]
         self.firstname = data[2]['fn']
         self.surname = data[2]['sn']
         self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
@@ -779,19 +836,17 @@ def update_page():
     """Update students"""
     students = [Student(student) for student in STUDENTS if student[0]]
     students.sort(cmp_student)
-
-    content = []
-    for student in students:
-        if not student.active and not student.with_me():
-            content.append(student.box())
-    document.getElementById('waiting').innerHTML = ' '.join(content)
-
     ROOM.students = []
+    ROOM.waiting_students = []
     for student in students:
         if student.building == ROOM.building:
             ROOM.students.append(student)
+        elif not student.active:
+            ROOM.waiting_students.append(student)
     ROOM.put_students_in_rooms()
     ROOM.draw()
+    ROOM.compute_rooms_on_screen()
+    ROOM.update_waiting_room()
 
 def reload_page():
     """Update data now"""

@@ -115,7 +115,7 @@ def handle(base=''):
                     <script src="/ccccc.js?ticket={session.ticket}"></script>''')
             if filename.startswith('course_'):
                 course = utilities.CourseConfig.get(filename[:-3])
-                status = course.status(login)
+                status = course.status(login, session.client_ip)
                 if not session.is_admin():
                     if status == 'done':
                         filename = "course_js_done.js"
@@ -254,6 +254,17 @@ async def adm_c5(request):
             utilities.CONFIG.masters.remove(value)
             utilities.CONFIG.set_value('masters', utilities.CONFIG.masters)
             more = f"Master «{value}» removed"
+    elif action == 'ips_per_room':
+        try:
+            ips = {}
+            for line in value.strip().split('\n'):
+                if line:
+                    room, ip_addrs = line.split(' ', 1)
+                    ips[room] = ip_addrs
+            utilities.CONFIG.set_value(action, ips)
+            more = f"IPs per room updated to<pre>{value}</pre>"
+        except ValueError:
+            more = "Invalid syntax"
     elif action == 'ticket_ttl':
         try:
             utilities.CONFIG.set_value(action, int(value))
