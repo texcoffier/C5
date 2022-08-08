@@ -20,6 +20,7 @@ try:
     Date = Date
     setInterval = setInterval
     setTimeout = setTimeout
+    hljs = hljs
 except ValueError:
     pass
 
@@ -574,14 +575,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                        + ROOM.building + ',' + column + ',' + line)
             elif not self.moved:
                 # Simple click
-                if self.moving.active:
-                    if confirm("Terminer l'examen pour "
-                               + self.moving.firstname + ' ' + self.moving.surname):
-                        record('/checkpoint/' + COURSE + '/' + self.moving.login + '/STOP')
-                else:
-                    if confirm("Rouvrir l'examen pour "
-                               + self.moving.firstname + ' ' + self.moving.surname):
-                        record('/checkpoint/' + COURSE + '/' + self.moving.login + '/RESTART')
+                record('/checkpoint/SPY/' + COURSE + '/' + self.moving.login)
         else:
             record('/checkpoint/' + COURSE + '/' + self.moving.login + '/EJECT')
     def drag_stop_click_on_computer_menu(self):
@@ -810,6 +804,12 @@ def create_page():
         #top SELECT { font-size: 150%; }
         #top .drag_and_drop { display: inline-block }
         #top .reload { font-family: emoji; font-size: 300%; cursor: pointer; }
+        #spy { position: absolute; left: 0% ; top: 0% ; right: 0%; bottom: 0%;
+               display: none; background: #FFF; opacity: 0.95; overflow: auto;
+               padding: 1em; font-size: 150%; z-index: 3
+             }
+        #spy BUTTON { font-size: 150%; }
+        #spy .source {  white-space: pre; }
         </style>
         <div id="top"><span class="reload" onclick="reload_page()">⟳</span>''',
 
@@ -829,6 +829,7 @@ def create_page():
             onwheel="ROOM.zoom(event)"
             onmousedown="ROOM.drag_start(event)"
         ></canvas>
+        <div id="spy"></div>
         ''']
     document.body.innerHTML = ''.join(content)
     update_page()
@@ -853,6 +854,37 @@ def reload_page():
     """Update data now"""
     if document.body.onmousemove is None and window.mouse_is_inside:
         record('/update/' + COURSE)
+
+
+def close_exam(login):
+    """Terminate the student exam"""
+    record('/checkpoint/' + COURSE + '/' + login + '/STOP')
+    spy_close()
+
+def open_exam(login):
+    """Open again the student exam"""
+    record('/checkpoint/' + COURSE + '/' + login + '/RESTART')
+    spy_close()
+
+def spy_close():
+    """Close the student source code"""
+    document.getElementById('spy').style.display = 'none'
+
+def spy(text, login, infos):
+    """Display the infos source code"""
+    student = STUDENT_DICT[login]
+    if student.active:
+        state = '<button onclick="close_exam(\'' + login + '\')">Clôturer examen</button>'
+    else:
+        state = '<button onclick="open_exam(\'' + login + '\')">Rouvrir examen</button>'
+    div = document.getElementById('spy')
+    div.innerHTML = (
+        '<button onclick="spy_close()">Fermer</button> '
+        + login + ' ' + infos.fn + ' ' + infos.sn + ' ' + state
+        + '<pre></pre>')
+    div.style.display = 'block'
+    div.lastChild.textContent = text
+    hljs.highlightElement(div.lastChild)
 
 ROOM = Room()
 

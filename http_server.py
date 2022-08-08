@@ -12,6 +12,7 @@ import zipfile
 import html
 import asyncio
 import logging
+import ast
 import urllib.request
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
@@ -505,7 +506,10 @@ async def checkpoint(request):
         STUDENTS = {json.dumps(await course.get_students())};
         </script>
         <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
-        <script src="/checkpoint.js?ticket={session.ticket}"></script>''',
+        <script src="/checkpoint.js?ticket={session.ticket}"></script>
+        <link rel="stylesheet" href="/xxx-highlight.css?ticket={session.ticket}">
+        <script src="/xxx-highlight.js?ticket={session.ticket}"></script>
+        ''',
         content_type='text/html',
         charset='utf-8',
         headers={'Cache-Control': 'no-cache'}
@@ -613,6 +617,45 @@ async def computer(request):
     utilities.CONFIG.save()
     return await update_browser_data(course)
 
+async def checkpoint_spy(request):
+    """The last answer from the student"""
+    _session, course = await get_teacher_login_and_course(request)
+    student = request.match_info['student']
+    answer = ''
+    try:
+        with open(f'{course.course}/{student}/compile_server.log') as file:
+            last_compile = ''
+            for line in file:
+                if "('COMPILE'," in line:
+                    last_compile = line
+        if last_compile:
+            line = ast.literal_eval(last_compile)
+            answer = ast.literal_eval(last_compile)[2][1][6]
+    except (IndexError, FileNotFoundError):
+        pass
+
+    if not answer:
+        try:
+            last_save = ''
+            with open(f'{course.course}/{student}/http_server.log') as file:
+                for line in file:
+                    if '["answer",' in line or '["save",' in line:
+                        last_save = line
+            if last_save:
+                for item in json.loads(last_save):
+                    if isinstance(item, list) and item[0] in ('answer', 'save'):
+                        answer = item[2]
+        except (IndexError, FileNotFoundError):
+            pass
+
+    return web.Response(
+        body=f'''spy({json.dumps(answer)},
+                     {json.dumps(student)},
+                     {json.dumps(await utilities.LDAP.infos(student))})''',
+        content_type='application/javascript',
+        charset='utf-8',
+        headers={'Cache-Control': 'no-cache'}
+    )
 
 APP = web.Application()
 APP.add_routes([web.get('/', home),
@@ -628,6 +671,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/checkpoint/*', checkpoint_list),
                 web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
                 web.get('/checkpoint/{course}', checkpoint),
+                web.get('/checkpoint/SPY/{course}/{student}', checkpoint_spy),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
