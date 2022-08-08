@@ -176,14 +176,14 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.lines_height = [size for i in range(2 * len(self.lines))]
     def only_my_students(self):
         """Hide columns without my students"""
-        self.update_sizes(0.1)
+        self.update_sizes(0.05)
         for student in self.students:
-            if student.active:
+            if student.active and student.with_me():
                 (col_start, line_start, room_width, room_height, _center_x, _center_y
                 ) = self.get_room(student.column, student.line)
                 for i in range(2*col_start, 2*(col_start + room_width)):
                     self.columns_width[i] = 0.5
-                for i in range(line_start, 2*(line_start + room_height)):
+                for i in range(2*line_start, 2*(line_start + room_height)):
                     self.lines_height[i] = 0.5
         self.update_visible()
     def update_visible(self):
@@ -504,7 +504,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             else:
                 self.update_sizes(0.5)
             self.update_visible()
-            self.scale = self.min_scale = canvas.offsetWidth / self.columns_x[2 * self.x_max - 1]
+            self.scale = self.min_scale = min(
+                (self.width - LEFT) / self.columns_x[2 * self.x_max - 1],
+                (self.height - TOP) / self.lines_y[2 * len(self.lines) - 1])
             self.top = TOP
             self.left = LEFT
         ctx = canvas.getContext("2d")
@@ -677,7 +679,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             left, top, _size = self.xys(left, top)
             if left > 0 and top > 0 and right < self.width and bottom < self.height:
                 self.rooms_on_screen[room_name] = True
-
     def update_waiting_room(self):
         """Update HTML with the current waiting student for the rooms on screen"""
         content = []
