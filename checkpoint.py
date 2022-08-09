@@ -141,6 +141,21 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.update_sizes(0.5)
         self.update_visible()
         self.search_rooms()
+        self.prepare_draw()
+    def prepare_draw(self):
+        """Compile information to draw quickly the map"""
+        self.walls = []
+        self.prepare_horizontals("+-wd", 1, self.walls)
+        self.prepare_verticals("+|wd", 1, self.walls)
+
+        self.windows = []
+        self.prepare_horizontals("w", 1, self.windows)
+        self.prepare_verticals("w", 1, self.windows)
+
+        self.doors = []
+        self.prepare_horizontals("d", 1, self.doors)
+        self.prepare_verticals("d", 1, self.doors)
+
     def get_room_by_name(self, name):
         """From the room name, compute its top left and size"""
         spaced = name + ' '
@@ -239,7 +254,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         room_height = line_end - line_start
         center_y = self.lines_y[2*line_start + room_height]
         return col_start, line_start, room_width, room_height, center_x, center_y
-    def draw_horizontals(self, chars, min_size, draw_line):
+    def prepare_horizontals(self, chars, min_size, lines):
         """Horizontal line"""
         for y_pos, line in enumerate(self.lines):
             line += ' ' # To simplify end testing
@@ -258,10 +273,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                         continue
                     if last_char == '+':
                         x_pos -= 0.5
-                    draw_line(start-0.5, y_pos, x_pos-0.5, y_pos)
+                    lines.append([start-0.5, y_pos, x_pos-0.5, y_pos])
                     start = -1
                 last_char = char
-    def draw_verticals(self, chars, min_size, draw_line):
+    def prepare_verticals(self, chars, min_size, lines):
         """Vertical line"""
         for x_pos in range(self.x_max):
             start = -1
@@ -280,7 +295,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                         continue
                     if last_char == '+':
                         y_pos -= 0.5
-                    draw_line(x_pos, start-0.5, x_pos, y_pos-0.5)
+                    lines.append([x_pos, start-0.5, x_pos, y_pos-0.5])
                     start = -1
                 last_char = char
     def draw_computer_menu(self, ctx, event, messages):
@@ -403,16 +418,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.lineCap = 'round'
         ctx.lineWidth = 2
         ctx.strokeStyle = "#000"
-        self.draw_horizontals("+-wd", 1, line)
-        self.draw_verticals("+|wd", 1, line)
+        for coords in self.walls:
+            line(*coords)
 
         ctx.strokeStyle = "#4ffff6"
-        self.draw_horizontals("w", 1, line)
-        self.draw_verticals("w", 1, line)
+        for coords in self.windows:
+            line(*coords)
 
         ctx.strokeStyle = "#ff0"
-        self.draw_horizontals("d", 1, line)
-        self.draw_verticals("d", 1, line)
+        for coords in self.doors:
+            line(*coords)
 
         ctx.strokeStyle = "#000"
         ctx.fillStyle = "#000"
@@ -420,6 +435,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         # 🪑 🛗 not working on phone
         translate = {'c': '⑁', 's': '💻', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
                      'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' '}
+        sizes = {}
         for line, chars in enumerate(self.lines):
             if self.lines_height[2*line] < 0.5:
                 # _x_pos, y_pos, size = self.xys(1, line)
@@ -434,7 +450,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     char = translate[char]
                 if char == ' ':
                     continue
-                char_size = ctx.measureText(char)
+                if char in sizes:
+                    char_size = sizes[char]
+                else:
+                    sizes[char] = char_size = ctx.measureText(char)
                 x_pos, y_pos, size = self.xys(column, line)
                 # ctx.font = size + "px sans-serif,emoji"
                 ctx.fillText(char, x_pos - char_size.width/2, y_pos + size/2)
