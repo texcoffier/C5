@@ -562,9 +562,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.draw_teachers(ctx)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
-        column, line = self.get_column_row(pos_x, pos_y)
-        self.left += column * (self.scale - new_scale)
-        self.top += line * (self.scale - new_scale)
+        self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
+        self.top += (pos_y - self.top) * (1 - new_scale/self.scale)
         self.scale = new_scale
         self.draw()
     def zoom(self, event):
