@@ -25,8 +25,8 @@ except ValueError:
     pass
 
 RELOAD_INTERVAL = 60 # Number of seconds between update data
+HELP_LINES = 8
 LEFT = 10
-TOP = 200
 BOLD_TIME = 180 # In seconds for new students in checking room
 BOLD_TIME_ACTIVE = 300 # In seconds for last activity
 MENU_WIDTH = 9
@@ -51,7 +51,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     """Graphic display off rooms"""
     drag_x_current = drag_x_start = drag_y_current = drag_y_start = None
     scale = min_scale = 0
-    top = TOP
+    top = 0
     left = LEFT
     x_max = 0
     moving = False
@@ -68,10 +68,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     rooms_on_screen = {}
     width = height = 0
     waiting_students = []
-    def __init__(self):
-        self.change('Nautibus')
+    def __init__(self, building):
+        self.menu = document.getElementById('top')
+        self.change(building)
         window.onblur = mouse_leave
         window.onfocus = mouse_enter
+        window.onresize = update_page
         setInterval(reload_page, RELOAD_INTERVAL * 1000)
 
         self.ips = {}
@@ -113,7 +115,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.building = building
         self.lines = BUILDINGS[building].split('\n')
         self.x_max = max([len(line) for line in self.lines]) + 1
-        self.top = TOP
+        self.top = self.menu.offsetHeight
         self.left = LEFT
         self.drag_x_current = self.drag_x_start = None
         self.drag_y_current = self.drag_y_start = None
@@ -507,8 +509,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.update_visible()
             self.scale = self.min_scale = min(
                 (self.width - LEFT) / self.columns_x[2 * self.x_max - 1],
-                (self.height - TOP) / self.lines_y[2 * len(self.lines) - 1])
-            self.top = TOP
+                (self.height - self.menu.offsetHeight) / self.lines_y[2 * len(self.lines) - 1 - HELP_LINES])
+            self.top = self.menu.offsetHeight + HELP_LINES * self.scale
             self.left = LEFT
         ctx = canvas.getContext("2d")
         self.draw_map(ctx, canvas)
@@ -784,7 +786,7 @@ def cmp_student(student_a, student_b):
         return 1
     return -1
 
-def create_page():
+def create_page(building_name):
     """Fill the page content"""
     content = [
         '''<style>
@@ -794,7 +796,7 @@ def create_page():
         BODY { font-family: sans-serif }
         .name:hover { background: #FFF }
         .name SPAN { color: #888 }
-        CANVAS { position: absolute; left: 0px; width: 100vw; top: 0px; height: 100vh }
+        CANVAS { position: absolute; left: 0px; width: 100%; top: 0px; height: 100% }
         #waiting { display: inline }
         #top {z-index: 2; position: absolute;
               top: 0px; left: 0px; width: 100%; height: 5em;
@@ -816,7 +818,7 @@ def create_page():
         '<span class="course">', COURSE, '</span>',
         ' <select onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
         ''.join(['<option'
-                 + (building == ROOM.building and ' selected' or '')
+                 + (building == building_name and ' selected' or '')
                  + '>'+building+'</option>' for building in BUILDINGS]),
         '''</select>
         <label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()" type="checkbox"
@@ -832,7 +834,6 @@ def create_page():
         <div id="spy"></div>
         ''']
     document.body.innerHTML = ''.join(content)
-    update_page()
 
 def update_page():
     """Update students"""
@@ -886,6 +887,7 @@ def spy(text, login, infos):
     div.lastChild.textContent = text
     hljs.highlightElement(div.lastChild)
 
-ROOM = Room()
 
-create_page()
+create_page('Nautibus')
+ROOM = Room('Nautibus')
+update_page()
