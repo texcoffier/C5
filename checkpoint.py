@@ -94,8 +94,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Change coordinates system"""
         return [self.left + self.scale * self.columns_x[2*column],
                 self.top + self.scale * self.lines_y[2*line],
-                self.scale * Math.min(self.columns_x[2*column] - self.columns_x[2*column-2],
-                                      self.lines_y[2*line] - self.lines_y[2*line-2])]
+                self.scale * Math.min(self.columns_x[2*column+2] - self.columns_x[2*column],
+                                      self.lines_y[2*line+2] - self.lines_y[2*line])]
     def get_column_row(self, pos_x, pos_y):
         """Return character position (float) in the character map"""
         column = -1
@@ -155,7 +155,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.doors = []
         self.prepare_horizontals("d", 1, self.doors)
         self.prepare_verticals("d", 1, self.doors)
-
     def get_room_by_name(self, name):
         """From the room name, compute its top left and size"""
         spaced = name + ' '
