@@ -47,6 +47,13 @@ def mouse_leave():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = False
 
+def distance2(x1, y1, x2, y2):
+    """Squared distance beween 2 points"""
+    return (x1 - x2) ** 2 + (y1 - y2) ** 2
+def distance(x1, y1, x2, y2):
+    """Distance beween 2 points"""
+    return distance2(x1, y1, x2, y2) ** 0.5
+
 class Room: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Graphic display off rooms"""
     drag_x_current = drag_x_start = drag_y_current = drag_y_start = None
@@ -68,6 +75,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     rooms_on_screen = {}
     width = height = 0
     waiting_students = []
+    zooming = scale_start = zooming_x = zooming_y = 0
+    event_x = event_y = 0
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.change(building)
@@ -78,27 +87,25 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
         self.ips = {}
         for room_name in CONFIG.ips_per_room:
-            for ip in CONFIG.ips_per_room[room_name].split(' '):
-                if ip != '':
-                    self.ips[ip] = room_name
+            for client_ip in CONFIG.ips_per_room[room_name].split(' '):
+                if client_ip != '':
+                    self.ips[client_ip] = room_name
     def xys(self, column, line):
         """Change coordinates system"""
         return [self.left + self.scale * self.columns_x[2*column],
                 self.top + self.scale * self.lines_y[2*line],
                 self.scale * Math.min(self.columns_x[2*column] - self.columns_x[2*column-2],
                                       self.lines_y[2*line] - self.lines_y[2*line-2])]
-    def get_column_row(self, event):
+    def get_column_row(self, pos_x, pos_y):
         """Return character position (float) in the character map"""
-        if event.target.tagName != 'CANVAS':
-            return [-1, -1]
         column = -1
         for i, position in enumerate(self.columns_x):
-            if position > (event.clientX - self.left) / self.scale:
+            if position > (pos_x - self.left) / self.scale:
                 column = int(i/2)
                 break
         line = -1
         for i, position in enumerate(self.lines_y):
-            if position > (event.clientY - self.top) / self.scale:
+            if position > (pos_y - self.top) / self.scale:
                 line = int(i/2)
                 break
         if column >= 0 and column <= self.x_max and line >= 0 and line < len(self.lines):
@@ -106,7 +113,18 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         return [-1, -1]
     def get_coord(self, event):
         """Get column line as integer"""
-        column, line = self.get_column_row(event)
+        if event.target.tagName != 'CANVAS':
+            return [-1, -1]
+        if event.touches:
+            if len(event.touches):
+                self.event_x = event.touches[0].pageX
+                self.event_y = event.touches[0].pageY
+            # else: 'ontouchend' : return the last coordinates
+        else:
+            self.event_x = event.clientX
+            self.event_y = event.clientY
+
+        column, line = self.get_column_row(self.event_x, self.event_y)
         column = Math.round(column)
         line = Math.round(line)
         return [column, line]
@@ -399,7 +417,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.strokeStyle = "#000"
         ctx.fillStyle = "#000"
         ctx.font = self.scale + "px sans-serif,emoji"
-        translate = {'c': '🪑', 's': '💻', 'p': '🖨', 'l': '🛗', 'r': '🚻', 'h': '♿',
+        # 🪑 🛗 not working on phone
+        translate = {'c': '⑁', 's': '💻', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
                      'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' '}
         for line, chars in enumerate(self.lines):
             if self.lines_height[2*line] < 0.5:
@@ -523,20 +542,32 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.draw_square_feedback(ctx, event)
         self.draw_help(ctx)
         self.draw_teachers(ctx)
+    def do_zoom(self, pos_x, pos_y, new_scale):
+        """Do zoom"""
+        column, line = self.get_column_row(pos_x, pos_y)
+        self.left += column * (self.scale - new_scale)
+        self.top += line * (self.scale - new_scale)
+        self.scale = new_scale
+        self.draw()
     def zoom(self, event):
         """Zooming on the map"""
-        column, line = self.get_column_row(event)
-        old_scale = self.scale
-        self.scale *= (1000 - event.deltaY) / 1000
-        self.left += column * (old_scale - self.scale)
-        self.top += line * (old_scale - self.scale)
-        self.draw()
+        self.do_zoom(event.clientX, event.clientY,
+                     self.scale * (1000 - event.deltaY) / 1000)
         event.preventDefault()
     def drag_start(self, event):
         """Start moving the map"""
-        window.onmousemove = bind(self.drag_move, self)
-        window.onmouseup = bind(self.drag_stop, self)
         column, line = self.get_coord(event)
+        window.onmousemove = window.ontouchmove = bind(self.drag_move, self)
+        window.onmouseup = window.ontouchend = bind(self.drag_stop, self)
+        if event.touches:
+            event.preventDefault()
+            if len(event.touches) == 2:
+                self.zooming = distance(self.event_x, self.event_y,
+                                        event.touches[1].pageX, event.touches[1].pageY)
+                self.zooming_x = (self.event_x + event.touches[1].pageX) / 2
+                self.zooming_y = (self.event_y + event.touches[1].pageY) / 2
+                self.scale_start = self.scale
+                return
         self.moved = False
         for student in self.students:
             if student.column == column and student.line == line:
@@ -544,24 +575,36 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 student.column_start = student.column
                 student.line_start = student.line
                 return
-        self.drag_x_start = self.drag_x_current = event.clientX
-        self.drag_y_start = self.drag_y_current = event.clientY
+        self.drag_x_start = self.drag_x_current = self.event_x
+        self.drag_y_start = self.drag_y_current = self.event_y
         self.moving = True
     def drag_move(self, event):
         """Moving the map"""
+        column, line = self.get_coord(event)
+        if self.zooming:
+            if len(event.touches) == 2:
+                zooming = distance(self.event_x, self.event_y,
+                                   event.touches[1].pageX, event.touches[1].pageY)
+                self.do_zoom(self.zooming_x, self.zooming_y,
+                             self.scale_start * zooming / self.zooming)
+                self.draw(event)
+                return
+            self.zooming = 0
+            window.ontouchmove = None
+            window.ontouchend = None
+            return
         if not self.moving:
             if self.selected_computer:
                 self.draw(event)
             return
-        self.moved = self.moved or ((self.drag_x_start - event.clientX) ** 2
-                                    + (self.drag_y_start - event.clientY) ** 2) > 10
+        self.moved = self.moved or distance2(self.drag_x_start, self.drag_y_start,
+                                             self.event_x, self.event_y) > 10
         if self.moving == True: # pylint: disable=singleton-comparison
-            self.left += event.clientX - self.drag_x_current
-            self.top += event.clientY - self.drag_y_current
-            self.drag_x_current = event.clientX
-            self.drag_y_current = event.clientY
+            self.left += self.event_x - self.drag_x_current
+            self.top += self.event_y - self.drag_y_current
+            self.drag_x_current = self.event_x
+            self.drag_y_current = self.event_y
         else:
-            column, line = self.get_coord(event)
             if column != -1:
                 self.moving.line = line
                 self.moving.column = column
@@ -631,6 +674,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.animate_zoom()
     def drag_stop(self, event):
         """Stop moving the map"""
+        if self.zooming:
+            window.onmousemove = None
+            window.ontouchmove = None
+            self.zooming = 0
+            return
         if not self.moving:
             print('bug')
             return
@@ -654,7 +702,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.update_waiting_room()
         if not self.selected_computer:
             window.onmousemove = None
+            window.ontouchmove = None
         window.onmouseup = None
+        window.ontouchend = None
         self.moving = False
     def animate_zoom(self):
         """Transition from zoom"""
@@ -705,7 +755,10 @@ def move_student(event):
     Student.moving_element.style.left = event.clientX + 'px'
     Student.moving_element.style.top = event.clientY + 'px'
     Student.moving_element.style.pointerEvents = 'none'
-    pos = ROOM.get_column_row(event)
+    if event.target.tagName != 'CANVAS':
+        pos = [-1, -1]
+    else:
+        pos = ROOM.get_column_row(event.clientX, event.clientY)
     if pos[0] != -1:
         Student.moving_element.style.background = "#0F0"
         document.getElementById('top').style.background = TOP_INACTIVE
@@ -830,6 +883,7 @@ def create_page(building_name):
             id="canvas"
             onwheel="ROOM.zoom(event)"
             onmousedown="ROOM.drag_start(event)"
+            ontouchstart="ROOM.drag_start(event)"
         ></canvas>
         <div id="spy"></div>
         ''']
