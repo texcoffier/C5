@@ -432,6 +432,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
             ctx.fillText(student.surname, x_pos, y_pos + y_size/2)
+        ctx.globalAlpha = 1
     def draw_map(self, ctx, canvas):
         """Draw the character map"""
         canvas.setAttribute('width', self.width)
@@ -546,7 +547,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.fillText("Cliquez sur le sol d'un salle pour zoomer.", column, line)
     def draw_teachers(self, ctx):
         """Display teacher names in front of rooms"""
-        size = self.scale * 0.6
+        ctx.fillStyle = "#000"
+        size = self.scale * 0.4
         ctx.font = size + "px sans-serif"
         for room_name in self.rooms:
             room = self.rooms[room_name]
@@ -572,7 +574,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.scale = self.min_scale = min(
                 (self.width - LEFT) / self.columns_x[2 * self.x_max - 1],
                 (self.height - self.menu.offsetHeight) / self.lines_y[2 * len(self.lines) - 1 - HELP_LINES])
-            self.top = self.menu.offsetHeight + HELP_LINES * self.scale
+            self.top = self.menu.offsetHeight
+            if not document.getElementById('my_rooms').checked:
+                self.top += HELP_LINES * self.scale
             self.left = LEFT
         ctx = canvas.getContext("2d")
         self.draw_map(ctx, canvas)
