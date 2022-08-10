@@ -480,7 +480,7 @@ ACTIONS = {
         """,
     'cp': f"""
         scp $(git ls-files | grep -v BUILDINGS) favicon.ico {C5_LOGIN}@{C5_HOST}:{C5_DIR}
-        scp BUILDINGS/* favicon.ico {C5_LOGIN}@{C5_HOST}:{C5_DIR}/BUILDINGS
+        scp BUILDINGS/* {C5_LOGIN}@{C5_HOST}:{C5_DIR}/BUILDINGS
         """,
     'nginx': f"""#C5_ROOT
         sudo sh -c '
