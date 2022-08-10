@@ -79,6 +79,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     waiting_students = []
     zooming = scale_start = zooming_x = zooming_y = 0
     event_x = event_y = 0
+    walls = windows = doors = chars = []
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.change(building)
@@ -160,6 +161,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.doors = []
         self.prepare_horizontals("d", 1, self.doors)
         self.prepare_verticals("d", 1, self.doors)
+
+        self.prepare_map()
     def get_room_by_name(self, name):
         """From the room name, compute its top left and size"""
         spaced = name + ' '
@@ -302,6 +305,21 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     lines.append([x_pos, start-0.5, x_pos, y_pos-0.5])
                     start = -1
                 last_char = char
+    def prepare_map(self):
+        """Create list of chars to display"""
+        # 🪑 🛗 not working on phone
+        translate = {'c': '⑁', 's': '💻', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
+                     'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' '}
+        self.chars = {}
+        for line, chars in enumerate(self.lines):
+            for column, char in enumerate(chars):
+                if char in translate: # pylint: disable=consider-using-get
+                    char = translate[char]
+                if char == ' ':
+                    continue
+                if char not in self.chars:
+                    self.chars[char] = []
+                self.chars[char].append([column, line])
     def draw_computer_menu(self, ctx, messages):
         """The computer problems menu"""
         x_pos, y_pos, size = self.xys(self.selected_computer[1] - 0.5,
@@ -435,30 +453,18 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.strokeStyle = "#000"
         ctx.fillStyle = "#000"
         ctx.font = self.scale + "px sans-serif,emoji"
-        # 🪑 🛗 not working on phone
-        translate = {'c': '⑁', 's': '💻', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
-                     'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' '}
-        sizes = {}
-        for line, chars in enumerate(self.lines):
-            if self.lines_height[2*line] < 0.5:
-                # _x_pos, y_pos, size = self.xys(1, line)
-                # ctx.fillStyle = "#DDD"
-                # ctx.fillRect(0, y_pos, width, size)
-                # ctx.fillStyle = "#000"
-                continue
-            for column, char in enumerate(chars):
+        for char in self.chars:
+            char_size = ctx.measureText(char)
+            for column, line in self.chars[char]:
+                if self.lines_height[2*line] < 0.5:
+                    # _x_pos, y_pos, size = self.xys(1, line)
+                    # ctx.fillStyle = "#DDD"
+                    # ctx.fillRect(0, y_pos, width, size)
+                    # ctx.fillStyle = "#000"
+                    continue
                 if self.columns_width[2*column] < 0.5:
                     continue
-                if char in translate: # pylint: disable=consider-using-get
-                    char = translate[char]
-                if char == ' ':
-                    continue
-                if char in sizes:
-                    char_size = sizes[char]
-                else:
-                    sizes[char] = char_size = ctx.measureText(char)
                 x_pos, y_pos, size = self.xys(column, line)
-                # ctx.font = size + "px sans-serif,emoji"
                 ctx.fillText(char, x_pos - char_size.width/2, y_pos + size/2)
     def draw_square_feedback(self, ctx):
         """Single square feedback"""
@@ -539,6 +545,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillText(room['teachers'], x_pos, y_pos + self.scale/3)
     def draw(self, square_feedback=False):
         """Display on canvas"""
+        #start = Date().getTime()
         canvas = document.getElementById('canvas')
         self.width = canvas.offsetWidth
         self.height = canvas.offsetHeight
@@ -564,6 +571,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if square_feedback:
             self.draw_square_feedback(ctx)
         self.draw_help(ctx)
+        #print(Date().getTime() - start)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
         self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
