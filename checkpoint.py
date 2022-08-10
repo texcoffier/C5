@@ -620,8 +620,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.draw()
                 return
             self.zooming = 0
-            window.ontouchmove = None
-            window.ontouchend = None
+            window.onmousemove = window.ontouchmove = None
+            window.onmouseup = window.ontouchend = None
             return
         if not self.moving:
             if self.selected_computer:
@@ -707,6 +707,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if self.zooming:
             window.onmousemove = None
             window.ontouchmove = None
+            window.onmouseup = None
+            window.ontouchend = None
             self.zooming = 0
             return
         if not self.moving:
