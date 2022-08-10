@@ -47,6 +47,8 @@ def mouse_leave():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = False
 
+mouse_enter()
+
 def distance2(x1, y1, x2, y2):
     """Squared distance beween 2 points"""
     return (x1 - x2) ** 2 + (y1 - y2) ** 2
@@ -98,6 +100,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                                       self.lines_y[2*line+2] - self.lines_y[2*line])]
     def get_column_row(self, pos_x, pos_y):
         """Return character position (float) in the character map"""
+        if pos_y < self.menu.offsetHeight:
+            return [-1, -1]
         column = -1
         for i, position in enumerate(self.columns_x):
             if position > (pos_x - self.left) / self.scale:
@@ -111,10 +115,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if column >= 0 and column <= self.x_max and line >= 0 and line < len(self.lines):
             return [column, line]
         return [-1, -1]
-    def get_coord(self, event):
-        """Get column line as integer"""
-        if event.target.tagName != 'CANVAS':
-            return [-1, -1]
+    def get_event(self, event):
+        """Get event coordinates"""
         if event.touches:
             if len(event.touches):
                 self.event_x = event.touches[0].pageX
@@ -124,6 +126,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.event_x = event.clientX
             self.event_y = event.clientY
 
+    def get_coord(self, event):
+        """Get column line as integer"""
+        self.get_event(event)
         column, line = self.get_column_row(self.event_x, self.event_y)
         column = Math.round(column)
         line = Math.round(line)
@@ -297,7 +302,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     lines.append([x_pos, start-0.5, x_pos, y_pos-0.5])
                     start = -1
                 last_char = char
-    def draw_computer_menu(self, ctx, event, messages):
+    def draw_computer_menu(self, ctx, messages):
         """The computer problems menu"""
         x_pos, y_pos, size = self.xys(self.selected_computer[1] - 0.5,
                                       self.selected_computer[2] - 0.5)
@@ -332,13 +337,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillRect(x_pos + size, y_item,
                              MENU_WIDTH*size, MENU_LINE*size)
                 ctx.fillStyle = "#000"
-            if (event # pylint: disable=too-many-boolean-expressions
-                    and i > 1
+            if (i > 1 # pylint: disable=too-many-boolean-expressions
                     and message != ''
-                    and event.clientX > x_pos + size
-                    and event.clientX < x_pos + size + MENU_WIDTH*size
-                    and event.clientY > y_item
-                    and event.clientY < y_item + MENU_LINE * size
+                    and self.event_x > x_pos + size
+                    and self.event_x < x_pos + size + MENU_WIDTH*size
+                    and self.event_y > y_item
+                    and self.event_y < y_item + MENU_LINE * size
                ):
                 ctx.fillStyle = "#FF0"
                 ctx.fillRect(x_pos + size, y_item,
@@ -456,9 +460,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 x_pos, y_pos, size = self.xys(column, line)
                 # ctx.font = size + "px sans-serif,emoji"
                 ctx.fillText(char, x_pos - char_size.width/2, y_pos + size/2)
-    def draw_square_feedback(self, ctx, event):
+    def draw_square_feedback(self, ctx):
         """Single square feedback"""
-        column, line = self.get_coord(event)
+        column, line = self.get_column_row(self.event_x, self.event_y)
         x_pos, y_pos, size = self.xys(column - 0.5, line - 0.5)
         ctx.fillStyle = "#0F0"
         ctx.globalAlpha = 0.5
@@ -533,7 +537,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 column, line = room['label']
                 x_pos, y_pos, _size = self.xys(column, line)
                 ctx.fillText(room['teachers'], x_pos, y_pos + self.scale/3)
-    def draw(self, event=None, square_feedback=False):
+    def draw(self, square_feedback=False):
         """Display on canvas"""
         canvas = document.getElementById('canvas')
         self.width = canvas.offsetWidth
@@ -553,13 +557,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.draw_map(ctx, canvas)
         ctx.font = self.scale/2 + "px sans-serif"
         self.draw_students(ctx)
+        self.draw_teachers(ctx)
         messages = self.draw_computer_problems(ctx)
         if self.selected_computer and self.selected_computer[0] == self.building:
-            self.draw_computer_menu(ctx, event, messages)
+            self.draw_computer_menu(ctx, messages)
         if square_feedback:
-            self.draw_square_feedback(ctx, event)
+            self.draw_square_feedback(ctx)
         self.draw_help(ctx)
-        self.draw_teachers(ctx)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
         self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
@@ -595,6 +599,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.drag_x_start = self.drag_x_current = self.event_x
         self.drag_y_start = self.drag_y_current = self.event_y
         self.moving = True
+        self.draw()
     def drag_move(self, event):
         """Moving the map"""
         column, line = self.get_coord(event)
@@ -604,7 +609,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                                    event.touches[1].pageX, event.touches[1].pageY)
                 self.do_zoom(self.zooming_x, self.zooming_y,
                              self.scale_start * zooming / self.zooming)
-                self.draw(event)
+                self.draw()
                 return
             self.zooming = 0
             window.ontouchmove = None
@@ -612,7 +617,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             return
         if not self.moving:
             if self.selected_computer:
-                self.draw(event)
+                self.draw()
             return
         self.moved = self.moved or distance2(self.drag_x_start, self.drag_y_start,
                                              self.event_x, self.event_y) > 10
@@ -756,50 +761,47 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                         continue
                 content.append(student.box())
         document.getElementById('waiting').innerHTML = ' '.join(content)
+    def start_move_student(self, event):
+        """Move student bloc"""
+        login = event.currentTarget.getAttribute('login')
+        Student.moving_student = STUDENT_DICT[login]
+        Student.moving_element = event.currentTarget
+        Student.moving_element.style.position = 'absolute'
+        document.body.onmousemove = document.body.ontouchmove = bind(self.move_student, self)
+        window.onmouseup = document.body.ontouchend = bind(self.stop_move_student, self)
+        self.move_student(event)
+        event.preventDefault()
+    def move_student(self, event):
+        """To put the student on the map"""
+        self.get_event(event)
+        Student.moving_element.style.left = self.event_x + 'px'
+        Student.moving_element.style.top = self.event_y + 'px'
+        Student.moving_element.style.pointerEvents = 'none'
+        pos = self.get_column_row(self.event_x, self.event_y)
+        if pos[0] != -1:
+            Student.moving_element.style.background = "#0F0"
+            document.getElementById('top').style.background = TOP_INACTIVE
+        else:
+            Student.moving_element.style.background = "#FFF"
+            document.getElementById('top').style.background = TOP_ACTIVE
+        self.draw(square_feedback=True)
+    def stop_move_student(self, event):
+        """Drop the student"""
+        pos = self.get_coord(event)
+        if pos[0] != -1:
+            record('/checkpoint/' + COURSE + '/' + Student.moving_student.login + '/'
+                   + self.building + ',' + pos[0] + ',' + pos[1])
 
-
-def start_move_student(event):
-    """Move student bloc"""
-    login = event.currentTarget.getAttribute('login')
-    Student.moving_student = STUDENT_DICT[login]
-    Student.moving_element = event.currentTarget
-    Student.moving_element.style.position = 'absolute'
-    document.body.onmousemove = move_student
-    window.onmouseup = stop_move_student
-    move_student(event)
-def move_student(event):
-    """To put the student on the map"""
-    Student.moving_element.style.left = event.clientX + 'px'
-    Student.moving_element.style.top = event.clientY + 'px'
-    Student.moving_element.style.pointerEvents = 'none'
-    if event.target.tagName != 'CANVAS':
-        pos = [-1, -1]
-    else:
-        pos = ROOM.get_column_row(event.clientX, event.clientY)
-    if pos[0] != -1:
-        Student.moving_element.style.background = "#0F0"
+        document.body.onmousemove = document.body.ontouchmove = None
+        window.onmouseup = document.body.ontouchend = None
+        del Student.moving_element.style.position
+        del Student.moving_element.style.background
+        del Student.moving_element.style.pointerEvents
         document.getElementById('top').style.background = TOP_INACTIVE
-    else:
-        Student.moving_element.style.background = "#FFF"
-        document.getElementById('top').style.background = TOP_ACTIVE
-    ROOM.draw(event, square_feedback=True)
-def stop_move_student(event):
-    """Drop the student"""
-    pos = ROOM.get_coord(event)
-    if pos[0] != -1:
-        record('/checkpoint/' + COURSE + '/' + Student.moving_student.login + '/'
-               + ROOM.building + ',' + pos[0] + ',' + pos[1])
-
-    document.body.onmousemove = None
-    window.onmouseup = None
-    del Student.moving_element.style.position
-    del Student.moving_element.style.background
-    del Student.moving_element.style.pointerEvents
-    document.getElementById('top').style.background = TOP_INACTIVE
-    Student.moving_student = None
-    Student.moving_element = None
-    if pos[0] == -1:
-        update_page()
+        Student.moving_student = None
+        Student.moving_element = None
+        if pos[0] == -1:
+            update_page()
 def record(action):
     """Do an action and get data"""
     script = document.createElement('SCRIPT')
@@ -838,7 +840,8 @@ class Student: # pylint: disable=too-many-instance-attributes
         else:
             more = ''
         return ''.join([
-            '<div class="name" onmousedown="start_move_student(event)" login="',
+            '<div class="name" onmousedown="ROOM.start_move_student(event)"',
+            ' ontouchstart="ROOM.start_move_student(event)" login="',
             self.login, '"', more, '>',
             # '<span>', self.login, '</span>',
             '<div>', self.firstname, '</div>',
