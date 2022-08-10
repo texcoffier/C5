@@ -97,8 +97,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Change coordinates system"""
         return [self.left + self.scale * self.columns_x[2*column],
                 self.top + self.scale * self.lines_y[2*line],
-                self.scale * Math.min(self.columns_x[2*column+2] - self.columns_x[2*column],
-                                      self.lines_y[2*line+2] - self.lines_y[2*line])]
+                2 * self.scale * self.columns_width[2*column],
+                2 * self.scale * self.lines_height[2*line]]
     def get_column_row(self, pos_x, pos_y):
         """Return character position (float) in the character map"""
         if pos_y < self.menu.offsetHeight:
@@ -322,11 +322,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.chars[char].append([column, line])
     def draw_computer_menu(self, ctx, messages):
         """The computer problems menu"""
-        x_pos, y_pos, size = self.xys(self.selected_computer[1] - 0.5,
-                                      self.selected_computer[2] - 0.5)
+        x_pos, y_pos, x_size, y_size = self.xys(self.selected_computer[1] - 0.5,
+                                                self.selected_computer[2] - 0.5)
         ctx.fillStyle = "#FFF"
         ctx.globalAlpha = 0.9
-        ctx.fillRect(x_pos, y_pos, size, size)
+        ctx.fillRect(x_pos, y_pos, x_size, y_size)
         ctx.fillRect(x_pos + self.scale, y_pos, MENU_WIDTH*self.scale, MENU_HEIGHT*self.scale)
         ctx.globalAlpha = 1
         ctx.fillStyle = "#000"
@@ -349,25 +349,25 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 "",
                 "Réparé : tout fonctionne !"
             ]):
-            y_item = y_pos + MENU_LINE * size * i
+            y_item = y_pos + MENU_LINE * y_size * i
             if message in messages:
                 ctx.fillStyle = "#FDD"
-                ctx.fillRect(x_pos + size, y_item,
-                             MENU_WIDTH*size, MENU_LINE*size)
+                ctx.fillRect(x_pos + x_size, y_item,
+                             MENU_WIDTH*x_size, MENU_LINE*y_size)
                 ctx.fillStyle = "#000"
             if (i > 1 # pylint: disable=too-many-boolean-expressions
                     and message != ''
-                    and self.event_x > x_pos + size
-                    and self.event_x < x_pos + size + MENU_WIDTH*size
+                    and self.event_x > x_pos + x_size
+                    and self.event_x < x_pos + x_size + MENU_WIDTH*y_size
                     and self.event_y > y_item
-                    and self.event_y < y_item + MENU_LINE * size
+                    and self.event_y < y_item + MENU_LINE * y_size
                ):
                 ctx.fillStyle = "#FF0"
-                ctx.fillRect(x_pos + size, y_item,
-                             MENU_WIDTH*size, MENU_LINE*size)
+                ctx.fillRect(x_pos + x_size, y_item,
+                             MENU_WIDTH*x_size, MENU_LINE*y_size)
                 ctx.fillStyle = "#000"
                 self.selected_item = message
-            ctx.fillText(message, x_pos + size*1.5, y_item + (MENU_LINE - 0.1)*size)
+            ctx.fillText(message, x_pos + x_size*1.5, y_item + (MENU_LINE - 0.1)*y_size)
     def draw_computer_problems(self, ctx):
         """Draw a red square on computer with problems"""
         ctx.fillStyle = "#F00"
@@ -375,8 +375,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         messages = []
         for building, column, line, message, _time in CONFIG.computers:
             if building == self.building:
-                x_pos, y_pos, size = self.xys(column - 0.5, line - 0.5)
-                ctx.fillRect(x_pos, y_pos, size, size)
+                x_pos, y_pos, x_size, y_size = self.xys(column - 0.5, line - 0.5)
+                ctx.fillRect(x_pos, y_pos, x_size, y_size)
                 if (self.selected_computer
                         and self.selected_computer[1] == column
                         and self.selected_computer[2] == line):
@@ -387,27 +387,27 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Draw students names"""
         now = seconds()
         for student in self.students:
-            if (self.lines_height[2*student.line] < 0.5
-                or self.columns_width[2*student.column] < 0.5):
-                continue
-            x_pos, y_pos, size = self.xys(student.column, student.line)
+            x_pos, y_pos, x_size, y_size = self.xys(student.column, student.line)
             x_pos -= self.scale / 2
+            ctx.globalAlpha = 0.5
+            if student.active:
+                ctx.fillStyle = "#FF0"
+                ctx.fillRect(x_pos, y_pos - y_size/2, x_size, y_size)
+            if (self.lines_height[2*student.line] < 0.5
+                    or self.columns_width[2*student.column] < 0.5):
+                continue
             width = max(ctx.measureText(student.firstname).width,
                         ctx.measureText(student.surname).width)
             ctx.fillStyle = "#FFF"
-            ctx.globalAlpha = 0.5
-            ctx.fillRect(x_pos, y_pos - size/2, width + 2, size + 2)
-            if student.active:
-                ctx.fillStyle = "#FF0"
-                ctx.fillRect(x_pos, y_pos - size/2, size, size + 2)
+            ctx.fillRect(x_pos, y_pos - y_size/2, width + 2, y_size + 2)
             if student.blur:
                 ctx.fillStyle = "#F00"
-                ctx.fillRect(x_pos, y_pos - size/2,
-                             student.blur / 10 * size, size/2)
+                ctx.fillRect(x_pos, y_pos - y_size/2,
+                             student.blur / 10 * x_size, y_size/2)
             if student.nr_questions_done:
                 ctx.fillStyle = "#0C0"
                 ctx.fillRect(x_pos, y_pos + 1,
-                             student.nr_questions_done / 10 * size, size/2)
+                             student.nr_questions_done / 10 * x_size, y_size/2)
             if student.with_me():
                 if student.active:
                     if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
@@ -423,7 +423,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     ctx.fillStyle = "#88F"
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
-            ctx.fillText(student.surname, x_pos, y_pos + size/2)
+            ctx.fillText(student.surname, x_pos, y_pos + y_size/2)
     def draw_map(self, ctx, canvas):
         """Draw the character map"""
         canvas.setAttribute('width', self.width)
@@ -432,8 +432,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.fillRect(0, 0, self.width, self.height)
 
         def line(x_start, y_start, x_end, y_end):
-            x_start, y_start, _ = self.xys(x_start, y_start)
-            x_end, y_end, _ = self.xys(x_end, y_end)
+            x_start, y_start, _, _ = self.xys(x_start, y_start)
+            x_end, y_end, _, _ = self.xys(x_end, y_end)
             ctx.beginPath()
             ctx.moveTo(x_start, y_start)
             ctx.lineTo(x_end, y_end)
@@ -467,15 +467,15 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     continue
                 if self.columns_width[2*column] < 0.5:
                     continue
-                x_pos, y_pos, size = self.xys(column, line)
-                ctx.fillText(char, x_pos - char_size.width/2, y_pos + size/2)
+                x_pos, y_pos, x_size, y_size = self.xys(column, line)
+                ctx.fillText(char, x_pos - char_size.width/2, y_pos + y_size/2)
     def draw_square_feedback(self, ctx):
         """Single square feedback"""
         column, line = self.get_column_row(self.event_x, self.event_y)
-        x_pos, y_pos, size = self.xys(column - 0.5, line - 0.5)
+        x_pos, y_pos, x_size, y_size = self.xys(column - 0.5, line - 0.5)
         ctx.fillStyle = "#0F0"
         ctx.globalAlpha = 0.5
-        ctx.fillRect(x_pos, y_pos, size, size)
+        ctx.fillRect(x_pos, y_pos, x_size, y_size)
         ctx.globalAlpha = 1
     def draw_help(self, ctx): # pylint: disable=too-many-statements
         """Display documentation"""
@@ -547,7 +547,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 if (self.lines_height[2*line] < 0.5
                     or self.columns_width[2*column] < 0.5):
                     continue
-                x_pos, y_pos, _size = self.xys(column, line)
+                x_pos, y_pos, _x_size, _y_size = self.xys(column, line)
                 ctx.fillText(room['teachers'], x_pos, y_pos + self.scale/3)
     def draw(self, square_feedback=False):
         """Display on canvas"""
@@ -759,8 +759,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         for room_name in self.rooms:
             room = self.rooms[room_name]
             left, top, width, height = room['position'][:4]
-            right, bottom, _size = self.xys(left + width, top + height)
-            left, top, _size = self.xys(left, top)
+            right, bottom, _x_size, _y_size = self.xys(left + width, top + height)
+            left, top, _x_size, _y_size = self.xys(left, top)
             if left > 0 and top > 0 and right < self.width and bottom < self.height:
                 self.rooms_on_screen[room_name] = True
     def update_waiting_room(self):
