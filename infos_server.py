@@ -36,6 +36,7 @@ while True:
         LDAP.simple_bind_s(C5_LDAP_LOGIN, C5_LDAP_PASSWORD)
 
         for line in sys.stdin:
+            start = time.time()
             login = line.strip()
             print("About:", login, file=sys.stderr)
             infos = LDAP.search_s(
@@ -44,9 +45,11 @@ while True:
                 ('givenName', 'sn'))
             for item in infos:
                 print(item, file=sys.stderr)
-            print(file=sys.stderr)
-            if infos[0][0] is None or 'givenName' not in infos[0][1] or 'sn' not in infos[0][1]:
-                sys.stdout.write(json.dumps([login, {'fn': 'fn', 'sn': 'sn'}]) + '\n')
+            if (not infos
+                    or infos[0][0] is None
+                    or 'givenName' not in infos[0][1]
+                    or 'sn' not in infos[0][1]):
+                sys.stdout.write(json.dumps([login, {'fn': login, 'sn': login}]) + '\n')
                 sys.stdout.flush()
             else:
                 infos = infos[0][1]
@@ -56,6 +59,7 @@ while True:
                     }
                 sys.stdout.write(json.dumps([login, infos]) + '\n')
                 sys.stdout.flush()
+            print(f"Done in {time.time() - start:6.3f} seconds\n", file=sys.stderr)
 
         break # stdin closed
     except KeyboardInterrupt:
