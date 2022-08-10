@@ -387,6 +387,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Draw students names"""
         now = seconds()
         for student in self.students:
+            if (self.lines_height[2*student.line] < 0.5
+                or self.columns_width[2*student.column] < 0.5):
+                continue
             x_pos, y_pos, size = self.xys(student.column, student.line)
             x_pos -= self.scale / 2
             width = max(ctx.measureText(student.firstname).width,
@@ -541,6 +544,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             room = self.rooms[room_name]
             if room['teachers']:
                 column, line = room['label']
+                if (self.lines_height[2*line] < 0.5
+                    or self.columns_width[2*column] < 0.5):
+                    continue
                 x_pos, y_pos, _size = self.xys(column, line)
                 ctx.fillText(room['teachers'], x_pos, y_pos + self.scale/3)
     def draw(self, square_feedback=False):
