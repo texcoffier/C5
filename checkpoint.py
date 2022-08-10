@@ -246,18 +246,26 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         col_end = column
         while self.lines[line][col_end] not in ROOM_BORDER:
             col_end += 1
+            if not self.lines[line][col_end]:
+                return [0, 0, 0, 0, 0, 0]
         col_start = column
         while self.lines[line][col_start] not in ROOM_BORDER:
             col_start -= 1
+            if not self.lines[line][col_start]:
+                return [0, 0, 0, 0, 0, 0]
         room_width = col_end - col_start
         center_x = self.columns_x[2*col_start + room_width]
 
         line_end = line
         while self.lines[line_end][column] not in ROOM_BORDER:
             line_end += 1
+            if not self.lines[line_end]:
+                return [0, 0, 0, 0, 0, 0]
         line_start = line
         while self.lines[line_start][column] not in ROOM_BORDER:
             line_start -= 1
+            if not self.lines[line_start]:
+                return [0, 0, 0, 0, 0, 0]
         room_height = line_end - line_start
         center_y = self.lines_y[2*line_start + room_height]
         return col_start, line_start, room_width, room_height, center_x, center_y
@@ -691,6 +699,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Zoom on room
             (_col_start, _line_start, room_width, room_height, center_x, center_y
             ) = self.get_room(column, line)
+            if room_width == 0 or room_height == 0:
+                return
             nr_frame = 10
             def linear(start, end, i):
                 return (start*i + end*(nr_frame-i)) / nr_frame
