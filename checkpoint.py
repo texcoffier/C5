@@ -394,10 +394,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def draw_students(self, ctx):
         """Draw students names"""
         now = seconds()
+        self.students.sort(cmp_student_position)
         for student in self.students:
             x_pos, y_pos, x_size, y_size = self.xys(student.column, student.line)
             x_pos -= self.scale / 2
-            ctx.globalAlpha = 0.5
+            ctx.globalAlpha = 0.7
             if student.active:
                 ctx.fillStyle = "#FF0"
                 ctx.fillRect(x_pos, y_pos - y_size/2, x_size, y_size)
@@ -431,7 +432,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     ctx.fillStyle = "#88F"
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
-            ctx.fillText(student.surname, x_pos, y_pos + y_size/2)
+            ctx.fillText(student.surname, x_pos, y_pos + y_size/3)
         ctx.globalAlpha = 1
     def draw_map(self, ctx, canvas):
         """Draw the character map"""
@@ -548,7 +549,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def draw_teachers(self, ctx):
         """Display teacher names in front of rooms"""
         ctx.fillStyle = "#000"
-        size = self.scale * 0.4
+        size = self.scale * 0.5
         ctx.font = size + "px sans-serif"
         for room_name in self.rooms:
             room = self.rooms[room_name]
@@ -558,7 +559,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     or self.columns_width[2*column] < 0.5):
                     continue
                 x_pos, y_pos, _x_size, _y_size = self.xys(column, line)
-                ctx.fillText(room['teachers'], x_pos, y_pos + self.scale/3)
+                ctx.fillText(room['teachers'], x_pos, y_pos)
     def draw(self, square_feedback=False):
         """Display on canvas"""
         #start = Date().getTime()
@@ -580,8 +581,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.left = LEFT
         ctx = canvas.getContext("2d")
         self.draw_map(ctx, canvas)
-        ctx.font = self.scale/2 + "px sans-serif"
+        ctx.font = self.scale/3 + "px sans-serif"
         self.draw_students(ctx)
+        ctx.font = self.scale/2 + "px sans-serif"
         self.draw_teachers(ctx)
         messages = self.draw_computer_problems(ctx)
         if self.selected_computer and self.selected_computer[0] == self.building:
@@ -698,7 +700,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def drag_stop_click_on_room(self, event, column, line):
         """Click on a room to zoom"""
         if (column != -1
-                and self.lines[line][column] not in 'cs'
+                and self.lines[line][column] != 's'
                 and self.scale < self.min_scale * 2):
             # Zoom on room
             (_col_start, _line_start, room_width, room_height, center_x, center_y
@@ -883,11 +885,15 @@ class Student: # pylint: disable=too-many-instance-attributes
         """The student is in my room"""
         return self.teacher == LOGIN
 
-def cmp_student(student_a, student_b):
+def cmp_student_name(student_a, student_b):
     """Compare 2 students names"""
     if student_a.sort_key > student_b.sort_key:
         return 1
     return -1
+
+def cmp_student_position(student_a, student_b):
+    """Compare 2 students column"""
+    return student_a.column - student_b.column
 
 def create_page(building_name):
     """Fill the page content"""
@@ -942,7 +948,7 @@ def create_page(building_name):
 def update_page():
     """Update students"""
     students = [Student(student) for student in STUDENTS if student[0]]
-    students.sort(cmp_student)
+    students.sort(cmp_student_name)
     ROOM.students = []
     ROOM.waiting_students = []
     for student in students:
@@ -991,6 +997,13 @@ def spy(text, login, infos):
     div.lastChild.textContent = text
     hljs.highlightElement(div.lastChild)
 
+def debug():
+    """debug"""
+    students_per_room = {}
+    for room_name in ROOM.rooms:
+        room = ROOM.rooms[room_name]
+        students_per_room[room_name] = [student.login for student in room.students]
+    print(JSON.stringify(students_per_room))
 
 create_page('Nautibus')
 ROOM = Room('Nautibus')
