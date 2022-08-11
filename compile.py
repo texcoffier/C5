@@ -14,7 +14,14 @@ def onmessage(event):
         elif event.data[0] == 'array':
             Compile.worker.shared_buffer = event.data[1]
         elif event.data[0] == 'config':
+            init_needed = len(Compile.worker.config) == 0
             Compile.worker.set_config(event.data[1])
+            if init_needed:
+                Compile.worker.start_question()
+                Compile.worker.init()
+                print("Worker: init done. current_question_max=",
+                      Compile.worker.current_question_max)
+
     else:
         if Compile.worker.shared_buffer:
             Compile.worker.shared_buffer[0] = 0
@@ -68,9 +75,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             quest.worker = self
             self.post('default', [i, quest.default_answer()])
         self.set_options(self.options)
-        self.start_question()
-        self.init()
-        print("Worker: init done. current_question_max=", self.current_question_max)
 
     def init(self):
         """Your own compiler init, for example:
