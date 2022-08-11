@@ -407,18 +407,26 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.record('CopyAllowed')
         self.copied = text
 
+    def insert_text(self, event, text):
+        """Insert the pasted text"""
+        self.overlay_hide()
+        if event.type == 'drop':
+            setTimeout(bind(self.coloring, self), 100)
+        else:
+            document.execCommand('insertText', False, text)
+            event.preventDefault(True)
+            self.coloring()
+
     def onpaste(self, event):
         """Mouse down"""
+        text = (event.clipboardData or event.dataTransfer).getData("text")
         if self.options['allow_copy_paste']:
             self.record('Paste')
-            self.overlay_hide()
-            setTimeout(bind(self.coloring, self), 100)
+            self.insert_text(event, text)
             return
-        text = (event.clipboardData or event.dataTransfer).getData("text")
         if text in self.editor.innerText or text in self.question.innerText or text == self.copied:
             self.record('PasteOk')
-            self.overlay_hide()
-            setTimeout(bind(self.coloring, self), 100)
+            self.insert_text(event, text)
             return # auto paste allowed
         self.record('PasteRejected')
         popup_message(self.options['forbiden'])
