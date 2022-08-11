@@ -77,6 +77,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     """A course session"""
     configs = {}
     def __init__(self, course):
+        if not os.path.exists(course + '.py'):
+            return
         self.course = course
         self.filename = course + '.cf'
         self.time = 0
