@@ -18,7 +18,7 @@ class QEnd(Question): # pylint: disable=undefined-variable
             'reset_button': [68, 2, 0, 2, '#0000'],
             }})
         batiment, coord_x, coord_y = self.placement()
-        return ("<p>Plus de questions."
+        return ("<p>Récupération des informations concernant la place de l'étudiant dans la salle."
                 + "<p>Surveillant :" + self.teacher()
                 + "<p>Bâtiment : " + batiment
                 + "<p>Poste X : " + coord_x

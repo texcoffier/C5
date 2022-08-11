@@ -10,7 +10,10 @@
             line-height: 1.3em;
         }
 
-        H1, H2 { clear: both }
+        H1,
+        H2 {
+            clear: both
+        }
 
         H1 {
             font-size: 150%;
@@ -61,6 +64,12 @@
             font-size: 90%;
             overflow: hidden;
         }
+        .compilateur { background: #DFF }
+        .message { background: #DFD }
+        .cours { background: #BFB }
+        .js { background: #DDF }
+        .serveur { background: #FDD }
+        .executable { background: #FEE }
     </style>
 </head>
 
@@ -123,7 +132,7 @@
     <p>
         Pour chaque question il y a une classe
         dont les méthodes définissent la question.
-        Voici les méthodes possibles dans l'ordre d'appel :
+        Voici les méthodes possibles dans l'ordre d'appel lorsque l'étudiant arrive sur la question :
     </p>
     <ul>
         <li> <tt>default_answer(self)</tt> qui retourne la valeur initiale de l'éditeur.</li>
@@ -154,7 +163,7 @@
     def default_answer(self):
         return "# Tapez votre programme ici :\n"</pre>
     <p>
-        Un sujet complet est une liste de question gérées
+        Un sujet complet est une liste de questions gérées
         par un unique compilateur.
         Par exemple :
     </p>
@@ -185,10 +194,12 @@
             affiche les messages vert/rouge en fonction de la présence
             de <tt>re</tt> dans <tt>text</tt>
         </li>
+        <li> <tt>self.teacher()</tt> donne le nom de l'enseignant qui surveille l'étudiant.</li>
         <li> <tt>batiment, coord_x, coord_y = self.placement()</tt>
             permet de donner un sujet différent aux étudiants.
             Si deux sujets, prendre <tt>(coord_x, coord_y) % 2</tt>
-        <li> <pre>self.set_options(
+        <li>
+            <pre>self.set_options(
     {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -233,10 +244,10 @@
         'allowed': [], # system call allowed 'brk'
 
     })</pre>
-        Il faut mettre seulement les options qui changent.
-        Les options restent les mêmes tant qu'elles ne sont pas modifiées.
-        La disposition de l'écran peut changer d'une question à l'autre.
-    </li>
+            Il faut mettre seulement les options qui changent.
+            Les options restent les mêmes tant qu'elles ne sont pas modifiées.
+            La disposition de l'écran peut changer d'une question à l'autre.
+        </li>
     </ul>
 
 
@@ -254,7 +265,8 @@
         <li> C++: <tt>Compile_remote</tt> envoi des requêtes à
             <tt>compile_server.py</tt> pour compiler avec <tt>g++</tt>
             et exécuter. Supporte <tt>cin</tt> mais pas le graphique.
-            Tous les appels systèmes sont interdits (sauf <tt>fstat</tt>, <tt>write</tt>, <tt>read, </tt><tt>lseek</tt>, <tt>exit_group</tt>),
+            Tous les appels systèmes sont interdits (sauf <tt>fstat</tt>, <tt>write</tt>, <tt>read, </tt><tt>lseek</tt>,
+            <tt>exit_group</tt>),
             donc pas de problème de sécurité.
             Temps et espace limité pour la compilation et l'exécution.</li>
     </ul>
@@ -313,7 +325,7 @@
     <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-course.png">
     <h3>Administrateur : détails d'un cours</h3>
     <p>
-        Les administreurs peuvent regarder le détails de tous les cours.
+        Les administrateurs peuvent regarder le détails de tous les cours.
         Pour chaque étudiant on a le détail et le résumé de toute
         la colonne sur la dernière ligne (importable directement dans TOMUSS).
     </p>
@@ -387,7 +399,7 @@
         Une fois sur le cours, si celui-ci a une salle d'attente,
         cela affiche «Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen»
     </p>
-    
+
     <h2>Installer C5</h2>
     <p>
         Lancez ces commandes (Ubuntu) :
@@ -427,6 +439,191 @@ server {
         }
   }
             </pre>
+    <h3>Organisation des sources</h3>
+    <p>
+        Légende :
+    </p>
+    <ul>
+        <li class="compilateur"> Les compilateurs (coté navigateur web). </li>
+        <li class="cours"> Les cours (coté navigateur web).</li>
+        <li class="message"> Un message (coté navigateur web).</li>
+        <li class="js"> Traduit en JavaScript pour être exécuté coté navigateur web.</li>
+        <li class="executable"> Les programmes.</li>
+        <li class="serveur"> Les serveurs.</li>
+    </ul>
+    <p>
+        Ordre alphabétique des fichiers.
+    </p>
+    <table>
+        <tr>
+            <td>127
+            <td>Administre C5 sur la machine locale (même paramètres que utilities.py)
+        </tr>
+        <tr>
+            <td>BUILDINGS/Nautibus<br>
+                BUILDINGS/empty
+            <td> Les plans des bâtiments
+        </tr>
+        <tr>
+            <td>Makefile
+            <td>Utilisé par <tt>utilities.py</tt>, pas directement.
+        </tr>
+        <tr>
+            <td>README.rst
+            <td>Page d'accueil pour GitHub
+        </tr>
+        <tr class="js">
+            <td>adm_course.py
+            <td>Page d'accueil du cours avec les statistiques étudiants.
+        </tr>
+        <tr class="js">
+            <td>adm_home.py
+            <td>Page d'accueil administrateur listant tous les cours.
+        </tr>
+        <tr>
+            <td>c5.svg
+            <td>Logo
+        </tr>
+        <tr class="js">
+            <td>ccccc.css<br>ccccc.py
+            <td>Interface d'étudiant pour travailler
+        </tr>
+        <tr class="js">
+            <td>checkpoint.py
+            <td>Gestion de la salle d'attente et placement des étudiants sur le plan.
+        </tr>
+        <tr class="js">
+            <td>compatibility.py
+            <td>Utilitaires pour ajouter des fonctions manquantes à JavaScript
+        </tr>
+        <tr class="compilateur">
+            <td>compile.py
+            <td>La classe racine de tous les compilateurs.
+        </tr>
+        <tr class="compilateur">
+            <td>compile_cpp.py
+            <td>Compilateur incomplet C++ en javascript.
+        </tr>
+        <tr class="compilateur">
+            <td>compile_js.py
+            <td>Interpréteur JavaScript
+        </tr>
+        <tr class="compilateur">
+            <td>compile_python.py
+            <td>Interpréteur Python (brython)
+        </tr>
+        <tr class="compilateur">
+            <td>compile_remote.py
+            <td>Contacte compile_server.py pour compiler et exécuter.
+        </tr>
+        <tr class="serveur">
+            <td>compile_server.py
+            <td>Serveur de compilation et exécution de C++ avec différents
+                compilateur et options possibles.
+        </tr>
+        <tr class="cours">
+            <td>course_cpp.py
+            <td>Exemple d'utilisation de compile_cpp et de récupération
+                des informations concernant la place de l'étudiant dans la salle.
+        </tr>
+        <tr class="cours">
+            <td>course_js.py
+            <td>Mini cours de JavaScript
+        </tr>
+        <tr class="message">
+            <td>course_js_checkpoint.py
+            <td>Message indiquant à l'étudiant qu'il doit dire à l'enseignant
+                de l'accepter dans la session.
+        </tr>
+        <tr class="message">
+            <td>course_js_done.py
+            <td>Message indiquant que l'examen est terminé.
+        </tr>
+        <tr class="cours">
+            <td>course_js_example.py
+            <td>Un exemple minimaliste de cours pour commencer.
+        </tr>
+        <tr class="message">
+            <td>course_js_not_admin.py
+            <td>Message indiquant que la page est inaccessible car non administrateur.
+        </tr>
+        <tr class="message">
+            <td>course_js_not_teacher.py
+            <td>Message indiquant que la page est inaccessible car non enseignant.
+        </tr>
+        <tr class="message">
+            <td>course_js_pending.py
+            <td>Message indiquant que l'examen n'a pas commencé.
+        </tr>
+        <tr class="cours">
+            <td>course_python.py
+            <td>Un mini cours Python
+        </tr>
+        <tr class="cours">
+            <td>course_remote.py
+            <td>Exemple d'utilisation de compile_remote
+        </tr>
+        <tr class="cours">
+            <td>course_remote_errors.py
+            <td>Une série d'exercices dans lesquels l'étudiant doit corriger des erreurs de syntaxe.
+        </tr>
+        <tr>
+            <td>favicon.ico
+            <td>L'icone des page web, calculée à partir de <tt>c5.svg</tt>
+        </tr>
+        <tr class="serveur">
+            <td>http_server.py
+            <td>Le serveur web C5 pouvant fonctionner seul ou derrière
+                un server web classique.
+        </tr>
+        <tr>
+            <td>index.html
+            <td>Cette page d'explication
+        </tr>
+        <tr class="executable">
+            <td>infos_server.py
+            <td>Un filtre (stdin/stdout) calculant le nom et prénom à partir du login
+        </tr>
+        <tr class="executable">
+            <td>load_testing.py
+            <td>Un simulateur de charge pour voir combien le système supporte d'étudiants.
+                Difficilement utilisable car il faut le modifier pour indiquer un bon ticket de session.
+        </tr>
+        <tr class="js">
+            <td>question.py
+            <td>La classe permettant de définir les questions.
+        </tr>
+        <tr>
+            <td>screen-admin.png<br>
+            screen-checkpoint.png<br>
+            screen-course.png<br>
+            screen-python.png<br>
+            screen-src.png<br>
+            screen-student.png<br>
+            screen-teacher-list.png
+            <td>Copies d'écran pour cette page.
+        </tr>
+        <tr class="executable">
+            <td>tests.py
+            <td>Tests de régression (ne teste pas la salle d'attente).
+        </tr>
+        <tr class="executable">
+            <td>utilities.py
+            <td>Classes et fonctions nécessaires pour les serveurs,
+                mais c'est aussi le script d'administration du serveur.
+                Run it without argument will display:
+                <ul>
+                    <li> The usage list </li>
+                    <li> The default configuration (from environment variables)</li>
+                    <li> The running servers</li>
+                </ul>
+                The script is called by <tt>127</tt>,
+                make your own copy with your local configuration
+                and run it to manage your C5 server.
+        </tr>
+    </table>
+
+
     <h3>Tests de régression</h3>
     <p>
         Installer les paquets :
@@ -450,7 +647,7 @@ server {
     </p>
     <ul>
         <li> Ménage fichiers log. </li>
-        <li> Fonctions graphiques.</li>
+        <li> Fonctions graphiques pour que les étudiants puissent faire des dessins.</li>
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
     </ul>
 </body>

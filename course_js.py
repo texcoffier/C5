@@ -11,7 +11,8 @@ class Q0(Question): # pylint: disable=undefined-variable
         return """Ce bloc contient l'objectif que vous devez atteindre
         pour passer à la question suivante.
         <p>
-        Votre progression est affichée dans la barre de gauche.
+        Votre progression est affichée dans la barre à l'extrême gauche.
+        On peut voir qu'il y a ici 5 questions à répondre et que nous en sommes à la 1<sup>ère</sup>.
         <p>
         Modifiez le programme dans le bloc blanc à droite pour qu'il affiche
         dans le bloc bleu «Exécution» en bas à droite :
