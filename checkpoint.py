@@ -80,6 +80,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     zooming = scale_start = zooming_x = zooming_y = 0
     event_x = event_y = 0
     walls = windows = doors = chars = []
+    left_column = right_column = top_line = bottom_line = 0
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.change(building)
@@ -87,7 +88,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         window.onfocus = mouse_enter
         window.onresize = update_page
         setInterval(reload_page, RELOAD_INTERVAL * 1000)
-
+        self.draw_times = []
         self.ips = {}
         for room_name in CONFIG.ips_per_room:
             for client_ip in CONFIG.ips_per_room[room_name].split(' '):
@@ -396,6 +397,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         now = seconds()
         self.students.sort(cmp_student_position)
         for student in self.students:
+            if (student.column < self.left_column or student.column > self.right_column
+                    or student.line < self.top_line or student.line > self.bottom_line):
+                continue
+
             x_pos, y_pos, x_size, y_size = self.xys(student.column, student.line)
             x_pos -= self.scale / 2
             ctx.globalAlpha = 0.7
@@ -438,10 +443,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Draw the character map"""
         canvas.setAttribute('width', self.width)
         canvas.setAttribute('height', self.height)
-        ctx.fillStyle = "#EEE"
-        ctx.fillRect(0, 0, self.width, self.height)
+        #ctx.fillStyle = "#EEE"
+        #ctx.fillRect(0, 0, self.width, self.height)
 
         def line(x_start, y_start, x_end, y_end):
+            if x_start == x_end:
+                if (x_start < self.left_column or x_start > self.right_column):
+                    return
+            else:
+                if y_start < self.top_line or y_start > self.bottom_line:
+                    return
             x_start, y_start, _, _ = self.xys(x_start, y_start)
             x_end, y_end, _, _ = self.xys(x_end, y_end)
             ctx.beginPath()
@@ -469,6 +480,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         for char in self.chars:
             char_size = ctx.measureText(char)
             for column, line in self.chars[char]:
+                if (column < self.left_column or column > self.right_column
+                        or line < self.top_line or line > self.bottom_line):
+                    continue
                 if self.lines_height[2*line] < 0.5:
                     # _x_pos, y_pos, size = self.xys(1, line)
                     # ctx.fillStyle = "#DDD"
@@ -477,7 +491,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     continue
                 if self.columns_width[2*column] < 0.5:
                     continue
-                x_pos, y_pos, x_size, y_size = self.xys(column, line)
+                x_pos, y_pos, _x_size, y_size = self.xys(column, line)
                 ctx.fillText(char, x_pos - char_size.width/2, y_pos + y_size/2)
     def draw_square_feedback(self, ctx):
         """Single square feedback"""
@@ -562,7 +576,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillText(room['teachers'], x_pos, y_pos)
     def draw(self, square_feedback=False):
         """Display on canvas"""
-        #start = Date().getTime()
+        start = Date().getTime()
         canvas = document.getElementById('canvas')
         self.width = canvas.offsetWidth
         self.height = canvas.offsetHeight
@@ -580,6 +594,15 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.top += HELP_LINES * self.scale
             self.left = LEFT
         ctx = canvas.getContext("2d")
+        self.left_column, self.top_line = self.get_column_row(0, self.menu.offsetHeight+1)
+        self.left_column = Math.max(self.left_column, 0) - 1
+        self.top_line = Math.max(self.top_line, 0) - 2
+        self.right_column, self.bottom_line = self.get_column_row(self.width, self.height)
+        if self.right_column == -1:
+            self.right_column = self.x_max
+        if self.bottom_line == -1:
+            self.bottom_line = len(self.lines)
+
         self.draw_map(ctx, canvas)
         ctx.font = self.scale/3 + "px sans-serif"
         self.draw_students(ctx)
@@ -591,7 +614,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if square_feedback:
             self.draw_square_feedback(ctx)
         self.draw_help(ctx)
-        #print(Date().getTime() - start)
+        self.draw_times.append(Date().getTime() - start)
+        if len(self.draw_times) > 10:
+            self.draw_times = self.draw_times[1:]
+            ctx.font = "16px sans-serif"
+            ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms', self.width - 70, 50)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
         self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
