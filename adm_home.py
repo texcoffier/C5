@@ -65,10 +65,13 @@ def display(): # pylint: disable=too-many-statements
     <tr><th>Course<br>Master<th>Logs<th>Try<th>Start<th>Stop<th>Options<th>TT logins
         <th>ZIP<th>Update<br>course source<th>Teachers</tr>
     ''']
-    def add_button(url, label, name=''):
-        text.append(
-            '<button onclick="window.location = \'' + url + '?ticket=' + TICKET
-            + '\'" class="' + name + '">'
+    def add_button(url, label, name='', new_window=False):
+        url = "'" + url + '?ticket=' + TICKET + "'"
+        if new_window:
+            action = 'window.open(' + url + ')'
+        else:
+            action = 'window.location = ' + url
+        text.append('<button onclick="' + action + '" class="' + name + '">'
             + label + '</button>')
     def add_input(url, value, name='', disable=False):
         text.append(
@@ -109,9 +112,9 @@ def display(): # pylint: disable=too-many-statements
         text.append('</b>')
         text.append('<td>')
         if course.logs:
-            add_button('/adm/course/' + course.course, 'Logs')
+            add_button('/adm/course/' + course.course, 'Logs', '', True)
         text.append('<td>')
-        add_button('=' + course.course + '.js', 'Try')
+        add_button('=' + course.course + '.js', 'Try', '', True)
         text.append('<td>')
         add_input('/adm/config/' + course.course + '/start/', course.start)
         if course.status != 'running':
