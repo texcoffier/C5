@@ -54,6 +54,8 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
                     copy_ok += 1
                 elif cell.startswith('Blur'):
                     nr_blurs += 1
+                elif cell == "checkpoint_eject":
+                    pass
                 else:
                     key_stroke += 1
                 continue
