@@ -15,10 +15,7 @@ class QEnd(Question): # pylint: disable=undefined-variable
     def tester(self):
         self.display('FINI !')
     def default_answer(self):
-        return """/*
-No 'struct', 'class' nor 'reference'
-*/
-
+        return """
 using namespace std;
 
 #include <iostream>

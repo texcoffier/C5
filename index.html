@@ -10,6 +10,11 @@
             line-height: 1.3em;
         }
 
+        P,
+        LI {
+            text-align: justify
+        }
+
         H1,
         H2 {
             clear: both
@@ -64,12 +69,30 @@
             font-size: 90%;
             overflow: hidden;
         }
-        .compilateur { background: #DFF }
-        .message { background: #DFD }
-        .cours { background: #BFB }
-        .js { background: #DDF }
-        .serveur { background: #FDD }
-        .executable { background: #FEE }
+
+        .compilateur {
+            background: #DFF
+        }
+
+        .message {
+            background: #DFD
+        }
+
+        .cours {
+            background: #BFB
+        }
+
+        .js {
+            background: #DDF
+        }
+
+        .serveur {
+            background: #FDD
+        }
+
+        .executable {
+            background: #FEE
+        }
     </style>
 </head>
 
@@ -165,15 +188,15 @@
     <p>
         Un sujet complet est une liste de questions gérées
         par un unique compilateur.
-        Par exemple :
+        La dernier ligne du fichier définissant les questions est par exemple :
     </p>
     <pre>Compile_Python([Q0(), Q1(), Q2(), Q3(), QEnd()])</pre>
 
     <h3>Attributs</h3>
     <ul>
         <li> <tt>self.worker.execution_result</tt> résultat de l'exécution
-            une fois toutes les lectures claviers faites</li>
-        <li> <tt>self.worker.source</tt> la réponse de l'étudiant</li>
+            une fois toutes les lectures claviers faites.</li>
+        <li> <tt>self.worker.source</tt> la réponse de l'étudiant.</li>
         <li> <tt>self.all_tests_are_fine</tt> vrai au départ puis mis à jour automatiquement
             par les fonctions utilitaires.
         </li>
@@ -196,8 +219,19 @@
         </li>
         <li> <tt>self.teacher()</tt> donne le nom de l'enseignant qui surveille l'étudiant.</li>
         <li> <tt>batiment, coord_x, coord_y = self.placement()</tt>
-            permet de donner un sujet différent aux étudiants.
-            Si deux sujets, prendre <tt>(coord_x, coord_y) % 2</tt>
+            permet de donner un sujet différent aux étudiants quand
+            ils sont assis l'un à coté de l'autre :
+            <pre>def question(self):
+    return "Vous avez le sujet " + self.sujet
+def tester(self):
+    if self.sujet == 0:
+        ...
+    else:
+        ...
+def default_answer(self):
+    batiment, coord_x, coord_y = self.placement()
+    self.sujet = (coord_x, coord_y) % 2 # Seulement 2 sujets
+    return ""</pre>
         <li>
             <pre>self.set_options(
     {
@@ -410,10 +444,44 @@ git clone https://github.com/texcoffier/C5.git
 cd C5
 make</pre>
     <p>
-        Si tout s'est bien passé, une page web s'ouvre sur une copie
-        de cette page qui est sur votre machine.
+        Si tout s'est bien passé, une page web s'ouvre
+        sur le cours javascript.
         L'interface d'administration est <tt>.../adm/home</tt>
     </p>
+    <h2>Configuration et gestion C5</h2>
+    <p>
+        La configuration de C5 est un script exécutable, vous pouvez en créer
+        autant que vous voulez.
+        Il est conseillé de faire une configuration pour le développement local
+        et une configuration pour la production.
+        <b>Dans tous les cas vous lancez les commandes sur votre machine de développement,
+            elle seront éventuellement exécutées via SSH sur le serveur de production.</b>
+        On va supposer que vous appeliez votre configuration <tt>c5</tt>,
+        voici ce que vous devez faire :
+    </p>
+    <ul>
+        <li> <tt>cp 127 c5 ; chmod a+x c5</tt> faites une copie de la configuration de base.</li>
+        <li> Vous éditez le script <tt>c5</tt> pour mettre les bonnes valeurs.
+            Pour avoir un peu d'aide, lancez simplement : <tt>./c5</tt>
+        </li>
+        <li> <tt>./c5 start</tt> pour lancer les serveurs locaux ou distants,
+            les logs sont dans <tt>http_server.log</tt>, <tt>compile_server.log</tt>
+            et <tt>infos_server.log</tt> sur la machine qui fait tourner les serveurs.</li>
+        <li> <tt>./c5 open js</tt> pour ouvrir <tt>course_js</tt> dans le navigateur web.</li>
+        <li> <tt>./c5 compile</tt> pour recompiler tout ce qui est nécessaire
+            quand vous avez modifié un cours.
+            Regardez bien s'il y a des erreurs de traduction.</li>
+    </ul>
+    <p>
+        Plus rarement utilisé :
+    </p>
+    <ul>
+        <li> <tt>./c5 os</tt> installation paquets nécessaires sur la machine.
+        <li> <tt>./c5 SSL-LE</tt> génération du certificat pour NGINX.
+            Cela ne configure pas NGINX.</li>
+        <li> <tt>./c5 c5 ; ./c5 restart</tt> Mise à jour d'une nouvelle version à partir de GitHub</li>
+    </ul>
+
     <h3>Configuration NGINX</h3>
     <p>
         Il faut remplacer /WebSocket/, 4201, 4202 par les bonnes valeurs.
@@ -457,12 +525,12 @@ server {
     <table>
         <tr>
             <td>127
-            <td>Administre C5 sur la machine locale (même paramètres que utilities.py)
+            <td>Administre C5 sur la machine locale (même paramètres que utilities.py).
         </tr>
         <tr>
             <td>BUILDINGS/Nautibus<br>
                 BUILDINGS/empty
-            <td> Les plans des bâtiments
+            <td> Les plans des bâtiments.
         </tr>
         <tr>
             <td>Makefile
@@ -470,7 +538,7 @@ server {
         </tr>
         <tr>
             <td>README.rst
-            <td>Page d'accueil pour GitHub
+            <td>Page d'accueil pour GitHub.
         </tr>
         <tr class="js">
             <td>adm_course.py
@@ -482,11 +550,11 @@ server {
         </tr>
         <tr>
             <td>c5.svg
-            <td>Logo
+            <td>Logo.
         </tr>
         <tr class="js">
             <td>ccccc.css<br>ccccc.py
-            <td>Interface d'étudiant pour travailler
+            <td>Interface d'étudiant pour travailler.
         </tr>
         <tr class="js">
             <td>checkpoint.py
@@ -494,7 +562,7 @@ server {
         </tr>
         <tr class="js">
             <td>compatibility.py
-            <td>Utilitaires pour ajouter des fonctions manquantes à JavaScript
+            <td>Utilitaires pour ajouter des fonctions manquantes à JavaScript.
         </tr>
         <tr class="compilateur">
             <td>compile.py
@@ -506,11 +574,11 @@ server {
         </tr>
         <tr class="compilateur">
             <td>compile_js.py
-            <td>Interpréteur JavaScript
+            <td>Interpréteur JavaScript.
         </tr>
         <tr class="compilateur">
             <td>compile_python.py
-            <td>Interpréteur Python (brython)
+            <td>Interpréteur Python (brython).
         </tr>
         <tr class="compilateur">
             <td>compile_remote.py
@@ -528,7 +596,7 @@ server {
         </tr>
         <tr class="cours">
             <td>course_js.py
-            <td>Mini cours de JavaScript
+            <td>Mini cours de JavaScript.
         </tr>
         <tr class="message">
             <td>course_js_checkpoint.py
@@ -557,11 +625,11 @@ server {
         </tr>
         <tr class="cours">
             <td>course_python.py
-            <td>Un mini cours Python
+            <td>Un mini cours Python.
         </tr>
         <tr class="cours">
             <td>course_remote.py
-            <td>Exemple d'utilisation de compile_remote
+            <td>Exemple d'utilisation de compile_remote.
         </tr>
         <tr class="cours">
             <td>course_remote_errors.py
@@ -569,7 +637,7 @@ server {
         </tr>
         <tr>
             <td>favicon.ico
-            <td>L'icone des page web, calculée à partir de <tt>c5.svg</tt>
+            <td>L'icone des page web, calculée à partir de <tt>c5.svg</tt>.
         </tr>
         <tr class="serveur">
             <td>http_server.py
@@ -578,11 +646,11 @@ server {
         </tr>
         <tr>
             <td>index.html
-            <td>Cette page d'explication
+            <td>Cette page d'explication.
         </tr>
         <tr class="executable">
             <td>infos_server.py
-            <td>Un filtre (stdin/stdout) calculant le nom et prénom à partir du login
+            <td>Un filtre (stdin/stdout) calculant le nom et prénom à partir du login.
         </tr>
         <tr class="executable">
             <td>load_testing.py
@@ -595,12 +663,12 @@ server {
         </tr>
         <tr>
             <td>screen-admin.png<br>
-            screen-checkpoint.png<br>
-            screen-course.png<br>
-            screen-python.png<br>
-            screen-src.png<br>
-            screen-student.png<br>
-            screen-teacher-list.png
+                screen-checkpoint.png<br>
+                screen-course.png<br>
+                screen-python.png<br>
+                screen-src.png<br>
+                screen-student.png<br>
+                screen-teacher-list.png
             <td>Copies d'écran pour cette page.
         </tr>
         <tr class="executable">
@@ -611,17 +679,72 @@ server {
             <td>utilities.py
             <td>Classes et fonctions nécessaires pour les serveurs,
                 mais c'est aussi le script d'administration du serveur.
-                Run it without argument will display:
+                S'il est lancé sans arguments, cela affiche :
                 <ul>
-                    <li> The usage list </li>
-                    <li> The default configuration (from environment variables)</li>
-                    <li> The running servers</li>
+                    <li> Les explications pour l'utiliser.</li>
+                    <li> La configuration par défaut extraite des variables d'environnement.</li>
+                    <li> Les processus serveur en train de tourner.</li>
                 </ul>
-                The script is called by <tt>127</tt>,
-                make your own copy with your local configuration
-                and run it to manage your C5 server.
+                Ce script est appelé par le script <tt>127</tt>.
+                faites une copie de <tt>127</tt> avec votre propre configuration
+                et utiliser-la pour gérer vos serveurs C5.
         </tr>
     </table>
+
+    <h3>Organisation des fichiers générés</h3>
+    <p>
+        Les fichiers de configurations se terminent tous par <tt>.cf</tt>
+        et contiennent une expression Python :
+    </p>
+    <ul>
+        <li> <tt>c5.cf</tt> configuration globales de C5
+            <ul>
+                <li> La liste des administrateurs.
+                <li> La durée de vie des tickets,
+                <li> La liste des adresses IP par salle de TP
+                <li> La liste des ordinateurs en panne.
+            </ul>
+        </li>
+        <li> <tt>course_COMPILATEUR_COURSE.cf</tt> est la configuration d'un cours
+            <ul>
+                <li> Dates de début et fin.</li>
+                <li> Listes des étudiants avec un tiers-temps.</li>
+                <li> Copier/coller autorisé ou non.</li>
+                <li> Avec salle d'attente ou non.</li>
+                <li> Liste des surveillants.</li>
+                <li> Liste des étudiants en salle d'attente et ceux placés.</li>
+            </ul>
+        </li>
+    </ul>
+    <p>
+        Les fichiers de logs se terminent tous par <tt>.log</tt> :
+    </p>
+    <ul>
+        <li> <tt>http_server.log</tt> toutes les requêtes web reçues.</li>
+        <li> <tt>compile_server.log</tt> toutes les demandes de compilation reçues.</li>
+        <li> <tt>infos_server.log</tt> toutes les requêtes nom/prénom faites.</li>
+        <li> <tt>tests.log</tt> Résumé des tests de régression.</li>
+        <li> <tt>course_COMPILATEUR_COURSE/LOGIN/http_server.log</tt> toutes les actions de l'étudiant.<br>
+            <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
+        </li>
+        <li> <tt>course_COMPILATEUR_COURSE/LOGIN/compile_server.log</tt><br>
+            toutes les compilations/exécutions faites par l'étudiant.</li>
+    </ul>
+    <p>
+        Divers fichiers générés à l'installation ou à l'utilisation :
+    </p>
+    <ul>
+        <li> <tt>TICKETS</tt> les tickets de session avec l'IP et le navigateur web.</li>
+        <li> <tt>http_server.pid</tt>, <tt>compile_server.pid</tt> PID des serveurs locaux.</li>
+        <li> <tt>SSL</tt> certificat généré pour le serveur web local.</li>
+        <li> <tt>RapydScript</tt> transpiler Python→JavaScript.</li>
+        <li> <tt>brython</tt> interpréteur Python en JavaScript.</li>
+        <li> <tt>xxx-JSCPP.js</tt> compilateur C++ en JavaScript.</li>
+        <li> <tt>xxx-highlight.js</tt> coloriage du code source.</li>
+        <li> <tt>sandbox</tt> librairie pour filtrer les appels système.</li>
+        <li> <tt>node_modules</tt>, <tt>package-lock.json</tt> généré par <tt>npm</tt></li>
+        <li> <tt>geckodriver.log</tt> généré par Selenium (tests de régression).</li>
+    </ul>
 
 
     <h3>Tests de régression</h3>
@@ -643,11 +766,17 @@ server {
     </p>
     <h2>TODO</h2>
     <p>
-        Fonctionnalités manquantes:
+        Fonctionnalités manquantes :
     </p>
     <ul>
         <li> Ménage fichiers log. </li>
         <li> Fonctions graphiques pour que les étudiants puissent faire des dessins.</li>
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
+        <li> Destruction d'une session.</li>
+        <li> Indication des retours à la ligne (wrap) dans la zone d'édition.</li>
+        <li> Affichage d'un corrigé.</li>
+        <li> Affichage des anciennes réponses de l'étudiant sur le plan du bâtiment.</li>
+        <li> Générer automatiquement la liste finale des questions.</li>
+        <li> Mettre les courses dans un répertoire séparé.</li>
     </ul>
 </body>
