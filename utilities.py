@@ -230,6 +230,8 @@ class Config:
         if os.path.exists('c5.cf'):
             with open('c5.cf', 'r') as file:
                 self.config.update(json.loads(file.read()))
+        else:
+            self.save()
         self.update()
     def update(self):
         """Update configuration attributes"""
