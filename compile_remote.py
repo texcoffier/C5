@@ -106,7 +106,6 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
-        print('sock', '__SOCK__', self.socket, 'src', len(source or ''))
         if not source:
             self.post('compiler', 'Rien à compiler')
             self.post('state', "stopped")
@@ -140,7 +139,6 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
             return eval("function _() {}") # pylint: disable=eval-used
     def run_executor(self):
         """Execute the compiled code"""
-        print('execute', self.executable)
         if self.executable is True:
             self.execution_returns = ''
             return

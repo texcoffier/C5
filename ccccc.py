@@ -235,7 +235,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.clear_highlight_errors()
             self.unlock_worker()
             self.state = 'started'
-            print("send to compiler")
             self.worker.postMessage(self.source) # Start compile/execute/test
         seconds = int(millisecs() / 1000)
         if self.seconds != seconds:
