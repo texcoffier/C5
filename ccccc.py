@@ -1,4 +1,4 @@
-# pylint: disable=invalid-name,too-many-arguments,too-many-instance-attributes,self-assigning-variable
+# pylint: disable=invalid-name,too-many-arguments,too-many-instance-attributes,self-assigning-variable,len-as-condition
 
 """
 To simplify the class contains the code for the GUI and the worker.
@@ -110,7 +110,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     popup_done = False
     last_save = ''
     compile_now = False
-    need_editor_cleanup = False
+    editor_lines = []
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -228,16 +228,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Send a new job if free and update the screen"""
         if self.state == 'started':
             return # Compiler is running
-        source = self.editor.innerText
         if (self.options['automatic_compilation'] or self.compile_now
-           ) and source != self.old_source:
+           ) and self.source != self.old_source:
             self.compile_now = False
-            self.old_source = source # Do not recompile the same thing
+            self.old_source = self.source # Do not recompile the same thing
             self.clear_highlight_errors()
             self.unlock_worker()
             self.state = 'started'
             print("send to compiler")
-            self.worker.postMessage(source) # Start compile/execute/test
+            self.worker.postMessage(self.source) # Start compile/execute/test
         seconds = int(millisecs() / 1000)
         if self.seconds != seconds:
             self.seconds = seconds
@@ -306,29 +305,42 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.overlay.removeChild(self.overlay.lastChild)
     def coloring(self):
         """Coloring of the text editor with an overlay."""
-        if self.need_editor_cleanup:
-            # The Enter key insert DIV in place of BR when inserting at the beginning
-            self.need_editor_cleanup = False
-            children = [i for i in self.editor.childNodes] # pylint: disable=unnecessary-comprehension
-            for child in children:
-                if child.tagName == 'DIV':
-                    # Must be removed and the children must go up
-                    element = child.nextSibling
-                    self.editor.removeChild(child)
-                    need_br = len(child.childNodes) == 1 and not child.firstChild.tagName
-                    for kid in child.childNodes:
-                        if element:
-                            self.editor.insertBefore(kid, element)
-                        else:
-                            self.editor.appendChild(kid)
-                    if need_br:
-                        # FireFox case
-                        kid = document.createElement('BR')
-                        if element:
-                            self.editor.insertBefore(kid, element)
-                        else:
-                            self.editor.appendChild(kid)
-        self.overlay.innerHTML = html(self.editor.innerText)
+        def clear_text(state):
+            if state.node.tagName == 'DIV':
+                if len(state.text) and state.text[-1] != '\n':
+                    state.editor_lines.append(state.last)
+                    state.text.append('\n')
+                    state.last = None
+                for state.node in state.node.childNodes:
+                    clear_text(state)
+                if len(state.text) and state.text[-1] != '\n':
+                    state.editor_lines.append(state.last)
+                    state.text.append('\n')
+                    state.last = None
+            elif state.node.tagName == 'BR':
+                if state.last:
+                    state.editor_lines.append(state.last)
+                else:
+                    state.editor_lines.append(state.node)
+                state.text.append('\n')
+                state.last = None
+            elif state.node.tagName == 'SPAN':
+                state.text.append(state.node.innerText)
+            else:
+                state.text.append(state.node.nodeValue)
+                state.last = state.node
+        self.editor_lines = []
+        state = {
+            'node': self.editor,
+            'text': [],
+            'last': None,
+            'editor_lines': self.editor_lines
+        }
+        clear_text(state)
+        if state['last']:
+            self.editor_lines.append(state['last'])
+        self.source = ''.join(state['text'])
+        self.overlay.innerHTML = html(self.source)
         self.overlay.className = 'overlay language-' + self.options['language']
         hljs.highlightElement(self.overlay)
         for line_char in self.highlight_errors:
@@ -341,7 +353,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Append event to record to 'record_to_send'"""
         time = Math.floor(Date().getTime()/1000)
         if time != self.record_last_time:
-            if len(self.record_to_send): # pylint: disable=len-as-condition
+            if len(self.record_to_send):
                 self.record_to_send.append(time - self.record_last_time)
             else:
                 self.record_to_send.append(time)
@@ -361,29 +373,32 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
         box = document.createRange()
-        def insert(element, class_name):
+        def insert(element, class_name, move_right=0):
             """Set the element to the same place than the range"""
             rect = box.getBoundingClientRect()
+            if move_right:
+                move_right = rect.width
             element.style.top = (rect.top - self.editor.offsetTop) + 'px'
             element.style.height = rect.height + 'px'
-            element.style.left = 'calc(' + (rect.left - self.editor.offsetLeft) + 'px - var(--pad))'
+            element.style.left = 'calc(' + (
+                rect.left - self.editor.offsetLeft + move_right) + 'px - var(--pad))'
             element.style.width = rect.width + 'px'
             element.className = class_name
             self.overlay.appendChild(element)
-
-        br = self.editor.children[line_nr - 1]
-        if br.previousSibling and br.previousSibling.tagName != 'BR':
-            line = br.previousSibling
-        else:
-            line = br # empty line
+        line = self.editor_lines[line_nr - 1]
         box.selectNode(line)
         error = document.createElement('DIV')
         insert(error, 'ERROR ' + what)
         try:
+            if char_nr >= (line.nodeValue or line.innerText).length:
+                char_nr -= 1
+                move_right = 1
+            else:
+                move_right = 0
             box.setStart(line, char_nr-1)
             box.setEnd(line, char_nr)
             char = document.createElement('DIV')
-            insert(char, what + ' char ERROR')
+            insert(char, what + ' char ERROR', move_right)
         except: # pylint: disable=bare-except
             pass
 
@@ -399,7 +414,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record('Copy')
             return
         text = window.getSelection().toString()
-        if text not in self.editor.innerText and text not in self.question.innerText:
+        if text not in self.source and text not in self.question.innerText:
             self.record('CopyRejected')
             popup_message(self.options['forbiden'])
             event.preventDefault(True)
@@ -424,7 +439,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record('Paste')
             self.insert_text(event, text)
             return
-        if text in self.editor.innerText or text in self.question.innerText or text == self.copied:
+        if text in self.source or text in self.question.innerText or text == self.copied:
             self.record('PasteOk')
             self.insert_text(event, text)
             return # auto paste allowed
@@ -455,11 +470,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 document.getElementById('automatic_compilation').checked = False
                 self.options['automatic_compilation'] = True
-
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
             self.oldScrollTop = self.editor.scrollTop
-            self.need_editor_cleanup = True
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
         self.overlay_hide()
@@ -510,8 +523,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def save(self):
         """Save the editor content"""
-        source = self.editor.innerText.strip()
-        if source != self.last_save:
+        if self.source != self.last_save:
             self.save_button.style.transition = ''
             self.save_button.style.transform = 'scale(8)'
             self.save_button.style.opacity = 0.1
@@ -520,8 +532,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.save_button.style.transform = 'scale(1)'
                 self.save_button.style.opacity = 1
             setTimeout(stop, 100)
-            self.record(['save', self.current_question, source], send_now=True)
-            self.last_save = source
+            self.record(['save', self.current_question, self.source], send_now=True)
+            self.last_save = self.source
 
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
         """Interprete messages from the worker: update self.messages"""
@@ -585,8 +597,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self[what].innerHTML = value # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question
-            # Many \n at the bug (browser problem when inserting a final \n)
-            message = value + '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
+            message = value + '\n\n\n'
             self.set_editor_content(message)
         elif what == 'default':
             self.question_original[value[0]] = value[1]
