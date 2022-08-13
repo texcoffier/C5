@@ -110,6 +110,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.test_date_change,
                 self.test_master_change,
                 self.test_ticket_ttl,
+                self.test_editor,
                 ):
             print('*'*99)
             print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -153,12 +154,14 @@ class Tests: # pylint: disable=too-many-public-methods
     def select_all(self, path='.editor'):
         """Select the full editor content"""
         self.move_cursor(path, 10, 10)
+        self.control('a')
+        self.control('c')
+    def control(self, char):
+        """Send a control character"""
         action = selenium.webdriver.ActionChains(self.driver)
         action.key_down(Keys.CONTROL)
-        action.key_down('a')
-        action.key_up('a')
-        action.key_down('c')
-        action.key_up('c')
+        action.key_down(char)
+        action.key_up(char)
         action.key_up(Keys.CONTROL)
         action.perform()
     def goto(self, url):
@@ -228,6 +231,7 @@ class Tests: # pylint: disable=too-many-public-methods
         action.move_to_element_with_offset(element, relative_x, relative_y)
         action.click()
         action.perform()
+        return element
     def test_popup(self):
         """Page display"""
         self.goto('=course_remote.js')
@@ -340,12 +344,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§§')})
-        action = selenium.webdriver.ActionChains(self.driver)
-        action.key_down(Keys.CONTROL)
-        action.key_down('s')
-        action.key_up('s')
-        action.key_up(Keys.CONTROL)
-        action.perform()
+        self.control('s')
         self.load_page('=course_js.js')
         self.check('.editor', {'innerHTML': Contains('§§')})
         self.move_cursor('.editor')
@@ -358,14 +357,8 @@ class Tests: # pylint: disable=too-many-public-methods
         """Test a working copy paste"""
         self.load_page('=course_js.js')
         self.select_all()
-        action = selenium.webdriver.ActionChains(self.driver)
-        action.key_down(Keys.CONTROL)
-        action.key_down('v')
-        action.key_up('v')
-        action.key_down('v')
-        action.key_up('v')
-        action.key_up(Keys.CONTROL)
-        action.perform()
+        self.control('v')
+        self.control('v')
         self.check('.executor', {'innerText': Contains('court\nJe')})
     def test_question_index(self):
         """Test question index"""
@@ -462,6 +455,35 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.more', {'innerText': Contains('tickets deleted')})
             assert not os.path.exists(to_delete)
             os.unlink(to_keep)
+    def test_editor(self):
+        """Test editor line insert"""
+        self.load_page('=course_js.js')
+        self.check('.index STYLE + DIV').click() # Returns to the first question
+        self.check('.reset_button').click() # Returns to the original text
+        self.check_alert(accept=True)
+
+        self.move_cursor('.editor').send_keys(Keys.ENTER)
+        self.check('.overlay', {'innerHTML': Contains('\n\n<span class="hljs-comment">// Lisez')})
+        self.control('z')
+        self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez')})
+        self.check('.editor').send_keys(Keys.ARROW_DOWN)
+        self.check('.editor').send_keys(Keys.ENTER)
+        self.check('.overlay', {'innerHTML': Contains('\n\n<span class="hljs-comment">// Lisez')})
+        self.control('z')
+        self.check('.editor').send_keys(Keys.ARROW_RIGHT)
+        self.check('.editor').send_keys(Keys.ENTER)
+        self.check('.overlay', {'innerHTML': Contains('\n/\n/ <span class="hljs-title class_">Lisez')})
+        self.control('z')
+        self.check('.editor').send_keys(Keys.END)
+        self.check('.editor').send_keys(Keys.ENTER)
+        self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauche.</span>\n\n')})
+        self.control('z')
+        self.control(Keys.END)
+        self.check('.editor').send_keys('/')
+        self.check('.editor').send_keys(Keys.ENTER)
+        self.check('.overlay', {'innerHTML': Contains(');\n/')})
+        self.check('.editor').send_keys('/')
+        self.check('.overlay', {'innerHTML': Contains(');\n/\n/')})
 
 IN_DOCKER = not os.getenv('DISPLAY')
 
