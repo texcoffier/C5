@@ -346,6 +346,25 @@ class CCCCC: # pylint: disable=too-many-public-methods
             what = self.highlight_errors[line_char]
             line_nr, char_nr = line_char.split(':')
             self.add_highlight_errors(line_nr, char_nr, what)
+
+        meter = document.createRange()
+        line_height = 0
+        for line in self.editor_lines:
+            meter.selectNodeContents(line)
+            rect = meter.getBoundingClientRect()
+            if line_height == 0:
+                # Assume the first line is not wrapped
+                line_height = rect.height * 1.1
+                continue
+            if rect.height < line_height:
+                continue
+            marker = document.createElement('DIV')
+            marker.className = 'wrapped'
+            marker.style.left = rect.left - self.overlay.offsetLeft + 'px'
+            marker.style.top = rect.top + line_height + 'px'
+            marker.style.width = rect.width + 'px'
+            marker.style.height = rect.height - line_height + 'px'
+            self.overlay.appendChild(marker)
         self.overlay_show()
 
     def record(self, data, send_now=False):  # pylint: disable=no-self-use

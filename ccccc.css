@@ -44,6 +44,12 @@ DIV.overlay {
     border: 2px solid #000
 }
 
+.wrapped {
+    position: absolute;
+    background: #EEE;
+    opacity: 0.5;
+}
+
 BODY>DIV>DIV {
     padding-left: var(--pad);
     padding-right: var(--pad);
