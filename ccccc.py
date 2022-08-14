@@ -269,13 +269,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     delta = days + opts['time_days']
                 timer.innerHTML = message + '<br>' + delta
 
-    def compilation_toggle(self):
+    def compilation_toggle(self, element):
         """Toggle the automatic compilation flag"""
         if self.options['automatic_compilation']:
             # The False value is for course deactivated automatic compilation
             self.options['automatic_compilation'] = None
+            element.className = 'unchecked'
         else:
             self.options['automatic_compilation'] = True
+            element.className = 'checked'
 
     def compilation_run(self):
         """Run one compilation"""
@@ -483,10 +485,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.options['automatic_compilation'] == False: # pylint: disable=singleton-comparison
                 self.compilation_run()
             elif self.options['automatic_compilation']:
-                document.getElementById('automatic_compilation').checked = True
+                document.getElementById('automatic_compilation').className = 'unchecked'
                 self.options['automatic_compilation'] = None
             else:
-                document.getElementById('automatic_compilation').checked = False
+                document.getElementById('automatic_compilation').className = 'checked'
                 self.options['automatic_compilation'] = True
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior

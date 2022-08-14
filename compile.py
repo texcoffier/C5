@@ -49,7 +49,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         'question_title': 'Question',
         'tester_title': 'Les buts que vous devez atteindre',
         'compiler_title': 'Compilation',
-        'compiler_title_toggle': 'Désactivée (F9)',
+        'compiler_title_toggle': 'Automatique (F9)',
         'compiler_title_button': 'Maintenant ! (F9)',
         'executor_title': 'Exécution',
         'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
@@ -232,14 +232,15 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         if self.options['automatic_compilation']:
-            more = ('<input type="checkbox" id="automatic_compilation" '
-                    + ' onchange="ccccc.compilation_toggle()"><span>'
-                    + self.options['compiler_title_toggle'] + '</span>')
+            more = ('<label type="checkbox" id="automatic_compilation" '
+                    + ' onclick="ccccc.compilation_toggle(this)"'
+                    + ' class="checked">'
+                    + self.options['compiler_title_toggle'] + '</label>')
         else:
-            more = ('<div style="font-size: 80%" onclick="ccccc.compilation_run()">'
-                    + self.options['compiler_title_button'] + '</div>')
-        return ('<h2>' + self.options['compiler_title'] + ' <label>'
-                + more + '</label></h2>')
+            more = ('<label style="font-size: 80%" onclick="ccccc.compilation_run()">'
+                    + self.options['compiler_title_button'] + '</label>')
+        return ('<h2>' + self.options['compiler_title'] + ' '
+                + more + '</h2>')
     def time_initial_content(self):
         """The message terminate the job. It indicates the worker time"""
         more = ' ' + self.current_question_max

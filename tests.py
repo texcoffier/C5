@@ -218,7 +218,7 @@ class Tests: # pylint: disable=too-many-public-methods
         """Load page and clear popup"""
         self.goto(url)
         self.check_alert(required=False, nbr=2)
-        self.check('.compiler H2').click() # Hide popup
+        self.check('.question H2').click() # Hide popup
     def move_to_element(self, element):
         """Make the element visible on screen in order to click on it"""
         self.driver.execute_script("arguments[0].scrollIntoView();", element)
@@ -312,12 +312,12 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.executor', {'innerHTML': Contains('Hello')})
 
         # Disable compilation by clicking
-        self.check('.compiler LABEL SPAN').click()
+        self.check('.compiler LABEL').click()
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
         time.sleep(0.3) # Wait a recompile that must not happen
         self.check('.compiler', {'innerHTML': Contains('sans')})
-        self.check('.compiler LABEL SPAN').click()
+        self.check('.compiler LABEL').click()
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
     def test_reset_button(self):
         """Test reset button"""
