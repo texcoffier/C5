@@ -135,7 +135,8 @@ H2 {
 }
 
 .index>DIV.current {
-    background: linear-gradient(to right, #0F0F, #0002)
+    background: #000;
+    color: #FFF;
 }
 
 .index>DIV.i {
@@ -147,6 +148,8 @@ H2 {
     padding: 0.2em;
     transition: opacity 0.5s, visibility 0.5s;
     visibility: hidden;
+    padding-top: 0px;
+    margin-top: -1px;
 }
 
 div:hover>.i {
