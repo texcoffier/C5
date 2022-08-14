@@ -30,8 +30,10 @@ def html(txt):
 def display(): # pylint: disable=too-many-statements
     """Display adm home page"""
     update_url()
-    text = ['''
-    <title>C5 Administration</title>
+    text = [
+        '<title>C5 Administration</title>',
+        MORE,
+        '''
     <h1>C5 Administration</h1>
     <style>
         TABLE { border-spacing: 0px; border-collapse: collapse ; }
@@ -47,8 +49,9 @@ def display(): # pylint: disable=too-many-statements
         .done { background: #FDD }
         .running { background: #DFD }
         .running_tt { background: #FEB }
-        .more { font-size: 150% ; border: 1px solid black ; background: #FFE;
-                padding: 1em ; margin: 1em
+        .more { border: 1px solid black ; background: #FFE;
+                padding: 0.3em ; margin: 0.1em ;
+                float: right;
               }
         TD INPUT[type=submit], TD INPUT[type=file] { margin: 0px }
         BODY > TEXTAREA { width: 100%; height: 10em }
@@ -165,8 +168,6 @@ def display(): # pylint: disable=too-many-statements
     for room in CONFIG.ips_per_room:
         content.append(room + ' ' + CONFIG.ips_per_room[room])
     add_textarea('/adm/c5/ips_per_room/', '\n'.join(content))
-    text.append('<hr>')
-    text.append(MORE)
     document.body.innerHTML = text.join('') # pylint: disable=no-member
 
 
