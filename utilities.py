@@ -94,6 +94,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'teachers': 'nobody',
                        'copy_paste': '0',
                        'checkpoint': '0',
+                       'messages': [],
                        # For each student login :
                        #   * True is the examination is possible.
                        #   * the teacher who checkpointed  (or '')
@@ -130,6 +131,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.teachers = set(re.split('[ \n\r\t]+', self.config['teachers']))
         self.checkpoint = int(self.config['checkpoint'])
         self.active_teacher_room = self.config['active_teacher_room']
+        self.messages = self.config['messages']
     def record(self):
         """Record option on disk"""
         with open(self.course + '.cf', 'w') as file:

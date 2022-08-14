@@ -12,9 +12,13 @@ try:
     STUDENTS = STUDENTS
     BUILDINGS = BUILDINGS
     CONFIG = CONFIG
+    MESSAGES = MESSAGES
     document = document
     window = window
     confirm = confirm
+    prompt = prompt
+    encodeURIComponent = encodeURIComponent
+    JSON = JSON
     Math = Math
     bind = bind
     Date = Date
@@ -35,6 +39,7 @@ MENU_LINE = 0.6
 TOP_INACTIVE = 'linear-gradient(to bottom, #FFFF, #FFFE, #FFFE, #FFF0)'
 TOP_ACTIVE = 'linear-gradient(to bottom, #8F8F, #8F87)'
 ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
+MESSAGES_TO_HIDE = {}
 
 def seconds():
     """Number of second as Unix"""
@@ -46,6 +51,14 @@ def mouse_enter():
 def mouse_leave():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = False
+def html(txt):
+    """Escape < > &"""
+    # pylint: disable=undefined-variable
+    return txt.replace(RegExp('&', 'g'), '&amp;'
+                      ).replace(RegExp('<', 'g'), '&lt;').replace(RegExp('>', 'g'), '&gt;')
+def two_digit(number):
+    """ 6 → 06 """
+    return ('0' + str(int(number)))[-2:]
 
 mouse_enter()
 
@@ -820,6 +833,26 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                         continue
                 content.append(student.box())
         document.getElementById('waiting').innerHTML = ' '.join(content)
+    def update_messages(self):
+        """Update HTML with the messages"""
+        content = []
+        for i, infos in enumerate(MESSAGES):
+            if i in MESSAGES_TO_HIDE:
+                continue
+            login, date, message = infos
+            js_date = Date()
+            js_date.setTime(date*1000)
+            content.append(
+                "<p>"
+                + '<button onclick="MESSAGES_TO_HIDE['
+                + i + ']=1;ROOM.update_messages()">×</button> '
+                + js_date.getFullYear()
+                + '-' + two_digit(js_date.getMonth())
+                + '-' + two_digit(js_date.getDate())
+                + ' ' + two_digit(js_date.getHours())
+                + ':' + two_digit(js_date.getMinutes())
+                + ' ' + login + ' <b>' + html(message) + '</b>')
+        document.getElementById('messages').innerHTML = ' '.join(content)
     def start_move_student(self, event):
         """Move student bloc"""
         login = event.currentTarget.getAttribute('login')
@@ -948,6 +981,14 @@ def create_page(building_name):
              }
         #spy BUTTON { font-size: 150%; }
         #spy .source {  white-space: pre; }
+        .send_alert { font-size: 200% ; display: inline-block;
+                      transition: transform 0.5s; cursor: pointer }
+        .send_alert:hover { transform: scale(2, 2) }
+        #messages { position: fixed ; right: 0px ; bottom: 0px ;
+            max-width: 40vw;
+            background: #F88; opacity: 0.8;
+            padding-left: 0.5em;
+            }
         </style>
         <div id="top"><span class="reload" onclick="reload_page()">⟳</span>''',
 
@@ -959,8 +1000,10 @@ def create_page(building_name):
         '''</select>
         <label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()" type="checkbox"
                >Seulement<br>mes salles</label>
+        <span class="send_alert" onclick="send_alert()">🚨</span>
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
+        <div id="messages"></div>
         </div>
         <canvas
             id="canvas"
@@ -971,6 +1014,12 @@ def create_page(building_name):
         <div id="spy"></div>
         ''']
     document.body.innerHTML = ''.join(content)
+
+def send_alert():
+    """Sent an on map alert message to all teachers"""
+    message = prompt("Message à afficher sur les plans de tous les surveillants :")
+    if message:
+        record('/checkpoint/MESSAGE/' + COURSE + '/' + encodeURIComponent(message))
 
 def update_page():
     """Update students"""
@@ -987,6 +1036,7 @@ def update_page():
     ROOM.draw()
     ROOM.compute_rooms_on_screen()
     ROOM.update_waiting_room()
+    ROOM.update_messages()
 
 def reload_page():
     """Update data now"""

@@ -195,7 +195,10 @@ async def adm_course(request):
 
     return web.Response(
         body=session.header() + f"""
-            <script>STUDENTS = {json.dumps(students)}; COURSE = '{course.course}';</script>
+            <script>
+            STUDENTS = {json.dumps(students)};
+            COURSE = '{course.course}';
+            </script>
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """,
         content_type='text/html',
@@ -504,6 +507,7 @@ async def checkpoint(request):
         <script>
         COURSE = {json.dumps(course.course)};
         STUDENTS = {json.dumps(await course.get_students())};
+        MESSAGES = {json.dumps(course.messages)};
         </script>
         <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
         <script src="/checkpoint.js?ticket={session.ticket}"></script>
@@ -520,6 +524,7 @@ async def update_browser_data(course):
     return web.Response(
         body=f'''
         STUDENTS = {json.dumps(await course.get_students())};
+        MESSAGES = {json.dumps(course.messages)};
         CONFIG.computers = {json.dumps(utilities.CONFIG.computers)};
         ''',
         content_type='application/javascript',
@@ -657,6 +662,18 @@ async def checkpoint_spy(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+async def checkpoint_message(request):
+    """The last answer from the student"""
+    session, course = await get_teacher_login_and_course(request)
+    course.messages.append([session.login, int(time.time()), request.match_info['message']])
+    course.set_parameter('messages', course.messages)
+    return web.Response(
+        body=f'''MESSAGES.push({json.dumps(course.messages[-1])});ROOM.update_messages()''',
+        content_type='application/javascript',
+        charset='utf-8',
+        headers={'Cache-Control': 'no-cache'}
+    )
+
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
@@ -672,6 +689,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
                 web.get('/checkpoint/{course}', checkpoint),
                 web.get('/checkpoint/SPY/{course}/{student}', checkpoint_spy),
+                web.get('/checkpoint/MESSAGE/{course}/{message:.*}', checkpoint_message),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
