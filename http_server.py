@@ -292,7 +292,7 @@ async def adm_home(request, more=''):
     utilities.CourseConfig.load_all_configs()
     session = await get_admin_login(request)
     courses = []
-    for config in utilities.CourseConfig.configs.values():
+    for _course_name, config in sorted(utilities.CourseConfig.configs.items()):
         courses.append({
             'course': config.course,
             'status': config.status(''),
