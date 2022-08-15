@@ -40,6 +40,7 @@ TOP_INACTIVE = 'linear-gradient(to bottom, #FFFF, #FFFE, #FFFE, #FFF0)'
 TOP_ACTIVE = 'linear-gradient(to bottom, #8F8F, #8F87)'
 ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
+BEFORE_FIRST = 60 # Time scroll bar padding left in seconds
 
 def seconds():
     """Number of second as Unix"""
@@ -59,6 +60,17 @@ def html(txt):
 def two_digit(number):
     """ 6 → 06 """
     return ('0' + str(int(number)))[-2:]
+
+def nice_date(secs):
+    """seconds → human date"""
+    js_date = Date()
+    js_date.setTime(secs*1000)
+    return (js_date.getFullYear()
+            + '-' + two_digit(js_date.getMonth())
+            + '-' + two_digit(js_date.getDate())
+            + ' ' + two_digit(js_date.getHours())
+            + ':' + two_digit(js_date.getMinutes())
+           )
 
 mouse_enter()
 
@@ -840,17 +852,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if i in MESSAGES_TO_HIDE:
                 continue
             login, date, message = infos
-            js_date = Date()
-            js_date.setTime(date*1000)
             content.append(
                 "<p>"
                 + '<button onclick="MESSAGES_TO_HIDE['
                 + i + ']=1;ROOM.update_messages()">×</button> '
-                + js_date.getFullYear()
-                + '-' + two_digit(js_date.getMonth())
-                + '-' + two_digit(js_date.getDate())
-                + ' ' + two_digit(js_date.getHours())
-                + ':' + two_digit(js_date.getMinutes())
+                + nice_date(date)
                 + ' ' + login + ' <b>' + html(message) + '</b>')
         document.getElementById('messages').innerHTML = ' '.join(content)
     def start_move_student(self, event):
@@ -989,6 +995,19 @@ def create_page(building_name):
             background: #F88; opacity: 0.8;
             padding-left: 0.5em;
             }
+        #time SPAN { position: absolute; top: 0px; cursor: pointer; pointer-events: none; }
+        #time { height: 2.5em ; background: #FFF; border: 1px solid #000;
+                position: relative; margin-top: 0.2em; }
+        #time SPAN.cursor { display: inline-block; transition: left 0.2s, right 0.2s, color 0.2s }
+        #time SPAN.left { border-left: 0.2em solid black }
+        #time SPAN.right { border-right: 0.2em solid black; text-align: right }
+        #time SPAN.c, #time SPAN.s, #time SPAN.a { font-size: 83%; height: 1em }
+        #time SPAN.c { border-left: 1px solid #000; top: 0px }
+        #time SPAN.s { border-left: 1px solid #00F; top: 1em }
+        #time SPAN.a { border-left: 1px solid #0D0; top: 2em; color: #0F0 }
+        #time SPAN.ca { color: #080 ; }
+        #time SPAN.cc { color: #000 ; }
+        #time SPAN.cs { color: #00F ; }
         </style>
         <div id="top"><span class="reload" onclick="reload_page()">⟳</span>''',
 
@@ -1058,7 +1077,48 @@ def spy_close():
     """Close the student source code"""
     document.getElementById('spy').style.display = 'none'
 
-def spy(text, login, infos):
+def spy_it(event=None):
+    """Display the selected source"""
+    bar = document.getElementById('time')
+    first = spy.sources[0][0] - BEFORE_FIRST
+    last = spy.sources[-1][0]
+    width = last - first
+    if event:
+        time = first + width * (event.clientX - bar.offsetLeft) / bar.offsetWidth
+        source = None # To please pylint
+        last_source = None
+        for source in spy.sources:
+            if source[0] >= time:
+                break
+            last_source = source
+        if last_source and source[0] - time > time - last_source[0]:
+            source = last_source # Take the previous because it is nearer
+        event.stopPropagation()
+        event.preventDefault()
+    else:
+        source = spy.sources[-1]
+
+    cursor = bar.lastChild
+    pos_x = (source[0] - first) / width * bar.offsetWidth
+    if pos_x < bar.offsetWidth / 2:
+        cursor.style.left = pos_x + 'px'
+        cursor.style.right = 'auto'
+        cursor.className = 'cursor left c' + source[2]
+    else:
+        cursor.style.right = bar.offsetWidth - pos_x + 'px'
+        cursor.style.left = 'auto'
+        cursor.className = 'cursor right c' + source[2]
+    cursor.innerHTML = (
+        nice_date(source[0])
+        + '<br>' + {'c': 'Compile', 's': 'Sauve', 'a': 'Réussi'}[source[2]]
+        + ' N° ' + (source[1] + 1)
+    )
+
+    div_source = document.getElementById('source')
+    div_source.textContent = source[3]
+    hljs.highlightElement(div_source)
+
+def spy(sources, login, infos):
     """Display the infos source code"""
     student = STUDENT_DICT[login]
     if student.active:
@@ -1066,13 +1126,28 @@ def spy(text, login, infos):
     else:
         state = '<button onclick="open_exam(\'' + login + '\')">Rouvrir examen</button>'
     div = document.getElementById('spy')
-    div.innerHTML = (
-        '<button onclick="spy_close()">Fermer</button> '
-        + login + ' ' + infos.fn + ' ' + infos.sn + ' ' + state
-        + '<pre></pre>')
+    content = [
+        '<button onclick="spy_close()">Fermer</button> ',
+        login, ' ', infos.fn, ' ', infos.sn, ' ', state,
+        '<div id="time" onmousedown="spy_it(event)"',
+        ' onmousemove="if (event.buttons) spy_it(event)">']
+    sources.sort()
+    first = sources[0][0] - BEFORE_FIRST
+    last = sources[-1][0]
+    width = (last - first) or 1
+    spy.sources = []
+    for source in sources:
+        spy.sources.append(source)
+        content.append(
+            '<span style="left:' + 100*(source[0] - first)/width
+            + '%" class="' + source[2] + '">'
+            + (source[2] == 'a' and (source[1]+1) or '')
+            + '</span>')
+    content.append('<span class="cursor right"></span>')
+    content.append('</div><pre id="source"></pre>')
+    div.innerHTML = ''.join(content)
     div.style.display = 'block'
-    div.lastChild.textContent = text
-    hljs.highlightElement(div.lastChild)
+    spy_it()
 
 def debug():
     """debug"""

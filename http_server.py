@@ -623,38 +623,37 @@ async def computer(request):
     return await update_browser_data(course)
 
 async def checkpoint_spy(request):
-    """The last answer from the student"""
+    """All the sources of the student as a list of:
+           [timestamp, question, compile | save | answer, source]
+    """
     _session, course = await get_teacher_login_and_course(request)
     student = request.match_info['student']
-    answer = ''
+    answers = []
     try:
         with open(f'{course.course}/{student}/compile_server.log') as file:
-            last_compile = ''
             for line in file:
                 if "('COMPILE'," in line:
-                    last_compile = line
-        if last_compile:
-            line = ast.literal_eval(last_compile)
-            answer = ast.literal_eval(last_compile)[2][1][6]
+                    line = ast.literal_eval(line)
+                    answers.append([line[0], line[2][1][1], 'c', line[2][1][6]])
+                    await asyncio.sleep(0)
     except (IndexError, FileNotFoundError):
         pass
 
-    if not answer:
-        try:
-            last_save = ''
-            with open(f'{course.course}/{student}/http_server.log') as file:
-                for line in file:
-                    if '["answer",' in line or '["save",' in line:
-                        last_save = line
-            if last_save:
-                for item in json.loads(last_save):
-                    if isinstance(item, list) and item[0] in ('answer', 'save'):
-                        answer = item[2]
-        except (IndexError, FileNotFoundError):
-            pass
+    try:
+        with open(f'{course.course}/{student}/http_server.log') as file:
+            for line in file:
+                if '["answer",' in line or '["save",' in line:
+                    seconds = 0
+                    for item in json.loads(line):
+                        if isinstance(item, list) and item[0] in ('answer', 'save'):
+                            answers.append([seconds, item[1], item[0][0], item[2]])
+                        elif isinstance(item, int):
+                            seconds += item
+    except (IndexError, FileNotFoundError):
+        pass
 
     return web.Response(
-        body=f'''spy({json.dumps(answer)},
+        body=f'''spy({json.dumps(answers)},
                      {json.dumps(student)},
                      {json.dumps(await utilities.LDAP.infos(student))})''',
         content_type='application/javascript',
