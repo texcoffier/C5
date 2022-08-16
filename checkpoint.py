@@ -66,7 +66,7 @@ def nice_date(secs):
     js_date = Date()
     js_date.setTime(secs*1000)
     return (js_date.getFullYear()
-            + '-' + two_digit(js_date.getMonth())
+            + '-' + two_digit(js_date.getMonth() + 1)
             + '-' + two_digit(js_date.getDate())
             + ' ' + two_digit(js_date.getHours())
             + ':' + two_digit(js_date.getMinutes())
