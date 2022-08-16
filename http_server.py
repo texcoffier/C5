@@ -642,7 +642,7 @@ async def checkpoint_spy(request):
     student = request.match_info['student']
     answers = []
     try:
-        with open(f'{course.course}/{student}/compile_server.log') as file:
+        with open(f'{course.dirname}/{student}/compile_server.log') as file:
             for line in file:
                 if "('COMPILE'," in line:
                     line = ast.literal_eval(line)
@@ -652,7 +652,7 @@ async def checkpoint_spy(request):
         pass
 
     try:
-        with open(f'{course.course}/{student}/http_server.log') as file:
+        with open(f'{course.dirname}/{student}/http_server.log') as file:
             for line in file:
                 if '["answer",' in line or '["save",' in line:
                     seconds = 0

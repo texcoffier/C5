@@ -1,0 +1,77 @@
+#!/bin/sh
+
+# Helper function to create screencast
+# The idea:
+#   * Acquire a long video without interruption (acquire)
+#   * Use VLC to find the good parts
+#   * Extract the good parts (extract)
+#   * Merge them (merge)
+
+#########################
+# Get the screen video :
+# Example: acquire xxx.webm
+#########################
+acquire() {
+echo y | ffmpeg \
+    -itsoffset -1 \
+    -thread_queue_size 256 \
+    -f pulse -i $(pactl list short sources | grep Webcam | sed 's/\t.*//') \
+    -thread_queue_size 256 \
+    -f x11grab \
+    -thread_queue_size 256 \
+    -show_region 1 \
+    -video_size 960x540 \
+    -r 15 \
+    -i :0.0+1,148 \
+    -threads 4 \
+    -b:v 256k \
+    -c:v libvpx \
+    -qcomp 0 \
+    -ac 1 \
+    $1
+}
+
+#########################
+# Extract all the interesting parts
+# Example: extract xxx.webm "00:03-02:38" "02:53-03:45" "04:32-06:28" "06:50-06:59"
+#########################
+extract() {
+I=100
+NAME=$1
+shift
+for CHUNK in $*
+do
+    ffmpeg -y -i $NAME \
+           $(echo $CHUNK | sed -r 's/^(.....)-(.....)$/-ss \1 -to \2/') \
+           $I-$NAME
+    I=$(expr $I + 1)
+done
+}
+
+#########################
+# Merge videos
+# Example: merge merged.webm ???-xxx.webm
+#########################
+merge() {
+NAME=$1
+shift
+for CHUNK in $*
+do
+    echo "file '$CHUNK'"
+done >xxx.list
+ffmpeg -y -f concat -safe 0 -i xxx.list $NAME
+rm xxx.list
+}
+
+#########################
+# Do the work
+#########################
+
+
+# acquire xxx.webm
+# extract xxx.webm "00:03-02:38" "02:53-03:45" "04:32-06:28" "06:50-06:59"
+# merge xxxx.webm ???-xxx.webm 
+
+extract tout.webm "00:00-00:16" "00:23-01:32" "01:36-01:43" "01:59-02:26" "02:42-03:29" "03:42-04:21" "05:28-06:17"
+merge xxxx.webm 1*
+
