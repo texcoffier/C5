@@ -176,7 +176,7 @@ E { font-family: emoji }
                         + 'px" class="sec' + i % len(COLORS) + '">' + more + '</span>')
         text.append('<td>')
         for filename in student.files:
-            text.append(' <a target="_blank" href="/adm/get/' + COURSE + '/')
+            text.append(' <a target="_blank" href="/adm/get/COMPILE_' + COURSE.replace('=', '/') + '/')
             text.append(login)
             text.append('/')
             text.append(filename)
@@ -186,9 +186,9 @@ E { font-family: emoji }
             text.append('</a>')
     text.append('''
 <tr><td><td>Sources:
-<button onclick="window.location.pathname = 'adm_answers/0/' + COURSE + '.zip'"
+<button onclick="window.location.pathname = '/adm/answers/0/' + COURSE + '.zip'"
 >Validated questions<br>txt ZIP</button>
-<button onclick="window.location.pathname = 'adm_answers/1/' + COURSE + '.zip'"
+<button onclick="window.location.pathname = '/adm/answers/1/' + COURSE + '.zip'"
 >Saved questions<br>txt ZIP</button>
 ''')
     for what in WHAT:

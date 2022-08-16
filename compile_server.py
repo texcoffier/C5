@@ -40,7 +40,8 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.tasks = ()
         self.wait_input = False
         self.login = login
-        self.course = utilities.CourseConfig.get(course)
+        self.course = utilities.CourseConfig.get(utilities.get_course(course))
+        course = self.course.dirname
         self.dir = f"{course}/{login}"
         if not os.path.exists(self.dir):
             if not os.path.exists(course):
@@ -145,7 +146,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             return
         self.log("RUN")
         self.process = await asyncio.create_subprocess_exec(
-            f"{self.course.course}/{self.login}/{self.conid}",
+            f"{self.course.dirname}/{self.login}/{self.conid}",
             stdout=asyncio.subprocess.PIPE,
             stdin=asyncio.subprocess.PIPE,
             # stderr=subprocess.PIPE,

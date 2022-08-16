@@ -38,7 +38,7 @@ class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
         if self.connecting:
             return
         # pylint: disable=eval-used
-        course = self.config.COURSE[:-3]
+        course = self.config.COURSE
         url = self.config.SOCK + "/" + self.config.TICKET + "/" + course  # pylint: disable=unused-variable
         socket = eval('new WebSocket(url)')
 

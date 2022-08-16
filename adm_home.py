@@ -110,14 +110,14 @@ def display(): # pylint: disable=too-many-statements
 
     for course in COURSES:
         i_am_a_teacher = LOGIN in course.teachers.replace('\n', ' ').split(' ')
-        text.append('<tr class="' + course.status + ' ' + course.course.split('.')[0] + '"><td>')
-        text.append(course.course.replace('course_', 'course_<br><b>'))
+        text.append('<tr class="' + course.status + ' ' + course.course.replace('=','_') + '"><td>')
+        text.append(course.course.replace('=', '<br><b>'))
         text.append('</b>')
         text.append('<td>')
         if course.logs:
             add_button('/adm/course/' + course.course, 'Logs', '', True)
         text.append('<td>')
-        add_button('=' + course.course + '.js', 'Try', '', True)
+        add_button('=' + course.course, 'Try', '', True)
         text.append('<td>')
         add_input('/adm/config/' + course.course + '/start/', course.start)
         if course.status != 'running':
@@ -138,11 +138,10 @@ def display(): # pylint: disable=too-many-statements
         add_textarea('/adm/config/' + course.course + '/tt/', course.tt)
         text.append('</textarea><td>')
         if course.logs:
-            add_button('/adm/get/' + course.course + '.zip', 'ZIP')
+            add_button('/adm/get/COMPILE_' + course.course.replace('=', '/') + '.zip', 'ZIP')
         text.append('<td>')
         form(
-            '<div><input type="submit" value="Replace «'
-            + course.course + '.js»'
+            '<div><input type="submit" value="Replace «' + course.course + '.py»'
             + '" name="replace"></div>',
             not i_am_a_teacher)
         text.append('<td>')

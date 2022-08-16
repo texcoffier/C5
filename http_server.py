@@ -91,8 +91,8 @@ def handle(base=''):
             filename = base + '/' + filename
         else:
             if filename.startswith("="):
-                course = utilities.CourseConfig.get(filename[1:-3])
-                answers = get_answers(course.course, session.login, saved=True)
+                course = utilities.CourseConfig.get(utilities.get_course(filename[1:]))
+                answers = get_answers(course.dirname, session.login, saved=True)
                 for key, value in answers.items():
                     answers[key] = value[-1] # Only the last answer
                 if course:
@@ -114,16 +114,17 @@ def handle(base=''):
                         WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0)))};
                     </script>
                     <script src="/ccccc.js?ticket={session.ticket}"></script>''')
-            if filename.startswith('course_'):
-                course = utilities.CourseConfig.get(filename[:-3])
+            if '=' in filename:
+                course = utilities.CourseConfig.get(utilities.get_course(filename))
+                filename = course.filename.replace('.cf', '.js')
                 status = course.status(login, session.client_ip)
                 if not session.is_admin():
                     if status == 'done':
-                        filename = "course_js_done.js"
+                        filename = "COMPILE_JS/done.js"
                     elif status == 'pending':
-                        filename = "course_js_pending.js"
+                        filename = "COMPILE_JS/pending.js"
                     elif status == 'checkpoint':
-                        filename = "course_js_checkpoint.js"
+                        filename = "COMPILE_JS/checkpoint.js"
         return File.get(filename).response()
     return real_handle
 
@@ -140,12 +141,12 @@ async def log(request):
     """Log user actions"""
     session = await utilities.Session.get(request)
     post = await request.post()
-    course = utilities.CourseConfig.get(post['course'])
+    course = utilities.CourseConfig.get(utilities.get_course(post['course']))
     if not course.running(session.login):
         return
     data = urllib.request.unquote(post['line'])
     # Must do sanity check on logged data
-    student_log(course.course, session.login, data)
+    student_log(course.dirname, session.login, data)
     if session.login in course.active_teacher_room:
         infos = course.active_teacher_room[session.login]
         infos[3] = int(time.time())
@@ -162,33 +163,33 @@ async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
     if not session.is_admin():
-        session.redirect('=course_js_not_admin.js')
+        session.redirect('=JS=not_admin')
     return session
 
 async def get_teacher_login_and_course(request):
     """Get the teacher login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
-    course = utilities.CourseConfig.get(request.match_info['course'])
+    course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
     if session.is_student():
-        session.redirect('=course_js_not_teacher.js')
+        session.redirect('=JS=not_teacher')
     # if session.login not in course.teachers:
-    #     session.redirect('=course_js_not_teacher.js')
+    #     session.redirect('=JS=not_teacher')
     return session, course
 
 async def adm_course(request):
     """Course details page for administrators"""
     session, course = await get_teacher_login_and_course(request)
     students = {}
-    for user in sorted(os.listdir(course.course)):
+    for user in sorted(os.listdir(course.dirname)):
         await asyncio.sleep(0)
         files = []
         students[user] = student = {'files': files}
-        for filename in sorted(os.listdir(f'{course.course}/{user}')):
+        for filename in sorted(os.listdir(f'{course.dirname}/{user}')):
             if '.' in filename:
                 # To not display executables
                 files.append(filename)
         try:
-            with open(f'{course.course}/{user}/http_server.log') as file:
+            with open(f'{course.dirname}/{user}/http_server.log') as file:
                 student['http_server'] = file.read()
         except IOError:
             pass
@@ -210,7 +211,7 @@ async def adm_config(request):
     """Course details page for administrators"""
     _session = await get_admin_login(request)
     course = request.match_info['course']
-    config = utilities.CourseConfig.get(course)
+    config = utilities.CourseConfig.get(utilities.get_course(course))
     action = request.match_info['action']
     value = request.match_info['value']
     if value == 'now':
@@ -242,7 +243,7 @@ async def adm_config(request):
 
     return await adm_home(request, feedback)
 
-async def adm_c5(request):
+async def adm_c5(request): # pylint: disable=too-many-branches
     """Remove a C5 master"""
     _session = await get_admin_login(request)
     action = request.match_info['action']
@@ -290,7 +291,10 @@ async def adm_c5(request):
 async def adm_home(request, more=''):
     """Home page for administrators"""
     if more:
-        more = '<div class="more">' + more + '</div>'
+        if more.endswith('!'):
+            more = '<div class="more" style="background: #F88">' + more + '</div>'
+        else:
+            more = '<div class="more">' + more + '</div>'
 
     utilities.CourseConfig.load_all_configs()
     session = await get_admin_login(request)
@@ -300,7 +304,7 @@ async def adm_home(request, more=''):
             'course': config.course,
             'status': config.status(''),
             'teachers': config.config['teachers'],
-            'logs': os.path.exists(config.course),
+            'logs': os.path.exists(config.dirname),
             'start': config.start,
             'stop': config.stop,
             'tt': html.escape(config.config['tt']),
@@ -369,7 +373,7 @@ async def adm_answers(request):
     course = request.match_info['course']
     saved = int(request.match_info['saved'])
     assert '/.' not in course and course.endswith('.zip')
-    course = course[:-4]
+    course = utilities.get_course(course[:-4])
     fildes, filename = tempfile.mkstemp()
     try:
         zipper = zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w")
@@ -400,38 +404,45 @@ async def adm_answers(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
-async def upload_course(request):
+async def upload_course(request): # pylint: disable=too-many-branches
     """Add a new course"""
     session = await get_admin_login(request)
     post = await request.post()
     filehandle = post['course']
     if not hasattr(filehandle, 'filename'):
-        more = "You must select a file"
-    filename = getattr(filehandle, 'filename', None)
-    if filename:
-        compiler = '_'.join(filename.split('_')[:2]) + '.py'
-    if filename is None:
-        more = "You forgot to select a course file"
-    elif not filename.endswith('.py'):
-        more = "Only «.py» file allowed"
-    elif '/' in filename:
-        more = f"«{filename}» invalid name (/)"
-    elif not os.path.exists(compiler):
-        more = f"«{filename}» use a not defined compiler: «{compiler}»"
-    elif 'replace' not in post and os.path.exists(filename):
-        more = f"«{filename}» name is yet used"
-    else:
-        with open(filename, "wb") as file:
-            file.write(filehandle.file.read())
-        config = utilities.CourseConfig.get(filename.replace('.py', ''))
-        config.set_parameter('teachers', session.login)
-        process = await asyncio.create_subprocess_exec(
-            "make", filename.replace('.py', '.js'))
-        await process.wait()
-        if 'replace' in post:
-            more = f"Course «{filename}» replaced"
+        more = "You must select a file!"
+    src_filename = getattr(filehandle, 'filename', None)
+    replace = post.get('replace', '')
+    if src_filename:
+        if replace:
+            dst_filename = replace.split('«')[1].split('»')[0]
         else:
-            more = f"Course «{filename}» added"
+            dst_filename = src_filename
+        compiler = f"compile_{dst_filename.split('=')[0].lower()}.py"
+        dst_filename = utilities.get_course(dst_filename[:-3]) # Remove .py
+    else:
+        more = "You must select a file!"
+    if src_filename is None:
+        more = "You forgot to select a course file!"
+    elif not src_filename.endswith('.py'):
+        more = "Only «.py» file allowed!"
+    elif '/' in src_filename:
+        more = f"«{src_filename}» invalid name (/)!"
+    elif not os.path.exists(compiler):
+        more = f"«{src_filename}» use a not defined compiler: «{compiler}»!"
+    elif not replace and os.path.exists(dst_filename + '.py'):
+        more = f"«{dst_filename}.py» file exists!"
+    else:
+        with open(dst_filename + '.py', "wb") as file:
+            file.write(filehandle.file.read())
+        config = utilities.CourseConfig.get(dst_filename)
+        config.set_parameter('teachers', session.login)
+        process = await asyncio.create_subprocess_exec("make", dst_filename + '.js')
+        await process.wait()
+        if replace:
+            more = f"Course «{src_filename}» replace «{dst_filename}.py» file"
+        else:
+            more = f"Course «{src_filename}» added into «{dst_filename}.py» file"
     return await adm_home(request, more)
 
 async def config_reload(request):
@@ -459,7 +470,7 @@ async def checkpoint_list(request):
         ]
     utilities.CourseConfig.load_all_configs()
     now = time.strftime('%Y-%m-%d %H:%M:%S')
-    for course_name, course in sorted(utilities.CourseConfig.configs.items()):
+    for _course_name, course in sorted(utilities.CourseConfig.configs.items()):
         if not course.checkpoint:
             continue
         if now > course.stop_tt:
@@ -479,12 +490,13 @@ async def checkpoint_list(request):
                 else:
                     waiting.append(student)
         if session.login in course.teachers:
-            checkurl = f'<a href="/checkpoint/{course_name}?ticket={session.ticket}">Checkpoint</a>'
+            checkurl = f'''<a href="/checkpoint/{course.course}?ticket={session.ticket}"
+            >Checkpoint</a>'''
         else:
             checkurl = ' '.join(course.teachers)
         content.append(f'''
         <tr>
-        <td>{course_name}
+        <td>{course.course}
         <td>{len(course.active_teacher_room)}
         <td>{len(waiting)}
         <td>{len(working)}
@@ -546,22 +558,22 @@ async def checkpoint_student(request):
     old = course.active_teacher_room[student]
     if room == 'STOP':
         old[0] = False
-        student_log(course.course, student, f'[{seconds},"checkpoint_stop"]\n')
+        student_log(course.dirname, student, f'[{seconds},"checkpoint_stop"]\n')
     elif room == 'RESTART':
         old[0] = True
         old[1] = session.login
-        student_log(course.course, student, f'[{seconds},"checkpoint_eject"]\n')
+        student_log(course.dirname, student, f'[{seconds},"checkpoint_eject"]\n')
     elif room == 'EJECT':
         old[0] = False
         old[1] = old[2] = ''
         old[3] = seconds # Make it bold for other teachers
-        student_log(course.course, student, f'[{seconds},"checkpoint_eject"]\n')
+        student_log(course.dirname, student, f'[{seconds},"checkpoint_eject"]\n')
     else:
         if old[1] == '':
             old[0] = True # A moved STOPed student must not be reactivated
         old[1] = session.login
         old[2] = room
-        student_log(course.course, student,
+        student_log(course.dirname, student,
                     f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
     course.record()
     return await update_browser_data(course)
@@ -580,7 +592,7 @@ async def home(request):
         if now > course.stop_tt or now < course.start:
             continue # Not running
         content.append(
-            f'<li> <a href="/={course_name}.js?ticket={session.ticket}">{course_name}</a>')
+            f'<li> <a href="/={course.course}?ticket={session.ticket}">{course_name}</a>')
 
     return web.Response(
         body=''.join(content),
@@ -606,7 +618,7 @@ async def checkpoint_buildings(request):
 async def computer(request):
     """Set value for computer"""
     _session = await utilities.Session.get(request)
-    course = utilities.CourseConfig.get(request.match_info['course'])
+    course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
     message = request.match_info.get('message', '')
     building = request.match_info['building']
     column = int(request.match_info['column'])

@@ -11,6 +11,7 @@ import json
 import socket
 import ssl
 import time
+import glob
 import urllib.request
 import asyncio
 import aiohttp
@@ -79,8 +80,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     def __init__(self, course):
         if not os.path.exists(course + '.py'):
             return
-        self.course = course
+        self.course = course.replace('COMPILE_', '').replace('/', '=')
         self.filename = course + '.cf'
+        self.dirname = course
         self.time = 0
         self.load()
         self.update()
@@ -112,7 +114,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         try:
             with open(self.filename, 'r') as file:
                 self.config.update(eval(file.read())) # pylint: disable=eval-used
-        except IOError:
+        except (IOError, FileNotFoundError):
             if os.path.exists(self.filename.replace('.cf', '.js')):
                 self.record()
                 self.time = time.time()
@@ -134,7 +136,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.messages = self.config['messages']
     def record(self):
         """Record option on disk"""
-        with open(self.course + '.cf', 'w') as file:
+        with open(self.filename, 'w') as file:
             file.write(repr(self.config))
         self.time = time.time()
     def set_parameter(self, parameter, value):
@@ -163,7 +165,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                 self.config['active_teacher_room'][login] = [
                     False, '', '', seconds, 0, 0, client_ip]
                 self.record()
-                with open(f'{self.course}/{login}/http_server.log', "a") as file:
+                with open(f'{self.dirname}/{login}/http_server.log', "a") as file:
                     file.write(f'[{seconds},"checkpoint_in"]\n')
                 return 'checkpoint'
             if client_ip:
@@ -181,7 +183,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         return 'done'
     def running(self, login):
         """If the session running for the user"""
-        return self.status(login).startswith('running')
+        return self.status(login).startswith('running') or not CONFIG.is_student(login)
 
     async def get_students(self):
         """Get all the students"""
@@ -202,17 +204,21 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     @classmethod
     def load_all_configs(cls):
         """Read all configuration from disk"""
-        for course in sorted(os.listdir('.')):
-            if course.startswith('course_') and course.endswith('.js'):
-                if course in (
-                        'course_js_checkpoint.js',
-                        'course_js_done.js',
-                        'course_js_not_admin.js',
-                        'course_js_not_teacher.js',
-                        'course_js_pending.js',
-                    ):
-                    continue
-                cls.get(course[:-3])
+        for course in sorted(glob.glob('COMPILE_*/*.py')):
+            if course in (
+                    'COMPILE_JS/checkpoint.py',
+                    'COMPILE_JS/done.py',
+                    'COMPILE_JS/not_admin.py',
+                    'COMPILE_JS/not_teacher.py',
+                    'COMPILE_JS/pending.py',
+                ):
+                continue
+            cls.get(course[:-3])
+
+def get_course(txt):
+    """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""
+    compilator, course = txt.split('=')
+    return f'COMPILE_{compilator}/{course}'
 
 class Config:
     """C5 configuration"""
@@ -485,8 +491,8 @@ ACTIONS = {
         fi
         """,
     'cp': f"""
-        scp $(git ls-files | grep -v BUILDINGS) favicon.ico {C5_LOGIN}@{C5_HOST}:{C5_DIR}
-        scp BUILDINGS/* {C5_LOGIN}@{C5_HOST}:{C5_DIR}/BUILDINGS
+        tar -cf - $(git ls-files | grep -v DOCUMENTATION) |
+        ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -xvf -'
         """,
     'nginx': f"""#C5_ROOT
         sudo sh -c '
@@ -591,7 +597,7 @@ With Firefox:
         rm http_server.pid compile_server.pid
         """,
     'open': f"""
-        xdg-open https://{C5_URL}/=course_{sys.argv[2] if len(sys.argv) >= 3 else 'js'}.js
+        xdg-open https://{C5_URL}/={sys.argv[2] if len(sys.argv) >= 3 else 'JS=introduction'}
         """,
     'load': "./load_testing.py",
     'compile': fr"""#C5_LOGIN

@@ -143,14 +143,11 @@
         Chaque sujet contient un ensemble de questions s'enchaînant successivement.
     </p>
     <ul>
-        <li> Le sujet est dans un fichier avec comme nom :<br>
-            <tt>course_{js|python|cpp|remote}_<b>nom_sujet</b>.py</tt><br>
-            par exemple <tt>course_js_<b>example</b>.py</tt>
+        <li> Le sujet est enregistré dans un des répertoires nommés
+            <tt>COMPILE_{JS|PYTHON|CPP|REMOTE}</tt>
         </li>
-        <li> Il est compilé en tapant :<br>
-            <tt>make course_js_<b>example.js</b></tt></li>
-        <li> Il est utilisable avec l'URL :<br>
-            <tt>…/=course_js_<b>example.js</b></tt></li>
+        <li> Il est compilé en tapant : <tt>make prepare</tt></li>
+        <li> Il est utilisable avec l'URL : <tt>https://…/={JS|PYTHON|CPP|REMOTE}=<b>nom_sujet</b></tt></li>
     </ul>
     <p>
         Pour chaque question il y a une classe
@@ -347,13 +344,17 @@ def default_answer(self):
         Au dessous de la liste :
     </p>
     <ul>
-        <li> Ajout d'une nouvelle session.</li>
+        <li> Ajout d'une nouvelle session.
+            <b>Le fichier doit impérativement porter un nom de la forme
+                <tt>{JS|PYTHON|CPP|REMOTE}=nom_sujet.py</tt></b>
+            afin de le ranger dans le bon répertoire.
+        </li>
         <li> Modification de la liste des administrateurs.</li>
         <li> Durée de vie des tickets de session.</li>
     </ul>
     <p>
         Cette configuration est dans le fichier <tt>c5.cf</tt>
-        plus un fichier <tt>course_....cf</tt> par session.
+        plus un fichier <tt>COMPILE_*/nom_sujet.cf</tt> par session.
     </p>
 
     <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-course.png">
@@ -467,7 +468,8 @@ make</pre>
         <li> <tt>./c5 start</tt> pour lancer les serveurs locaux ou distants,
             les logs sont dans <tt>http_server.log</tt>, <tt>compile_server.log</tt>
             et <tt>infos_server.log</tt> sur la machine qui fait tourner les serveurs.</li>
-        <li> <tt>./c5 open js</tt> pour ouvrir <tt>course_js</tt> dans le navigateur web.</li>
+        <li> <tt>./c5 open JS=introduction</tt> pour ouvrir <tt>COMPILE_JS/introduction.js</tt>
+            dans le navigateur web.</li>
         <li> <tt>./c5 compile</tt> pour recompiler tout ce qui est nécessaire
             quand vous avez modifié un cours.
             Regardez bien s'il y a des erreurs de traduction.</li>
@@ -532,6 +534,52 @@ server {
                 BUILDINGS/empty
             <td> Les plans des bâtiments.
         </tr>
+        <tr class="cours">
+            <td>COMPILE_CPP/test.py
+            <td>Exemple d'utilisation de compile_cpp et de récupération
+                des informations concernant la place de l'étudiant dans la salle.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_JS/introduction.py
+            <td>Mini cours de JavaScript.
+        </tr>
+        <tr class="message">
+            <td>COMPILE_JS/checkpoint.py
+            <td>Message indiquant à l'étudiant qu'il doit dire à l'enseignant
+                de l'accepter dans la session.
+        </tr>
+        <tr class="message">
+            <td>COMPILE_JS/done.py
+            <td>Message indiquant que l'examen est terminé.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_JS/example.py
+            <td>Un exemple minimaliste de cours pour commencer.
+        </tr>
+        <tr class="message">
+            <td>COMPILE_JS/not_admin.py
+            <td>Message indiquant que la page est inaccessible car non administrateur.
+        </tr>
+        <tr class="message">
+            <td>COMPILE_JS/not_teacher.py
+            <td>Message indiquant que la page est inaccessible car non enseignant.
+        </tr>
+        <tr class="message">
+            <td>COMPILE_JS/pending.py
+            <td>Message indiquant que l'examen n'a pas commencé.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_PYTHON/introduction.py
+            <td>Un mini cours Python.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_REMOTE/test.py
+            <td>Exemple d'utilisation de compile_remote.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_REMOTE/errors.py
+            <td>Une série d'exercices dans lesquels l'étudiant doit corriger des erreurs de syntaxe.
+        </tr>
         <tr>
             <td>Makefile
             <td>Utilisé par <tt>utilities.py</tt>, pas directement.
@@ -588,52 +636,6 @@ server {
             <td>compile_server.py
             <td>Serveur de compilation et exécution de C++ avec différents
                 compilateur et options possibles.
-        </tr>
-        <tr class="cours">
-            <td>course_cpp.py
-            <td>Exemple d'utilisation de compile_cpp et de récupération
-                des informations concernant la place de l'étudiant dans la salle.
-        </tr>
-        <tr class="cours">
-            <td>course_js.py
-            <td>Mini cours de JavaScript.
-        </tr>
-        <tr class="message">
-            <td>course_js_checkpoint.py
-            <td>Message indiquant à l'étudiant qu'il doit dire à l'enseignant
-                de l'accepter dans la session.
-        </tr>
-        <tr class="message">
-            <td>course_js_done.py
-            <td>Message indiquant que l'examen est terminé.
-        </tr>
-        <tr class="cours">
-            <td>course_js_example.py
-            <td>Un exemple minimaliste de cours pour commencer.
-        </tr>
-        <tr class="message">
-            <td>course_js_not_admin.py
-            <td>Message indiquant que la page est inaccessible car non administrateur.
-        </tr>
-        <tr class="message">
-            <td>course_js_not_teacher.py
-            <td>Message indiquant que la page est inaccessible car non enseignant.
-        </tr>
-        <tr class="message">
-            <td>course_js_pending.py
-            <td>Message indiquant que l'examen n'a pas commencé.
-        </tr>
-        <tr class="cours">
-            <td>course_python.py
-            <td>Un mini cours Python.
-        </tr>
-        <tr class="cours">
-            <td>course_remote.py
-            <td>Exemple d'utilisation de compile_remote.
-        </tr>
-        <tr class="cours">
-            <td>course_remote_errors.py
-            <td>Une série d'exercices dans lesquels l'étudiant doit corriger des erreurs de syntaxe.
         </tr>
         <tr>
             <td>favicon.ico
@@ -705,7 +707,7 @@ server {
                 <li> La liste des ordinateurs en panne.
             </ul>
         </li>
-        <li> <tt>course_COMPILATEUR_COURSE.cf</tt> est la configuration d'un cours
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE}/nom_sujet.cf</tt> est la configuration d'un cours
             <ul>
                 <li> Dates de début et fin.</li>
                 <li> Listes des étudiants avec un tiers-temps.</li>
@@ -724,10 +726,11 @@ server {
         <li> <tt>compile_server.log</tt> toutes les demandes de compilation reçues.</li>
         <li> <tt>infos_server.log</tt> toutes les requêtes nom/prénom faites.</li>
         <li> <tt>tests.log</tt> Résumé des tests de régression.</li>
-        <li> <tt>course_COMPILATEUR_COURSE/LOGIN/http_server.log</tt> toutes les actions de l'étudiant.<br>
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE}/nom_sujet/LOGIN/http_server.log</tt> toutes les actions de
+            l'étudiant.<br>
             <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
         </li>
-        <li> <tt>course_COMPILATEUR_COURSE/LOGIN/compile_server.log</tt><br>
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE}/nom_sujet/LOGIN/compile_server.log</tt><br>
             toutes les compilations/exécutions faites par l'étudiant.</li>
     </ul>
     <p>
@@ -774,8 +777,6 @@ server {
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
         <li> Destruction d'une session.</li>
         <li> Affichage d'un corrigé.</li>
-        <li> Affichage des anciennes réponses de l'étudiant sur le plan du bâtiment.</li>
         <li> Générer automatiquement la liste finale des questions.</li>
-        <li> Mettre les courses dans un répertoire séparé.</li>
     </ul>
 </body>

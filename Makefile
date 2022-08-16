@@ -4,17 +4,17 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 %.js:%.py
 	@echo '$*.py → $*.js'
 	@case $* in \
-	course_*) \
-		COMPILER=$$(echo $* | sed -r -e 's/course_([^_]*).*/\1/') ; \
-		FILES="compatibility.py compile.py question.py compile_$$COMPILER.py $*.py" \
+	COMPILE*) \
+		COMPILER=$$(echo $* | sed -e 's,/.*,,' | tr '[A-Z]' '[a-z]') ; \
+		FILES="compatibility.py compile.py question.py $$COMPILER.py $*.py" \
 		;; \
 	*) \
 		FILES="compatibility.py $*.py" \
 		;; \
 	esac ; \
-	cat $$FILES > xxx-$*.py ; \
-	$(PYTOJS) xxx-$*.py >$*.js ; \
-	rm xxx-$*.py
+	cat $$FILES > $*.py.xxx ; \
+	$(PYTOJS) $*.py.xxx >$*.js ; \
+	rm $*.py.xxx
 
 default:all
 	@./utilities.py open # Open page on browser
@@ -32,10 +32,10 @@ favicon.ico:c5.svg
 
 prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js sandbox \
 	ccccc.js adm_home.js adm_course.js checkpoint.js \
-	course_js_done.js course_js_pending.js course_js_not_admin.js \
-	course_js_checkpoint.js course_js_not_teacher.js \
+	COMPILE_JS/done.js COMPILE_JS/pending.js COMPILE_JS/not_admin.js \
+	COMPILE_JS/checkpoint.js COMPILE_JS/not_teacher.js \
 	favicon.ico
-	@$(MAKE) $$(echo course*.py | sed 's/\.py/.js/g')
+	@$(MAKE) $$(echo COMPILE_*/*.py | sed 's/\.py/.js/g')
 	@if [ ! -d SSL ] ; then ./utilities.py SSL-SS ; fi
 
 all:prepare
@@ -54,7 +54,8 @@ xxx-highlight.js:
 	npm install commander && \
 	node tools/build.js -t browser :common && \
 	cp build/highlight.min.js $$HERE/xxx-highlight.js && \
-	cp build/demo/styles/default.css $$HERE/xxx-highlight.css
+	cp build/demo/styles/default.css $$HERE/xxx-highlight.css && \
+	rm -rf /tmp/highlight.js
 
 ############# Compilers ############
 node_modules/brython:
@@ -68,10 +69,10 @@ xxx-JSCPP.js:
 ############# Dependencies ############
 
 FRAMEWORK=ccccc.py compile.py question.py
-course_python.js:$(FRAMEWORK) compile_python.py course_python.py
-course_js.js:$(FRAMEWORK) compile_js.py course_js.py
-course_cpp.js:$(FRAMEWORK) compile_cpp.py course_cpp.py
-course_remote.js:$(FRAMEWORK) compile_remote.py course_remote.py
+COMPILE_JS/course_python.js:$(FRAMEWORK) compile_python.py COMPILE_JS/course_python.py
+COMPILE_JS/course_js.js:$(FRAMEWORK) compile_js.py COMPILE_JS/course_js.py
+COMPILE_JS/course_cpp.js:$(FRAMEWORK) compile_cpp.py COMPILE_JS/course_cpp.py
+COMPILE_JS/course_remote.js:$(FRAMEWORK) compile_remote.py COMPILE_JS/course_remote.py
 
 
 

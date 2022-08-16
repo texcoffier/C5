@@ -138,7 +138,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if path[:2] == '/=':
                 course = path[2:]
         if not course:
-            course = 'course_js.js'
+            course = 'JS=introduction'
         self.course = course
         self.worker = Worker(course + "?ticket=" + TICKET) # pylint: disable=undefined-variable
         self.worker.onmessage = bind(self.onmessage, self)
@@ -384,7 +384,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # Record on the server
             do_post_data(
                 {
-                    'course': self.course[:-3],
+                    'course': self.course,
                     'line': encodeURIComponent(JSON.stringify(self.record_to_send) + '\n'),
                 }, 'log?ticket=' + TICKET)
             self.record_to_send = []

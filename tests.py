@@ -88,7 +88,7 @@ class Tests: # pylint: disable=too-many-public-methods
     ticket = None
     def __init__(self, driver):
         self.driver = driver
-        for course_name in ('course_remote', 'course_js'):
+        for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction'):
             course = utilities.CourseConfig(course_name)
             course.set_parameter('start', '2000-01-01 00:00:01')
             course.set_parameter('stop', '2100-01-01 00:00:01')
@@ -234,7 +234,7 @@ class Tests: # pylint: disable=too-many-public-methods
         return element
     def test_popup(self):
         """Page display"""
-        self.goto('=course_remote.js')
+        self.goto('=REMOTE=test')
         self.check('.popup', {'innerHTML': Contains('ATTENTION')})
         action = selenium.webdriver.ActionChains(self.driver)
         action.key_down('§')
@@ -249,7 +249,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.executor INPUT')
     def test_f9(self):
         """Check if F9 launch compilation"""
-        self.load_page('=course_remote.js')
+        self.load_page('=REMOTE=test')
         self.check('.compiler', {'innerText': Contains('On attend') & Contains('Bravo')})
         self.move_cursor('.editor')
         self.check('.editor').send_keys('\n')
@@ -258,7 +258,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.compiler', {'innerText': ~Contains('On attend') & Contains('Bravo')})
     def test_inputs(self):
         """Tests inputs"""
-        self.load_page('=course_remote.js')
+        self.load_page('=REMOTE=test')
         self.check('.compiler', {'innerText': Contains('On attend') & Contains('Bravo')})
         self.check('.executor INPUT').send_keys('8')
         self.check('.executor INPUT').send_keys(Keys.ENTER)
@@ -297,7 +297,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.executor', {'innerHTML': Contains('····················*···················')})
     def test_auto_compile(self):
         """Tests automatic recompilation"""
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
@@ -321,7 +321,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
     def test_reset_button(self):
         """Test reset button"""
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§')})
@@ -333,36 +333,36 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.editor', {'innerHTML': ~Contains('§')})
     def test_save_button(self):
         """Test save button"""
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
         self.move_cursor('.editor')
         self.check('.editor', {'innerHTML': ~Contains('§')})
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§')})
         self.check('.save_button').click()
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§')})
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§§')})
         self.control('s')
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§§')})
         self.move_cursor('.editor')
         self.check('.editor').send_keys(Keys.DELETE)
         self.check('.editor').send_keys(Keys.DELETE)
         self.check('.save_button').click()
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': ~Contains('§')})
     def test_copy_paste_allowed(self):
         """Test a working copy paste"""
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
         self.select_all()
         self.control('v')
         self.control('v')
         self.check('.executor', {'innerText': Contains('court\nJe')})
     def test_question_index(self):
         """Test question index"""
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
 
         # Try to click on the next question
         self.check('.index > DIV:nth-child(4)').click()
@@ -387,12 +387,12 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.index > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
     def test_admin_home(self):
         """Test the admin page link"""
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
         self.check('.index > A').click()
         self.check_alert(required=False, nbr=2)
         self.check('.editor') # Not seeing the admin page
         with self.admin_rights():
-            self.load_page('=course_js.js')
+            self.load_page('=JS=introduction')
             self.check('.index > A').click()
             self.check_alert(required=False, nbr=2)
             self.check('H1', {'innerText': Equal('C5 Administration')})
@@ -408,20 +408,20 @@ class Tests: # pylint: disable=too-many-public-methods
 
         with self.admin_rights():
             self.goto('adm/home')
-            set_date('.course_js TD:nth-child(4) INPUT',
+            set_date('.JS_introduction TD:nth-child(4) INPUT',
                      "2000-01-01 00:00:0", 'Start date updated')
-            set_date('.course_js TD:nth-child(5) INPUT',
+            set_date('.JS_introduction TD:nth-child(5) INPUT',
                      "2100-01-01 00:00:0", 'Stop date updated')
-            self.check('TR.course_js', {'className': Contains('running')})
-            self.check('.course_js TD:nth-child(5) BUTTON').click()
-            self.check('TR.course_js', {'className': Contains('running_tt')})
-            self.check('.course_js TD:nth-child(4) BUTTON').click()
-            self.check('TR.course_js', {'className': Contains('running')})
-            set_date('.course_js TD:nth-child(5) INPUT',
+            self.check('TR.JS_introduction', {'className': Contains('running')})
+            self.check('.JS_introduction TD:nth-child(5) BUTTON').click()
+            self.check('TR.JS_introduction', {'className': Contains('running_tt')})
+            self.check('.JS_introduction TD:nth-child(4) BUTTON').click()
+            self.check('TR.JS_introduction', {'className': Contains('running')})
+            set_date('.JS_introduction TD:nth-child(5) INPUT',
                      "2001-01-01 00:00:0", 'Stop date updated')
-            self.check('TR.course_js', {'className': Contains('done')})
-            self.check('.course_js TD:nth-child(4) BUTTON').click()
-            self.check('TR.course_js', {'className': Contains('running')})
+            self.check('TR.JS_introduction', {'className': Contains('done')})
+            self.check('.JS_introduction TD:nth-child(4) BUTTON').click()
+            self.check('TR.JS_introduction', {'className': Contains('running')})
     def test_master_change(self):
         """Test add and remove master"""
         with self.admin_rights():
@@ -457,7 +457,7 @@ class Tests: # pylint: disable=too-many-public-methods
             os.unlink(to_keep)
     def test_editor(self):
         """Test editor line insert"""
-        self.load_page('=course_js.js')
+        self.load_page('=JS=introduction')
         self.check('.index STYLE + DIV').click() # Returns to the first question
         self.check('.reset_button').click() # Returns to the original text
         self.check_alert(accept=True)
