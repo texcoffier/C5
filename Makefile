@@ -1,7 +1,7 @@
 
 PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 
-%.js:%.py
+%.js:%.py compatibility.py compile.py question.py compile_*.py
 	@echo '$*.py → $*.js'
 	@case $* in \
 	COMPILE*) \
@@ -65,17 +65,7 @@ node_modules/brython:
 xxx-JSCPP.js:
 	GET https://raw.githubusercontent.com/felixhao28/JSCPP/gh-pages/dist/JSCPP.es5.min.js >$@
 
-
-############# Dependencies ############
-
-FRAMEWORK=ccccc.py compile.py question.py
-COMPILE_JS/course_python.js:$(FRAMEWORK) compile_python.py COMPILE_JS/course_python.py
-COMPILE_JS/course_js.js:$(FRAMEWORK) compile_js.py COMPILE_JS/course_js.py
-COMPILE_JS/course_cpp.js:$(FRAMEWORK) compile_cpp.py COMPILE_JS/course_cpp.py
-COMPILE_JS/course_remote.js:$(FRAMEWORK) compile_remote.py COMPILE_JS/course_remote.py
-
-
-
+############# Misc ############
 lint:
 	pylint [^x]*.py
 clean:
