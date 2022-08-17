@@ -52,10 +52,6 @@ try:
 except: # pylint: disable=bare-except
     pass
 
-def popup_message(txt):
-    """OK popup with the message"""
-    alert(txt) # pylint: disable=undefined-variable
-
 def two_digit(number):
     """ 6 → 06 """
     return ('0' + str(int(number)))[-2:]
@@ -111,6 +107,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     last_save = ''
     compile_now = False
     editor_lines = []
+    do_not_register_this_blur = False
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -170,6 +167,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.do_not_clear = {}
         self.seconds = int(millisecs() / 1000)
         print("GUI: init done")
+
+    def popup_message(self, txt):
+        """OK popup with the message"""
+        self.do_not_register_this_blur = True
+        alert(txt) # pylint: disable=undefined-variable
 
     def send_input(self, string):
         """Send the input value to the worker"""
@@ -436,7 +438,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         text = window.getSelection().toString()
         if text not in self.source and text not in self.question.innerText:
             self.record('CopyRejected')
-            popup_message(self.options['forbiden'])
+            self.popup_message(self.options['forbiden'])
             event.preventDefault(True)
             return
         self.record('CopyAllowed')
@@ -464,7 +466,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.insert_text(event, text)
             return # auto paste allowed
         self.record('PasteRejected')
-        popup_message(self.options['forbiden'])
+        self.popup_message(self.options['forbiden'])
         event.preventDefault(True)
 
     def onkeydown(self, event):
@@ -504,6 +506,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Key press"""
     def onblur(self, _event):
         """Window blur"""
+        if self.do_not_register_this_blur:
+            self.do_not_register_this_blur = False
+            return
         self.record('Blur')
     def onscroll(self, _event=None):
         """To synchronize syntax highlighting"""
@@ -589,7 +594,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.record(['answer', self.current_question, value.strip()], True)
                 self.question_done[self.current_question] = True
                 messages = self.options['good']
-                popup_message(messages[millisecs() % len(messages)])
+                self.popup_message(messages[millisecs() % len(messages)])
         elif what == 'executor':
             self.clear_if_needed(what)
             if value == '\000INPUT':
