@@ -49,7 +49,8 @@ while True:
                     or infos[0][0] is None
                     or 'givenName' not in infos[0][1]
                     or 'sn' not in infos[0][1]):
-                sys.stdout.write(json.dumps([login, {'fn': login, 'sn': login}]) + '\n')
+                pointed = (login + '.').split('.')
+                sys.stdout.write(json.dumps([login, {'fn': pointed[0], 'sn': pointed[1]}]) + '\n')
                 sys.stdout.flush()
             else:
                 infos = infos[0][1]
