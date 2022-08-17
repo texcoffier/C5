@@ -276,6 +276,12 @@ async def adm_c5(request): # pylint: disable=too-many-branches
             more = f"Ticket TTL updated to {value} seconds"
         except ValueError:
             more = "Invalid ticket TTL"
+    elif action == 'student':
+        try:
+            utilities.CONFIG.set_value(action, value)
+            more = f"Student detector updated to «{value}» regexp"
+        except ValueError:
+            more = "Invalid regexp"
     elif action == 'remove_old_tickets':
         # Load in order to remove!
         nr_deleted = 0

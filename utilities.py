@@ -225,12 +225,14 @@ class Config:
     masters = []
     ticket_ttl = 86400
     computers = []
+    student = None
     def __init__(self):
         self.config = {
             'masters': self.masters,
             'ticket_ttl': self.ticket_ttl,
             'computers': [],
             'ips_per_room': {"Nautibus,TP3": "192.168.0.1 192.168.0.2"},
+            'student': '[0-9][0-9]$'
         }
         self.load()
     def load(self):
@@ -246,6 +248,7 @@ class Config:
         self.masters = self.config['masters']
         self.ticket_ttl = self.config['ticket_ttl']
         self.computers = self.config['computers']
+        self.student = re.compile(self.config['student'])
     def json(self):
         """For browser or to save"""
         return json.dumps(self.config)
@@ -264,8 +267,11 @@ class Config:
             return True
         if self.masters:
             return False
-        # No master, so check the login
-        return not login[-1].isdigit()
+        # No master, so all teachers are master
+        return not self.is_student(login)
+    def is_student(self, login):
+        """The user is a student"""
+        return self.student.search(login)
 
 CONFIG = Config()
 
@@ -377,7 +383,7 @@ class Session:
         return CONFIG.is_admin(self.login)
     def is_student(self):
         """The user is a student"""
-        return self.login[1:].isdigit()
+        return CONFIG.is_student(self.login)
 
     def header(self, courses=(), more=''):
         """Standard header"""
