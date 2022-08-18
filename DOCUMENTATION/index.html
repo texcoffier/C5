@@ -232,8 +232,11 @@
             permet de donner un sujet différent aux étudiants quand
             ils sont assis l'un à coté de l'autre :
             <pre>def question(self):
-    return "Vous avez le sujet " + self.sujet
-def tester(self):
+    if self.sujet == 0:
+        return "Vous avez le sujet A : ..."
+    else:
+        return "Vous avez le sujet B : ..."
+    def tester(self):
     if self.sujet == 0:
         ...
     else:
@@ -270,7 +273,9 @@ def default_answer(self):
         'allow_copy_paste': False,
         'display_reset': True,
         'automatic_compilation': True, # Recompile dès que c'est possible
-        'positions' : { # [X, Largeur, Y, Hauteur, Couleur] en pourcentage écran
+        'positions' : {
+            # [X, Largeur, Y, Hauteur, Couleur] en pourcentage écran
+            # Mettre le X ou Y pour faire disparaître la zone de l'affichage
             'question': [1, 29, 0, 30, '#EFE'],
             'tester': [1, 29, 30, 70, '#EFE'],
             'editor': [30, 40, 0, 100, '#FFF'],
@@ -362,6 +367,8 @@ def default_answer(self):
             <b>Le fichier doit impérativement porter un nom de la forme
                 <tt>{JS|PYTHON|CPP|REMOTE|SQL}=nom_sujet.py</tt></b>
             afin de le ranger dans le bon répertoire.
+            Il est conseillé de préfixer le nom du sujet
+            par le code de l'UE.
         </li>
         <li> Modification de la liste des administrateurs.</li>
         <li> Durée de vie des tickets de session.</li>
@@ -777,7 +784,6 @@ server {
         <li> <tt>http_server.pid</tt>, <tt>compile_server.pid</tt> PID des serveurs locaux.</li>
         <li> <tt>SSL</tt> certificat généré pour le serveur web local.</li>
         <li> <tt>RapydScript</tt> transpiler Python→JavaScript.</li>
-        <li> <tt>brython</tt> interpréteur Python en JavaScript.</li>
         <li> <tt>xxx-JSCPP.js</tt> compilateur C++ en JavaScript.</li>
         <li> <tt>xxx-highlight.js</tt> coloriage du code source.</li>
         <li> <tt>sandbox</tt> librairie pour filtrer les appels système.</li>
@@ -813,5 +819,9 @@ server {
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
         <li> Destruction d'une session.</li>
         <li> Affichage d'un corrigé.</li>
+        <li> Choisir le thème de highlight.js</li>
+        <li> Ajouter les numéros de lignes.</li>
+        <li> Lors du dépôt choisir le compilateur avec un menu et pas dans le nom du fichier.</li>
+        <li> Permettre l'édition intéractive du sujet sur la page web ?</li>
     </ul>
 </body>
