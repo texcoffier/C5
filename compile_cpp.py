@@ -9,7 +9,7 @@ importScripts('xxx-JSCPP.js' + self.location.search) # pylint: disable=undefined
 JSCPP = self.window.JSCPP # pylint: disable=undefined-variable
 
 
-class Compile_CPP(Compile): # pylint: disable=undefined-variable,invalid-name
+class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     """CPP compiler and evaluator"""
     execution_result = ''
     execution_returns = None

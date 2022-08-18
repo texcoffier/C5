@@ -54,4 +54,4 @@ int main() {
 }
 """
 
-Compile_CPP([QEnd()]) # pylint: disable=undefined-variable
+# Session([QEnd()]) # pylint: disable=undefined-variable

@@ -163,17 +163,17 @@
     <p>
         Pour chaque question il y a une classe
         dont les méthodes définissent la question.
-        Voici les méthodes possibles dans l'ordre d'appel lorsque l'étudiant arrive sur la question :
+        Voici les méthodes dans l'ordre d'appel lorsque l'étudiant arrive sur la question :
     </p>
     <ul>
-        <li> <tt>default_answer(self)</tt> qui retourne la valeur initiale de l'éditeur.</li>
-        <li> <tt>question(self)</tt> qui retourne la question au format HTML.
+        <li> <tt>default_answer(self)</tt> retourne la valeur initiale de l'éditeur.</li>
+        <li> <tt>question(self)</tt> retourne la question au format HTML.
             C'est ce qui est affiché en haut à gauche.
             Cette méthode est appelée chaque fois que l'étudiant arrive sur la question.
             Si la question est aléatoire, on peut conserver dans l'instance
             de la question l'aléa choisi ou bien en choisir un nouveau à chaque fois.
         </li>
-        <li> <tt>tester(self)</tt> qui affiche les indices
+        <li> <tt>tester(self)</tt> affiche les indices
             et décide quand faire passer à la question suivante.
             C'est ce qui est affiché en bas à gauche.
         </li>
@@ -196,9 +196,11 @@
     <p>
         Un sujet complet est une liste de questions gérées
         par un unique compilateur.
-        La dernier ligne du fichier définissant les questions est par exemple :
+        La dernière ligne du fichier définie la liste des questions,
+        si elle n'est pas indiquée alors toutes les questions du fichier
+        sont proposées à l'étudiant :
     </p>
-    <pre>Compile_Python([Q0(), Q1(), Q2(), Q3(), QEnd()])</pre>
+    <pre>Session([Q0(), Q1(), Q2(), Q3(), QEnd()])</pre>
 
     <h3>Attributs</h3>
     <ul>
@@ -299,12 +301,12 @@ def default_answer(self):
         Il est nécessaire d'avoir un compilateur du langage écrit en JavaScript :
     </p>
     <ul>
-        <li> JavaScript: <tt>Compile_JS</tt></li>
-        <li> Python: <tt>Compile_Python</tt></li>
-        <li> C++: <tt>Compile_CCP</tt>)
+        <li> JavaScript: <tt>COMPILE_JS</tt></li>
+        <li> Python: <tt>COMPILE_PYTHON</tt></li>
+        <li> C++: <tt>COMPILE_CCP</tt>)
             ATTENTION : pas de classe, de structure ni de passage par référence.
         </li>
-        <li> C++: <tt>Compile_remote</tt> envoi des requêtes à
+        <li> C++: <tt>COMPILE_REMOTE</tt> envoi des requêtes à
             <tt>compile_server.py</tt> pour compiler avec <tt>g++</tt>
             et exécuter. Supporte <tt>cin</tt> mais pas le graphique.
             Tous les appels systèmes sont interdits (sauf <tt>fstat</tt>, <tt>write</tt>, <tt>read, </tt><tt>lseek</tt>,
@@ -806,6 +808,5 @@ server {
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
         <li> Destruction d'une session.</li>
         <li> Affichage d'un corrigé.</li>
-        <li> Générer automatiquement la liste finale des questions.</li>
     </ul>
 </body>

@@ -7,9 +7,6 @@ CCCCC          class manages the GUI
                It sends source code to the Compile worker with sendMessage
                It receives events to update the GUI
 Compile        worker base class to manage the question list, compilation, execution
-Compile_JS     subclass for Javascript compiler
-Compile_CPP    subclass for C++ compiler
-Compile_remote subclass for remote compiling
 Question       base class for question definition
 """
 

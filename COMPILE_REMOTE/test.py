@@ -50,4 +50,4 @@ int main() {
 }
 """
 
-Compile_remote([QEnd()]) # pylint: disable=undefined-variable
+# Session([QEnd()]) # pylint: disable=undefined-variable

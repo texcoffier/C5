@@ -275,5 +275,5 @@ for line in range(hauteur):
           + '</span>')
 """
 
-Compile_Python([Q_print(), Q_variable(), Q_booleen(), Q_str_add(),  # pylint: disable=undefined-variable
-                Q_import_math(), Q_exo1(), QEnd()])
+# Session([Q_print(), Q_variable(), Q_booleen(), Q_str_add(),  # pylint: disable=undefined-variable
+#          Q_import_math(), Q_exo1(), QEnd()])

@@ -279,4 +279,4 @@ def init():
     questions.append(End())
     return questions
 
-Compile_remote(init()) # pylint: disable=undefined-variable
+Session(init()) # pylint: disable=undefined-variable

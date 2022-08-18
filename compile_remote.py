@@ -2,7 +2,7 @@
 Run the compilation and execution on a remote server
 """
 
-class Compile_remote(Compile): # pylint: disable=undefined-variable,invalid-name
+class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None

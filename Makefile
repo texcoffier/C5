@@ -6,13 +6,17 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 	@case $* in \
 	COMPILE*) \
 		COMPILER=$$(echo $* | sed -e 's,/.*,,' | tr '[A-Z]' '[a-z]') ; \
-		FILES="compatibility.py compile.py question.py $$COMPILER.py $*.py" \
+		FILES="compatibility.py compile.py question.py $$COMPILER.py $*.py" ; \
+		SESSION=$$(echo ; echo 'if not Compile.worker: Session([' ; \
+		grep '^class.*(Question)' $*.py | sed -r 's/.*class *(.*)\(Question\).*/\1(),/' ;\
+		echo '])') \
 		;; \
 	*) \
 		FILES="compatibility.py $*.py" \
 		;; \
 	esac ; \
 	cat $$FILES > $*.py.xxx ; \
+	echo $$SESSION >> $*.py.xxx ; \
 	$(PYTOJS) $*.py.xxx >$*.js ; \
 	rm $*.py.xxx
 

@@ -156,4 +156,4 @@ class QEnd(Question): # pylint: disable=undefined-variable
     def default_answer(self):
         return ""
 
-Compile_JS([Q0(), Q1(), Q2(), Q3(), QEnd()]) # pylint: disable=undefined-variable
+# Session([Q0(), Q1(), Q2(), Q3(), QEnd()]) # pylint: disable=undefined-variable

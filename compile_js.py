@@ -29,7 +29,7 @@ function _tmp_()
 
 OFFSET = len(PREAMBLE) - 1
 
-class Compile_JS(Compile): # pylint: disable=undefined-variable,invalid-name
+class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None

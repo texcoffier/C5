@@ -27,7 +27,7 @@ _sys.stderr = __eRRor__()
 
 OFFSET = len(PREAMBLE.split('\n')) - 1
 
-class Compile_Python(Compile): # pylint: disable=undefined-variable,invalid-name
+class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None
