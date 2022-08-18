@@ -11,6 +11,7 @@ try:
     RegExp = RegExp
     encodeURIComponent = encodeURIComponent
     document = document
+    setTimeout = setTimeout
 except ValueError:
     pass
 
@@ -45,7 +46,8 @@ def display(): # pylint: disable=too-many-statements
         BUTTON.start_date, BUTTON.stop_date { height: 1.55em }
         BUTTON.start_date { margin-top: 0.2em }
         BUTTON.stop_date { margin-top: 0.1em }
-        TABLE TD TEXTAREA { border: 0px; height: 3.5em; margin-bottom: 0px; font-family: monospace,monospace }
+        TABLE TD TEXTAREA { border: 0px; height: 3.5em; margin-bottom: 0px;
+                            font-family: monospace,monospace }
         TABLE TD TEXTAREA.tt { width: 5em }
         TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
         TD BUTTON {
@@ -77,7 +79,8 @@ def display(): # pylint: disable=too-many-statements
     <p>
     Changing the stop date will not update onscreen timers.
     <table>
-    <tr><th>Compiler<br>Session<th>Logs<th>Try<th>Start date/time<br>Stop date/time<th>Options<th>TT logins
+    <tr><th>Compiler<br>Session<th>Logs<th>Try
+        <th>Start date/time<br>Stop date/time<th>Options<th>TT logins
         <th>ZIP<th>Update<br>course source<th>Teachers</tr>
     ''']
     def add_button(url, label, name='', new_window=False):
@@ -110,12 +113,12 @@ def display(): # pylint: disable=too-many-statements
             + (name and ' class="' + name + '"' or '')
             + '>'
             + html(value) + '</textarea>')
-    def form(content, disable):
+    def form(replace, disable):
         value = (
             '<form id="upload_course" method="POST" enctype="multipart/form-data" '
             + 'action="/upload_course?ticket=' + TICKET + '">'
-            + '<input type="file" name="course">'
-            + content
+            + '<input type="file" name="course" onchange="this.parentNode.submit()">'
+            + '<input type="hidden" name="replace" value="' + replace + '">'
             + '</form>')
         if disable:
             value = value.replace(RegExp("input ", "g"), "input disabled ")
@@ -123,7 +126,8 @@ def display(): # pylint: disable=too-many-statements
 
     for course in COURSES:
         i_am_a_teacher = LOGIN in course.teachers.replace('\n', ' ').split(' ')
-        text.append('<tr class="' + course.status + ' ' + course.course.replace('=','_') + '"><td>')
+        text.append('<tr class="' + course.status + ' '
+                    + course.course.replace('=', '_') + '"><td>')
         text.append(course.course.replace('=', '<br><b>'))
         text.append('</b>')
         text.append('<td>')
@@ -153,16 +157,16 @@ def display(): # pylint: disable=too-many-statements
         if course.logs:
             add_button('/adm/get/COMPILE_' + course.course.replace('=', '/') + '.zip', 'ZIP')
         text.append('<td>')
-        form(
-            '<div><input type="submit" value="Replace «' + course.course + '.py»'
-            + '" name="replace"></div>',
-            not i_am_a_teacher)
+        form(course.course + '.py', not i_am_a_teacher)
         text.append('<td>')
         add_textarea('/adm/config/' + course.course + '/teachers/', course.teachers,
                      disable=not i_am_a_teacher)
         text.append('</tr>\n')
     text.append('</table><p>')
-    form('<input type="submit" value="Add a new course">', False)
+    text.append('''
+        Add a new session, filename must be as «{JS|CPP|PYTHON|REMOTE}=SESSION.py»
+        for example «JS=foo_loop.py», the session name must not yet exists.''')
+    form('', False)
     text.append('<hr>')
     text.append('Masters: ')
     for master in CONFIG.masters:

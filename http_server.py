@@ -437,16 +437,17 @@ async def upload_course(request): # pylint: disable=too-many-branches
     src_filename = getattr(filehandle, 'filename', None)
     replace = post.get('replace', '')
     if src_filename:
-        if replace:
-            dst_filename = replace.split('«')[1].split('»')[0]
-        else:
-            dst_filename = src_filename
-        compiler = f"compile_{dst_filename.split('=')[0].lower()}.py"
-        dst_filename = utilities.get_course(dst_filename[:-3]) # Remove .py
+        dst_filename = replace or src_filename
+        if '=' in dst_filename:
+            compiler = f"compile_{dst_filename.split('=')[0].lower()}.py"
+            dst_filename = utilities.get_course(dst_filename[:-3]) # Remove .py
     else:
         more = "You must select a file!"
     if src_filename is None:
         more = "You forgot to select a course file!"
+    elif '=' not in src_filename:
+        more = """The file name shape must be : COMPILER=SESSION.py<br>
+        For example: «PYTHON=introduction.py» or «JS=example.py»!"""
     elif not src_filename.endswith('.py'):
         more = "Only «.py» file allowed!"
     elif '/' in src_filename:
