@@ -36,10 +36,17 @@ def display(): # pylint: disable=too-many-statements
         '''
     <h1>C5 Administration</h1>
     <style>
+        BODY { font-family: sans-serif }
         TABLE { border-spacing: 0px; border-collapse: collapse ; }
-        TABLE TD { border: 1px solid #888; padding: 0px }
+        TABLE TD { border: 1px solid #888; padding: 0px; white-space: nowrap }
         TABLE TD > INPUT { margin: 0.5em ; margin-right: 0px }
-        TABLE TD TEXTAREA { border: 0px; height: 4em }
+        INPUT.start_date {margin-top: 0.2em; margin-bottom: 0.1em }
+        INPUT.stop_date { margin-top: 0.1em; margin-bottom: 0.2em }
+        BUTTON.start_date, BUTTON.stop_date { height: 1.55em }
+        BUTTON.start_date { margin-top: 0.2em }
+        BUTTON.stop_date { margin-top: 0.1em }
+        TABLE TD TEXTAREA { border: 0px; height: 3.5em; margin-bottom: 0px; font-family: monospace,monospace }
+        TABLE TD TEXTAREA.tt { width: 5em }
         TT, PRE, INPUT { font-family: monospace, monospace; font-size: 100% }
         TD BUTTON {
             margin: 1px ; height: 2.5em; vertical-align: top;
@@ -65,7 +72,7 @@ def display(): # pylint: disable=too-many-statements
     <p>
     Changing the stop date will not update onscreen timers.
     <table>
-    <tr><th>Course<br>Master<th>Logs<th>Try<th>Start<th>Stop<th>Options<th>TT logins
+    <tr><th>Compiler<br>Session<th>Logs<th>Try<th>Start date/time<br>Stop date/time<th>Options<th>TT logins
         <th>ZIP<th>Update<br>course source<th>Teachers</tr>
     ''']
     def add_button(url, label, name='', new_window=False):
@@ -75,7 +82,7 @@ def display(): # pylint: disable=too-many-statements
         else:
             action = 'window.location = ' + url
         text.append('<button onclick="' + action + '" class="' + name + '">'
-            + label + '</button>')
+                    + label + '</button>')
     def add_input(url, value, name='', disable=False):
         text.append(
             '<input onchange="window.location = \''
@@ -90,11 +97,12 @@ def display(): # pylint: disable=too-many-statements
             + ((value == '1') and ' checked' or '')
             + (disable and ' disabled' or '')
             + '>' + label + '</label>')
-    def add_textarea(url, value, disable=False):
+    def add_textarea(url, value, disable=False, name=''):
         text.append(
             '<textarea onchange="window.location = \''
             + url + "'+encodeURIComponent(this.value)+" + '\'?ticket=' + TICKET + '\'" '
             + (disable and ' disabled' or '')
+            + (name and ' class="' + name + '"' or '')
             + '>'
             + html(value) + '</textarea>')
     def form(content, disable):
@@ -119,13 +127,13 @@ def display(): # pylint: disable=too-many-statements
         text.append('<td>')
         add_button('=' + course.course, 'Try', '', True)
         text.append('<td>')
-        add_input('/adm/config/' + course.course + '/start/', course.start)
+        add_input('/adm/config/' + course.course + '/start/', course.start, 'start_date')
         if course.status != 'running':
-            add_button('/adm/config/' + course.course + '/start/now', 'Now')
-        text.append('<td>')
-        add_input('/adm/config/' + course.course + '/stop/', course.stop)
+            add_button('/adm/config/' + course.course + '/start/now', 'Now', 'start_date')
+        text.append('<br>')
+        add_input('/adm/config/' + course.course + '/stop/', course.stop, 'stop_date')
         if course.status != 'done':
-            add_button('/adm/config/' + course.course + '/stop/now', 'Now')
+            add_button('/adm/config/' + course.course + '/stop/now', 'Now', 'stop_date')
         text.append('<td>')
         add_toggle('/adm/config/' + course.course + '/copy_paste/', course.copy_paste, 'Copy/Paste')
         label = 'Checkpoint'
@@ -135,8 +143,8 @@ def display(): # pylint: disable=too-many-statements
         add_toggle('/adm/config/' + course.course + '/checkpoint/', course.checkpoint,
                    label, disable=not i_am_a_teacher)
         text.append('<td>')
-        add_textarea('/adm/config/' + course.course + '/tt/', course.tt)
-        text.append('</textarea><td>')
+        add_textarea('/adm/config/' + course.course + '/tt/', course.tt, not i_am_a_teacher, 'tt')
+        text.append('<td>')
         if course.logs:
             add_button('/adm/get/COMPILE_' + course.course.replace('=', '/') + '.zip', 'ZIP')
         text.append('<td>')

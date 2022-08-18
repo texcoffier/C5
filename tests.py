@@ -408,19 +408,19 @@ class Tests: # pylint: disable=too-many-public-methods
 
         with self.admin_rights():
             self.goto('adm/home')
-            set_date('.JS_introduction TD:nth-child(4) INPUT',
+            set_date('.JS_introduction INPUT.start_date',
                      "2000-01-01 00:00:0", 'Start date updated')
-            set_date('.JS_introduction TD:nth-child(5) INPUT',
+            set_date('.JS_introduction INPUT.stop_date',
                      "2100-01-01 00:00:0", 'Stop date updated')
             self.check('TR.JS_introduction', {'className': Contains('running')})
-            self.check('.JS_introduction TD:nth-child(5) BUTTON').click()
+            self.check('.JS_introduction BUTTON.stop_date').click()
             self.check('TR.JS_introduction', {'className': Contains('running_tt')})
-            self.check('.JS_introduction TD:nth-child(4) BUTTON').click()
+            self.check('.JS_introduction BUTTON.start_date').click()
             self.check('TR.JS_introduction', {'className': Contains('running')})
-            set_date('.JS_introduction TD:nth-child(5) INPUT',
+            set_date('.JS_introduction INPUT.stop_date',
                      "2001-01-01 00:00:0", 'Stop date updated')
             self.check('TR.JS_introduction', {'className': Contains('done')})
-            self.check('.JS_introduction TD:nth-child(4) BUTTON').click()
+            self.check('.JS_introduction BUTTON.start_date').click()
             self.check('TR.JS_introduction', {'className': Contains('running')})
     def test_master_change(self):
         """Test add and remove master"""
