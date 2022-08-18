@@ -52,11 +52,7 @@ def mouse_enter():
 def mouse_leave():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = False
-def html(txt):
-    """Escape < > &"""
-    # pylint: disable=undefined-variable
-    return txt.replace(RegExp('&', 'g'), '&amp;'
-                      ).replace(RegExp('<', 'g'), '&lt;').replace(RegExp('>', 'g'), '&gt;')
+
 def two_digit(number):
     """ 6 → 06 """
     return ('0' + str(int(number)))[-2:]

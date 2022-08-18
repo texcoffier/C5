@@ -155,10 +155,10 @@
     </p>
     <ul>
         <li> Le sujet est enregistré dans un des répertoires nommés
-            <tt>COMPILE_{JS|PYTHON|CPP|REMOTE}</tt>
+            <tt>COMPILE_{JS|PYTHON|CPP|REMOTE|SQL}</tt>
         </li>
         <li> Il est compilé en tapant : <tt>make prepare</tt></li>
-        <li> Il est utilisable avec l'URL : <tt>https://…/={JS|PYTHON|CPP|REMOTE}=<b>nom_sujet</b></tt></li>
+        <li> Il est utilisable avec l'URL : <tt>https://…/={JS|PYTHON|CPP|REMOTE|SQL}=<b>nom_sujet</b></tt></li>
     </ul>
     <p>
         Pour chaque question il y a une classe
@@ -303,6 +303,7 @@ def default_answer(self):
     <ul>
         <li> JavaScript: <tt>COMPILE_JS</tt></li>
         <li> Python: <tt>COMPILE_PYTHON</tt></li>
+        <li> SQL: <tt>COMPILE_SQL</tt></li>
         <li> C++: <tt>COMPILE_CCP</tt>)
             ATTENTION : pas de classe, de structure ni de passage par référence.
         </li>
@@ -359,7 +360,7 @@ def default_answer(self):
     <ul>
         <li> Ajout d'une nouvelle session.
             <b>Le fichier doit impérativement porter un nom de la forme
-                <tt>{JS|PYTHON|CPP|REMOTE}=nom_sujet.py</tt></b>
+                <tt>{JS|PYTHON|CPP|REMOTE|SQL}=nom_sujet.py</tt></b>
             afin de le ranger dans le bon répertoire.
         </li>
         <li> Modification de la liste des administrateurs.</li>
@@ -609,6 +610,10 @@ server {
             <td>COMPILE_REMOTE/errors.py
             <td>Une série d'exercices dans lesquels l'étudiant doit corriger des erreurs de syntaxe.
         </tr>
+        <tr class="cours">
+            <td>COMPILE_SQL/test.py
+            <td>Exemple d'utilisation de compile_sql pour tester s'il fonctionne.
+        </tr>
         <tr>
             <td>DOCUMENTATION/index.html
             <td>Cette page d'explication.
@@ -738,7 +743,7 @@ server {
                 <li> La liste des ordinateurs en panne.
             </ul>
         </li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE}/nom_sujet.cf</tt> est la configuration d'un cours
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL}/nom_sujet.cf</tt> est la configuration d'un cours
             <ul>
                 <li> Dates de début et fin.</li>
                 <li> Listes des étudiants avec un tiers-temps.</li>
@@ -757,11 +762,11 @@ server {
         <li> <tt>compile_server.log</tt> toutes les demandes de compilation reçues.</li>
         <li> <tt>infos_server.log</tt> toutes les requêtes nom/prénom faites.</li>
         <li> <tt>tests.log</tt> Résumé des tests de régression.</li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE}/nom_sujet/LOGIN/http_server.log</tt> toutes les actions de
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL}/nom_sujet/LOGIN/http_server.log</tt> toutes les actions de
             l'étudiant.<br>
             <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
         </li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE}/nom_sujet/LOGIN/compile_server.log</tt><br>
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL}/nom_sujet/LOGIN/compile_server.log</tt><br>
             toutes les compilations/exécutions faites par l'étudiant.</li>
     </ul>
     <p>

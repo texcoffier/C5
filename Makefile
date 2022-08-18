@@ -34,7 +34,7 @@ sandbox:
 favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
-prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js sandbox \
+prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js node_modules/alasql sandbox \
 	ccccc.js adm_home.js adm_course.js checkpoint.js favicon.ico
 	@$(MAKE) $$(echo COMPILE_*/*.py | sed 's/\.py/.js/g')
 	@if [ ! -d SSL ] ; then ./utilities.py SSL-SS ; fi
@@ -60,11 +60,11 @@ xxx-highlight.js:
 
 ############# Compilers ############
 node_modules/brython:
-	-rm brython
 	npm install brython@3.10.5 # 3.10.6 not working (missing module_id)
-	ln -s node_modules/brython .
 xxx-JSCPP.js:
 	GET https://raw.githubusercontent.com/felixhao28/JSCPP/gh-pages/dist/JSCPP.es5.min.js >$@
+node_modules/alasql:
+	npm install alasql@1.7.2
 
 ############# Misc ############
 lint:

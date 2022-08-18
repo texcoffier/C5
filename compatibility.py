@@ -34,3 +34,10 @@ def join(table):
     return table.join(this) # pylint: disable=undefined-variable
 Object.defineProperty(String.prototype, 'join',
                       {'enumerable': False, 'value': join})
+
+def html(txt):
+    """Escape < > &"""
+    # pylint: disable=undefined-variable
+    return txt.replace(RegExp('&', 'g'), '&amp;'
+                      ).replace(RegExp('<', 'g'), '&lt;'
+                               ).replace(RegExp('>', 'g'), '&gt;')

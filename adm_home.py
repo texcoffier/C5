@@ -22,12 +22,6 @@ def update_url():
     clean = url.replace(RegExp('(.*)/(adm|upload).*([?]ticket=.*)'), "$1/adm/home$3")
     history.replaceState('_a_', '_t_', clean)
 
-def html(txt):
-    """Escape < > &"""
-    # pylint: disable=undefined-variable
-    return txt.replace(RegExp('&', 'g'), '&amp;'
-                      ).replace(RegExp('<', 'g'), '&lt;').replace(RegExp('>', 'g'), '&gt;')
-
 def display(): # pylint: disable=too-many-statements
     """Display adm home page"""
     update_url()
@@ -80,8 +74,8 @@ def display(): # pylint: disable=too-many-statements
     Changing the stop date will not update onscreen timers.
     <table>
     <tr><th>Compiler<br>Session<th>Logs<th>Try
-        <th>Start date/time<br>Stop date/time<th>Options<th>TT logins
-        <th>ZIP<th>Update<br>course source<th>Teachers</tr>
+        <th>Start date/time<br>Stop date/time<th>Options<th>TT<br>logins
+        <th>full<br>ZIP<th>Update<br>course source<th>Teachers</tr>
     ''']
     def add_button(url, label, name='', new_window=False):
         url = "'" + url + '?ticket=' + TICKET + "'"

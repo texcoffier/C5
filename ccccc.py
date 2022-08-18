@@ -10,14 +10,6 @@ Compile        worker base class to manage the question list, compilation, execu
 Question       base class for question definition
 """
 
-def html(txt):
-    """Escape < > &"""
-    # pylint: disable=undefined-variable
-    return txt.replace(RegExp('&', 'g'), '&amp;'
-                      ).replace(RegExp('<', 'g'), '&lt;'
-                               ).replace(RegExp('>', 'g'), '&gt;')
-
-
 # Hide pylint warnings
 try:
     document = document

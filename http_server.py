@@ -88,6 +88,7 @@ def handle(base=''):
         filename = request.match_info['filename']
         course = None
         if base:
+            assert '/.' not in filename
             filename = base + '/' + filename
         else:
             if filename.startswith("="):
@@ -712,7 +713,7 @@ async def checkpoint_message(request):
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
-                web.get('/brython/{filename}', handle('brython')),
+                web.get('/node_modules/{filename:.*}', handle('node_modules')),
                 web.get('/adm/get/{filename:.*}', adm_get),
                 web.get('/adm/answers/{saved}/{course:.*}', adm_answers),
                 web.get('/adm/home', adm_home),
