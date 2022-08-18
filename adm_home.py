@@ -56,9 +56,14 @@ def display(): # pylint: disable=too-many-statements
         .done { background: #FDD }
         .running { background: #DFD }
         .running_tt { background: #FEB }
-        .more { border: 1px solid black ; background: #FFE;
+        #more { border: 1px solid black ; background: #FFE;
                 padding: 0.3em ; margin: 0.1em ;
-                float: right;
+                position: absolute;
+                right: 0px;
+                top: 0px;
+                transform: scale(5, 5);
+                transform-origin: top right;
+                transition: transform 1s
               }
         TD INPUT[type=submit], TD INPUT[type=file] { margin: 0px }
         BODY > TEXTAREA { width: 100%; height: 10em }
@@ -186,6 +191,10 @@ def display(): # pylint: disable=too-many-statements
         content.append(message + ' ' + CONFIG.messages[message])
     add_textarea('/adm/c5/messages/', '\n'.join(content))
     document.body.innerHTML = text.join('') # pylint: disable=no-member
-
+    def anime():
+        more = document.getElementById('more')
+        if more:
+            more.style.transform = 'scale(1,1)'
+    setTimeout(anime, 100)
 
 display()

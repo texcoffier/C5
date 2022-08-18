@@ -315,9 +315,9 @@ async def adm_home(request, more=''):
     """Home page for administrators"""
     if more:
         if more.endswith('!'):
-            more = '<div class="more" style="background: #F88">' + more + '</div>'
+            more = '<div id="more" style="background: #F88">' + more + '</div>'
         else:
-            more = '<div class="more">' + more + '</div>'
+            more = '<div id="more">' + more + '</div>'
 
     utilities.CourseConfig.load_all_configs()
     session = await get_admin_login(request)

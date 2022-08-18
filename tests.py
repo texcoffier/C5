@@ -404,7 +404,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check(path).send_keys(
                 date + ('1' if old_date[-1] == '0' else '0'))
             self.check(path).send_keys(Keys.ENTER)
-            self.check('.more', {'innerText': Contains(expect)})
+            self.check('#more', {'innerText': Contains(expect)})
 
         with self.admin_rights():
             self.goto('adm/home')
@@ -428,9 +428,9 @@ class Tests: # pylint: disable=too-many-public-methods
             self.goto('adm/home')
             self.check('.add_master').send_keys('john.doe')
             self.check('.add_master').send_keys(Keys.ENTER)
-            self.check('.more', {'innerText': Contains('Master «john.doe» added')})
+            self.check('#more', {'innerText': Contains('Master «john.doe» added')})
             self.check("BUTTON.del_master_john_doe").click()
-            self.check('.more', {'innerText': Contains('Master «john.doe» removed')})
+            self.check('#more', {'innerText': Contains('Master «john.doe» removed')})
     def test_ticket_ttl(self):
         """Test TTL change"""
         to_delete = "TICKETS/TO_DELETE"
@@ -446,13 +446,13 @@ class Tests: # pylint: disable=too-many-public-methods
             self.select_all('.ticket_ttl')
             self.check('.ticket_ttl').send_keys('X')
             self.check('.ticket_ttl').send_keys(Keys.ENTER)
-            self.check('.more', {'innerText': Contains('Invalid')})
+            self.check('#more', {'innerText': Contains('Invalid')})
             self.select_all('.ticket_ttl')
             self.check('.ticket_ttl').send_keys(str(ttl))
             self.check('.ticket_ttl').send_keys(Keys.ENTER)
-            self.check('.more', {'innerText': Contains(f'to {ttl} seconds')})
+            self.check('#more', {'innerText': Contains(f'to {ttl} seconds')})
             self.check('.remove_olds').click()
-            self.check('.more', {'innerText': Contains('tickets deleted')})
+            self.check('#more', {'innerText': Contains('tickets deleted')})
             assert not os.path.exists(to_delete)
             os.unlink(to_keep)
     def test_editor(self):
@@ -524,5 +524,5 @@ except: # pylint: disable=bare-except
     traceback.print_exc()
 finally:
     os.system('./127 stop')
-    os.system('rm -r */Anon#* ; rm $(grep -l "Anon#" TICKETS/*)')
+    os.system('rm -r COMPILE_*/*/Anon#* ; rm $(grep -l "Anon#" TICKETS/*)')
     sys.exit(EXIT_CODE)
