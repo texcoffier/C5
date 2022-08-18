@@ -390,7 +390,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.load_page('=JS=introduction')
         self.check('.index > A').click()
         self.check_alert(required=False, nbr=2)
-        self.check('.editor') # Not seeing the admin page
+        self.check('H1', {'innerText': Equal(utilities.CONFIG.config['messages']['not_admin'])})
         with self.admin_rights():
             self.load_page('=JS=introduction')
             self.check('.index > A').click()

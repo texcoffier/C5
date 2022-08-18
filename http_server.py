@@ -92,6 +92,8 @@ def handle(base=''):
         else:
             if filename.startswith("="):
                 course = utilities.CourseConfig.get(utilities.get_course(filename[1:]))
+                if not course.dirname:
+                    return session.message('unknown')
                 answers = get_answers(course.dirname, session.login, saved=True)
                 for key, value in answers.items():
                     answers[key] = value[-1] # Only the last answer
@@ -120,11 +122,11 @@ def handle(base=''):
                 status = course.status(login, session.client_ip)
                 if not session.is_admin():
                     if status == 'done':
-                        filename = "COMPILE_JS/done.js"
-                    elif status == 'pending':
-                        filename = "COMPILE_JS/pending.js"
-                    elif status == 'checkpoint':
-                        filename = "COMPILE_JS/checkpoint.js"
+                        return session.message('done')
+                    if status == 'pending':
+                        return session.message('pending')
+                    if status == 'checkpoint':
+                        return session.message('checkpoint')
         return File.get(filename).response()
     return real_handle
 
@@ -163,7 +165,7 @@ async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
     if not session.is_admin():
-        session.redirect('=JS=not_admin')
+        raise session.message('not_admin', exception=True)
     return session
 
 async def get_teacher_login_and_course(request):
@@ -171,9 +173,9 @@ async def get_teacher_login_and_course(request):
     session = await utilities.Session.get(request)
     course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
     if session.is_student():
-        session.redirect('=JS=not_teacher')
+        raise session.message('not_teacher', exception=True)
     # if session.login not in course.teachers:
-    #     session.redirect('=JS=not_teacher')
+    #     raise session.message('not_teacher', exception=True)
     return session, course
 
 async def adm_course(request):

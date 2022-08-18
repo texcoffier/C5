@@ -79,6 +79,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     configs = {}
     def __init__(self, course):
         if not os.path.exists(course + '.py'):
+            self.dirname = ''
             return
         self.course = course.replace('COMPILE_', '').replace('/', '=')
         self.filename = course + '.cf'
@@ -205,14 +206,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     def load_all_configs(cls):
         """Read all configuration from disk"""
         for course in sorted(glob.glob('COMPILE_*/*.py')):
-            if course in (
-                    'COMPILE_JS/checkpoint.py',
-                    'COMPILE_JS/done.py',
-                    'COMPILE_JS/not_admin.py',
-                    'COMPILE_JS/not_teacher.py',
-                    'COMPILE_JS/pending.py',
-                ):
-                continue
             cls.get(course[:-3])
 
 def get_course(txt):
@@ -232,7 +225,15 @@ class Config:
             'ticket_ttl': self.ticket_ttl,
             'computers': [],
             'ips_per_room': {"Nautibus,TP3": "192.168.0.1 192.168.0.2"},
-            'student': '[0-9][0-9]$'
+            'student': '[0-9][0-9]$',
+            'messages': {
+                'unknown': "Cette session n'existe pas",
+                'checkpoint': "Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen",
+                'done': "La session d'exercice ou d'examen est terminée",
+                'not_admin': "Vous n'êtes pas administrateur C5",
+                'not_teacher': "Vous ne surveillez pas cet examen",
+                'pending': "La session d'exercice ou d'examen n'a pas commencé",
+                }
         }
         self.load()
     def load(self):
@@ -409,6 +410,26 @@ class Session:
     def redirect(self, where):
         """In case of problem redirect to an error page"""
         raise web.HTTPFound(f'https://{C5_URL}/{where}?ticket={self.ticket}')
+
+    def message(self, key, exception=False):
+        """Error message for the user in a standalone page"""
+        if exception:
+            fct = web.HTTPSuccessful
+        else:
+            fct = web.Response
+        return fct(
+            body=f"""<!DOCTYPE html>
+            <html>
+            <head>
+            <meta charset="utf-8">
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+            <link REL="icon" href="/favicon.ico?ticket={self.ticket}">
+            </head>
+            <h1>{CONFIG.config['messages'][key]}</h1>
+            """,
+            content_type='text/html',
+            headers={'Cache-Control': 'no-cache'}
+            )
 
 C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host (for SSH)
 C5_IP = os.getenv('C5_IP', local_ip())               # For Socket IP binding
