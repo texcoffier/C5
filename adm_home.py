@@ -163,6 +163,7 @@ def display(): # pylint: disable=too-many-statements
     text.append(' ')
     add_button('/adm/c5/remove_old_tickets/0', 'Remove old tickets now', name="remove_olds")
     text.append('<hr>')
+    text.append('For each room indicate the computers IP:')
     content = []
     for room in CONFIG.ips_per_room:
         content.append(room + ' ' + CONFIG.ips_per_room[room])
@@ -170,6 +171,12 @@ def display(): # pylint: disable=too-many-statements
     text.append('<hr>')
     text.append('It is a student if the login match regexp: ')
     add_input('/adm/c5/student/', CONFIG.student, name="student")
+    text.append('<hr>')
+    text.append('User messages:')
+    content = []
+    for message in CONFIG.messages:
+        content.append(message + ' ' + CONFIG.messages[message])
+    add_textarea('/adm/c5/messages/', '\n'.join(content))
     document.body.innerHTML = text.join('') # pylint: disable=no-member
 
 

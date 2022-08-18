@@ -245,6 +245,20 @@ async def adm_config(request):
 
     return await adm_home(request, feedback)
 
+def text_to_dict(text):
+    """Transform a user text to a dict.
+             key1 value1
+             key2 value2
+        Become: {'key1': 'value1', 'key2': 'value2'}
+    """
+    dictionary = {}
+    for line in text.strip().split('\n'):
+        line = line.strip()
+        if line:
+            key, value = line.split(' ', 1)
+            dictionary[key] = value
+    return dictionary
+
 async def adm_c5(request): # pylint: disable=too-many-branches
     """Remove a C5 master"""
     _session = await get_admin_login(request)
@@ -263,27 +277,28 @@ async def adm_c5(request): # pylint: disable=too-many-branches
             more = f"Master «{value}» removed"
     elif action == 'ips_per_room':
         try:
-            ips = {}
-            for line in value.strip().split('\n'):
-                if line:
-                    room, ip_addrs = line.split(' ', 1)
-                    ips[room] = ip_addrs
-            utilities.CONFIG.set_value(action, ips)
+            utilities.CONFIG.set_value(action, text_to_dict(value))
             more = f"IPs per room updated to<pre>{value}</pre>"
         except ValueError:
-            more = "Invalid syntax"
+            more = "Invalid syntax!"
+    elif action == 'messages':
+        try:
+            utilities.CONFIG.set_value(action, text_to_dict(value))
+            more = f"Messages updated to<pre>{value}</pre>"
+        except ValueError:
+            more = "Invalid syntax!"
     elif action == 'ticket_ttl':
         try:
             utilities.CONFIG.set_value(action, int(value))
             more = f"Ticket TTL updated to {value} seconds"
         except ValueError:
-            more = "Invalid ticket TTL"
+            more = "Invalid ticket TTL!"
     elif action == 'student':
         try:
             utilities.CONFIG.set_value(action, value)
             more = f"Student detector updated to «{value}» regexp"
         except ValueError:
-            more = "Invalid regexp"
+            more = "Invalid regexp!"
     elif action == 'remove_old_tickets':
         # Load in order to remove!
         nr_deleted = 0
