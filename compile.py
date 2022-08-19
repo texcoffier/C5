@@ -104,8 +104,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                         # Only if not after the last question
                         self.current_question_max = question + 1
         self.current_question = self.current_question_max
-        if self.current_question != 0 or self.questions[0].last_answer:
-            self.source = self.questions[0].last_answer
+        if self.current_question != 0 or self.questions[self.current_question].last_answer:
+            self.source = self.questions[self.current_question].last_answer or self.questions[self.current_question].default_answer()
             self.start_question()
 
     def disable_goto(self):
