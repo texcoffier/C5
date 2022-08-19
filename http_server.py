@@ -113,6 +113,7 @@ def handle(base=''):
                         ADMIN = "{int(session.is_admin())}";
                         STOP = "{stop}";
                         CP = "{course.config['copy_paste']}";
+                        SEQUENTIAL = "{course.config['sequential']}";
                         ANSWERS = {json.dumps(answers)};
                         WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0)))};
                     </script>
@@ -243,6 +244,12 @@ async def adm_config(request):
             feedback = f"«{course}» Automatic access to the courses"
         else:
             feedback = f"«{course}» Need teacher approval to start"
+    elif action == 'sequential':
+        config.set_parameter('sequential', value)
+        if value == '0':
+            feedback = f"«{course}» All questions are accessible in a random order."
+        else:
+            feedback = f"«{course}» Questions are accessible only if the previous are corrects."
 
     return await adm_home(request, feedback)
 
@@ -334,6 +341,7 @@ async def adm_home(request, more=''):
             'tt': html.escape(config.config['tt']),
             'copy_paste': config.config['copy_paste'],
             'checkpoint': config.config['checkpoint'],
+            'sequential': config.config['sequential'],
             })
 
     return web.Response(

@@ -97,11 +97,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'teachers': 'nobody',
                        'copy_paste': '0',
                        'checkpoint': '0',
+                       'sequential': '1',
                        'messages': [],
                        # For each student login :
-                       #   * True is the examination is possible.
+                       #   * Active: True is the examination is possible.
                        #   * the teacher who checkpointed  (or '')
-                       #   * the building and the place
+                       #   * Room: the building and the place
                        #   * timestamp of last student interaction
                        #   * Number of window blur
                        #   * Number of questions
@@ -133,6 +134,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.tt_list.add('')
         self.teachers = set(re.split('[ \n\r\t]+', self.config['teachers']))
         self.checkpoint = int(self.config['checkpoint'])
+        self.sequential = int(self.config['sequential'])
         self.active_teacher_room = self.config['active_teacher_room']
         self.messages = self.config['messages']
     def record(self):

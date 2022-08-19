@@ -31,6 +31,7 @@ try:
     SOCK = SOCK
     STOP = STOP
     CP = CP
+    SEQUENTIAL = SEQUENTIAL
     WHERE = WHERE
     encodeURIComponent = encodeURIComponent
     @external
@@ -139,6 +140,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'ANSWERS': ANSWERS,
             'COURSE': course,
             'WHERE': WHERE,
+            'SEQUENTIAL': SEQUENTIAL != '0'
             }])
         self.create_html()
         for question in ANSWERS:

@@ -170,7 +170,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('index', self.index_initial_content())
     def goto(self, question):
         """Change question"""
-        if question > self.current_question_max:
+        if question > self.current_question_max and self.config.SEQUENTIAL:
             return
         self.current_question = question
         self.start_question()
@@ -259,7 +259,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 link = ''
             if i == self.current_question:
                 attr = ' class="current"'
-            elif i <= self.current_question_max:
+            elif i <= self.current_question_max or not self.config.SEQUENTIAL:
                 attr = ' class="possible"'
             else:
                 attr = ''

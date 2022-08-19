@@ -145,6 +145,8 @@ def display(): # pylint: disable=too-many-statements
                      + '?ticket=' + TICKET + '">' + label + '</a>')
         add_toggle('/adm/config/' + course.course + '/checkpoint/', course.checkpoint,
                    label, disable=not i_am_a_teacher)
+        add_toggle('/adm/config/' + course.course + '/sequential/', course.sequential,
+                   'Sequential', disable=not i_am_a_teacher)
         text.append('<td>')
         add_textarea('/adm/config/' + course.course + '/tt/', course.tt, not i_am_a_teacher, 'tt')
         text.append('<td>')
