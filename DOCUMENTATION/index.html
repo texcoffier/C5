@@ -245,9 +245,11 @@ def default_answer(self):
         <li>
             <pre>self.set_options(
     {
-        'language': 'javascript', # pour la coloration syntaxique avec highlightjs.org
+        # pour la coloration syntaxique avec highlightjs.org
+        # Option prédéfinie par le compilateur, pas besoin de la modifier.
+        'language': 'javascript',
+        # Messages affiché par le navigateur web
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
-        # Affichage dépend du navigateur
         # Mettre une chaine vide pour désactiver la confirmation (pendant le débugage)
         'close': "Voulez-vous vraiment quitter cette page ?",
         'question_title': 'Question',
@@ -267,7 +269,7 @@ def default_answer(self):
         'time_d': " j ",
         'time_m': " m ",
         'time_h': " h ",
-        'allow_copy_paste': False,
+        'allow_copy_paste': False, # Valeur par défaut : définie dans l'interface d'administration.
         'display_reset': True,
         'automatic_compilation': True, # Recompile dès que c'est possible
         'positions' : {
@@ -821,5 +823,7 @@ server {
         <li> Ajouter les numéros de lignes.</li>
         <li> Lors du dépôt choisir le compilateur avec un menu et pas dans le nom du fichier.</li>
         <li> Permettre l'édition intéractive du sujet sur la page web ?</li>
+        <li> Documentation sur comment tester une sujet.</li>
+        <li> Affichage de seulement ses sujets.</li>
     </ul>
 </body>

@@ -241,7 +241,7 @@ async def adm_config(request):
     elif action == 'checkpoint':
         config.set_parameter('checkpoint', value)
         if value == '0':
-            feedback = f"«{course}» Automatic access to the courses"
+            feedback = f"«{course}» Automatic access to the session"
         else:
             feedback = f"«{course}» Need teacher approval to start"
     elif action == 'sequential':
