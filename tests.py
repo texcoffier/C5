@@ -368,21 +368,21 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.index > DIV:nth-child(4)').click()
         self.check('.editor', {'innerText': Contains('court') & ~Contains('long')})
 
-        self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('current')})
+        self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('current possible')})
         self.check('.index > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('')})
         self.check('.index > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
         self.select_all()
         self.check('.editor').send_keys("print('Je suis un texte super long')")
         self.check_alert(contains=' !')
-        self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('possible')})
-        self.check('.index > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('current')})
+        self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('good')})
+        self.check('.index > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('current possible')})
         self.check('.index > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
         self.check('.question', {'innerText': Contains('la_chose_a_afficher')})
 
         # Returns to the first question
         self.check('.index > DIV:nth-child(3)').click()
         self.check('.editor', {'innerText': Contains('long')})
-        self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('current')})
+        self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('current good')})
         self.check('.index > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('possible')})
         self.check('.index > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
     def test_admin_home(self):

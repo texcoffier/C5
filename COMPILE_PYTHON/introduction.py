@@ -211,11 +211,12 @@ class Q_exo1(Question):
     """Surface du disque"""
     def question(self):
         return """Ecrire un programme qui affiche la surface
-        d'un disque dont vous aurez choisi le rayon.
+        d'un disque dont vous aurez choisi le rayon (par exemple 42).
         Vous devez :
         <ul>
         <li> enregistrer le rayon du disque dans «rayon»
         <li> enregistrer la surface du disque dans «surface»
+        <li> afficher la surface du disque.
         </ul>
         <p>
         La surface est π multiplié par le rayon au carré.
@@ -227,7 +228,7 @@ class Q_exo1(Question):
              ['\nrayon *= *[0-9.]+ *\n', 'Vous enregistrez un nombre dans «rayon»'],
              ['\nsurface *=', 'Vous enregistrez dans «surface»'],
              ['math\\.pi', 'Vous utilisez π'],
-             ['rayon \\* *rayon', 'Vous calculez le rayon au carré'],
+             ['rayon *\\* *rayon|rayon *\\*\\* *2', 'Vous calculez le rayon au carré'],
             ])
         rayon = surface = None
         if 'rayon' in self.worker.locals():

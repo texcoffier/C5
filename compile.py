@@ -179,13 +179,18 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         current_question = self.current_question
         self.quest.all_tests_are_fine = True
         self.quest.tester()
-        if (current_question != self.current_question
-                and self.current_question != self.current_question_max
-                and current_question >= self.current_question_max - 1
+        if (current_question != self.current_question # Question has been solved now
+                and not self.question_yet_solved(current_question)
            ):
             self.post("good", self.source)
+            self.config.ANSWERS[current_question] = [self.source, 1]
             self.start_question()
 
+    def question_yet_solved(self, question):
+        """Return True if the current question has been correctly answered"""
+        if not self.config.ANSWERS[question]:
+            return False
+        return self.config.ANSWERS[question][1]
 
     def read_input(self):
         """Ask the webpage some input text, wait the answer."""
@@ -253,18 +258,21 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         tips = []
         for i, _ in enumerate(self.questions):
             if self.allow_goto:
-                link = (' onclick="ccccc.unlock_worker();ccccc.worker.postMessage([\'goto\','
+                link = ('onclick="ccccc.unlock_worker();ccccc.worker.postMessage([\'goto\','
                         + i + '])"')
             else:
                 link = ''
+            html_class = []
             if i == self.current_question:
-                attr = ' class="current"'
-            elif i <= self.current_question_max or not self.config.SEQUENTIAL:
-                attr = ' class="possible"'
+                html_class.append('current')
+            if self.question_yet_solved(i):
+                html_class.append('good')
             else:
-                attr = ''
-                link = ''
+                if i <= self.current_question_max or not self.config.SEQUENTIAL:
+                    html_class.append('possible')
+                else:
+                    link = ''
             if self.allow_tip:
                 tips.append('<div>' + self.escape(self.questions[i].__doc__) + '</div>')
-            texts += '<div' + attr + link + '>' + str(i+1) + '</div>'
+            texts += '<div class="' + ' '.join(html_class) + '" ' + link + '>' + str(i+1) + '</div>'
         return '<div class="i">' + tips.join('') + '</div>' + texts  # pylint: disable=no-member

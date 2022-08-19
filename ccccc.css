@@ -131,16 +131,28 @@ H2 {
 
 .index>DIV {
     font-size: 80%;
-    background: linear-gradient(to right, #FFFF, #0002)
+    background: #FFF;
 }
 
 .index>DIV.possible {
-    background: linear-gradient(to right, #8F8F, #0002)
+    background: #FF0;
 }
 
-.index>DIV.current {
+.index>DIV.good {
+    background:#0F0;
+    border-top-right-radius: 0.5em;
+    border-bottom-right-radius: 0.5em;
+    padding-right: 1.8em;
+}
+
+.index>DIV.current.good, .index>DIV.current.possible {
     background: #000;
-    color: #FFF;
+}
+.index>DIV.current.good {
+    color: #0F0
+}
+.index>DIV.current.possible {
+    color: #FF0
 }
 
 .index>DIV.i {
