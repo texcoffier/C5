@@ -71,10 +71,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.questions = questions
         self.allow_tip = True
         self.allow_goto = True
-        for i, quest in enumerate(questions):
-            quest.worker = self
-            self.post('default', [i, quest.default_answer()])
-        self.set_options(self.options)
 
     def init(self):
         """Your own compiler init, for example:
@@ -95,6 +91,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def set_config(self, config):
         """Record config, update old question answer, jump to the last question"""
         self.config = config
+        self.set_options(self.options)
         for question in config['ANSWERS']:
             question = Number(question)
             if self.questions[question] and config['ANSWERS'][question]:
@@ -103,6 +100,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                     if self.questions[question + 1]:
                         # Only if not after the last question
                         self.current_question_max = question + 1
+        for i, quest in enumerate(self.questions):
+            quest.worker = self
+            self.post('default', [i, quest.default_answer()])
         self.current_question = self.current_question_max
         if self.current_question != 0 or self.questions[self.current_question].last_answer:
             self.source = self.questions[self.current_question].last_answer or self.questions[self.current_question].default_answer()

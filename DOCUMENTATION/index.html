@@ -240,7 +240,7 @@
         ...
 def default_answer(self):
     batiment, coord_x, coord_y = self.placement()
-    self.sujet = (coord_x, coord_y) % 2 # Seulement 2 sujets
+    self.sujet = (coord_x + coord_y) % 2 # Seulement 2 sujets
     return ""</pre>
         <li>
             <pre>self.set_options(
