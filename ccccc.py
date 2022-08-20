@@ -21,6 +21,7 @@ try:
     window = window
     confirm = confirm
     millisecs = millisecs
+    html = html
     Date = Date
     Math = Math
     JSON = JSON

@@ -224,6 +224,26 @@
         <li> Vous cliquez sur le bouton <tt>Try</tt></li>
     </ul>
 
+    <h3>Ajouter des images dans un questionnaire</h3>
+    <p>
+        C5 n'héberge pas de fichiers media pour le moment,
+        il faut donc faire autrement :
+    </p>
+    <ul>
+        <li> Graphique SVG : on peut directement mettre le code SVG dans le HTML
+            de la question.</li>
+        <li> Image PNG, transformez l'image <tt>image.png</tt> en HTML avec cette commande shell :
+            <pre>echo "&lt;img src=\"data:image/png;base64,$(openssl enc -base64 -A &lt;<b>image.png</b>)\"&gt;"</pre>
+        </li>
+        <li> Héberger l'image sur un autre site web.
+            Le tag IMG doit alors contenir <tt>crossorigin</tt>
+            et l'autre site web doit contenir dans le <tt>.htaccess</tt>
+            du répertoire de l'image :
+            <pre>Header set Access-Control-Allow-Origin "https://c5.univ-lyon1.fr"</pre>
+            Remplacez par l'adresse de votre serveur C5 et ne mettez PAS le '/' final.
+        </li>
+    </ul>
+
     <h3>Attributs de la question</h3>
     <ul>
         <li> <tt>self.worker.execution_result</tt> résultat de l'exécution
