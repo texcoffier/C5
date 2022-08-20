@@ -108,10 +108,10 @@
         <li> Tout est fait dans une unique page web facile à surveiller visuellement :
             <ul>
                 <li> Sujet de l'examen, éventuellement différent pour chaque étudiant.</li>
-                <li> Aide pour les étudiants bloqués.</li>
                 <li> Éditeur de code pour répondre.</li>
                 <li> Résultat de compilation.</li>
                 <li> Résultat de l'exécution.</li>
+                <li> Aide pour les étudiants en difficulté.</li>
             </ul>
         </li>
         <li> Le copier/copier de sources extérieures est impossible.</li>
@@ -134,7 +134,7 @@
         <li> Coloration syntaxique.</li>
         <li> Recompilation et exécution temps-réel.</li>
         <li> Indices pour guider l'étudiant vers la solution.</li>
-        <li> Outils pour la surveillance d'examen sur de nombreuses salles</li>
+        <li> Outils pour la surveillance d'examen sur de nombreuses salles.</li>
     </ul>
     <p>
         Présentation video de 5 minutes 32 :
@@ -188,7 +188,7 @@
         self.check(self.worker.source, [
             ['print'  , 'Le nom de la fonction «print» pour afficher la valeur'],
             ['Bonjour', 'Le texte «Bonjour» que vous devez afficher'],
-                ])
+            ])
         if self.worker.execution_result == 'Bonjour\n':
             self.next_question()
     def default_answer(self):
@@ -204,6 +204,20 @@
 
     <h3>Comment tester un sujet</h3>
     <p>
+        Si vous travaillez sur un serveur distant :
+    </p>
+    <ul>
+        <li> Vous allez sur la page d'administration.</li>
+        <li> Vous déposez <tt>XXX=yyy.py</tt>.
+            De préférence préfixez le nom de la session par le code du cours.
+        </li>
+        <li> Vous cliquez sur le bouton <tt>Try</tt></li>
+        <li> Si votre sujet dépend de la place de l'étudiant, alors
+            vous devez allez sur le plan (checkpoint) pour vous
+            placer sur la bonne chaise et recharger la page contenant le sujet.
+        </li>
+    </ul>
+    <p>
         Si vous travaillez en local, la première fois :
     </p>
     <ul>
@@ -215,14 +229,6 @@
     <p>
         Les fois suivantes : édition, compilation, rechargement de la page web.
     </p>
-    <p>
-        Si vous travaillez sur un serveur distant :
-    </p>
-    <ul>
-        <li> Vous allez sur la page d'administration.</li>
-        <li> Vous déposez <tt>XXX=yyy.py</tt></li>
-        <li> Vous cliquez sur le bouton <tt>Try</tt></li>
-    </ul>
 
     <h3>Ajouter des images dans un questionnaire</h3>
     <p>
@@ -247,7 +253,7 @@
     <h3>Attributs de la question</h3>
     <ul>
         <li> <tt>self.worker.execution_result</tt> résultat de l'exécution
-            une fois toutes les lectures claviers faites.</li>
+            une fois toutes les lectures clavier (scanf, input, cin...) faites.</li>
         <li> <tt>self.worker.source</tt> la réponse de l'étudiant.</li>
         <li> <tt>self.all_tests_are_fine</tt> vrai au départ puis mis à jour automatiquement
             par les fonctions utilitaires.
@@ -276,10 +282,10 @@
     else:
         return "Vous avez le sujet B : ..."
     def tester(self):
-    if self.sujet == 0:
-        ...
-    else:
-        ...
+        if self.sujet == 0:
+            ...
+        else:
+            ...
 def default_answer(self):
     batiment, coord_x, coord_y = self.placement()
     self.sujet = (coord_x + coord_y) % 2 # Seulement 2 sujets
@@ -292,7 +298,7 @@ def default_answer(self):
         'language': 'javascript',
         # Messages affiché par le navigateur web
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
-        # Mettre une chaine vide pour désactiver la confirmation (pendant le débugage)
+        # Mettre une chaîne vide pour désactiver la confirmation (pendant le débugage)
         'close': "Voulez-vous vraiment quitter cette page ?",
         'question_title': 'Question',
         'tester_title': 'Les buts que vous devez atteindre',
@@ -326,9 +332,9 @@ def default_answer(self):
             'index': [0, 1, 0, 100, '#0000'],
             'save_button': [66, 2, 0, 2, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
-            # Mettre 29 au lieu de 100 pour placer
-            # les numéros de ligne à la gauche de l'éditeur.
-            # Et diminuer de 1 la largeur de 'question' et 'tester'
+            # Diminuer de 1 la largeur de 'question' et 'tester'
+            # et remplacer par [29, 1, 0, 100, '#EEE']
+            # pour placer les numéros de ligne à la gauche de l'éditeur.
             'line_numbers': [100, 1, 0, 100, '#EEE'],
             },
         # For compile_remote. The values must be allowed by the server.
@@ -404,7 +410,7 @@ def default_answer(self):
         <li> ZIP total avec tous les fichiers de log de la session.</li>
         <li> Mise à jour du questionnaire.</li>
         <li> Liste des surveillants.</li>
-        <li> Thème highlight.js</li>
+        <li> Thème «highlight.js».</li>
     </ul>
     <p>
         Au dessous de la liste :
@@ -466,6 +472,8 @@ def default_answer(self):
         on lui liste tous les examens présents et futurs pour lesquels
         il est surveillant.
         Il clique alors sur <tt>Checkpoint</tt> pour gérer la salle d'attente.
+        Les enseignants peuvent tester la session même s'ils n'ont pas
+        été placés sur le plan.
     </p>
     <p>
         La salle d'attente affiche en haut de l'écran :
@@ -486,7 +494,7 @@ def default_answer(self):
             salles affichées complètement (pas à moitié) sur l'écran
             seront indiqués dans la liste des étudiants à placer.
             Cette liste est mise à jour en fin de déplacement,
-            pas en pendant que le plan bouge sur l'écran.
+            pas pendant que le plan bouge sur l'écran.
         </li>
     </ul>
     <p>
@@ -863,15 +871,25 @@ server {
     </p>
     <ul>
         <li> Ménage fichiers log. </li>
-        <li> Fonctions graphiques pour que les étudiants puissent faire des dessins.</li>
+        <li> Fonctions graphiques pour que les étudiants puissent faire des dessins (grapic?).</li>
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
         <li> Destruction d'une session.</li>
         <li> Affichage d'un corrigé.</li>
-        <li> Choisir le thème de highlight.js</li>
-        <li> Ajouter les numéros de lignes.</li>
         <li> Lors du dépôt choisir le compilateur avec un menu et pas dans le nom du fichier.</li>
         <li> Permettre l'édition intéractive du sujet sur la page web ?</li>
-        <li> Documentation sur comment tester une sujet.</li>
         <li> Affichage de seulement ses sujets.</li>
+        <li> L'étudiant doit pouvoir fermer sa session lui-même.</li>
+        <li> Exportation vers TOMUSS dans une colonne de type Notation.
+            Ajout du barème aux questions.
+        </li>
+        <li> Choix du thème de coloriage syntaxique.</li>
+        <li> Ajouter un compilateur qui ne fait rien (examen texte pur).</li>
+        <li> Icone pour passer en plein écran.</li>
+        <li> Enregistrer le code source dans un fichier (étudiant et enseignants).</li>
+        <li> Activer le placement des étudiants sur les chaises
+            mais sans activer la fonctionnalité checkpoint.</li>
+        <li> Sur la page d'administration, trier les sujets par questionnaire et
+            puis par compilateur.
+        </li>
     </ul>
 </body>

@@ -1,7 +1,7 @@
 # pylint: disable=no-self-use,missing-function-docstring
 """
 Ne rien changer après le début de l'examen car cela casse tout.
-(A part des typos dans les textes).
+(Á part des typos dans les textes).
 """
 
 # Le nombre DU indique la qualité des messages du compilateur

@@ -163,7 +163,7 @@ class Process: # pylint: disable=too-many-instance-attributes
 
 async def echo(websocket, path): # pylint: disable=too-many-branches
     """Analyse the requests from one websocket connection"""
-    print(path)
+    print(path, flush=True)
 
     _, ticket, course = path.split('/')
     if not os.path.exists('TICKETS/' + ticket):
@@ -211,11 +211,14 @@ async def main():
         await asyncio.Future()  # run forever
 
 CERT = utilities.get_certificate()
+signal.signal(signal.SIGHUP, lambda signal, stack: sys.exit(0))
 signal.signal(signal.SIGINT, lambda signal, stack: sys.exit(0))
+signal.signal(signal.SIGQUIT, lambda signal, stack: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signal, stack: sys.exit(0))
 def clean():
     """Erase executables"""
     for process in PROCESSES:
         process.cleanup(erase_executable=True)
-    atexit.register(clean)
+
+atexit.register(clean)
 asyncio.run(main())

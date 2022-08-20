@@ -232,7 +232,7 @@ class Config:
             'student': '[0-9][0-9]$',
             'messages': {
                 'unknown': "Cette session n'existe pas",
-                'checkpoint': "Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen",
+                'checkpoint': "Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen.<br>Rechargez cette page quand l'intervenant vous le dira.",
                 'done': "La session d'exercice ou d'examen est terminée",
                 'not_admin': "Vous n'êtes pas administrateur C5",
                 'not_teacher': "Vous ne surveillez pas cet examen",
