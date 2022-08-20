@@ -78,7 +78,7 @@ def do_post_data(dictionary, url, target=None):
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
-    index = reset_button = popup_element = save_button = None # HTML elements
+    index = reset_button = popup_element = save_button = line_numbers = None # HTML elements
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -115,6 +115,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'index': [0, 1, 0, 100, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
             'save_button': [66, 2, 0, 2, '#0000'],
+            'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
             }
     }
 
@@ -194,6 +195,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.reset_button.style.display = 'none'
         self.reset_button.textContent = self.options['icon_reset']
         self.save_button.textContent = self.options['icon_save']
+        self.line_numbers.innerHTML = '\n'.join([str(i) for i in range(1, 1000)])
 
     def create_gui(self):
         """The text editor container"""
@@ -509,6 +511,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.editor.scrollTop = self.oldScrollTop
             self.oldScrollTop = None
         else:
+            self.line_numbers.scrollTop = self.editor.scrollTop
             self.overlay.scrollTop = self.editor.scrollTop
     def oninput(self, event):
         """Send the input to the worker"""

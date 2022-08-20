@@ -10,6 +10,18 @@ class QEnd(Question): # pylint: disable=undefined-variable
             'automatic_compilation': False,
             'compile_options': ['-Wall', '-pedantic'],
             'allowed': ['brk'],
+            'positions' : {
+                'question': [1, 28, 0, 30, '#EFE'],
+                'tester': [1, 28, 30, 70, '#EFE'],
+                'editor': [30, 40, 0, 100, '#FFF'],
+                'compiler': [70, 30, 0, 30, '#EEF'],
+                'executor': [70, 30, 30, 70, '#EEF'],
+                'time': [80, 20, 98, 2, '#0000'],
+                'index': [0, 1, 0, 100, '#0000'],
+                'reset_button': [68, 2, 0, 2, '#0000'],
+                'save_button': [66, 2, 0, 2, '#0000'],
+                'line_numbers': [29, 1, 0, 100, '#EEE'],
+                }
             })
         return "Plus de questions"
     def tester(self):

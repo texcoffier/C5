@@ -2,6 +2,7 @@ BODY {
     font-family: sans-serif;
     font-size: 1vw;
     --pad: 0.5em;
+    --line_height: 1.18vw;
     overflow: hidden;
 }
 
@@ -17,7 +18,7 @@ DIV.overlay {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     font-family: monospace, monospace;
-    line-height: 1.18vw;
+    line-height: var(--line_height);
     overflow: auto;
 }
 
@@ -28,7 +29,7 @@ DIV.overlay {
     left: 0;
     opacity: 0.1;
     pointer-events: none;
-    height: 1.18vw;
+    height: var(--line_height);
     margin-left: var(--pad);
 }
 
@@ -48,6 +49,16 @@ DIV.overlay {
     position: absolute;
     background: #EEE;
     opacity: 0.5;
+}
+
+.line_numbers {
+    text-align: right;
+    font-size: 50%;
+    line-height: var(--line_height);
+    white-space: pre;
+    overflow: hidden;
+    padding-left: 0px;
+    padding-right: 0px;
 }
 
 BODY>DIV>DIV {

@@ -326,6 +326,10 @@ def default_answer(self):
             'index': [0, 1, 0, 100, '#0000'],
             'save_button': [66, 2, 0, 2, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
+            # Mettre 29 au lieu de 100 pour placer
+            # les numéros de ligne à la gauche de l'éditeur.
+            # Et diminuer de 1 la largeur de 'question' et 'tester'
+            'line_numbers': [100, 1, 0, 100, '#EEE'],
             },
         # For compile_remote. The values must be allowed by the server.
         'compiler': 'g++', # or 'gcc'
