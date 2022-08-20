@@ -359,7 +359,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             marker = document.createElement('DIV')
             marker.className = 'wrapped'
             marker.style.left = rect.left - self.overlay.offsetLeft + 'px'
-            marker.style.top = rect.top + line_height + 'px'
+            marker.style.top = rect.top + line_height + self.editor.scrollTop + 'px'
             marker.style.width = rect.width + 'px'
             marker.style.height = rect.height - line_height + 'px'
             self.overlay.appendChild(marker)
@@ -394,7 +394,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             rect = box.getBoundingClientRect()
             if move_right:
                 move_right = rect.width
-            element.style.top = (rect.top - self.editor.offsetTop) + 'px'
+            element.style.top = (rect.top - self.editor.offsetTop + self.editor.scrollTop) + 'px'
             element.style.height = rect.height + 'px'
             element.style.left = 'calc(' + (
                 rect.left - self.editor.offsetLeft + move_right) + 'px - var(--pad))'
