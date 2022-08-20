@@ -75,7 +75,9 @@ def display(): # pylint: disable=too-many-statements
     <table>
     <tr><th>Compiler<br>Session<th>Logs<th>Try
         <th>Start date/time<br>Stop date/time<th>Options<th>TT<br>logins
-        <th>full<br>ZIP<th>Update<br>course source<th>Teachers</tr>
+        <th>full<br>ZIP<th>Update<br>course source<th>Teachers
+        <th>Highlight<br>theme
+        </tr>
     ''']
     def add_button(url, label, name='', new_window=False):
         url = "'" + url + '?ticket=' + TICKET + "'"
@@ -157,6 +159,9 @@ def display(): # pylint: disable=too-many-statements
         text.append('<td>')
         add_textarea('/adm/config/' + course.course + '/teachers/', course.teachers,
                      disable=not i_am_a_teacher)
+        text.append('<td>')
+        add_input('/adm/config/' + course.course + '/theme/', course.theme,
+                  disable=not i_am_a_teacher)
         text.append('</tr>\n')
     text.append('</table><p>')
     text.append('''

@@ -105,9 +105,9 @@ def handle(base=''):
                 return File.get('ccccc.html').response(
                     session.header() + f'''
                     <title>C5 is Compiler Course Class in the Cloud</title>
-                    <link rel="stylesheet" href="/xxx-highlight.css?ticket={session.ticket}">
+                    <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
                     <link rel="stylesheet" href="/ccccc.css?ticket={session.ticket}">
-                    <script src="/xxx-highlight.js?ticket={session.ticket}"></script>
+                    <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
                     <script>
                         SOCK = "wss://{utilities.C5_WEBSOCKET}";
                         ADMIN = "{int(session.is_admin())}";
@@ -211,7 +211,7 @@ async def adm_course(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
-async def adm_config(request):
+async def adm_config(request): # pylint: disable=too-many-branches
     """Course details page for administrators"""
     _session = await get_admin_login(request)
     course = request.match_info['course']
@@ -235,6 +235,12 @@ async def adm_config(request):
     elif action == 'teachers':
         config.set_parameter('teachers', value)
         feedback = f"«{course}» Teachers list updated with «{value}»"
+    elif action == 'theme':
+        if os.path.exists(f'HIGHLIGHT/{value}.css'):
+            config.set_parameter('theme', value)
+            feedback = f"«{course}» Highlight theme updated to «{value}»"
+        else:
+            feedback = f"«{course}» Highlight theme «{value}» does not exists"
     elif action == 'copy_paste':
         config.set_parameter('copy_paste', value)
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
@@ -331,18 +337,15 @@ async def adm_home(request, more=''):
     session = await get_admin_login(request)
     courses = []
     for _course_name, config in sorted(utilities.CourseConfig.configs.items()):
-        courses.append({
+        attrs = {
             'course': config.course,
             'status': config.status(''),
-            'teachers': config.config['teachers'],
             'logs': os.path.exists(config.dirname),
-            'start': config.start,
-            'stop': config.stop,
-            'tt': html.escape(config.config['tt']),
-            'copy_paste': config.config['copy_paste'],
-            'checkpoint': config.config['checkpoint'],
-            'sequential': config.config['sequential'],
-            })
+        }
+        attrs.update(config.config)
+        attrs.pop('active_teacher_room')
+        attrs.pop('messages')
+        courses.append(attrs)
 
     return web.Response(
         body=session.header(courses, more)
@@ -556,8 +559,8 @@ async def checkpoint(request):
         </script>
         <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
         <script src="/checkpoint.js?ticket={session.ticket}"></script>
-        <link rel="stylesheet" href="/xxx-highlight.css?ticket={session.ticket}">
-        <script src="/xxx-highlight.js?ticket={session.ticket}"></script>
+        <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
+        <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         ''',
         content_type='text/html',
         charset='utf-8',
@@ -722,6 +725,7 @@ APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
                 web.get('/node_modules/{filename:.*}', handle('node_modules')),
+                web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
                 web.get('/adm/get/{filename:.*}', adm_get),
                 web.get('/adm/answers/{saved}/{course:.*}', adm_answers),
                 web.get('/adm/home', adm_home),

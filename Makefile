@@ -34,7 +34,7 @@ sandbox:
 favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
-prepare:RapydScript node_modules/brython xxx-highlight.js xxx-JSCPP.js node_modules/alasql sandbox \
+prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js node_modules/alasql sandbox \
 	ccccc.js adm_home.js adm_course.js checkpoint.js favicon.ico
 	@$(MAKE) $$(echo COMPILE_*/*.py | sed 's/\.py/.js/g')
 	@if [ ! -d SSL ] ; then ./utilities.py SSL-SS ; fi
@@ -47,15 +47,16 @@ all:prepare
 RapydScript:
 	git clone https://github.com/atsepkov/RapydScript.git
 
-xxx-highlight.js:
-	HERE=$$(pwd) && \
+HIGHLIGHT:
+	@mkdir $@
+	cd $@ && HERE=$$(pwd) && \
 	cd /tmp && \
 	git clone https://github.com/highlightjs/highlight.js.git && \
 	cd highlight.js && \
 	npm install commander && \
 	node tools/build.js -t browser :common && \
-	cp build/highlight.min.js $$HERE/xxx-highlight.js && \
-	cp build/demo/styles/default.css $$HERE/xxx-highlight.css && \
+	cp build/highlight.min.js $$HERE/highlight.js && \
+	cp -r src/styles/* $$HERE
 	rm -rf /tmp/highlight.js
 
 ############# Compilers ############

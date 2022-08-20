@@ -98,6 +98,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'copy_paste': '0',
                        'checkpoint': '0',
                        'sequential': '1',
+                       'theme': 'a11y-light',
                        'messages': [],
                        # For each student login :
                        #   * Active: True is the examination is possible.
@@ -135,6 +136,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.teachers = set(re.split('[ \n\r\t]+', self.config['teachers']))
         self.checkpoint = int(self.config['checkpoint'])
         self.sequential = int(self.config['sequential'])
+        self.theme = self.config['theme']
         self.active_teacher_room = self.config['active_teacher_room']
         self.messages = self.config['messages']
     def record(self):
