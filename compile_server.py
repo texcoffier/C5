@@ -125,7 +125,8 @@ class Process: # pylint: disable=too-many-instance-attributes
             if option not in ('brk',):
                 stderr += f"Appel système non autorisé : «{option}»\n"
         if not stderr:
-            self.allowed = ':'.join(["fstat", "write", "read", "lseek", "exit_group"] + allowed)
+            self.allowed = ':'.join(["fstat", "newfstatat", "write", "read",
+                                     "lseek", "futex", "exit_group"] + allowed)
             self.process = await asyncio.create_subprocess_exec(
                 compiler, *compile_options, self.source_file, *ld_options, '-o', self.exec_file,
                 stderr=asyncio.subprocess.PIPE,
@@ -207,7 +208,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
 async def main():
     """Answer compilation requests"""
     async with websockets.serve(echo, utilities.C5_IP, utilities.C5_SOCK, ssl=CERT):
-        print("compile_server running", flush=True)
+        print(f"compile_server running {utilities.C5_IP}:{utilities.C5_SOCK}", flush=True)
         await asyncio.Future()  # run forever
 
 CERT = utilities.get_certificate()

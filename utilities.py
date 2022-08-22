@@ -581,7 +581,8 @@ DNS.3 = localhost:{C5_HTTP}
 DNS.4 = 127.0.0.1:{C5_HTTP}
 DNS.5 = {local_ip()}:{C5_HTTP}
 DNS.6 = {local_ip()}:{C5_SOCK}
-DNS.7 = {C5_URL}
+DNS.7 = {C5_HOST}:{C5_SOCK}
+DNS.8 = {C5_URL}
 ' >domains.ext
         openssl req -new -nodes -newkey rsa:2048 -keyout localhost.key -out localhost.csr -subj '/C=US/ST=YourState/L=YourCity/O=Example-Certificates/CN=localhost.local'
         openssl x509 -req -sha256 -days 1024 -in localhost.csr -CA RootCA.pem -CAkey RootCA.key -CAcreateserial -extfile domains.ext -out localhost.crt
