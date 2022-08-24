@@ -170,11 +170,11 @@ async def get_admin_login(request):
         raise session.message('not_admin', exception=True)
     return session
 
-async def get_teacher_login_and_course(request):
+async def get_teacher_login_and_course(request, allow=None):
     """Get the teacher login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
     course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
-    if session.is_student():
+    if session.is_student() and allow != session.login:
         raise session.message('not_teacher', exception=True)
     # if session.login not in course.teachers:
     #     raise session.message('not_teacher', exception=True)
@@ -587,9 +587,14 @@ async def update_browser(request):
 
 async def checkpoint_student(request):
     """Display the students waiting checkpoint"""
-    session, course = await get_teacher_login_and_course(request)
     student = request.match_info['student']
     room = request.match_info['room']
+    if room == 'STOP':
+        # The student is allowed to stop the session
+        allow = student
+    else:
+        allow = None
+    session, course = await get_teacher_login_and_course(request, allow=student)
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     if room == 'STOP':

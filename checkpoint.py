@@ -25,6 +25,8 @@ try:
     setInterval = setInterval
     setTimeout = setTimeout
     hljs = hljs
+    record = record
+    html = html
 except ValueError:
     pass
 
@@ -896,12 +898,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         Student.moving_element = None
         if pos[0] == -1:
             update_page()
-def record(action):
-    """Do an action and get data"""
-    script = document.createElement('SCRIPT')
-    script.src = action + '?ticket=' + TICKET
-    script.onload = update_page
-    document.body.append(script)
 
 STUDENT_DICT = {}
 

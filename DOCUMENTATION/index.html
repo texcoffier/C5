@@ -309,7 +309,10 @@ def default_answer(self):
         'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
         'icon_reset': '🗑',
         'icon_save': '📩',
+        'icon_stop': 'EXIT',
         'reset_confirm': 'Vous voulez vraiment revenir à la version de départ ?',
+        'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
+        'stop_done': "&lt;h1&gt;C'est fini.&lt;/h1&gt;",
         'time_running': 'Fini dans',
         'time_done': "Fini depuis",
         'time_seconds': " secondes",
@@ -322,7 +325,7 @@ def default_answer(self):
         'automatic_compilation': True, # Recompile dès que c'est possible
         'positions' : {
             # [X, Largeur, Y, Hauteur, Couleur] en pourcentage écran
-            # Mettre le X ou Y pour faire disparaître la zone de l'affichage
+            # Mettre le X ou Y à 100 pour faire disparaître la zone de l'affichage
             'question': [1, 29, 0, 30, '#EFE'],
             'tester': [1, 29, 30, 70, '#EFE'],
             'editor': [30, 40, 0, 100, '#FFF'],
@@ -331,6 +334,7 @@ def default_answer(self):
             'time': [80, 20, 98, 2, '#0000'],
             'index': [0, 1, 0, 100, '#0000'],
             'save_button': [66, 2, 0, 2, '#0000'],
+            'stop_button': [63, 2, 0, 2, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
             # Diminuer de 1 la largeur de 'question' et 'tester'
             # et remplacer par [29, 1, 0, 100, '#EEE']
@@ -535,6 +539,7 @@ def default_answer(self):
     <p>
         Le bouton «Clôturer examen» doit être utilisé quand il quitte
         la salle afin qu'il ne puisse pas continuer l'examen à l'extérieur.
+        L'étudiant a un bouton EXIT sur l'éditeur de source pour terminer l'examen.
     </p>
 
     <h3>Étudiant</h3>
@@ -878,7 +883,6 @@ server {
         <li> Lors du dépôt choisir le compilateur avec un menu et pas dans le nom du fichier.</li>
         <li> Permettre l'édition intéractive du sujet sur la page web.</li>
         <li> Affichage de seulement ses sujets.</li>
-        <li> L'étudiant doit pouvoir fermer sa session lui-même.</li>
         <li> Exportation vers TOMUSS dans une colonne de type Notation.
             Ajout du barème aux questions.
         </li>

@@ -41,3 +41,14 @@ def html(txt):
     return txt.replace(RegExp('&', 'g'), '&amp;'
                       ).replace(RegExp('<', 'g'), '&lt;'
                                ).replace(RegExp('>', 'g'), '&gt;')
+
+def record(action):
+    """Do an action and get data"""
+    script = document.createElement('SCRIPT')
+    script.src = action + '?ticket=' + TICKET
+    try:
+        script.onload = update_page
+    except: # pylint: disable=bare-except
+        # There is no update_page for the student interface
+        pass
+    document.body.append(script)

@@ -10,8 +10,8 @@ Compile        worker base class to manage the question list, compilation, execu
 Question       base class for question definition
 """
 
-# Hide pylint warnings
 try:
+    # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
     document = document
     setInterval = setInterval
     setTimeout = setTimeout
@@ -24,6 +24,7 @@ try:
     html = html
     Date = Date
     Math = Math
+    record = record
     JSON = JSON
     LOGIN = LOGIN
     ANSWERS = ANSWERS
@@ -78,7 +79,8 @@ def do_post_data(dictionary, url, target=None):
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
-    index = reset_button = popup_element = save_button = line_numbers = None # HTML elements
+    index = reset_button = popup_element = save_button = line_numbers = None
+    stop_button = None
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -115,6 +117,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'index': [0, 1, 0, 100, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
             'save_button': [66, 2, 0, 2, '#0000'],
+            'stop_button': [63, 2, 0, 2, '#0000'],
             'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
             }
     }
@@ -193,8 +196,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.reset_button.style.display = 'block'
         else:
             self.reset_button.style.display = 'none'
-        self.reset_button.textContent = self.options['icon_reset']
-        self.save_button.textContent = self.options['icon_save']
+        self.reset_button.innerHTML = self.options['icon_reset']
+        self.save_button.innerHTML = self.options['icon_save']
+        if self.stop_button:
+            self.stop_button.innerHTML = self.options['icon_stop']
         self.line_numbers.innerHTML = '\n'.join([str(i) for i in range(1, 1000)])
 
     def create_gui(self):
@@ -219,6 +224,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.reset_button.onclick = bind(self.reset, self)
         self.save_button.style.fontFamily = 'emoji'
         self.save_button.onclick = bind(self.save, self)
+        if self.stop_button:
+            self.stop_button.style.fontFamily = 'emoji'
+            self.stop_button.onclick = bind(self.stop, self)
 
     def scheduler(self): # pylint: disable=too-many-branches
         """Send a new job if free and update the screen"""
@@ -300,7 +308,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                and self.overlay.lastChild.className
                and 'ERROR' in self.overlay.lastChild.className):
             self.overlay.removeChild(self.overlay.lastChild)
-    def coloring(self):
+    def coloring(self): # pylint: disable=too-many-statements
         """Coloring of the text editor with an overlay."""
         def clear_text(state):
             if state.node.tagName == 'DIV':
@@ -554,6 +562,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
             setTimeout(stop, 100)
             self.record(['save', self.current_question, self.source], send_now=True)
             self.last_save = self.source
+
+    def stop(self):
+        """The student stop its session"""
+        if confirm(self.options['stop_confirm']):
+            self.save()
+            record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP')
+            self.options['close'] = ''
+            document.body.innerHTML = self.options['stop_done']
 
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
         """Interprete messages from the worker: update self.messages"""
