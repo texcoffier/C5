@@ -23,7 +23,13 @@ class QEnd(Question): # pylint: disable=undefined-variable
                 'line_numbers': [29, 1, 0, 100, '#EEE'],
                 }
             })
-        return "Plus de questions"
+        return """Plus de questions.
+        <p>Test de coloriage syntaxique dans la question :
+        <pre style="margin:0px;padding:0px"><code class="language-cpp">#define a A
+const int a = 5 ;
+const char *b = "P" ;</code></pre>
+        <img style="display: none" src="data:x" onerror="hljs.highlightAll()">
+        """
     def tester(self):
         self.display('FINI !')
     def default_answer(self):
