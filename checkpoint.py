@@ -44,6 +44,9 @@ ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
 BEFORE_FIRST = 60 # Time scroll bar padding left in seconds
 
+BUILDINGS_SORTED = [_ for _ in BUILDINGS]
+BUILDINGS_SORTED.sort()
+
 def seconds():
     """Number of second as Unix"""
     return int(Date().getTime() / 1000)
@@ -1007,7 +1010,7 @@ def create_page(building_name):
         ' <select onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
         ''.join(['<option'
                  + (building == building_name and ' selected' or '')
-                 + '>'+building+'</option>' for building in BUILDINGS]),
+                 + '>'+building+'</option>' for building in BUILDINGS_SORTED]),
         '''</select>
         <label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()" type="checkbox"
                >Seulement<br>mes salles</label>
