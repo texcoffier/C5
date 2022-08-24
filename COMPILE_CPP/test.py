@@ -3,21 +3,24 @@
 Demonstration of the system
 """
 
+COURSE_OPTIONS = {
+    'positions': {
+        'question': [1, 29, 0, 30, '#EFE'],
+        'tester': [1, 29, 30, 70, '#EFE'],
+        'editor': [30, 40, 0, 80, '#FFF'],
+        'compiler': [30, 70, 80, 20, '#EEF'],
+        'executor': [70, 30, 0, 80, '#EEF'],
+        'time': [80, 20, 98, 2, '#0000'],
+        'index': [0, 1, 0, 100, '#0000'],
+        'save_button': [66, 2, 0, 2, '#0000'],
+        'reset_button': [68, 2, 0, 2, '#0000'],
+        'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
+        }
+    }
+
 class QEnd(Question): # pylint: disable=undefined-variable
     """Question Finale"""
     def question(self):
-        self.set_options({'positions': {
-            'question': [1, 29, 0, 30, '#EFE'],
-            'tester': [1, 29, 30, 70, '#EFE'],
-            'editor': [30, 40, 0, 80, '#FFF'],
-            'compiler': [30, 70, 80, 20, '#EEF'],
-            'executor': [70, 30, 0, 80, '#EEF'],
-            'time': [80, 20, 98, 2, '#0000'],
-            'index': [0, 1, 0, 100, '#0000'],
-            'save_button': [66, 2, 0, 2, '#0000'],
-            'reset_button': [68, 2, 0, 2, '#0000'],
-            'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
-            }})
         batiment, coord_x, coord_y = self.placement()
         return ("<p>Récupération des informations concernant la place de l'étudiant dans la salle."
                 + "<p>Surveillant :" + self.teacher()

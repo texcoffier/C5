@@ -101,6 +101,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     compile_now = False
     editor_lines = []
     do_not_register_this_blur = False
+    init_done = False
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -147,17 +148,24 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'WHERE': WHERE,
             'SEQUENTIAL': SEQUENTIAL != '0'
             }])
+        try:
+            self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
+        except: # pylint: disable=bare-except
+            self.shared_buffer = None
+        self.worker.postMessage(['array', self.shared_buffer])
+        print("GUI: wait worker")
+
+    def terminate_init(self):
+        """Only terminate init when the worker started"""
+        if self.init_done:
+            return
+        self.init_done = True
         self.create_html()
         for question in ANSWERS:
             question = Number(question)
             self.last_answer[question] = ANSWERS[question][0]
             if ANSWERS[question][1]:
                 self.question_done[question] = True
-        try:
-            self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
-        except: # pylint: disable=bare-except
-            self.shared_buffer = None
-        self.worker.postMessage(['array', self.shared_buffer])
 
         self.inputs = {} # Indexed by the question number
         self.do_not_clear = {}
@@ -579,6 +587,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if what == 'options':
             for key in value:
                 self.options[key] = value[key]
+            self.terminate_init()
             self.update_gui()
         elif what == 'current_question':
             self.compile_now = True

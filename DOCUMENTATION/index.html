@@ -348,9 +348,16 @@ def default_answer(self):
         'allowed': [], # system call allowed. You can add 'brk'
 
     })</pre>
-            Il faut mettre seulement les options qui changent.
-            Les options restent les mêmes tant qu'elles ne sont pas modifiées.
-            La disposition de l'écran peut changer d'une question à l'autre.
+            <p>
+                Il faut mettre seulement les options qui changent.
+                Les options restent les mêmes tant qu'elles ne sont pas modifiées.
+                La disposition de l'écran peut changer d'une question à l'autre.
+            </p>
+            <p>
+                Pour les options qui restent constantes pour toutes les questions,
+                vous pouvez les indiquer dans la variable globale <tt>COURSE_OPTIONS</tt> :
+            </p>
+            <tt>COURSE_OPTIONS = { 'display_reset': False }</tt>
         </li>
     </ul>
 

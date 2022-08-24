@@ -6,6 +6,8 @@ millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variab
 Number = Number # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 JSON = JSON # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 
+COURSE_OPTIONS = {}
+
 def onmessage(event):
     """Evaluate immediatly the function if in the worker"""
     if event.data.splice:
@@ -74,6 +76,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.questions = questions
         self.allow_tip = True
         self.allow_goto = True
+        # Get the option changed by the course
+        for option in COURSE_OPTIONS:
+            self.options[option] = COURSE_OPTIONS[option]
 
     def init(self):
         """Your own compiler init, for example:
