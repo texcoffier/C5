@@ -22,6 +22,10 @@ DIV.overlay {
     overflow: auto;
 }
 
+DIV.tester {
+    overflow: auto;
+}
+
 .error,
 .warning {
     position: absolute;
