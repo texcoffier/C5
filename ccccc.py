@@ -97,11 +97,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
     record_last_time = 0
     record_start = 0
     popup_done = False
-    last_save = ''
     compile_now = False
     editor_lines = []
     do_not_register_this_blur = False
     init_done = False
+    seconds = 0
+    do_not_clear = {}
+    inputs = {} # User input in execution bloc
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -542,7 +544,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 event.target.run_on_change = True
 
     def clear_if_needed(self, box):
-        """Clear ony once the new content starts to come"""
+        """Clear only once the new content starts to come"""
         if box in self.do_not_clear:
             return
         self.do_not_clear[box] = True
@@ -559,7 +561,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def save(self):
         """Save the editor content"""
-        if self.source != self.last_save:
+        if self.last_answer[self.current_question].strip() != self.source.strip():
             self.save_button.style.transition = ''
             self.save_button.style.transform = 'scale(8)'
             self.save_button.style.opacity = 0.1
@@ -569,7 +571,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.save_button.style.opacity = 1
             setTimeout(stop, 100)
             self.record(['save', self.current_question, self.source], send_now=True)
-            self.last_save = self.source
 
     def stop(self):
         """The student stop its session"""
@@ -592,11 +593,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif what == 'current_question':
             self.compile_now = True
             self.do_not_clear = {}
-            source = self.editor.innerText.strip()
+            self.source = self.editor.innerText.strip()
             if (self.current_question >= 0 and value != self.current_question
-                    and self.last_answer[self.current_question] != source
+                    and self.last_answer[self.current_question].strip() != self.source.strip()
                ):
-                self.last_answer[self.current_question] = source
+                self.save()
+                self.last_answer[self.current_question] = self.source
             self.current_question = value
             self.record(['question', self.current_question])
         elif what in ('error', 'warning'):

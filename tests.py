@@ -176,7 +176,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.ticket = self.driver.current_url.split('?ticket=')[1]
                 return None
             except selenium.common.exceptions.WebDriverException:
-                return f"Server connection is impossible"
+                return "Server connection is impossible"
         retry(check)
     def check(self, path, checks={}, expected=1): # pylint: disable=dangerous-default-value
         """Check"""
@@ -217,7 +217,7 @@ class Tests: # pylint: disable=too-many-public-methods
     def load_page(self, url):
         """Load page and clear popup"""
         self.goto(url)
-        self.check_alert(required=False, nbr=2)
+        self.check_alert(required=False, nbr=10)
         self.check('.question H2').click() # Hide popup
     def move_to_element(self, element):
         """Make the element visible on screen in order to click on it"""
@@ -372,24 +372,32 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.index > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('')})
         self.check('.index > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
         self.select_all()
-        self.check('.editor').send_keys("print('Je suis un texte super long')")
-        self.check_alert(contains=' !')
-        self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('good')})
-        self.check('.index > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('current possible')})
-        self.check('.index > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
-        self.check('.question', {'innerText': Contains('la_chose_a_afficher')})
 
-        # Returns to the first question
-        self.check('.index > DIV:nth-child(3)').click()
-        self.check('.editor', {'innerText': Contains('long')})
-        self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('current good')})
-        self.check('.index > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('possible')})
-        self.check('.index > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
+        try:
+            self.check('.editor').send_keys("print('Je suis un texte super long')")
+            self.check_alert(contains=' !')
+            self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('good')})
+            self.check('.index > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('current possible')})
+            self.check('.index > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
+            self.check('.question', {'innerText': Contains('la_chose_a_afficher')})
+
+            # Returns to the first question
+            self.check('.index > DIV:nth-child(3)').click()
+            self.check('.editor', {'innerText': Contains('long')})
+            self.check('.index > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('current good')})
+            self.check('.index > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('possible')})
+            self.check('.index > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
+        finally:
+            time.sleep(0.5) # Wait save button animation end
+            self.check('.reset_button').click() # Returns to the original text
+            self.check_alert(accept=True)
+            self.check('.save_button').click()
+
     def test_admin_home(self):
         """Test the admin page link"""
         self.load_page('=JS=introduction')
         self.check('.index > A').click()
-        self.check_alert(required=False, nbr=2)
+        self.check_alert(required=False, nbr=10)
         self.check('H1', {'innerText': Equal(utilities.CONFIG.config['messages']['not_admin'])})
         with self.admin_rights():
             self.load_page('=JS=introduction')
