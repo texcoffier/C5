@@ -1,63 +1,64 @@
-+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww+ww-ww+ww-ww+ww+ww-ww+ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+     +--ww--+--ww--+--ww--+--ww--+--ww--+--ww--+--ww--+--ww--+
-|sc s  cs|sc p  cs|sc s  cs|sc s  cs|sc s  cs|     |     |     |  |     |  |sc s  cs|sc s  cs|sc s  cs|sc s  cs|sc s  cs|        |        |     |      |      |      |      |      |      |      |      |
-|sc c  cs|sc    cs|sc c  cs|sc c  cs|sc c  cs|     |     |     |  +--+--+  |sc c  cs|sc c  cs|sc c  cs|sc c  cs|sc c  cs|        |        |     |      |      |      |      |      |      |      | ??   |
-|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|     +dd---+     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |     |      |      |      |      |      |      |      | ??   |
-|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           d     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |     |      |      |      |      |      |      |      | r    |
-|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           d     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |     |      |      |      |      |      |      |      |      |
-|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           |     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |     +--dd--+--dd--+--dd--+--dd--+--dd--+--dd--+--dd--+dd-dd-+
-|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           |     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        +wwwww+                                                d      d
-|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           |     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |c   c+                                                d      d
-|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           |     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |c   c+-dd----------------+++++++++++++++--------------+      |
++ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww+ww-ww+ww-ww+ww+ww-ww+ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+     +--ww--+--ww--+--ww--+--ww--+--ww--+--ww--+--ww+---+ww--+
+|sc    cs|sc p  cs|sc s  cs|sc s  cs|sc s  cs|     |     |     |  |     |  |sc p  cs|sc s  cs|sc s  cs|sc s  cs|sc    cs|        |        |     |      |      |      |      |      |      |    |   |    |
+|sc    cs|sc    cs|sc c  cs|sc c  cs|sc c  cs|     |     |     |  +--+--+  |sc    cs|sc c  cs|sc c  cs|sc c  cs|sc    cs|        |        |     |      |      |      |      |      |      |    |   |    |
+|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|     +dd---+     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |     |      |      |      |      |      |      |    |   |    |
+|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           d     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |     |      |      |      |      |      |      |    |   | r  |
+|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           d     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |     |      |      |      |      |      |      |   r|   |    |
+|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           |     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        |     +--dd--+--dd--+--dd--+--dd--+--dd--+--dd--+--dd+dd-+dd--+
+|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           |     |  +--+--+  |sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|        |        +wwwww+                                         d             d
+|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           |     |  +--+--+  |sc    cs|        |        |sc    cs|sc    cs|        |        |c   c+                                         d             d
+|sc    cs|sc    cs|sc    cs|sc    cs|sc    cs|           |     |  +--+--+  |sc    cs|        |        |sc      |sc    cs|        |        |c   c+-dd----------------+++++++++++++++--------------+      |
 |  TP1   |  TP2   |  TP3   |  TP4   |  TP5   |           |     |  |     |  |  TP6   |  TP7   |  TP8   |  TP13  |  TP14  |        |        |c   c|                   |||||||||||||||                     w
 +---dd---+---dd---+---dd---+---dd---+---dd---+---------dd+-----+dd+-ddd-+dd+---dd---+---dd---+---dd---+---dd---+---dd---+---dd---+---dd---+     +                   |||||||||||||||                     w
 w[TP1]    [TP2]    [TP3]    [TP4]    [TP5]   d                             d[TP6]    [TP7]    [TP8]    [TP13]   [TP14]                    d                         +++++++++++++++                     |
 w  NAUTIBUS PREMIER ÉTAGE                    d                             d                                                              d                                                             w
 w            [TPR1][TPR2]      [TPR3]        d[TP9] [TP10]     [TP11][TP12]d[TD5]          [TD6]          [TD8]                           d      [TD10]        [TD11]        [TD12]        [TD13]       w
-+-ddd-+  +--+-dd--+-dd--------+---------dd---+-dd--+-dd--+dd+dd+-dd--+-dd--+-dd-----------+-dd-----------+-dd--------------dd-+dd+dd+-ddd-+     +dd-----------+dd-----------+dd-----------+dd-----------+
-|     |r | h|sc cs|      cssc | c   cssc   sc|sc cs|sc cs|  |l |sc cs|sc cs|TD5           |TD6           |TD8     c           |r |r |     |     |    TD10     |    TD11     |     TD12    |    TD13     |
-+--+--+  d  |sc cs|cccc   Osc |sc   c  c    c|sc cs|sc cs|  |  |sc cs|sc cs| c  c  c  c   | c  c  c  c   |        c         cs|  |  +--+--+     |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
-+--+--+  d  |sc cs|Os s  cssc |  cc  Osc    c|sc cs|sc cs|  |  |sc cs|sc cs| c  c  c  c   | c  c  c  c   |        c         c |  |  +--+--+     |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
-+--+--+  +--+sc cs| s s  cssc |  s   s c     |sc cs|sc cs|  +--+sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  cs|  |  +--+--+dd+dd+  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
-+--+--+  d  |sc cs|cccc    sc |ssO  cc       |sc cs|sc cs|     |sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  c |  |  +--+--+  |l |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
-+--+--+  d  |sc cs|    TPR2   |cc     TPR3 cc|sc cs|sc cs|     |sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  cs|  |  +--+--+  |  |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
-+--+--+dd+  |sc cs|  c  c     |     c   csO s|sc cs|sc cs|     |sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  c |  |  +--+--+  |  |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
-+--+--+  |  |sc cs|  cssc     d   Osc   c s  |sc cs|sc cs|     |sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  cs|  |  +--+--+--+ww+  c  c  c  c d  c  c  c  c d  c  c  c  c d  c  c  c  c |
-+--+--+  |  |sc csd  cssc     d  cs c     cc |sc csdsc cs|     |sc csdsc cs| c  c  c  c   | c  c  c  c   |        cc cc cc  c |  |  +--+--+     |  c  c  c  c d  c  c  c  c d  c  c  c  c d  c  c  c  c |
-|     |  |  |TPR1 d  cO c   cc|  cssc      cs|TP9  dTP10 |     |TP11 dTP12 | c  c  c  c   | c  c  c  c   |         s  s  s    |  |  |     |     |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
-+ww-ww+ww+ww+dd+ww+dd+ww-dd+ww+dd+ww-dd+dd-ww+dd+ww+dd+ww+     +dd+ww+dd+ww+ww-ww-ww-ww-ww+ww-ww-ww-ww-ww+ww-ww-ww-ww-ww-ww-ww+ww+ww+ww-ww+     +wwwwwwwwwwwww+wwwwwwwwwwwww+wwwwwwwwwwwww+wwwwwwwwwwwww+
-          ??|  |     |     |     |     |     |  cc |  cc |     |  cc |  cc |                                                                    |                                                       |
-          ??|  |     |     |     |     |     |  cc |  cc |     |  cc |  cc |                                                                    |                                                       |
-            +ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+                                                                    +-------------------------------------------------------+
++-ddd-+  +--+-dd--+-dd--------+---------dd---+---dd+---dd+dd+dd+dd---+dd---+-dd-----------+-dd-----------+-dd--------------dd-+dd+dd+-ddd-+     +dd-----------+dd-----------+dd-----------+dd-----------+
+|     |r | h|sc   |     csOsc | c   cssc   sc|sc   |sc   |  |l |   cs|   cs|TD5 c  c  c   |TD6  VERIFIER |TD8        sss      |r |r |     |     |TD10 c  c    |TD11         |TD12    c  c |TD13         |
++--+--+  d  | c cs|cccc   ssc |sc   c  c    c|sc cs|sc cs|  |  |sc cs|sc cs|    c  c  c   | c  c  c  c   |           ccc      |  |  +--+--+     |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
++--+--+  d  |sc c |Os s   c   |  cc  Osc    c|sc cs|sc cs|  |  |sc cs|sc cs|              | c  c  c  c   |                    |  |  +--+--+     |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c w
++--+--+  +--+ c cs| s s    c  |  s   s c     |sc cs|sc cs|  +--+sc cs|sc cs| c  c  c  c   | c  c  c  c   |                    |  |  +--+--+dd+dd+  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c w
++--+--+  d  |sc c |cccc  csscO|ssO  cc       |sc cs|sc cs|     |sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  cs|  |  +--+--+  |l |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
++--+--+  d  | c cs|    TPR2 ss|cc     TPR3   |sc cs|   cs|     |sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  cs|  |  +--+--+  |  |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
++--+--+dd+  |sc c |         cc|            cc|sc cs|sc cs|     |sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  cs|  |  +--+--+  |  |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
++--+--+  |  | c cs|  c   c    |     c      s |sc cs|sc cs|     |sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  cs|  |  +--+--+--+ww+  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
++--+--+  |  |sc   |  cs sc    d   Osc  csOs  |sc cs|sc cs|     |sc cs|sc cs| c  c  c  c   | c  c  c  c   |                  cs|  |  +--+--+     |  c  c  c  c |  c  c  c  c |  c  c  c  c |  c  c  c  c |
++--+--+  |  |     d  c   c    d  cs c  c ccc |sc   dsc cs|     |   csd   cs| c  c  c  c   d c  c  c  c   |          cccccc  cs|  |  +--+--+     |  c  c  c  c d  c  c  c  c d  c  c  c  c d  c  c  c  c |
+|     |  |  |TPR1 d  csOsc  cc|  cssc      cs|TP9  dTP10 |     |TP11 dTP12 | c  c  c  c   d c  c  c  c   |          ssssss    |  |  |     |     |  c  c  c  c d  c  c  c  c d  c  c  c  c d  c  c  c  c |
++ww-ww+ww+ww+dd+ww+dd+ww-dd+ww+dd+ww-dd+dd-ww+ --- +dd+ww+     +dd+ww+dd+ww+ww-ww-ww-ww-ww+ww-ww-ww-ww-ww+ww-ww-ww-ww-ww-ww-ww+ww+ww+ww-ww+     +--wwww---wwww+--wwww---wwww+--wwww---wwww+--wwww---wwww+
+         |     |     |     |     |     |     |  cc |  cc |     |  cc |  cc |                                                                    |                                                       |
+         |     |     |     |     |     |     |  cc |  cc |     |  cc |  cc |                                                                    |                                                       |
+         +ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+ww-ww+                                                                    +-------------------------------------------------------+
 
 
 
 
 +ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww+ww+ww-ww+ww+ww-ww-ww+ww-ww-ww-ww-ww-ww+ww-ww-ww-ww+ww-ww-ww-ww+ww-ww-ww+ww+     +-----ww-------+-dd-+---------ww---+--------------------+
-|                                                              |  |     | c c c c   d   c c c c c c c | c c c c   | c c c c   |  c c c c  |     |              d    d              |                    |
-|                                                              |  +--+--+ c c c c   d   c c c c c c c | c c c c   | c c c c   |  c c c c  |     |              d    d              |                    |
-|                                                              |  +--+--+ c c c c   |   c c c c c c c | c c c c   | c c c c   |  c c c c  |     |              |    |              |                    |
-|                                                              |  +--+--+ c c c c   |   c c c c c c c | c c c c   | c c c c   |  c c c c  +-ddd-+              |    |              |                    |
-|                                                              |  +--+--+ c c c c   |C3               | c c c c   | c c c c   |  c c c c  |     |              |    |              | ?                  |
-|                                                              |  +--+--+ c c c c   |                 | c c c c   | c c c c   |  c c c c  |     |              |    |              |   |        |       |
-|                                                              |  +--+--+           |   c c c c c c c | c c c c   | c c c c   |  c c c c  |     |              |    |              |   |        |   ?   |
-|                                                              |  +--+--+TD1        |   c c c c c c c | c c c c   | c c c c   |  c c c c  |     |              |    |              |   |        |       |
-|                                                              |  +--+--+   c c c   |   c c c c c c   | c c c c   | c c c c   |  c c c c  |     +--------------+    ++++++++++++++++   +--------+       |
-|                                                              |  |  |  |   c c c   |   c c c c c c   |TD2        |TD3        |TD9        |                         ||||||||||||||||                    d
+|                                                              |  |     | c c c c   d   c c c c c c c | c c c c   | c c c c   |  c c c c  |     |              d    d              d  drh |             |
+|                                                              |  +--+--+ c c c c   d   c c c c c c c | c c c c   | c c c c   |  c c c c  |     |              d    d              d  d   |             |
+|                                                              |  +--+--+ c c c c   |   c c c c c c c | c c c c   | c c c c   |  c c c c  |     |              |    |              |  |   |             |
+|                                                              |  +--+--+ c c c c   |   c c c c c c c | c c c c   | c c c c   |  c c c c  +-ddd-+              |    |              |  |   |             |
+|                                                              |  +--+--+ c c c c   |C3 c c c c c c   | c c c c   | c c c c   |  c c c c  |     |              |    |              |  +---+             |
+|                                                              |  +--+--+ c c c c   |   c c c c c c   | c c c c   | c c c c   |  c c c c  |     |              |    |              |  dr  |             |
+|                                                              |  +--+--+ c c c c   |                 | c c c c   | c c c c   |  c c c c  |     w              |    |              |  d   |             |
+|                                                              |  +--+--+ c c c c   |                 | c c c c   | c c c c   |  c c c c  |     w              |    |              |  |   |             |
+|                                                              |  +--+--+     c c   |   c c c c c     |     c c   |     c c   |      c c  |     +--------------+    ++++++++++++++++dd+---+-----dd---dd-+
+|                                                              |  |  |  |TD1  c c   |   c c c c c     |TD2  c c   |TD3  c c   |TD9   c c  |                         ||||||||||||||||                    d
 +--------------------------------------------+-----------------+dd+dd+dd+dd---------+---------------dd+dd---------+-dd--------+--dd-------+                         ||||||||||||||||                    d
 w                                            d                          d[TD1]       [C3]              [TD2]       [TD3]       [TD9]      d                         ++++++++++++++++                    d
 w  NAUTIBUS REZ-DE-CHAUSSÉE                  d                          d                                                                 d                                                             d
 w                                            d                          d[C1]                       [C2]                                  d      [C4]                        [C5]                       |
 +-ddd-+  +--+--------------------------------+-----+        +dd+        +dd----------------------dd+dd----------------------dd+dd+dd+-ddd-+     +dd-----------------------dd+dd-----------------------dd+
-|     |r | h|                                      d        |l |        |   c c c c c c c c c c c  |    c c c c c c c c c c   |r |r |     |     |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
-+--+--+  d  |                                      d        |  |        |   c c c c c c c c c c    |    c c c c c c c c c c   |  |  +--+--+     |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
-+--+--+  d  |                                      |        |  |        |   c c c c c c c c c c +dd+dd+ c c c c c c c c c c   |  |  +--+--+     |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
-+--+--+  +--+                                      |        +--+        |   c c c c c c c c c c |     | c c c c c c c c c c   |  |  +--+--+dd+dd+   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
-+--+--+  d  |                                      |                    |   c c c c c c c c c c |     | c c c c c c c c c c   |  |  +--+--+  |l |C4                         |                        C5 |
+|     |r | h|                                      d        |l |        |   c c c c c c c c c      |      c c c c c c c c c   |r |r |     |     |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
++--+--+  d  |                                      d        |  |        |   c c c c c c c c c      |      c c c c c c c c c   |  |  +--+--+     |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
++--+--+  d  |                                      |        |  |        |   c c c c c c c c c   +dd+dd+   c c c c c c c c c   |  |  +--+--+     |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   w
++--+--+  +--+                                      |        +--+        |   c c c c c c c c c   |     |   c c c c c c c c c   |  |  +--+--+dd+dd+   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   w
++--+--+  d  |                                      |                    |   c c c c c c c c c   |     |   c c c c c c c c c   |  |  +--+--+  |l |C4 c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  cC5 |
 +--+--+  d  |                                      |                    |C1                     |     |                    C2 |  |  +--+--+  |  |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
-+--+--+dd+  |                                      |                    |   c c c c c c c c c c |     | c c c c c c c c c c   |  |  +--+--+  |  |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
-+--+--+  |  |                                      |                    |   c c c c c c c c c c +--+--+ c c c c c c c c c c   |  |  +--+--+--+ww+   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
-+--+--+  |  |                                      |                    |   c c c c c c c c c c    d    c c c c c c c c c c   |  |  +--+--+     |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
-|     |  |  |                                      |                    |   c c c c c c c c c c    d    c c c c c c c c c c   |  |  |     |     |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
++--+--+dd+  |                                      |                    |   c c c c c c c c c   |     |   c c c c c c c c c   |  |  +--+--+  |  |   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
++--+--+  |  |                                      |                    |   c c c c c c c c c   +--+--+   c c c c c c c c c   |  |  +--+--+--+ww+   c  c  c  c  c  c  c  c  |  c  c  c  c  c  c  c  c   |
++--+--+  |  |                                      |                    |   c c c c c c c c c      d      c c c c c c c c c   |  |  +--+--+     |   c  c  c  c  c  c  c  c  d  c  c  c  c  c  c  c  c   |
+|     |  |  |                                      |                    |   c c c c c c c c c      d      c c c c c c c c c   |  |  |     |     |   c  c  c  c  c  c  c  c  d  c  c  c  c  c  c  c  c   |
 +ww-ww+ww+ww+dd-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww+ww-ww-ww-ww-ww-ww-ww+ww+ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww-ww+ww+ww+ww-ww+     +wwwwwwwwwwwwwwwwwwwwwwwwwww+wwwwwwwwwwwwwwwwwwwwwwwwwww+
             |                                                              |                                                                    |                                                       |
             |                                                              |                                                                    |                                                       |
