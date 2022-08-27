@@ -16,7 +16,7 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 		;; \
 	esac ; \
 	cat $$FILES > $*.py.xxx ; \
-	echo $$SESSION >> $*.py.xxx ; \
+	echo "$$SESSION" >> $*.py.xxx ; \
 	$(PYTOJS) $*.py.xxx >$*.js ; \
 	rm $*.py.xxx
 
