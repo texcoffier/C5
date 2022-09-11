@@ -274,23 +274,24 @@
         </li>
         <li> <tt>self.teacher()</tt> donne le nom de l'enseignant qui surveille l'étudiant.</li>
         <li> <tt>batiment, coord_x, coord_y = self.placement()</tt>
-            permet de donner un sujet différent aux étudiants quand
-            ils sont assis l'un à coté de l'autre :
+            Permet de récupérer le bâtiment et les coordonnées sur le plan.
+            <li> <tt>sujet = self.version()</tt>
+                permet de récupérer la version du sujet suivant que
+                l'étudiant a été mis sur un Ⓐ ou Ⓑ sur le plan :
             <pre>def question(self):
-    if self.sujet == 0:
+    if self.sujet == 'a':
         return "Vous avez le sujet A : ..."
     else:
         return "Vous avez le sujet B : ..."
 
 def tester(self):
-    if self.sujet == 0:
+    if self.sujet == 'a':
         ...
     else:
         ...
 
 def default_answer(self):
-    batiment, coord_x, coord_y = self.placement()
-    self.sujet = (coord_x + coord_y) % 2 # Seulement 2 sujets
+    self.sujet = self.version() # 'a' ou 'b'
     return ""</pre>
         <li>
             <pre>self.set_options(
@@ -905,8 +906,25 @@ server {
             puis par compilateur.
         </li>
         <li>
+            Temps bonus pour un étudiant.
+        </li>
+        <li>
             Dépôt de fichiers média (images par exemple)
             pour simplifier l'inclusion dans les sujets.
+        </li>
+        <li>
+            Gestion des connexions sur le même compte à partir
+            d'adresses IP multiples en même temps.
+        </li>
+        <li>
+            Indentation automatique.
+        </li>
+        <li>
+            Option pour désactiver la toute première compilation quand
+            la compilation automatique est désactivée.
+        </li>
+        <li>
+            Numéros de ligne sur l'affichage du source au surveillant.
         </li>
     </ul>
 </body>

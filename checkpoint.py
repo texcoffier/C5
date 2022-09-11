@@ -344,7 +344,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Create list of chars to display"""
         # 🪑 🛗 not working on phone
         translate = {'c': '⑁', 's': '💻', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
-                     'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' '}
+                     'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' ', 'a': 'Ⓐ', 'b': 'Ⓑ'}
         self.chars = {}
         for line, chars in enumerate(self.lines):
             for column, char in enumerate(chars):
@@ -719,8 +719,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Stop moving a student"""
         if column != -1:
             if self.moving.column_start != column or self.moving.line_start != line:
-                record('/checkpoint/' + COURSE + '/' + self.moving.login + '/'
-                       + ROOM.building + ',' + column + ',' + line)
+                self.move_student_to(self.moving.login, column, line)
             elif not self.moved:
                 # Simple click
                 record('/checkpoint/SPY/' + COURSE + '/' + self.moving.login)
@@ -884,13 +883,20 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             Student.moving_element.style.background = "#FFF"
             document.getElementById('top').style.background = TOP_ACTIVE
         self.draw(square_feedback=True)
+    def move_student_to(self, student, column, line):
+        """Move the student on a chair.
+        If not an A or B version, ask for the version.
+        """
+        version = self.lines[line][column]
+        while version not in ('a', 'b'):
+            version = prompt('Version A / B:').lower()
+        record('/checkpoint/' + COURSE + '/' + student + '/'
+               + self.building + ',' + column + ',' + line + ',' + version)
     def stop_move_student(self, event):
         """Drop the student"""
         pos = self.get_coord(event)
         if pos[0] != -1:
-            record('/checkpoint/' + COURSE + '/' + Student.moving_student.login + '/'
-                   + self.building + ',' + pos[0] + ',' + pos[1])
-
+            self.move_student_to(Student.moving_student.login, pos[0], pos[1])
         document.body.onmousemove = document.body.ontouchmove = None
         window.onmouseup = document.body.ontouchend = None
         del Student.moving_element.style.position
@@ -913,10 +919,11 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.teacher = data[1][1]
         self.room = data[1][2]
         room = self.room.split(',')
-        if len(room) == 3:
+        if len(room) >= 3:
             self.building = room[0]
             self.column = int(room[1])
             self.line = int(room[2])
+            self.version = room[3]
         self.checkpoint_time = data[1][3]
         self.blur = data[1][4]
         self.nr_questions_done = data[1][5] or 0

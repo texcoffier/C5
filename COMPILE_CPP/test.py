@@ -22,11 +22,14 @@ class QEnd(Question): # pylint: disable=undefined-variable
     """Question Finale"""
     def question(self):
         batiment, coord_x, coord_y = self.placement()
+        version = self.version()
         return ("<p>Récupération des informations concernant la place de l'étudiant dans la salle."
-                + "<p>Surveillant :" + self.teacher()
-                + "<p>Bâtiment : " + batiment
-                + "<p>Poste X : " + coord_x
-                + "<p>Poste Y : " + coord_y)
+                + "<br>Surveillant :" + self.teacher()
+                + "<br>Bâtiment : " + batiment
+                + "<br>Poste X : " + coord_x
+                + "<br>Poste Y : " + coord_y
+                + "<br>Version sujet : " + version
+                )
     def tester(self):
         self.display('FINI !')
     def default_answer(self):

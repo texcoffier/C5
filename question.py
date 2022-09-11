@@ -47,8 +47,11 @@ class Question:
         return ""
     def placement(self):
         """Return [Building, coord_x, coord_y]"""
-        building, coord_x, coord_y = self.worker.config.WHERE[2].split(',')
+        building, coord_x, coord_y = self.worker.config.WHERE[2].split(',')[:3]
         return (building, int(coord_x), int(coord_y))
+    def version(self):
+        """Return 'a' or 'b'"""
+        return self.worker.config.WHERE[2].split(',')[3]
     def teacher(self):
         """Room managing Teacher"""
         return self.worker.config.WHERE[1]

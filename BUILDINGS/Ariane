@@ -1,0 +1,57 @@
+[TP01]                                        ARIANE RDC                             [TP06]                  
++-ww--ww--ww--ww-+                                                                   +-ww--ww--ww--ww-+
+|   sa  sa  sa   |[TP02]           [TP03]           [TP04]           [TP05]          |   as  as  as   |
+|   sb   c   c   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   c   c   bs   |
+|   sa  sb  sb   d   sa  sa  sa   |   as  as  as   d   sa  sa  sa   |   as  as  as   d   bs  bs  as   |
+|   sb   c   c   d   sb   c   c   |   c   c   bs   d   sb   c   c   |   c   c   bs   d   c   c   bs   |
+|   sa  sa  sa   |   sa  sb  sb   |   bs  bs  as   |    c  sb  sb   |   bs  bs  as   |   as  as  as   |
+|    c   c   c   |   sb   c   c   |   c   c   c    |   sa   c   c   |   c   c   c    |   c   c   c    |
+|   sb  sb  sb   |   sa  sa  sa   |   as  as  bs   |   sb  sa  sa   |   as  as  bs   |   bs  bs  bs   |
+|    c   c   c   |    c   c   c   |   c   c   c    |    c   c   c   |   c   c   c    |   c   c   c    |
+|   sa  sa  sa   |   sb  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |   as  as  as   |
+|TP01            |    c   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |TP06            |
++------+-----+-dd+   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   +-dd+-----+------+
+|      |     d   |TP02            |TP03            |TP04            |TP05            |   d     |      |
+|      |     d   +-dd-------------+-dd-+-------+---+----------+--dd-+-------------dd-+   d     |      |
+|      +-----+                         |       |              |                          +-----+      |
+|    r d                               |       |              |                          d r          |
+|      d                               +dd-----+dd------------+                          d            |
++------+                                                                                 +------------+
+[TP11]                                        ARIANE PREMIER                         [TP16]          
++-ww--ww--ww--ww-+                                                                   +-ww--ww--ww--ww-+
+|   sa  sa  sa   |[TP12]           [TP13]           [TP14]           [TP15]          |   as  as  as   |
+|   sb   c   c   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   c   c   bs   |
+|   sa  sb  sb   d   sa  sa  sa   |   as  as  as   d   sa  sa  sa   |   as  as  as   d   bs  bs  as   |
+|   sb   c   c   d   sb   c   c   |   c   c   bs   d   sb   c   c   |   c   c   bs   d   c   c   bs   |
+|   sa  sa  sa   |   sa  sb  sb   |   bs  bs  as   |    c  sb  sb   |   bs  bs  as   |   as  as  as   |
+|    c   c   c   |   sb   c   c   |   c   c   c    |   sa   c   c   |   c   c   c    |   c   c   c    |
+|   sb  sb  sb   |   sa  sa  sa   |   as  as  bs   |   sb  sa  sa   |   as  as  bs   |   bs  bs  bs   |
+|    c   c   c   |    c   c   c   |   c   c   c    |    c   c   c   |   c   c   c    |   c   c   c    |
+|   sa  sa  sa   |   sb  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |   as  as  as   |
+|TP11            |    c   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |TP16            |
++------+-----+-dd+   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   +-dd+-----+------+
+|      |     d   |TP12            |TP13            |TP14            |TP15            |   d     |      |
+|      |     d   +-dd-------------+-dd-+-----------+-------------dd-+-------------dd-+   d     |      |
+|      +-----+                                                                           +-----+      |
+|          r d                                                                           d r          |
+|            d                                                                           d            |
++------------+                                                                           +------------+
+[TP21]                                        ARIANE DEUXIÈME                        [TP25]          
++-ww--ww--ww--ww-+                                                                   +-ww--ww--ww--ww-+
+|   sa  sa  sa   |[TP22]           [TP23]           [TP24]                           |   as  as  as   |
+|   sb   c   c   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   c   c   bs   |
+|   sa  sb  sb   d   sa  sa  sa   |   as  as  as   d   sa  sa  sa   |                d   bs  bs  as   |
+|   sb   c   c   d   sb   c   c   |   c   c   bs   d   sb   c   c   |                d   c   c   bs   |
+|   sa  sa  sa   |   sa  sb  sb   |   bs  bs  as   |    c  sb  sb   |                |   as  as  as   |
+|    c   c   c   |   sb   c   c   |   c   c   c    |   sa   c   c   |                |   c   c   c    |
+|   sb  sb  sb   |   sa  sa  sa   |   as  as  bs   |   sb  sa  sa   |        +-----dd+   bs  bs  bs   |
+|    c   c   c   |    c   c   c   |   c   c   c    |    c   c   c   |        d       |   c   c   c    |
+|   sa  sa  sa   |   sb  sb  sb   |   bs  bs  as   |   sa  sb  sb   |        d       |   as  as  as   |
+|TP21            |    c   c   c   |   c   c   bs   |   sb   c   c   |        +--+    |TP25            |
++------+-----+-dd+   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |           |    +-dd+-----+------+
+|      |     d   |TP22            |TP23            |TP24            |           |        d     |      |
+|      |     d   +-dd-------------+-dd-+-----------+-------------dd-+-----------+        d     |      |
+|      +-----+       |            |                 VIRTUA / LAB                         +-----+      |
+|    r d             |            |                                                      d r          |
+|      d             +dd----------+                                                      d            |
++------+                                                                                 +------------+

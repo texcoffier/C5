@@ -12,6 +12,7 @@ try:
     encodeURIComponent = encodeURIComponent
     document = document
     setTimeout = setTimeout
+    html = html
 except ValueError:
     pass
 
@@ -48,7 +49,7 @@ def display(): # pylint: disable=too-many-statements
             margin: 1px ; height: 2.5em; vertical-align: top;
             font-size: 100% ;
             }
-        LABEL { display: block }
+        LABEL { display: inline-block }
         .done { background: #FDD }
         .running { background: #DFD }
         .running_tt { background: #FEB }
