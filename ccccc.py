@@ -561,7 +561,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def save(self):
         """Save the editor content"""
-        if self.last_answer[self.current_question].strip() != self.source.strip():
+        if (not self.last_answer[self.current_question]
+                or self.last_answer[self.current_question].strip() != self.source.strip()):
             self.save_button.style.transition = ''
             self.save_button.style.transform = 'scale(8)'
             self.save_button.style.opacity = 0.1
@@ -595,7 +596,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.do_not_clear = {}
             self.source = self.editor.innerText.strip()
             if (self.current_question >= 0 and value != self.current_question
-                    and self.last_answer[self.current_question].strip() != self.source.strip()
+                    and (
+                        not self.last_answer[self.current_question]
+                        or self.last_answer[self.current_question].strip() != self.source.strip()
+                    )
                ):
                 self.save()
                 self.last_answer[self.current_question] = self.source

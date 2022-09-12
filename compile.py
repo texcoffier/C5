@@ -163,6 +163,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('run', 'No executor defined')
     def start_question(self):
         """Start a new question"""
+        # print("STATS QUESTION", self.current_question, '/', self.current_question_max)
         if self.quest:
             self.quest.last_answer = self.source
         if self.current_question > self.current_question_max:
@@ -193,9 +194,12 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             self.post("good", self.source)
             self.config.ANSWERS[current_question] = [self.source, 1]
             self.start_question()
+        else:
+            self.current_question = current_question # Keep same question
 
     def question_yet_solved(self, question):
         """Return True if the current question has been correctly answered"""
+        # print(question, self.config.ANSWERS)
         if not self.config.ANSWERS[question]:
             return False
         return self.config.ANSWERS[question][1]
