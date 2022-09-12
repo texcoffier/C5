@@ -5,6 +5,7 @@ Base class for compiler
 millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 Number = Number # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 JSON = JSON # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
+RegExp = RegExp # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 
 COURSE_OPTIONS = {}
 
@@ -230,7 +231,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def escape(self, text): # pylint: disable=no-self-use
         """Escape HTML chars"""
-        return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return str(text).replace(RegExp("&","g"), "&amp;").replace(RegExp("<", "g"), "&lt;").replace(RegExp(">", "g"), "&gt;")
 
     ###########################################################################
 
