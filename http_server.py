@@ -113,6 +113,7 @@ def handle(base=''):
                         ADMIN = "{int(session.is_admin())}";
                         STOP = "{stop}";
                         CP = "{course.config['copy_paste']}";
+                        SAVE_UNLOCK = "{course.config['save_unlock']}";
                         SEQUENTIAL = "{course.config['sequential']}";
                         ANSWERS = {json.dumps(answers)};
                         WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0)))};
@@ -244,6 +245,9 @@ async def adm_config(request): # pylint: disable=too-many-branches
     elif action == 'copy_paste':
         config.set_parameter('copy_paste', value)
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
+    elif action == 'save_unlock':
+        config.set_parameter('save_unlock', value)
+        feedback = f"«{course}» Unlock next question on save «{'not' if value == '0' else ''} allowed»"
     elif action == 'checkpoint':
         config.set_parameter('checkpoint', value)
         if value == '0':

@@ -163,7 +163,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('run', 'No executor defined')
     def start_question(self):
         """Start a new question"""
-        # print("STATS QUESTION", self.current_question, '/', self.current_question_max)
+        # print("START QUESTION", self.current_question, '/', self.current_question_max)
         if self.quest:
             self.quest.last_answer = self.source
         if self.current_question > self.current_question_max:
@@ -179,8 +179,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('index', self.index_initial_content())
     def goto(self, question):
         """Change question"""
-        if question > self.current_question_max and self.config.SEQUENTIAL:
-            return
         self.current_question = question
         self.start_question()
     def run_tester(self):
@@ -280,7 +278,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             if self.question_yet_solved(i):
                 html_class.append('good')
             else:
-                if i <= self.current_question_max or not self.config.SEQUENTIAL:
+                if (i <= self.current_question_max
+                        or not self.config.SEQUENTIAL
+                        or self.config.ANSWERS[i]):
                     html_class.append('possible')
                 else:
                     link = ''

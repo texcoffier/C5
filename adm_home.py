@@ -142,14 +142,18 @@ def display(): # pylint: disable=too-many-statements
             add_button('/adm/config/' + course.course + '/stop/now', 'Now', 'stop_date')
         text.append('<td>')
         add_toggle('/adm/config/' + course.course + '/copy_paste/', course.copy_paste, 'Copy/Paste')
+        text.append('<br>')
         label = 'Checkpoint'
         if course.checkpoint != '0': # and i_am_a_teacher:
             label = ('<a target="_blank" href="/checkpoint/' + course.course
                      + '?ticket=' + TICKET + '">' + label + '</a>')
         add_toggle('/adm/config/' + course.course + '/checkpoint/', course.checkpoint,
                    label, disable=not i_am_a_teacher)
+        text.append('<br>')
         add_toggle('/adm/config/' + course.course + '/sequential/', course.sequential,
                    'Sequential', disable=not i_am_a_teacher)
+        add_toggle('/adm/config/' + course.course + '/save_unlock/', course.save_unlock,
+                   'Save→Unlock', disable=not i_am_a_teacher)
         text.append('<td>')
         add_textarea('/adm/config/' + course.course + '/tt/', course.tt, not i_am_a_teacher, 'tt')
         text.append('<td>')

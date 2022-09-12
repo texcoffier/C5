@@ -33,6 +33,7 @@ try:
     SOCK = SOCK
     STOP = STOP
     CP = CP
+    SAVE_UNLOCK = SAVE_UNLOCK
     SEQUENTIAL = SEQUENTIAL
     WHERE = WHERE
     encodeURIComponent = encodeURIComponent
@@ -109,6 +110,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
         'close': "Voulez-vous vraiment quitter cette page ?",
         'allow_copy_paste': CP == '1',
+        'save_unlock': SAVE_UNLOCK == '1',
         'display_reset': True,
         'positions' : {
             'question': [1, 29, 0, 30, '#EFE'],
@@ -233,7 +235,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.reset_button.style.fontFamily = 'emoji'
         self.reset_button.onclick = bind(self.reset, self)
         self.save_button.style.fontFamily = 'emoji'
-        self.save_button.onclick = bind(self.save, self)
+        self.save_button.onclick = bind(self.save_unlock, self)
         if self.stop_button:
             self.stop_button.style.fontFamily = 'emoji'
             self.stop_button.onclick = bind(self.stop, self)
@@ -493,7 +495,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             document.execCommand('insertHTML', False, '    ')
             event.preventDefault(True)
         elif event.key == 's' and event.ctrlKey:
-            self.save()
+            self.save_unlock()
             event.preventDefault(True)
         elif event.key == 'F9':
             if self.options['automatic_compilation'] == False: # pylint: disable=singleton-comparison
@@ -561,8 +563,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def save(self):
         """Save the editor content"""
+        source = self.editor.innerText.strip()
         if (not self.last_answer[self.current_question]
-                or self.last_answer[self.current_question].strip() != self.source.strip()):
+                or self.last_answer[self.current_question].strip() != source.strip()):
             self.save_button.style.transition = ''
             self.save_button.style.transform = 'scale(8)'
             self.save_button.style.opacity = 0.1
@@ -571,7 +574,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.save_button.style.transform = 'scale(1)'
                 self.save_button.style.opacity = 1
             setTimeout(stop, 100)
-            self.record(['save', self.current_question, self.source], send_now=True)
+            self.record(['save', self.current_question, source], send_now=True)
+            self.last_answer[self.current_question] = source
+            return True
+        return False
+
+    def save_unlock(self):
+        """Saving the last question allowed question open the next one"""
+        if self.save() and self.options['save_unlock']:
+            if not self.last_answer[self.current_question + 1]:
+                # Unlock the next question
+                self.unlock_worker()
+                self.worker.postMessage(['goto', self.current_question + 1])
 
     def stop(self):
         """The student stop its session"""
@@ -584,7 +598,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
-        # print(self.state, what, str(event.data[1])[:10])
+        # print(millisecs(), self.state, what, str(event.data[1])[:10])
         value = event.data[1]
         if what == 'options':
             for key in value:
@@ -602,7 +616,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     )
                ):
                 self.save()
-                self.last_answer[self.current_question] = self.source
             self.current_question = value
             self.record(['question', self.current_question])
         elif what in ('error', 'warning'):
