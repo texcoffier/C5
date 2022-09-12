@@ -50,7 +50,9 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
                 self.run_after_compile()
                 message = data[1]
                 if 'Bravo, il' not in message:
-                    message = '<error>' + self.escape(message) + '<error>'
+                    message = '<error>' + self.escape(message) + '</error>'
+                else:
+                    message = self.escape(message)
                 self.post('compiler', message)
                 for line in data[1].split('\n'):
                     line = line.split(':')
