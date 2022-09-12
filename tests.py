@@ -341,6 +341,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.save_button').click()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§')})
+        time.sleep(0.1) # For Firefox
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§§')})
