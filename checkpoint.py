@@ -719,7 +719,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Stop moving a student"""
         if column != -1:
             if self.moving.column_start != column or self.moving.line_start != line:
-                self.move_student_to(self.moving.login, column, line)
+                self.move_student_to(self.moving, column, line)
             elif not self.moved:
                 # Simple click
                 record('/checkpoint/SPY/' + COURSE + '/' + self.moving.login)
@@ -889,14 +889,18 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """
         version = self.lines[line][column]
         while version not in ('a', 'b'):
-            version = prompt('Version A / B:').lower()
-        record('/checkpoint/' + COURSE + '/' + student + '/'
+            version = prompt('Version A / B:')
+            if version:
+                version = version.lower()
+            else:
+                version = student.version or 'a'
+        record('/checkpoint/' + COURSE + '/' + student.login + '/'
                + self.building + ',' + column + ',' + line + ',' + version)
     def stop_move_student(self, event):
         """Drop the student"""
         pos = self.get_coord(event)
         if pos[0] != -1:
-            self.move_student_to(Student.moving_student.login, pos[0], pos[1])
+            self.move_student_to(Student.moving_student, pos[0], pos[1])
         document.body.onmousemove = document.body.ontouchmove = None
         window.onmouseup = document.body.ontouchend = None
         del Student.moving_element.style.position
