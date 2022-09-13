@@ -163,21 +163,30 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         now = time.strftime('%Y-%m-%d %H:%M:%S')
         if now < self.start:
             return 'pending'
-        if self.checkpoint and login:
+        if login:
             active_teacher_room = self.active_teacher_room.get(login, None)
             if active_teacher_room is None:
                 seconds = int(time.time())
                 # Add to the checkpoint room
-                self.config['active_teacher_room'][login] = [
+                active_teacher_room = self.config['active_teacher_room'][login] = [
                     False, '', '', seconds, 0, 0, client_ip]
                 self.record()
+                try:
+                    os.mkdir(f'{self.dirname}')
+                except FileExistsError:
+                    pass
+                try:
+                    os.mkdir(f'{self.dirname}/{login}')
+                except FileExistsError:
+                    pass
                 with open(f'{self.dirname}/{login}/http_server.log', "a") as file:
                     file.write(f'[{seconds},"checkpoint_in"]\n')
-                return 'checkpoint'
+                if self.checkpoint:
+                    return 'checkpoint'
             if client_ip:
                 # XXX Connecté à 2 IP différentes en même temps
                 active_teacher_room[6] = client_ip # Update
-            if not active_teacher_room[0]:
+            if self.checkpoint and not active_teacher_room[0]:
                 if active_teacher_room[1] == '':
                     # Always in the checkpoint or examination is done
                     return 'checkpoint'

@@ -511,8 +511,6 @@ async def checkpoint_list(request):
     utilities.CourseConfig.load_all_configs()
     now = time.strftime('%Y-%m-%d %H:%M:%S')
     for _course_name, course in sorted(utilities.CourseConfig.configs.items()):
-        if not course.checkpoint:
-            continue
         if now > course.stop_tt:
             continue # Exam done
         waiting = []
