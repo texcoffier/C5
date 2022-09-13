@@ -16,6 +16,8 @@ def onmessage(event):
             Compile.worker.goto(event.data[1])
         elif event.data[0] == 'array':
             Compile.worker.shared_buffer = event.data[1]
+        elif event.data[0] == 'source':
+            Compile.worker.questions[event.data[1]].last_answer = event.data[2]
         elif event.data[0] == 'config':
             init_needed = len(Compile.worker.config) == 0
             Compile.worker.set_config(event.data[1])
@@ -172,9 +174,10 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.quest = self.questions[self.current_question]
         self.post('current_question', self.current_question)
         if hasattr(self.quest, 'last_answer'):
-            self.post('editor', self.quest.last_answer)
+            self.source = self.quest.last_answer
         else:
-            self.post('editor', self.quest.default_answer())
+            self.source = self.quest.default_answer()
+        self.post('editor', self.source)
         self.post('question', self.question_initial_content())
         self.post('question', self.quest.question())
         self.post('index', self.index_initial_content())

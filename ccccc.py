@@ -575,6 +575,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.save_button.style.opacity = 1
             setTimeout(stop, 100)
             self.record(['save', self.current_question, source], send_now=True)
+            self.worker.postMessage(['source', self.current_question, source])
             self.last_answer[self.current_question] = source
             return True
         return False
