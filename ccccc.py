@@ -608,6 +608,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.update_gui()
         elif what == 'current_question':
             self.compile_now = True
+            self.old_source += 'force recompile'
             self.do_not_clear = {}
             self.source = self.editor.innerText.strip()
             if (self.current_question >= 0 and value != self.current_question

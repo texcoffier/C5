@@ -177,6 +177,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             self.source = self.quest.last_answer
         else:
             self.source = self.quest.default_answer()
+        self.previous_source += 'force recompilation'
         self.post('editor', self.source)
         self.post('question', self.question_initial_content())
         self.post('question', self.quest.question())
