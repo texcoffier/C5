@@ -217,6 +217,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             Atomics.wait(self.shared_buffer, 0, 0, 100) # pylint: disable=undefined-variable
         self.post('state', "inputdone")
         if self.shared_buffer[0] == 2:
+            self.post('state', "stopped")
             raise ValueError('canceled')
         string = ''
         for i in self.shared_buffer[1:]:
