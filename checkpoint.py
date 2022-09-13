@@ -1120,6 +1120,34 @@ def spy_it(event=None):
     div_source.textContent = source[3]
     hljs.highlightElement(div_source)
 
+def spy_concat(sources):
+    """Display all answers concatenated"""
+    done = {}
+    div_source = document.getElementById('source')
+    for source in sources[::-1]:
+        if source[1] in done:
+            continue
+        done[source[1]] = True
+        title = document.createElement('H1')
+        title.textContent = 'Question ' + (source[1] + 1)
+        div_source.appendChild(title)
+        lines = document.createElement('PRE')
+        lines.style.position = 'absolute'
+        lines.style.left = '0px'
+        lines.style.textAlign = 'right'
+        lines.style.marginTop = '0px'
+        lines.textContent = '\n'.join(
+            [
+                str(i+1)
+                for i, _ in enumerate(source[3].split('\n'))
+            ])
+        div_source.appendChild(lines)
+        code = document.createElement('PRE')
+        code.textContent = source[3]
+        code.style.marginLeft = "1em"
+        hljs.highlightElement(code)
+        div_source.appendChild(code)
+
 def spy(sources, login, infos):
     """Display the infos source code"""
     student = STUDENT_DICT[login]
@@ -1149,7 +1177,7 @@ def spy(sources, login, infos):
     content.append('</div><pre id="source"></pre>')
     div.innerHTML = ''.join(content)
     div.style.display = 'block'
-    spy_it()
+    spy_concat(sources)
 
 def debug():
     """debug"""
