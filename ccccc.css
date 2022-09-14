@@ -250,4 +250,4 @@ H2:hover .timer SPAN {
     padding: 2em;
 }
 
-LABEL, .index DIV, .save_button, .reset_button { cursor: pointer }
+LABEL, .index DIV, .save_button, .reset_button, .local_button { cursor: pointer }

@@ -16,7 +16,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def init(self):
         """Initialisations"""
-        self.set_options({'language': 'cpp'})
+        self.set_options({'language': 'cpp', 'extension': 'cpp'})
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""

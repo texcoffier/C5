@@ -60,6 +60,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
         'icon_reset': '🗑',
         'icon_save': '📩',
+        'icon_local': '💾',
         'icon_stop': '<span style="cursor:pointer;border: 1px solid #080;font-family:sans-serif;font-weight:bold;font-size:80%;color:#FFF;background:#0F0">EXIT</span>',
         'reset_confirm': 'Vous voulez vraiment revenir à la version de départ ?',
         'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",

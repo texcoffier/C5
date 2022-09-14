@@ -80,7 +80,7 @@ def do_post_data(dictionary, url, target=None):
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
-    index = reset_button = popup_element = save_button = line_numbers = None
+    index = reset_button = popup_element = save_button = local_button = line_numbers = None
     stop_button = None
     top = None # Top page HTML element
     source = None # The source code to compile
@@ -122,7 +122,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'index': [0, 1, 0, 100, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
             'save_button': [66, 2, 0, 2, '#0000'],
-            'stop_button': [63, 2, 0, 2, '#0000'],
+            'local_button': [64, 2, 0, 2, '#0000'],
+            'stop_button': [61, 2, 0, 2, '#0000'],
             'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
             }
     }
@@ -210,6 +211,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.reset_button.style.display = 'none'
         self.reset_button.innerHTML = self.options['icon_reset']
         self.save_button.innerHTML = self.options['icon_save']
+        self.local_button.innerHTML = self.options['icon_local']
         if self.stop_button:
             self.stop_button.innerHTML = self.options['icon_stop']
         self.line_numbers.innerHTML = '\n'.join([str(i) for i in range(1, 1000)])
@@ -239,6 +241,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.stop_button:
             self.stop_button.style.fontFamily = 'emoji'
             self.stop_button.onclick = bind(self.stop, self)
+        self.local_button.onclick = bind(self.save_local, self)
+
+    def save_local(self):
+        """Save the source on a local file"""
+        bb = eval('new Blob([' + JSON.stringify(self.source) + '], {"type": "text/plain"})')
+        a = document.createElement('a')
+        a.download = (self.course.split('=')[1] + '_' + (self.current_question + 1)
+            + '.' + (self.options['extension'] or 'txt'))
+        a.href = window.URL.createObjectURL(bb)
+        a.click()
 
     def scheduler(self): # pylint: disable=too-many-branches
         """Send a new job if free and update the screen"""

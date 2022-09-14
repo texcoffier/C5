@@ -19,7 +19,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def init(self):
         """Initialisations"""
-        self.set_options({'language': 'SQL'})
+        self.set_options({'language': 'SQL', 'extension': 'sql'})
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""

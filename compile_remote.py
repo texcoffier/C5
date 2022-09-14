@@ -20,6 +20,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
             'ld_options': [],
             'allowed': [],
             'language': 'cpp',
+            'extension': 'cpp',
             })
         self.popup("""
         <p>

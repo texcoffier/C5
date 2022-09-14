@@ -336,9 +336,10 @@ def default_answer(self):
             'executor': [70, 30, 30, 70, '#EEF'],
             'time': [80, 20, 98, 2, '#0000'],
             'index': [0, 1, 0, 100, '#0000'],
-            'save_button': [66, 2, 0, 2, '#0000'],
-            'stop_button': [63, 2, 0, 2, '#0000'],
             'reset_button': [68, 2, 0, 2, '#0000'],
+            'save_button': [66, 2, 0, 2, '#0000'],
+            'local_button': [64, 2, 0, 2, '#0000'],
+            'stop_button': [61, 2, 0, 2, '#0000'],
             # Diminuer de 1 la largeur de 'question' et 'tester'
             # et remplacer par [29, 1, 0, 100, '#EEE']
             # pour placer les numéros de ligne à la gauche de l'éditeur.
@@ -899,7 +900,6 @@ server {
         <li> Choix du thème de coloriage syntaxique.</li>
         <li> Ajouter un compilateur qui ne fait rien (examen texte pur).</li>
         <li> Icone pour passer en plein écran.</li>
-        <li> Enregistrer le code source dans un fichier (étudiant et enseignants).</li>
         <li> Sur la page d'administration, trier les sujets par questionnaire et
             puis par compilateur.
         </li>
@@ -920,6 +920,12 @@ server {
         <li>
             Option pour désactiver la toute première compilation quand
             la compilation automatique est désactivée.
+        </li>
+        <li>
+            Numéros de ligne dans l'éditeur qui tiennent compte du wrap.
+        </li>
+        <li>
+            Affiche source étudiant : bascule entre le mode ascenseur temporel et tout le code.
         </li>
     </ul>
 </body>
