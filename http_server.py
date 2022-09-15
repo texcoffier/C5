@@ -558,6 +558,7 @@ async def checkpoint(request):
         COURSE = {json.dumps(course.course)};
         STUDENTS = {json.dumps(await course.get_students())};
         MESSAGES = {json.dumps(course.messages)};
+        CHECKPOINT = {json.dumps(course.checkpoint)};
         </script>
         <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
         <script src="/checkpoint.js?ticket={session.ticket}"></script>

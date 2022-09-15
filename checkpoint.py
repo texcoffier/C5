@@ -13,6 +13,7 @@ try:
     BUILDINGS = BUILDINGS
     CONFIG = CONFIG
     MESSAGES = MESSAGES
+    CHECKPOINT = CHECKPOINT
     document = document
     window = window
     confirm = confirm
@@ -892,6 +893,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """
         version = self.lines[line][column]
         while version not in ('a', 'b'):
+            if not CHECKPOINT:
+                version = 'a'
+                break
             version = prompt('Version A / B:')
             if version:
                 version = version.lower()
