@@ -837,13 +837,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         for student in self.waiting_students:
             if student.room == '':
                 room = self.ips[student.client_ip]
+                style = ''
                 if room:
                     building, room_name = room.split(',')
                     if building != self.building:
                         continue
                     if not self.rooms_on_screen[room_name]:
                         continue
-                content.append(student.box())
+                else:
+                    style = 'background: #FFC'
+                content.append(student.box(style))
         document.getElementById('waiting').innerHTML = ' '.join(content)
     def update_messages(self):
         """Update HTML with the messages"""
@@ -937,7 +940,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
         STUDENT_DICT[self.login] = self
 
-    def box(self):
+    def box(self, style=''):
         """A nice box clickable and draggable"""
         if seconds() - self.checkpoint_time < BOLD_TIME:
             more = ' style="font-weight: bold"'
@@ -945,6 +948,7 @@ class Student: # pylint: disable=too-many-instance-attributes
             more = ''
         return ''.join([
             '<div class="name" onmousedown="ROOM.start_move_student(event)"',
+            ' style="', style, '"',
             ' ontouchstart="ROOM.start_move_student(event)" login="',
             self.login, '"', more, '>',
             # '<span>', self.login, '</span>',
