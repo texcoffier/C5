@@ -32,6 +32,7 @@ try:
     ADMIN = ADMIN
     SOCK = SOCK
     STOP = STOP
+    CHECKPOINT = CHECKPOINT
     CP = CP
     SAVE_UNLOCK = SAVE_UNLOCK
     SEQUENTIAL = SEQUENTIAL
@@ -109,8 +110,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
         'close': "Voulez-vous vraiment quitter cette page ?",
-        'allow_copy_paste': CP == '1',
-        'save_unlock': SAVE_UNLOCK == '1',
+        'allow_copy_paste': CP,
+        'save_unlock': SAVE_UNLOCK,
         'display_reset': True,
         'positions' : {
             'question': [1, 29, 0, 30, '#EFE'],
@@ -151,7 +152,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'ANSWERS': ANSWERS,
             'COURSE': course,
             'WHERE': WHERE,
-            'SEQUENTIAL': SEQUENTIAL != '0'
+            'SEQUENTIAL': SEQUENTIAL,
             }])
         try:
             self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
@@ -199,6 +200,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         for key in self.options['positions']:
             left, width, top, height, background = self.options['positions'][key]
             e = self[key] # pylint: disable=unsubscriptable-object
+            if not e:
+                continue
             e.style.left = left + '%'
             e.style.right = (100 - left - width) + '%'
             e.style.top = top + '%'
@@ -220,6 +223,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """The text editor container"""
         self.options['positions']['overlay'] = self.options['positions']['editor']
         for key in self.options['positions']:
+            if key == 'stop_button' and not CHECKPOINT:
+                continue
             e = document.createElement('DIV')
             e.className = key
             e.style.position = 'absolute'

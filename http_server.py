@@ -112,9 +112,10 @@ def handle(base=''):
                         SOCK = "wss://{utilities.C5_WEBSOCKET}";
                         ADMIN = "{int(session.is_admin())}";
                         STOP = "{stop}";
-                        CP = "{course.config['copy_paste']}";
-                        SAVE_UNLOCK = "{course.config['save_unlock']}";
-                        SEQUENTIAL = "{course.config['sequential']}";
+                        CP = {course.config['copy_paste']};
+                        SAVE_UNLOCK = {int(course.config['save_unlock'])};
+                        SEQUENTIAL = {int(course.config['sequential'])};
+                        CHECKPOINT = {course.checkpoint};
                         ANSWERS = {json.dumps(answers)};
                         WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0)))};
                     </script>
