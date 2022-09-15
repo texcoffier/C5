@@ -241,6 +241,8 @@ int main()
 """,
 ]
 
+# COURSE_OPTIONS = { 'automatic_compilation': False }
+
 def create(source):
     """Create a fix error question"""
     class FixErr(Question): # pylint: disable=undefined-variable

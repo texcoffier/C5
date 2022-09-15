@@ -14,6 +14,7 @@ COURSE_OPTIONS = {
         'index': [0, 1, 0, 100, '#0000'],
         'save_button': [66, 2, 0, 2, '#0000'],
         'reset_button': [68, 2, 0, 2, '#0000'],
+        'local_button': [100, 2, 0, 2, '#0000'],
         'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
         }
     }
