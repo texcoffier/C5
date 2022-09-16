@@ -338,6 +338,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.overlay.removeChild(self.overlay.lastChild)
     def coloring(self): # pylint: disable=too-many-statements
         """Coloring of the text editor with an overlay."""
+        if self.editor.textContent == '' and self.question_original[self.current_question] != '':
+            self.reset()
         def clear_text(state):
             if state.node.tagName == 'DIV':
                 if len(state.text) and state.text[-1] != '\n':
