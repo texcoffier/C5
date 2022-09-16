@@ -64,6 +64,10 @@ DIV.tester {
     padding-left: 0px;
     padding-right: 0px;
 }
+.line_numbers DIV {
+    position: absolute;
+    width: 2em;
+}
 
 BODY>DIV>DIV {
     padding-left: var(--pad);

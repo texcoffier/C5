@@ -217,7 +217,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.local_button.innerHTML = self.options['icon_local']
         if self.stop_button:
             self.stop_button.innerHTML = self.options['icon_stop']
-        self.line_numbers.innerHTML = '\n'.join([str(i) for i in range(1, 1000)])
 
     def create_gui(self):
         """The text editor container"""
@@ -384,9 +383,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         meter = document.createRange()
         line_height = 0
-        for line in self.editor_lines:
+        for i, line in enumerate(self.editor_lines):
             meter.selectNodeContents(line)
             rect = meter.getBoundingClientRect()
+            if not self.line_numbers.childNodes[i]:
+                self.line_numbers.appendChild(document.createElement('DIV'))
+                self.line_numbers.childNodes[i].textContent = i+1 
+            if rect.top:
+                top = rect.top + self.editor.scrollTop
+            else:
+                top = line.offsetTop
+            self.line_numbers.childNodes[i].style.top = top + 'px'
             if line_height == 0:
                 # Assume the first line is not wrapped
                 line_height = rect.height * 1.1
