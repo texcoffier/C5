@@ -497,16 +497,20 @@ class Tests: # pylint: disable=too-many-public-methods
 IN_DOCKER = not os.getenv('DISPLAY')
 
 os.system('./127 start')
+PORT = 3
+while os.path.exists(f'/tmp/.X{PORT}.lock'):
+    PORT += 1
 
+PORT = f':{PORT}'
 if 'hidden' in sys.argv:
-    X11 = ['Xvfb', ':1', '-noreset', '-screen', '0', '1024x768x24']
+    X11 = ['Xvfb', PORT, '-noreset', '-screen', '0', '1024x768x24']
 else:
-    X11 = ['Xnest', ':1', '-noreset', '-geometry', '1024x768']
+    X11 = ['Xnest', PORT, '-noreset', '-geometry', '1024x768']
 try:
     XNEST = subprocess.Popen(
-        X11, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    os.environ['DISPLAY'] = ':1'
+        X11, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     print(X11)
+    os.environ['DISPLAY'] = PORT
 except FileNotFoundError:
     print(f"«{X11}» not found: run directly on your screen")
     XNEST = None
