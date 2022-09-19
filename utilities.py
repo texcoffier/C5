@@ -183,9 +183,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                     file.write(f'[{seconds},"checkpoint_in"]\n')
                 if self.checkpoint:
                     return 'checkpoint'
-            if client_ip:
-                # XXX Connecté à 2 IP différentes en même temps
-                active_teacher_room[6] = client_ip # Update
+            elif client_ip:
+                if self.checkpoint:
+                    # Student IP changed after being checkpointed
+                    # Undo checkpointing
+                    active_teacher_room[6] = client_ip # Update
+                    active_teacher_room[0] = False
+                else:
+                    # No checkpoint: so allows the room change
+                    active_teacher_room[6] = client_ip # Update
             if self.checkpoint and not active_teacher_room[0]:
                 if active_teacher_room[1] == '':
                     # Always in the checkpoint or examination is done
