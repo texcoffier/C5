@@ -330,6 +330,7 @@ class Session:
         else:
             if self.ticket and self.ticket.isdigit():
                 self.login = f'Anon#{self.ticket}'
+                self.infos = {'fn': 'fn' + self.ticket, 'sn': 'sn' + self.ticket}
                 self.record()
             else:
                 raise web.HTTPFound(

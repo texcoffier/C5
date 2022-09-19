@@ -37,6 +37,7 @@ try:
     SAVE_UNLOCK = SAVE_UNLOCK
     SEQUENTIAL = SEQUENTIAL
     WHERE = WHERE
+    INFOS = INFOS
     encodeURIComponent = encodeURIComponent
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
@@ -153,6 +154,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'COURSE': course,
             'WHERE': WHERE,
             'SEQUENTIAL': SEQUENTIAL,
+            'INFOS': INFOS,
             }])
         try:
             self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used

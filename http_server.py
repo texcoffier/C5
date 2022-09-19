@@ -115,6 +115,7 @@ def handle(base=''):
                         CP = {course.config['copy_paste']};
                         SAVE_UNLOCK = {int(course.config['save_unlock'])};
                         SEQUENTIAL = {int(course.config['sequential'])};
+                        INFOS = {json.dumps(session.infos)};
                         CHECKPOINT = {course.checkpoint};
                         ANSWERS = {json.dumps(answers)};
                         WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0)))};

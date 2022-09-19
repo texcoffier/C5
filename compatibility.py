@@ -19,6 +19,8 @@ Object.defineProperty(Array.prototype, 'append',
                       {'enumerable': False, 'value': Array.prototype.push})
 Object.defineProperty(String.prototype, 'lower',
                       {'enumerable': False, 'value': String.prototype.toLowerCase})
+Object.defineProperty(String.prototype, 'upper',
+                      {'enumerable': False, 'value': String.prototype.toUpperCase})
 String.prototype.strip = String.prototype.trim
 def startswith(txt):
     """Only if txt is a string"""
