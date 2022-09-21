@@ -388,8 +388,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         meter = document.createRange()
         line_height = 0
         for i, line in enumerate(self.editor_lines):
-            meter.selectNodeContents(line)
-            rect = meter.getBoundingClientRect()
+            if line.getBoundingClientRect:
+                rect = line.getBoundingClientRect()
+            else:
+                meter.selectNodeContents(line)
+                rect = meter.getBoundingClientRect()
             if not self.line_numbers.childNodes[i]:
                 self.line_numbers.appendChild(document.createElement('DIV'))
                 self.line_numbers.childNodes[i].textContent = i+1 
