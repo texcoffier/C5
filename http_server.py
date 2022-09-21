@@ -162,8 +162,9 @@ async def log(request):
     return File('favicon.ico').response()
 
 async def startup(app):
-    """For the log"""
+    """For student names and computer names"""
     app['ldap'] = asyncio.create_task(utilities.LDAP.start())
+    app['dns'] = asyncio.create_task(utilities.DNS.start())
     print("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
 
 async def get_admin_login(request):

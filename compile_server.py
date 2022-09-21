@@ -212,6 +212,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
 
 async def main():
     """Answer compilation requests"""
+    await utilities.DNS.start()
     async with websockets.serve(echo, utilities.C5_IP, utilities.C5_SOCK, ssl=CERT):
         print(f"compile_server running {utilities.C5_IP}:{utilities.C5_SOCK}", flush=True)
         await asyncio.Future()  # run forever

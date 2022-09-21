@@ -12,6 +12,7 @@ import socket
 import ssl
 import time
 import glob
+import atexit
 import urllib.request
 import asyncio
 import aiohttp
@@ -38,41 +39,48 @@ def get_certificate(server=True):
     return None
 
 
-class LDAP_process: # pylint: disable=invalid-name
+class Process: # pylint: disable=invalid-name
     """Create a LDAP process and get information from it.
     It is more simple than using an asyncio LDAP library.
     """
-    ldap_cache = {}
+    cache = {}
     process = None
+
+    def __init__(self, command):
+        self.command = command
 
     async def start(self):
         """
         Start a process reading login on stdin and write information on stdout
         """
         self.process = await asyncio.create_subprocess_shell(
-            "exec ./infos_server.py",
+            "exec " + self.command,
             stdout=asyncio.subprocess.PIPE,
             stdin=asyncio.subprocess.PIPE,
             )
         asyncio.ensure_future(self.reader())
+        atexit.register(lambda: self.process.kill())
 
     async def reader(self):
-        """Parse infos from LDAP process"""
+        """Parse infos from process"""
         while True:
             infos = await self.process.stdout.readline()
             infos = json.loads(infos)
-            self.ldap_cache[infos[0]] = infos[1]
+            self.cache[infos[0]] = infos[1]
 
     async def infos(self, login):
         """Get the informations about login"""
-        if login in self.ldap_cache:
-            return self.ldap_cache[login]
-        self.process.stdin.write(login.encode('utf-8') + b'\n')
-        while login not in self.ldap_cache:
+        if login in self.cache:
+            return self.cache[login]
+        while not self.process:
             await asyncio.sleep(0.1)
-        return self.ldap_cache[login]
+        self.process.stdin.write(login.encode('utf-8') + b'\n')
+        while login not in self.cache:
+            await asyncio.sleep(0.1)
+        return self.cache[login]
 
-LDAP = LDAP_process()
+LDAP = Process('./infos_server.py')
+DNS = Process('./dns_server.py')
 
 class CourseConfig: # pylint: disable=too-many-instance-attributes
     """A course session"""
@@ -244,7 +252,7 @@ class Config:
             'masters': self.masters,
             'ticket_ttl': self.ticket_ttl,
             'computers': [],
-            'ips_per_room': {"Nautibus,TP3": "192.168.0.1 192.168.0.2"},
+            'ips_per_room': {"Nautibus,TP3": "b710l0301.univ-lyon1.fr b710l0302.univ-lyon1.fr"},
             'student': '[0-9][0-9]$',
             'messages': {
                 'unknown': "Cette session n'existe pas",
@@ -386,6 +394,7 @@ class Session:
         forward = headers.get('x-forwarded-for', '')
         if forward:
             client_ip = forward.split(",")[0]
+        client_ip = (await DNS.infos(client_ip))['name']
         browser = headers.get('user-agent', '')
         if ticket in cls.session_cache:
             session = cls.session_cache[ticket]

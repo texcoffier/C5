@@ -504,7 +504,7 @@ def default_answer(self):
         </li>
         <li> Liste des étudiants qui n'ont pas été acceptés pour commencer l'examen.
             Il faut les faire glisser sur une chaise sur le plan.
-            Si le lien entre les adresses IP et les salles a été fait dans
+            Si le lien entre les noms des machines et les salles a été fait dans
             la configuration alors seul les étudiants présents dans les
             salles affichées complètement (pas à moitié) sur l'écran
             seront indiqués dans la liste des étudiants à placer.
@@ -817,7 +817,7 @@ server {
             <ul>
                 <li> La liste des administrateurs.
                 <li> La durée de vie des tickets,
-                <li> La liste des adresses IP par salle de TP
+                <li> La liste des noms de machines par salle de TP
                 <li> La liste des ordinateurs en panne.
             </ul>
         </li>
@@ -852,7 +852,7 @@ server {
         Divers fichiers générés à l'installation ou à l'utilisation :
     </p>
     <ul>
-        <li> <tt>TICKETS</tt> les tickets de session avec l'IP et le navigateur web.</li>
+        <li> <tt>TICKETS</tt> les tickets de session avec le nom de la machine et le navigateur web.</li>
         <li> <tt>http_server.pid</tt>, <tt>compile_server.pid</tt> PID des serveurs locaux.</li>
         <li> <tt>SSL</tt> certificat généré pour le serveur web local.</li>
         <li> <tt>RapydScript</tt> transpiler Python→JavaScript.</li>
@@ -912,7 +912,7 @@ server {
         </li>
         <li>
             Gestion des connexions sur le même compte à partir
-            d'adresses IP multiples en même temps.
+            de plusieurs machines en même temps.
         </li>
         <li>
             Indentation automatique.
