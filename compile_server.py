@@ -38,7 +38,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.process = None
         self.allowed = None
         self.tasks = ()
-        self.wait_input = False
+        self.input_done = None
         self.login = login
         self.course = utilities.CourseConfig.get(utilities.get_course(course))
         course = self.course.dirname
@@ -82,21 +82,21 @@ class Process: # pylint: disable=too-many-instance-attributes
         """Send the data to the running process standard input"""
         self.log(("INPUT", data))
         self.process.stdin.write(data.encode('utf-8') + b'\n')
-        self.wait_input = False
+        self.input_done.set()
 
     async def timeout(self):
         """May ask for input"""
         # pylint: disable=cell-var-from-loop
-        self.wait_input = False
+        self.input_done = asyncio.Event()
         while True:
             await asyncio.sleep(0.5)
-            if self.wait_input:
-                continue
             print("TIMEOUT", self.process)
             if not self.process:
                 return
             await self.websocket.send(json.dumps(['input', '']))
-            self.wait_input = True
+            await self.input_done.wait()
+            self.input_done.clear()
+
     async def runner(self):
         """Pass the process output to the socket"""
         size = 0
