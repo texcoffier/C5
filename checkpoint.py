@@ -165,6 +165,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def change(self, building):
         """Initialise with a new building"""
         self.building = building
+        if building not in BUILDINGS: # It is a teacher login
+            building = 'empty'
         self.lines = BUILDINGS[building].split('\n')
         self.x_max = max([len(line) for line in self.lines]) + 1
         self.top = self.menu.offsetHeight
@@ -839,7 +841,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if student.room == '':
                 room = self.ips[student.client_ip]
                 style = ''
-                if room:
+                if room and self.building in BUILDINGS:
                     building, room_name = room.split(',')
                     if building != self.building:
                         continue
@@ -1029,7 +1031,8 @@ def create_page(building_name):
         ' <select onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
         ''.join(['<option'
                  + (building == building_name and ' selected' or '')
-                 + '>'+building+'</option>' for building in BUILDINGS_SORTED]),
+                 + '>' + building.replace('empty', LOGIN) + '</option>'
+                 for building in BUILDINGS_SORTED]),
         '''</select>
         <label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()" type="checkbox"
                >Seulement<br>mes salles</label>
