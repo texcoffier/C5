@@ -384,7 +384,12 @@ def default_answer(self):
             Tous les appels systèmes sont interdits (sauf <tt>fstat</tt>, <tt>write</tt>, <tt>read, </tt><tt>lseek</tt>,
             <tt>exit_group</tt>),
             donc pas de problème de sécurité.
-            Temps et espace limité pour la compilation et l'exécution.</li>
+            Temps et espace limité pour la compilation et l'exécution.
+            <p>
+                Avec ce compilateur la touche F8 permet de reformater le code source,
+                mais cela casse le <i>undo</i>.
+            </p>
+        </li>
     </ul>
 
     <h2>Page d'accueil</h2>
@@ -570,7 +575,7 @@ def default_answer(self):
         Lancez ces commandes (Ubuntu) :
     </p>
     <pre>apt update
-apt install python3-websockets python3-aiohttp curl npm # nginx certbot
+apt install python3-websockets python3-aiohttp astyle curl npm # nginx certbot
 git clone https://github.com/texcoffier/C5.git
 cd C5
 make</pre>
@@ -913,9 +918,6 @@ server {
         <li>
             Gestion des connexions sur le même compte à partir
             de plusieurs machines en même temps.
-        </li>
-        <li>
-            Indentation automatique.
         </li>
         <li>
             Option pour désactiver la toute première compilation quand

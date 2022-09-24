@@ -539,6 +539,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 document.getElementById('automatic_compilation').className = 'checked'
                 self.options['automatic_compilation'] = True
             event.preventDefault(True)
+        elif event.key == 'F8':
+            self.unlock_worker()
+            self.worker.postMessage(['indent', self.source.strip()])
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
             self.oldScrollTop = self.editor.scrollTop

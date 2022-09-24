@@ -144,6 +144,19 @@ class Process: # pylint: disable=too-many-instance-attributes
                 stderr = stderr.decode('utf-8')
         await self.websocket.send(json.dumps(['compiler', stderr]))
         os.unlink(self.source_file)
+    async def indent(self, data):
+        """Indent"""
+        self.log(("INDENT", data))
+        self.cleanup(erase_executable=True)
+        process = await asyncio.create_subprocess_exec(
+                'astyle',
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                )
+        process.stdin.write(data.encode('utf-8'))
+        process.stdin.close()
+        indented = await process.stdout.read()
+        await self.websocket.send(json.dumps(['indented', indented.decode('utf-8')]))
     async def run(self):
         """Launch process"""
         if not os.path.exists(self.exec_file):
@@ -194,6 +207,8 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
                 continue
             if action == 'compile':
                 await process.compile(data)
+            elif action == 'indent':
+                await process.indent(data)
             elif action == 'kill':
                 process.log("KILL")
                 process.cleanup()

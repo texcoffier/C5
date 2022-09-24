@@ -18,6 +18,8 @@ def onmessage(event):
             Compile.worker.shared_buffer = event.data[1]
         elif event.data[0] == 'source':
             Compile.worker.questions[event.data[1]].last_answer = event.data[2]
+        elif event.data[0] == 'indent':
+            Compile.worker.run_indent(event.data[1])
         elif event.data[0] == 'config':
             init_needed = len(Compile.worker.config) == 0
             Compile.worker.set_config(event.data[1])
@@ -165,6 +167,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def run_executor(self): # pylint: disable=no-self-use
         """Do the execution"""
         self.post('run', 'No executor defined')
+    def run_indent(self, source):
+        """Indent the source"""
+        self.post('run', 'No indenter defined')
     def start_question(self):
         """Start a new question"""
         # print("START QUESTION", self.current_question, '/', self.current_question_max)

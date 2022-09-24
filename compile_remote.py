@@ -85,6 +85,8 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
                     self.socket.send(JSON.stringify(['input', line])) # pylint: disable=undefined-variable
                 except ValueError:
                     self.socket.send(JSON.stringify(['kill', ''])) # pylint: disable=undefined-variable
+            elif data[0] == 'indented':
+                self.post('editor', data[1])
 
         def event_open(_event):
             print('Socket opened')
@@ -153,3 +155,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
                 'executor', '<error>'
                 + self.escape(err.name) + '\n'
                 + self.escape(err.message) + '</error>')
+
+    def run_indent(self, source):
+        """Indent the source"""
+        self.socket.send(JSON.stringify(['indent', source]))
