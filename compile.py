@@ -280,7 +280,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         return '#' + self.nr_eval + ' ' + (millisecs() - self.start_time) + 'ms' + more
     def index_initial_content(self): # pylint: disable=no-self-use,invalid-name
         """Used by the subclass"""
-        texts = '''<style></style>'''
+        texts = ['<style></style>']
         tips = []
         for i, _ in enumerate(self.questions):
             if self.allow_goto:
@@ -302,5 +302,5 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                     link = ''
             if self.allow_tip:
                 tips.append('<div>' + self.escape(self.questions[i].__doc__) + '</div>')
-            texts += '<div class="' + ' '.join(html_class) + '" ' + link + '>' + str(i+1) + '</div>'
-        return '<div class="i">' + tips.join('') + '</div>' + texts  # pylint: disable=no-member
+            texts.append('<div class="' + ' '.join(html_class) + '" ' + link + '>' + str(i+1) + '</div>')
+        return '<div class="questions"><div class="tips">' + tips.join('') + '</div>' + texts.join('') + '</div>'  # pylint: disable=no-member

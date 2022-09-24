@@ -153,28 +153,28 @@ H2 {
     background: #FFF;
 }
 
-.index>DIV.possible {
+.questions>DIV.possible {
     background: #FF0;
 }
 
-.index>DIV.good {
+.questions>DIV.good {
     background:#0F0;
     border-top-right-radius: 0.5em;
     border-bottom-right-radius: 0.5em;
     padding-right: 1.8em;
 }
 
-.index>DIV.current.good, .index>DIV.current.possible {
+.questions>DIV.current.good, .questions>DIV.current.possible {
     background: #000;
 }
-.index>DIV.current.good {
+.questions>DIV.current.good {
     color: #0F0
 }
-.index>DIV.current.possible {
+.questions>DIV.current.possible {
     color: #FF0
 }
 
-.index>DIV.i {
+.questions>DIV.tips {
     opacity: 0;
     position: fixed;
     background: #EEF;
@@ -187,7 +187,7 @@ H2 {
     margin-top: -1px;
 }
 
-div:hover>.i {
+.questions:hover>.tips {
     opacity: 0.9;
     visibility: visible;
 }

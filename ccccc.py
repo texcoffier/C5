@@ -695,6 +695,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 span.innerHTML = value
                 self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
+            value = ('<div class="questions"><a href="/' + window.location.search
+                     + '">🏠</a><div class="tips">Accueil C5</div></div><br>' + value)
             if ADMIN: # pylint: disable=undefined-variable
                 value += '<br><a href="javascript:window.location.pathname=\'/adm/home\'">#</a>'
             self[what].innerHTML = value # pylint: disable=unsubscriptable-object
