@@ -104,7 +104,7 @@ def handle(base=''):
                     stop = ''
                 return File.get('ccccc.html').response(
                     session.header() + f'''
-                    <title>C5 is Compiler Course Class in the Cloud</title>
+                    <title>{course.course.split('=', 1)[1]}</title>
                     <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
                     <link rel="stylesheet" href="/ccccc.css?ticket={session.ticket}">
                     <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
