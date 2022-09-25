@@ -252,7 +252,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.load_page('=REMOTE=test')
         self.check('.compiler', {'innerText': Contains('On attend') & Contains('Bravo')})
         self.move_cursor('.editor')
-        self.check('.editor').send_keys('\n')
+        self.check('.editor').send_keys('\n/**/')
         time.sleep(0.2)
         self.check('.editor').send_keys(Keys.F9)
         self.check('.compiler', {'innerText': ~Contains('On attend') & Contains('Bravo')})
@@ -271,7 +271,7 @@ class Tests: # pylint: disable=too-many-public-methods
         for _ in range(3):
             # Not a normal failure, a bug must be somewhere.
             # Rarely F9 is not working, so retry it
-            self.check('.editor').send_keys('\n\n\n')
+            self.check('.editor').send_keys('\n/**/\n\n')
             self.check('.editor').send_keys(Keys.F9)
             try:
                 self.check('.compiler', {'innerText': ~Contains('On attend') & Contains('Bravo')})

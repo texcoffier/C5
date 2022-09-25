@@ -338,10 +338,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                and self.overlay.lastChild.className
                and 'ERROR' in self.overlay.lastChild.className):
             self.overlay.removeChild(self.overlay.lastChild)
-    def coloring(self): # pylint: disable=too-many-statements
-        """Coloring of the text editor with an overlay."""
-        if self.editor.textContent == '' and self.question_original[self.current_question] != '':
-            self.reset()
+    def update_source(self):
         def clear_text(state):
             if state.node.tagName == 'DIV':
                 if len(state.text) and state.text[-1] != '\n':
@@ -376,7 +373,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
         clear_text(state)
         if state['last']:
             self.editor_lines.append(state['last'])
+        while state['text'][-1] == '\n':
+            state['text'].pop()
         self.source = ''.join(state['text'])
+
+    def coloring(self): # pylint: disable=too-many-statements
+        """Coloring of the text editor with an overlay."""
+        self.update_source()
+        if self.source == '' and self.question_original[self.current_question] != '':
+            self.reset()
         self.overlay.innerHTML = html(self.source)
         self.overlay.className = 'overlay language-' + self.options['language']
         hljs.highlightElement(self.overlay)
@@ -481,7 +486,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record('Copy')
             return
         text = window.getSelection().toString()
-        if text not in self.source and text not in self.question.innerText:
+        if text.strip() not in self.source and text not in self.question.innerText:
             self.record('CopyRejected')
             self.popup_message(self.options['forbiden'])
             event.preventDefault(True)
@@ -506,7 +511,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record('Paste')
             self.insert_text(event, text)
             return
-        if text in self.source or text in self.question.innerText or text == self.copied:
+        if text.strip() in self.source or text.strip() in self.question.innerText or text == self.copied:
             self.record('PasteOk')
             self.insert_text(event, text)
             return # auto paste allowed
@@ -600,9 +605,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def save(self):
         """Save the editor content"""
-        source = self.editor.innerText.strip()
+        self.update_source()
         if (not self.last_answer[self.current_question]
-                or self.last_answer[self.current_question].strip() != source.strip()):
+                or self.last_answer[self.current_question].strip() != self.source.strip()):
             self.save_button.style.transition = ''
             self.save_button.style.transform = 'scale(8)'
             self.save_button.style.opacity = 0.1
@@ -611,9 +616,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.save_button.style.transform = 'scale(1)'
                 self.save_button.style.opacity = 1
             setTimeout(stop, 100)
-            self.record(['save', self.current_question, source], send_now=True)
-            self.worker.postMessage(['source', self.current_question, source])
-            self.last_answer[self.current_question] = source
+            self.record(['save', self.current_question, self.source], send_now=True)
+            self.worker.postMessage(['source', self.current_question, self.source])
+            self.last_answer[self.current_question] = self.source
             return True
         return False
 
@@ -647,7 +652,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.compile_now = True
             self.old_source += 'force recompile'
             self.do_not_clear = {}
-            self.source = self.editor.innerText.strip()
+            self.update_source()
             if (self.current_question >= 0 and value != self.current_question
                     and (
                         not self.last_answer[self.current_question]
@@ -671,6 +676,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.current_question not in self.question_done:
                 self.record(['answer', self.current_question, value.strip()], True)
                 self.question_done[self.current_question] = True
+                self.last_answer[self.current_question] = value.strip()
                 messages = self.options['good']
                 self.popup_message(messages[millisecs() % len(messages)])
         elif what == 'executor':

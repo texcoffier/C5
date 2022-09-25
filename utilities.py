@@ -523,6 +523,7 @@ def print_help():
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py | grep -v grep")
+    print('pkill -f http_server.py ; pkill -f compile_server.py  ; pkill -f infos_server.py')
     sys.exit(1)
 
 ACTIONS = {
