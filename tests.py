@@ -88,9 +88,12 @@ class Tests: # pylint: disable=too-many-public-methods
     ticket = None
     def __init__(self, driver):
         self.driver = driver
-        for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction'):
+        for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction', 'COMPILE_JS/example'):
             course = utilities.CourseConfig(course_name)
-            course.set_parameter('start', '2000-01-01 00:00:01')
+            if course_name == 'COMPILE_JS/example':
+                course.set_parameter('start', '2099-01-01 00:00:01')
+            else:
+                course.set_parameter('start', '2000-01-01 00:00:01')
             course.set_parameter('stop', '2100-01-01 00:00:01')
             course.set_parameter('checkpoint', '0')
             course.record()
@@ -98,6 +101,7 @@ class Tests: # pylint: disable=too-many-public-methods
         start = time.time()
         self.wait_start()
         for test in (
+                self.test_before,
                 self.test_popup,
                 self.test_f9,
                 self.test_inputs,
@@ -398,7 +402,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.load_page('=JS=introduction')
         self.check('.index > A').click()
         self.check_alert(required=False, nbr=10)
-        self.check('H1', {'innerText': Equal(utilities.CONFIG.config['messages']['not_admin'])})
+        self.check('H1', {'innerText': Contains(utilities.CONFIG.config['messages']['not_admin'])})
         with self.admin_rights():
             self.load_page('=JS=introduction')
             self.check('.index > A').click()
@@ -411,7 +415,7 @@ class Tests: # pylint: disable=too-many-public-methods
             old_date = self.check(path).get_attribute('value')
             self.check(path).send_keys(
                 date + ('1' if old_date[-1] == '0' else '0'))
-            time.sleep(0.1)
+            time.sleep(0.2)
             self.check(path).send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains(expect)})
 
@@ -493,6 +497,12 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.overlay', {'innerHTML': Contains(');\n/')})
         self.check('.editor').send_keys('/')
         self.check('.overlay', {'innerHTML': Contains(');\n/\n/')})
+    def test_before(self):
+        """Goto exam before opening"""
+        self.goto('=JS=example')
+        self.check('BODY', {'innerHTML': Contains(utilities.CONFIG.config['messages']['pending'])
+                          & Contains('SN') & Contains('Fn')})
+
 
 IN_DOCKER = not os.getenv('DISPLAY')
 

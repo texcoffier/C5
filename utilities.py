@@ -447,6 +447,7 @@ class Session:
             fct = web.HTTPSuccessful
         else:
             fct = web.Response
+        name = self.infos['sn'].upper() + ' ' + self.infos['fn'].title()
         return fct(
             body=f"""<!DOCTYPE html>
             <html>
@@ -455,7 +456,7 @@ class Session:
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
             <link REL="icon" href="/favicon.ico?ticket={self.ticket}">
             </head>
-            <h1>{CONFIG.config['messages'][key]}</h1>
+            <h1>{name} : {CONFIG.config['messages'][key]}</h1>
             """,
             content_type='text/html',
             headers={'Cache-Control': 'no-cache'}

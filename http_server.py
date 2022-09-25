@@ -106,6 +106,14 @@ def handle(base=''):
                     stop = course.get_stop(session.login)
                 else:
                     stop = ''
+                status = course.status(login, session.client_ip)
+                if not session.is_admin():
+                    if status == 'done':
+                        return session.message('done')
+                    if status == 'pending':
+                        return session.message('pending')
+                    if status == 'checkpoint':
+                        return session.message('checkpoint')
                 return File.get('ccccc.html').response(
                     session.header() + f'''
                     <title>{course.course.split('=', 1)[1]}</title>
@@ -129,13 +137,8 @@ def handle(base=''):
                 course = utilities.CourseConfig.get(utilities.get_course(filename))
                 filename = course.filename.replace('.cf', '.js')
                 status = course.status(login, session.client_ip)
-                if not session.is_admin():
-                    if status == 'done':
-                        return session.message('done')
-                    if status == 'pending':
-                        return session.message('pending')
-                    if status == 'checkpoint':
-                        return session.message('checkpoint')
+                if not session.is_admin() and not status.startswith('running'):
+                    return session.message('done')
         return File.get(filename).response()
     return real_handle
 
