@@ -97,6 +97,10 @@ def handle(base=''):
                     return session.message('unknown')
                 answers = get_answers(course.dirname, session.login, saved=True)
                 for key, value in answers.items():
+                    for _source, answer in value:
+                        if answer == 1:
+                            value[-1][1] = 1 # Correct answer even if changed after
+                            break
                     answers[key] = value[-1] # Only the last answer
                 if course:
                     stop = course.get_stop(session.login)
