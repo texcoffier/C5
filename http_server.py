@@ -165,10 +165,18 @@ async def log(request):
         infos[5] += data.count('["answer",')
     return File('favicon.ico').response()
 
+async def load_student_infos():
+    """Load all student info in order to answer quickly"""
+    utilities.CourseConfig.load_all_configs()
+    for config in utilities.CourseConfig.configs.values():
+        for login in config.active_teacher_room:
+            await utilities.LDAP.infos(login)
+
 async def startup(app):
     """For student names and computer names"""
     app['ldap'] = asyncio.create_task(utilities.LDAP.start())
     app['dns'] = asyncio.create_task(utilities.DNS.start())
+    app['load_student_infos'] = asyncio.create_task(load_student_infos())
     print("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
 
 async def get_admin_login(request):
