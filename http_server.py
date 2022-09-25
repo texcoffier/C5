@@ -612,7 +612,7 @@ async def checkpoint_student(request):
         allow = student
     else:
         allow = None
-    session, course = await get_teacher_login_and_course(request, allow=student)
+    session, course = await get_teacher_login_and_course(request, allow=allow)
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     if room == 'STOP':

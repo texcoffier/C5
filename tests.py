@@ -411,6 +411,7 @@ class Tests: # pylint: disable=too-many-public-methods
             old_date = self.check(path).get_attribute('value')
             self.check(path).send_keys(
                 date + ('1' if old_date[-1] == '0' else '0'))
+            time.sleep(0.1)
             self.check(path).send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains(expect)})
 
