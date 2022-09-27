@@ -578,8 +578,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':
-            for value in event.target.parentNode.getElementsByTagName('INPUT'):
-                self.inputs[self.current_question][value.input_index] = value.value
+            if not self.options['forget_input']:
+                for value in event.target.parentNode.getElementsByTagName('INPUT'):
+                    self.inputs[self.current_question][value.input_index] = value.value
             if event.target.run_on_change:
                 self.old_source = ''
                 self.unlock_worker()
