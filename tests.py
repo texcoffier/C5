@@ -246,7 +246,7 @@ class Tests: # pylint: disable=too-many-public-methods
         action.perform()
         self.check('.popup', expected=0)
         self.check('.editor', {'innerHTML':  ~Contains('§')})
-        self.check('.compiler', {'innerText': Contains('On attend') & Contains('Bravo')})
+        self.check('.compiler', {'innerText': Contains('Bravo')})
         self.check('.executor', {'innerHTML': Contains('Saisir')})
         self.check('.question', {'innerHTML': Contains('Plus de questions')})
         self.check('.tester', {'innerHTML': Contains('Les buts que')})
@@ -254,16 +254,16 @@ class Tests: # pylint: disable=too-many-public-methods
     def test_f9(self):
         """Check if F9 launch compilation"""
         self.load_page('=REMOTE=test')
-        self.check('.compiler', {'innerText': Contains('On attend') & Contains('Bravo')})
+        self.check('.compiler', {'innerText': Contains('Bravo')})
         self.move_cursor('.editor')
         self.check('.editor').send_keys('\n/**/')
         time.sleep(0.2)
         self.check('.editor').send_keys(Keys.F9)
-        self.check('.compiler', {'innerText': ~Contains('On attend') & Contains('Bravo')})
+        self.check('.compiler', {'innerText': Contains('Bravo')})
     def test_inputs(self):
         """Tests inputs"""
         self.load_page('=REMOTE=test')
-        self.check('.compiler', {'innerText': Contains('On attend') & Contains('Bravo')})
+        self.check('.compiler', {'innerText': Contains('Bravo')})
         self.check('.executor INPUT').send_keys('8')
         self.check('.executor INPUT').send_keys(Keys.ENTER)
         self.check('.executor INPUT:nth-child(3)', {'value': Equal('8')})
@@ -278,7 +278,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.editor').send_keys('\n/**/\n\n')
             self.check('.editor').send_keys(Keys.F9)
             try:
-                self.check('.compiler', {'innerText': ~Contains('On attend') & Contains('Bravo')})
+                self.check('.compiler', {'innerText': Contains('Bravo')})
                 recompile_done = True
                 break
             except ValueError:

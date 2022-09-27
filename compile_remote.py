@@ -14,6 +14,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def init(self):
         """Your own compiler init"""
+        self.connect()
         self.set_options({
             'compiler': 'g++', # or 'gcc'
             'compile_options': ['-Wall'], # -pedantic -pthread
@@ -115,15 +116,6 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
             self.post('compiler', 'Rien à compiler')
             self.post('state', "stopped")
             return True
-        if not self.socket:
-            print('call connect')
-            self.connect()
-            self.post('compiler', 'On attend le serveur...<br>')
-            def retry():
-                print('retry')
-                self.run_compiler(source)
-            setTimeout(retry, 500) # pylint: disable=undefined-variable
-            return None
         try:
             self.socket.send(JSON.stringify( # pylint: disable=undefined-variable
                 ['compile', [
