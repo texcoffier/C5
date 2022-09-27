@@ -373,6 +373,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         clear_text(state)
         if state['last']:
             self.editor_lines.append(state['last'])
+        self.source_with_newlines = ''.join(state['text'])
         while state['text'][-1] == '\n':
             state['text'].pop()
         self.source = ''.join(state['text'])
@@ -382,7 +383,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.update_source()
         if self.source == '' and self.question_original[self.current_question] != '':
             self.reset()
-        self.overlay.innerHTML = html(self.source)
+        self.overlay.innerHTML = html(self.source_with_newlines)
         self.overlay.className = 'overlay language-' + self.options['language']
         hljs.highlightElement(self.overlay)
         for line_char in self.highlight_errors:
