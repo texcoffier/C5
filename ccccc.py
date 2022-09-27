@@ -699,7 +699,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.input_index += 1
             else:
                 span = document.createElement('SPAN')
-                span.innerHTML = value
+                # The first space is replaced by an unsecable space
+                # in order to display it on span start <span> foo</span>
+                span.innerHTML = value.replace(' ', ' ')
                 self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
             value = ('<div class="questions"><a href="/' + window.location.search
