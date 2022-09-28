@@ -162,6 +162,17 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         column = Math.round(column)
         line = Math.round(line)
         return [column, line]
+
+    def get_room_name(self, column, line):
+        """Return the short room name"""
+        for room_name in ROOM.rooms:
+            left, top, width, height = ROOM.rooms[room_name].position
+            if (column >= left and column <= left + width
+                    and line >= top and line <= top + height
+                ):
+                return room_name
+        return
+
     def change(self, building):
         """Initialise with a new building"""
         self.building = building
@@ -228,21 +239,18 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def put_students_in_rooms(self):
         """Create the list of student per room"""
         for room_name in self.rooms:
+            self.rooms[room_name]['students'] = []
+            self.rooms[room_name]['teachers'] = []
+        for student in self.students:
+            if student.short_room_name and student.short_room_name in self.rooms:
+                self.rooms[student.short_room_name]['students'].append(student)
+                teachers = self.rooms[student.short_room_name]['teachers']
+                if student.teacher not in teachers:
+                    teachers.append(student.teacher)
+        for room_name in self.rooms:
             room = self.rooms[room_name]
-            left, top, width, height = room.position
-            right = left + width
-            bottom = top + height
-            room['students'] = []
-            teachers = []
-            for student in self.students:
-                if (student.active
-                        and student.column >= left and student.column <= right
-                        and student.line >= top and student.line <= bottom):
-                    room['students'].append(student)
-                    if student.teacher not in teachers:
-                        teachers.append(student.teacher)
-            teachers.sort()
-            room['teachers'] = ' '.join(teachers)
+            room['teachers'].sort()
+            room['teachers'] = ' '.join(room['teachers'])
     def update_sizes(self, size):
         """Fix the width and heights of all columns"""
         self.columns_width = [size for i in range(2 * self.x_max)]
@@ -464,6 +472,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     ctx.fillStyle = "#888"
                 else:
                     ctx.fillStyle = "#88F"
+            if not student.good_room:
+                ctx.fillStyle = "#F88"
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
             ctx.fillText(student.surname, x_pos, y_pos + y_size/3)
@@ -714,6 +724,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if column != -1:
                 self.moving.line = line
                 self.moving.column = column
+                self.moving.update()
                 document.getElementById('top').style.background = TOP_INACTIVE
             else:
                 document.getElementById('top').style.background = TOP_ACTIVE
@@ -883,7 +894,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         Student.moving_element.style.pointerEvents = 'none'
         pos = self.get_column_row(self.event_x, self.event_y)
         if pos[0] != -1:
-            Student.moving_element.style.background = "#0F0"
+            if Student.moving_student.is_good_room(ROOM.get_room_name(pos[0], pos[1])):
+                Student.moving_element.style.background = "#0F0"
+            else:
+                Student.moving_element.style.background = "#F00"
             document.getElementById('top').style.background = TOP_INACTIVE
         else:
             Student.moving_element.style.background = "#FFF"
@@ -945,6 +959,31 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.surname = data[2]['sn']
         self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
         STUDENT_DICT[self.login] = self
+        self.update()
+
+    def is_good_room(self, room_name):
+        """Use IP to compute if the student is in the good room"""
+        if self.client_ip not in ROOM.ips: # Unknown IP
+            return True
+        if ROOM.building not in BUILDINGS: # Virtual room
+            return True
+        return ROOM.ips[self.client_ip] == ROOM.building + ',' + room_name
+
+    def update(self):
+        """Compute some values for placed students"""
+        self.full_room_name = None
+        self.short_room_name = None
+        self.good_room = None
+        if not self.active:
+            return
+        if self.building != ROOM.building:
+            # Not on this map
+            return
+        room_name = ROOM.get_room_name(self.column, self.line)
+        if room_name:
+            self.full_room_name = ROOM.building + ',' + room_name
+            self.short_room_name = room_name
+        self.good_room = self.is_good_room(self.short_room_name)
 
     def box(self, style=''):
         """A nice box clickable and draggable"""
@@ -1170,6 +1209,8 @@ def spy(sources, login, infos):
         state = '<button onclick="close_exam(\'' + login + '\')">Clôturer examen</button>'
     else:
         state = '<button onclick="open_exam(\'' + login + '\')">Rouvrir examen</button>'
+    if not student.good_room:
+        state += ' (Adresse IP dans la mauvaise salle)'
     div = document.getElementById('spy')
     content = [
         '<button onclick="spy_close()">Fermer</button> ',
