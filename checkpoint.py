@@ -958,8 +958,8 @@ class Student: # pylint: disable=too-many-instance-attributes
             ' ontouchstart="ROOM.start_move_student(event)" login="',
             self.login, '"', more, '>',
             # '<span>', self.login, '</span>',
-            '<div>', self.firstname, '</div>',
             '<div>', self.surname, '</div>',
+            '<div>', self.firstname, '</div>',
             # '<span>', self.room, '</span>',
             '</div>'])
 
