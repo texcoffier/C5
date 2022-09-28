@@ -1133,6 +1133,27 @@ def spy_close():
     """Close the student source code"""
     document.getElementById('spy').style.display = 'none'
 
+def spy_cursor(source):
+    bar = document.getElementById('time')
+    cursor = bar.lastChild
+    first = spy.sources[0][0] - BEFORE_FIRST
+    last = spy.sources[-1][0]
+    width = last - first
+    pos_x = (source[0] - first) / width * bar.offsetWidth
+    if pos_x < bar.offsetWidth / 2:
+        cursor.style.left = pos_x + 'px'
+        cursor.style.right = 'auto'
+        cursor.className = 'cursor left c' + source[2]
+    else:
+        cursor.style.right = bar.offsetWidth - pos_x + 'px'
+        cursor.style.left = 'auto'
+        cursor.className = 'cursor right c' + source[2]
+    cursor.innerHTML = (
+        nice_date(source[0])
+        + '<br>' + {'c': 'Compile', 's': 'Sauve', 'a': 'Réussi'}[source[2]]
+        + ' N° ' + (source[1] + 1)
+    )
+
 def spy_it(event=None):
     """Display the selected source"""
     bar = document.getElementById('time')
@@ -1153,23 +1174,7 @@ def spy_it(event=None):
         event.preventDefault()
     else:
         source = spy.sources[-1]
-
-    cursor = bar.lastChild
-    pos_x = (source[0] - first) / width * bar.offsetWidth
-    if pos_x < bar.offsetWidth / 2:
-        cursor.style.left = pos_x + 'px'
-        cursor.style.right = 'auto'
-        cursor.className = 'cursor left c' + source[2]
-    else:
-        cursor.style.right = bar.offsetWidth - pos_x + 'px'
-        cursor.style.left = 'auto'
-        cursor.className = 'cursor right c' + source[2]
-    cursor.innerHTML = (
-        nice_date(source[0])
-        + '<br>' + {'c': 'Compile', 's': 'Sauve', 'a': 'Réussi'}[source[2]]
-        + ' N° ' + (source[1] + 1)
-    )
-
+    spy_cursor(source)
     div_source = document.getElementById('source')
     div_source.textContent = source[3]
     hljs.highlightElement(div_source)
@@ -1234,6 +1239,7 @@ def spy(sources, login, infos):
     div.innerHTML = ''.join(content)
     div.style.display = 'block'
     spy_concat(sources)
+    spy_cursor(spy.sources[-1])
 
 def debug():
     """debug"""
