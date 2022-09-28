@@ -494,7 +494,9 @@ async def upload_course(request): # pylint: disable=too-many-branches
         with open(dst_filename + '.py', "wb") as file:
             file.write(filehandle.file.read())
         config = utilities.CourseConfig.get(dst_filename)
-        config.set_parameter('teachers', session.login)
+        if session.login not in config.teachers:
+            config.set_parameter('teachers', session.login + ' ' + config.config['teachers'])
+        config.set_parameter('stop', '2000-01-01 00:00:01')
         process = await asyncio.create_subprocess_exec("make", dst_filename + '.js')
         await process.wait()
         if replace:
