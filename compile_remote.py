@@ -11,6 +11,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     stop_after_compile = False
     run_tester_after_exec = False
     nr_errors = nr_warnings = 0
+    stoped = False
 
     def init(self):
         """Your own compiler init"""
@@ -37,7 +38,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     def connect(self): # pylint: disable=too-many-statements
         """Connect to the remote compiler/executor with a WebSocket"""
         print('connect', self.connecting)
-        if self.connecting:
+        if self.connecting or self.stoped:
             return
         # pylint: disable=eval-used
         course = self.config.COURSE
@@ -88,6 +89,9 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
                     self.socket.send(JSON.stringify(['kill', ''])) # pylint: disable=undefined-variable
             elif data[0] == 'indented':
                 self.post('editor', data[1])
+            elif data[0] == 'stop':
+                self.post('stop', data[1])
+                self.stoped = True
 
         def event_open(_event):
             print('Socket opened')

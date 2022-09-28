@@ -364,9 +364,16 @@ class Session:
             return True
         return False
     def check(self, request, client_ip, browser):
-        """Check for hacker"""
+        """Returns True if the session is valid.
+        Do a redirection if possible (not in compile server)
+        """
         if self.client_ip != client_ip or self.browser != browser or self.too_old():
-            raise web.HTTPFound(str(request.url).split('?')[0])
+            url = getattr(request, 'url', None)
+            if url:
+                raise web.HTTPFound(str(request.url).split('?')[0])
+            else:
+                return None
+        return True
 
     @classmethod
     def load_ticket_file(cls, ticket):
@@ -398,10 +405,12 @@ class Session:
         browser = headers.get('user-agent', '')
         if ticket in cls.session_cache:
             session = cls.session_cache[ticket]
-            session.check(request, client_ip, browser)
+            if not session.check(request, client_ip, browser):
+                return None
         elif ticket and os.path.exists(f'TICKETS/{ticket}'):
             session = cls.load_ticket_file(ticket)
-            session.check(request, client_ip, browser)
+            if not session.check(request, client_ip, browser):
+                return None
         else:
             session = Session(ticket, client_ip, browser)
             if ticket:

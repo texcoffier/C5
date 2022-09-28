@@ -729,6 +729,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
         elif what == 'eval':
             eval(value) # pylint: disable=eval-used
+        elif what == 'stop':
+            alert("La session est terminée, rechargez la page pour la réactiver")
+            window.location = window.location
 
     def set_editor_content(self, message):
         """Set the editor content (question change or reset)"""

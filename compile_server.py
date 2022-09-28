@@ -180,15 +180,25 @@ class Process: # pylint: disable=too-many-instance-attributes
             asyncio.ensure_future(self.runner())
         ]
 
+async def bad_session(websocket):
+    """Tail the browser that the session is bad"""
+    await websocket.send(json.dumps(['stop', 'Session expired']))
+    await asyncio.sleep(10)
+
 async def echo(websocket, path): # pylint: disable=too-many-branches
     """Analyse the requests from one websocket connection"""
     print(path, flush=True)
 
     _, ticket, course = path.split('/')
     if not os.path.exists('TICKETS/' + ticket):
+        await bad_session(websocket)
         return
 
     session = await utilities.Session.get(websocket, ticket)
+    if not session:
+        await bad_session(websocket)
+        return
+
     login = session.login
 
     process = Process(websocket, login, course)
