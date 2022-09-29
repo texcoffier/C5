@@ -1018,7 +1018,7 @@ def cmp_student_position(student_a, student_b):
 
 def create_page(building_name):
     """Fill the page content"""
-    content = [
+    content = ['<title>ⒶⒷ', COURSE.split('=')[1], '</title>',
         '''<style>
         .name, LABEL { display: inline-block; background: #EEE; vertical-align: top;
             cursor: pointer; user-select: none;
