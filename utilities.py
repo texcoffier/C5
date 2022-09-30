@@ -188,18 +188,22 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                 except FileExistsError:
                     pass
                 with open(f'{self.dirname}/{login}/http_server.log', "a") as file:
-                    file.write(f'[{seconds},"checkpoint_in"]\n')
+                    file.write(f'[{seconds},"checkpoint_in",{repr(client_ip)}]\n')
                 if self.checkpoint:
                     return 'checkpoint'
-            elif client_ip:
+            elif client_ip and client_ip != active_teacher_room[6]:
+                # Student IP changed
                 if self.checkpoint:
-                    # Student IP changed after being checkpointed
                     # Undo checkpointing
                     active_teacher_room[6] = client_ip # Update
                     active_teacher_room[0] = False
+                    with open(f'{self.dirname}/{login}/http_server.log', "a") as file:
+                        file.write(f'[{seconds},"checkpoint_eject",{repr(client_ip)}]\n')
                 else:
                     # No checkpoint: so allows the room change
                     active_teacher_room[6] = client_ip # Update
+                    with open(f'{self.dirname}/{login}/http_server.log', "a") as file:
+                        file.write(f'[{seconds},"checkpoint_ip_change",{repr(client_ip)}]\n')
             if self.checkpoint and not active_teacher_room[0]:
                 if active_teacher_room[1] == '':
                     # Always in the checkpoint or examination is done
