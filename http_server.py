@@ -102,11 +102,11 @@ def handle(base=''):
                             value[-1][1] = 1 # Correct answer even if changed after
                             break
                     answers[key] = value[-1] # Only the last answer
+                status = course.status(login, session.client_ip)
                 if course:
                     stop = course.get_stop(session.login)
                 else:
                     stop = ''
-                status = course.status(login, session.client_ip)
                 if not session.is_admin():
                     if status == 'done':
                         return session.message('done')
@@ -130,7 +130,7 @@ def handle(base=''):
                         INFOS = {json.dumps(session.infos)};
                         CHECKPOINT = {course.checkpoint};
                         ANSWERS = {json.dumps(answers)};
-                        WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0)))};
+                        WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0)))};
                     </script>
                     <script src="/ccccc.js?ticket={session.ticket}"></script>''')
             if '=' in filename:
@@ -142,25 +142,32 @@ def handle(base=''):
         return File.get(filename).response()
     return real_handle
 
-def student_log(course_name, login, data):
-    """Add a line to the student log"""
-    if not os.path.exists(f'{course_name}/{login}'):
-        if not os.path.exists(course_name):
-            os.mkdir(course_name)
-        os.mkdir(f'{course_name}/{login}')
-    with open(f'{course_name}/{login}/http_server.log', "a") as file:
-        file.write(data)
-
 async def log(request):
     """Log user actions"""
     session = await utilities.Session.get(request)
     post = await request.post()
     course = utilities.CourseConfig.get(utilities.get_course(post['course']))
-    if not course.running(session.login):
-        return
+    if not course.running(session.login, session.client_ip):
+        return web.Response(
+            body=r"""
+            <script>
+            alert("Ce que vous faites n'est plus enregistré :\n"
+                  + "  * L'examen est terminé\n"
+                  + "  * ou bien votre adresse IP a changé !\n"
+                  + "Contactez l'enseignant."
+                 )
+            </script>""",
+            content_type="text/html",
+            headers={
+                "Cross-Origin-Opener-Policy": "same-origin",
+                "Cross-Origin-Embedder-Policy": "require-corp",
+                'Cache-Control': 'no-cache',
+                # 'Cache-Control': 'max-age=60',
+            }
+        )
     data = urllib.request.unquote(post['line'])
     # Must do sanity check on logged data
-    student_log(course.dirname, session.login, data)
+    utilities.student_log(course.dirname, session.login, data)
     if session.login in course.active_teacher_room:
         infos = course.active_teacher_room[session.login]
         infos[3] = int(time.time())
@@ -212,6 +219,7 @@ async def adm_course(request):
                 # To not display executables
                 files.append(filename)
         try:
+            student['status'] = course.status(user)
             with open(f'{course.dirname}/{user}/http_server.log') as file:
                 student['http_server'] = file.read()
         except IOError:
@@ -529,9 +537,9 @@ async def checkpoint_list(request):
         '''
         ]
     utilities.CourseConfig.load_all_configs()
-    now = time.strftime('%Y-%m-%d %H:%M:%S')
+    now = time.time()
     for _course_name, course in sorted(utilities.CourseConfig.configs.items()):
-        if now > course.stop_tt:
+        if now > course.stop_tt_timestamp:
             continue # Exam done
         waiting = []
         working = []
@@ -621,24 +629,40 @@ async def checkpoint_student(request):
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     if room == 'STOP':
-        old[0] = False
-        student_log(course.dirname, student, f'[{seconds},"checkpoint_stop"]\n')
+        old[0] = 0
+        utilities.student_log(course.dirname, student,
+                              f'[{seconds},[["checkpoint_stop",{repr(session.login)}]]]\n')
     elif room == 'RESTART':
-        old[0] = True
+        old[0] = 1
         old[1] = session.login
-        student_log(course.dirname, student, f'[{seconds},"checkpoint_eject"]\n')
+        utilities.student_log(course.dirname, student,
+                              f'[{seconds},[["checkpoint_restart",{repr(session.login)}]]]\n')
     elif room == 'EJECT':
-        old[0] = False
+        old[0] = 0
         old[1] = old[2] = ''
         old[3] = seconds # Make it bold for other teachers
-        student_log(course.dirname, student, f'[{seconds},"checkpoint_eject"]\n')
+        utilities.student_log(course.dirname, student,
+                              f'[{seconds},[["checkpoint_eject",{repr(session.login)}]]]\n')
     else:
         if old[1] == '':
-            old[0] = True # A moved STOPed student must not be reactivated
+            old[0] = 1 # A moved STOPed student must not be reactivated
         old[1] = session.login
         old[2] = room
-        student_log(course.dirname, student,
-                    f'[{seconds},["checkpoint","{session.login}","{room}"]]\n')
+        utilities.student_log(
+            course.dirname, student,
+            f'[{seconds},[["checkpoint_move",{repr(session.login)},"{room}"]]]\n')
+    course.record()
+    return await update_browser_data(course)
+
+async def checkpoint_bonus(request):
+    """Set student time bonus"""
+    student = request.match_info['student']
+    bonus = request.match_info['bonus']
+    session, course = await get_teacher_login_and_course(request)
+    seconds = int(time.time())
+    old = course.active_teacher_room[student]
+    old[7] = int(bonus)
+    utilities.student_log(course.dirname, student, f'[{seconds},["time bonus",{bonus},"{session.login}"]]\n')
     course.record()
     return await update_browser_data(course)
 
@@ -650,10 +674,10 @@ async def home(request):
     if not session.is_student():
         return await checkpoint_list(request)
     utilities.CourseConfig.load_all_configs()
-    now = time.strftime('%Y-%m-%d %H:%M:%S')
+    now = time.time()
     content = [session.header()]
     for course_name, course in sorted(utilities.CourseConfig.configs.items()):
-        if now > course.stop_tt or now < course.start:
+        if now > course.stop_tt_timestamp or now < course.start_timestamp:
             continue # Not running
         content.append(
             f'<li> <a href="/={course.course}?ticket={session.ticket}">{course_name}</a>')
@@ -766,6 +790,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/checkpoint/{course}', checkpoint),
                 web.get('/checkpoint/SPY/{course}/{student}', checkpoint_spy),
                 web.get('/checkpoint/MESSAGE/{course}/{message:.*}', checkpoint_message),
+                web.get('/checkpoint/TIME_BONUS/{course}/{student}/{bonus}', checkpoint_bonus),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),

@@ -289,6 +289,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.executor', {'innerHTML': Contains('symbole')})
 
         # Fill second input
+        time.sleep(0.6)
         self.check('.executor INPUT:nth-child(5)').send_keys('*')
         self.check('.executor INPUT:nth-child(5)').send_keys(Keys.ENTER)
         self.check('.executor INPUT:nth-child(5)', {'value': Equal('*')})
@@ -407,7 +408,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.load_page('=JS=introduction')
             self.check('.index > A').click()
             self.check_alert(required=False, nbr=2)
-            self.check('H1', {'innerText': Equal('C5 Administration')})
+            self.check('H1', {'innerText': Contains('Administration')})
     def test_date_change(self):
         """Test home page course date change"""
         def set_date(path, date, expect):
@@ -415,7 +416,7 @@ class Tests: # pylint: disable=too-many-public-methods
             old_date = self.check(path).get_attribute('value')
             self.check(path).send_keys(
                 date + ('1' if old_date[-1] == '0' else '0'))
-            time.sleep(0.2)
+            time.sleep(0.4)
             self.check(path).send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains(expect)})
 

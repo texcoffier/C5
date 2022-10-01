@@ -27,10 +27,10 @@ def display(): # pylint: disable=too-many-statements
     """Display adm home page"""
     update_url()
     text = [
-        '<title>C5 Administration</title>',
+        '<title>Administration</title>',
         MORE,
         '''
-    <h1>C5 Administration</h1>
+    <h1>Administration</h1>
     <style>
         BODY { font-family: sans-serif }
         TABLE { border-spacing: 0px; border-collapse: collapse ; }

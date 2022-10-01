@@ -82,6 +82,15 @@ class Process: # pylint: disable=invalid-name
 LDAP = Process('./infos_server.py')
 DNS = Process('./dns_server.py')
 
+def student_log(course_name, login, data):
+    """Add a line to the student log"""
+    if not os.path.exists(f'{course_name}/{login}'):
+        if not os.path.exists(course_name):
+            os.mkdir(course_name)
+        os.mkdir(f'{course_name}/{login}')
+    with open(f'{course_name}/{login}/http_server.log', "a") as file:
+        file.write(data)
+
 class CourseConfig: # pylint: disable=too-many-instance-attributes
     """A course session"""
     configs = {}
@@ -110,13 +119,14 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'theme': 'a11y-light',
                        'messages': [],
                        # For each student login :
-                       #   * Active: True is the examination is possible.
-                       #   * the teacher who checkpointed  (or '')
-                       #   * Room: the building and the place
-                       #   * timestamp of last student interaction
-                       #   * Number of window blur
-                       #   * Number of questions
-                       #   * IP address
+                       #   [0] Active: True is the examination is possible.
+                       #   [1] the teacher who checkpointed  (or '')
+                       #   [2] Room: the building and the place
+                       #   [3] timestamp of last student interaction
+                       #   [4] Number of window blur
+                       #   [5] Number of questions
+                       #   [6] IP address
+                       #   [7] Bonus time in seconds
                        # Active : examination is running
                        # Inactive & Room=='' : wait access to examination
                        # Inactive & Room!='' : examination done
@@ -130,6 +140,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             if os.path.exists(self.filename.replace('.cf', '.js')):
                 self.record()
                 self.time = time.time()
+        # Update old data structure
+        for active_teacher_room in self.config['active_teacher_room'].values():
+            if len(active_teacher_room) == 7:
+                active_teacher_room.append(0)
 
     def update(self):
         """Compute some values"""
@@ -160,63 +174,72 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.record()
     def get_stop(self, login):
         """Get stop date, taking login into account"""
+        bonus_time = self.active_teacher_room[login][7]
         if login in self.tt_list:
-            return self.stop_tt_timestamp
-        return self.stop_timestamp
+            return self.stop_tt_timestamp + bonus_time
+        return self.stop_timestamp + bonus_time
+    def update_checkpoint(self, login, client_ip, now):
+        """Update active_teacher_room"""
+        if not login:
+            return
+        active_teacher_room = self.active_teacher_room.get(login, None)
+        # Simulate an IP change every 30 seconds
+        # if client_ip:
+        #     client_ip += str(int(time.time() / 30))
+        if active_teacher_room is None:
+            if not client_ip:
+                # There is an http_server.log but nothing in session.cf
+                client_ip = 'broken_cf_file'
+            # Add to the checkpoint room
+            active_teacher_room = self.active_teacher_room[login] = [
+                0, '', '', now, 0, 0, client_ip, 0]
+            self.record()
+            student_log(self.dirname, login,
+                        f'[{now},[["checkpoint_in",{repr(client_ip)}]]]\n')
+        elif client_ip and client_ip != active_teacher_room[6]:
+            # Student IP changed
+            if self.checkpoint:
+                # Undo checkpointing
+                active_teacher_room[6] = client_ip # Update
+                active_teacher_room[0] = 0
+                student_log(self.dirname, login,
+                            f'[{now},[["checkpoint_ip_change_eject",{repr(client_ip)}]]]\n')
+            else:
+                # No checkpoint: so allows the room change
+                active_teacher_room[6] = client_ip # Update
+                student_log(self.dirname, login,
+                            f'[{now},[["checkpoint_ip_change",{repr(client_ip)}]]]\n')
+        return active_teacher_room
+
     def status(self, login, client_ip=None): # pylint: disable: too-many-return-statements
         """Status of the course"""
         if os.path.getmtime(self.filename) > self.time:
             self.load()
             self.update()
-        now = time.strftime('%Y-%m-%d %H:%M:%S')
-        if now < self.start:
+        now = int(time.time())
+        if not login: # For adm home
+            if now < self.start_timestamp:
+                return 'pending'
+            if now < self.stop_timestamp:
+                return 'running'
+            if login in self.tt_list and now < self.stop_tt_timestamp:
+                return 'running_tt'
+            return 'done'
+        active_teacher_room = self.update_checkpoint(login, client_ip, now)
+        if now < self.start_timestamp:
             return 'pending'
-        if login:
-            active_teacher_room = self.active_teacher_room.get(login, None)
-            if active_teacher_room is None:
-                seconds = int(time.time())
-                # Add to the checkpoint room
-                active_teacher_room = self.config['active_teacher_room'][login] = [
-                    False, '', '', seconds, 0, 0, client_ip]
-                self.record()
-                try:
-                    os.mkdir(f'{self.dirname}')
-                except FileExistsError:
-                    pass
-                try:
-                    os.mkdir(f'{self.dirname}/{login}')
-                except FileExistsError:
-                    pass
-                with open(f'{self.dirname}/{login}/http_server.log', "a") as file:
-                    file.write(f'[{seconds},"checkpoint_in",{repr(client_ip)}]\n')
-                if self.checkpoint:
-                    return 'checkpoint'
-            elif client_ip and client_ip != active_teacher_room[6]:
-                # Student IP changed
-                if self.checkpoint:
-                    # Undo checkpointing
-                    active_teacher_room[6] = client_ip # Update
-                    active_teacher_room[0] = False
-                    with open(f'{self.dirname}/{login}/http_server.log', "a") as file:
-                        file.write(f'[{seconds},"checkpoint_eject",{repr(client_ip)}]\n')
-                else:
-                    # No checkpoint: so allows the room change
-                    active_teacher_room[6] = client_ip # Update
-                    with open(f'{self.dirname}/{login}/http_server.log', "a") as file:
-                        file.write(f'[{seconds},"checkpoint_ip_change",{repr(client_ip)}]\n')
-            if self.checkpoint and not active_teacher_room[0]:
-                if active_teacher_room[1] == '':
-                    # Always in the checkpoint or examination is done
-                    return 'checkpoint'
-                return 'done'
-        if now < self.stop:
+        if self.checkpoint and not active_teacher_room[0]:
+            if active_teacher_room[1] == '':
+                # Always in the checkpoint or examination is done
+                return 'checkpoint'
+            return 'done'
+        if now < self.get_stop(login):
             return 'running'
-        if login in self.tt_list and now < self.stop_tt:
-            return 'running_tt'
         return 'done'
-    def running(self, login):
+
+    def running(self, login, client_ip):
         """If the session running for the user"""
-        return self.status(login).startswith('running') or not CONFIG.is_student(login)
+        return self.status(login, client_ip).startswith('running') or not CONFIG.is_student(login)
 
     async def get_students(self):
         """Get all the students"""

@@ -955,6 +955,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.blur = data[1][4]
         self.nr_questions_done = data[1][5] or 0
         self.client_ip = data[1][6]
+        self.bonus_time = data[1][7]
         self.firstname = data[2]['fn']
         self.surname = data[2]['sn']
         self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
@@ -1207,6 +1208,12 @@ def spy_concat(sources):
         hljs.highlightElement(code)
         div_source.appendChild(code)
 
+def set_time_bonus(element, login):
+    """Recode and update student bonus time"""
+    record('/checkpoint/TIME_BONUS/' + COURSE + '/' + login + '/' + 60*int(element.value))
+    element.style.background = "#DFD"
+    STUDENT_DICT[login].bonus_time = element.value
+
 def spy(sources, login, infos):
     """Display the infos source code"""
     student = STUDENT_DICT[login]
@@ -1220,6 +1227,8 @@ def spy(sources, login, infos):
     content = [
         '<button onclick="spy_close()">Fermer</button> ',
         login, ' ', infos.fn, ' ', infos.sn, ' ', state,
+        '(<input onchange="set_time_bonus(this,\'' + login
+            + '\')" value="' + student.bonus_time/60 + '">Minutes bonus)',
         '<div id="time" onmousedown="spy_it(event)"',
         ' onmousemove="if (event.buttons) spy_it(event)">']
     sources.sort()

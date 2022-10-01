@@ -59,7 +59,7 @@ class Process: # pylint: disable=too-many-instance-attributes
 
     def course_running(self):
         """Check if the course is running for the user"""
-        return self.course.running(self.login)
+        return self.course.running(self.login, None)
 
     def cleanup(self, erase_executable=False):
         """Close connection"""
