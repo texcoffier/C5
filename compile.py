@@ -255,7 +255,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         return "<h2>" + self.options['tester_title'] + "</h2>"
     def executor_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return ("<h2>" + self.options['executor_title'] + ' <span style="background: #CCF">'
+        return ("<h2>" + self.options['executor_title'] + ' <span style="float:right; background: #CCF; margin-right: 0.3em;">'
             + self.config['INFOS']['sn'].upper()
             + ' '
             + self.config['INFOS']['fn'].lower()
