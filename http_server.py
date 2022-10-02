@@ -286,6 +286,12 @@ async def adm_config(request): # pylint: disable=too-many-branches
             feedback = f"«{course}» All questions are accessible in a random order."
         else:
             feedback = f"«{course}» Questions are accessible only if the previous are corrects."
+    elif action == 'highlight':
+        config.set_parameter('highlight', value)
+        if value == '0':
+            feedback = f"«{course}» The session is no more highlighted in the student list"
+        else:
+            feedback = f"«{course}» The session (even in the future) is displayed in green to the student session list."
 
     return await adm_home(request, feedback)
 
@@ -677,10 +683,16 @@ async def home(request):
     now = time.time()
     content = [session.header()]
     for course_name, course in sorted(utilities.CourseConfig.configs.items()):
-        if now > course.stop_tt_timestamp or now < course.start_timestamp:
-            continue # Not running
+        if now > course.stop_tt_timestamp:
+            continue # No more running
+        if now < course.start_timestamp and not course.highlight:
+            continue # Not started nor highlighted
+        if course.highlight:
+            style = ' style="background: #8F8"'
+        else:
+            style = ''
         content.append(
-            f'<li> <a href="/={course.course}?ticket={session.ticket}">{course_name}</a>')
+            f'<li> <a href="/={course.course}?ticket={session.ticket}"{style}>{course_name}</a>')
 
     return web.Response(
         body=''.join(content),
