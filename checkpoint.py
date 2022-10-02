@@ -48,6 +48,16 @@ BEFORE_FIRST = 60 # Time scroll bar padding left in seconds
 BUILDINGS_SORTED = [_ for _ in BUILDINGS]
 BUILDINGS_SORTED.sort()
 
+def filters(element):
+    """Update student filter"""
+    logins = {}
+    for login in element.value.split(' '):
+        logins[login] = True
+    filters.logins = logins
+    ROOM.update_waiting_room()
+
+filters.logins = {}
+
 def seconds():
     """Number of second as Unix"""
     return int(Date().getTime() / 1000)
@@ -989,14 +999,14 @@ class Student: # pylint: disable=too-many-instance-attributes
     def box(self, style=''):
         """A nice box clickable and draggable"""
         if seconds() - self.checkpoint_time < BOLD_TIME:
-            more = ' style="font-weight: bold"'
-        else:
-            more = ''
+            style += ';font-weight: bold'
+        if self.filtered():
+            style += ';background: #FF0'
         return ''.join([
             '<div class="name" onmousedown="ROOM.start_move_student(event)"',
             ' style="', style, '"',
             ' ontouchstart="ROOM.start_move_student(event)" login="',
-            self.login, '"', more, '>',
+            self.login, '">',
             # '<span>', self.login, '</span>',
             '<div>', self.surname, '</div>',
             '<div>', self.firstname, '</div>',
@@ -1006,6 +1016,10 @@ class Student: # pylint: disable=too-many-instance-attributes
     def with_me(self):
         """The student is in my room"""
         return self.teacher == LOGIN
+
+    def filtered(self):
+        """THe student must be highlighted"""
+        return filters.logins[self.login]
 
 def cmp_student_name(student_a, student_b):
     """Compare 2 students names"""
@@ -1024,7 +1038,7 @@ def create_page(building_name):
         .name, LABEL { display: inline-block; background: #EEE; vertical-align: top;
             cursor: pointer; user-select: none;
         }
-        BODY { font-family: sans-serif }
+        BODY { font-family: sans-serif}
         .name:hover { background: #FFF }
         .name SPAN { color: #888 }
         CANVAS { position: absolute; left: 0px; width: 100%; top: 0px; height: 100% }
@@ -1076,6 +1090,8 @@ def create_page(building_name):
         '''</select>
         <label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()" type="checkbox"
                >Seulement<br>mes salles</label>
+        <label class="filter">Mettre en évidence les logins :<br>
+        <input onchange="filters(this)" onblur="filters(this)" style="box-sizing: border-box; width:100%"></label>
         <span class="send_alert" onclick="send_alert()">🚨</span>
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
