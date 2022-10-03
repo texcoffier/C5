@@ -92,6 +92,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question_done = {}
     question_original = {}
     last_answer = {}
+    last_answer_cursor = {}
     copied = None # Copy with ^C ou ^X
     state = "uninitalised"
     input_index = -1 # The input number needed
@@ -547,6 +548,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             event.preventDefault(True)
         elif event.key == 'F8':
             self.unlock_worker()
+            self.last_answer_cursor[self.current_question] = [self.editor.scrollTop]
             self.worker.postMessage(['indent', self.source.strip()])
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
@@ -655,6 +657,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.old_source += 'force recompile'
             self.do_not_clear = {}
             self.update_source()
+            self.last_answer_cursor[self.current_question] = [self.editor.scrollTop]
             if (self.current_question >= 0 and value != self.current_question
                     and (
                         not self.last_answer[self.current_question]
@@ -737,7 +740,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Set the editor content (question change or reset)"""
         self.overlay_hide()
         self.editor.innerText = message
-        self.editor.scrollTop = 0
+        if self.last_answer_cursor[self.current_question]:
+            self.editor.scrollTop = self.last_answer_cursor[self.current_question][0]
+        else:
+            self.editor.scrollTop = 0
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
         self.coloring()
 
