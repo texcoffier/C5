@@ -8,6 +8,10 @@ Object = Object # pylint: disable=undefined-variable
 Array = Array # pylint: disable=undefined-variable
 String = String # pylint: disable=undefined-variable
 Date = Date # pylint: disable=undefined-variable
+alert = alert # pylint: disable=undefined-variable
+document = document # pylint: disable=undefined-variable
+TICKET = TICKET # pylint: disable=undefined-variable
+update_page = update_page # pylint: disable=undefined-variable
 
 def str(txt): # pylint: disable=redefined-builtin
     """Python like"""
@@ -44,12 +48,17 @@ def html(txt):
                       ).replace(RegExp('<', 'g'), '&lt;'
                                ).replace(RegExp('>', 'g'), '&gt;')
 
+def record_error():
+    """onerror event handler"""
+    alert("Une erreur de sauvegarde s'est produite.\nRechargez la page et recommencez")
+
 def record(action):
     """Do an action and get data"""
     script = document.createElement('SCRIPT')
     script.src = action + '?ticket=' + TICKET
     try:
         script.onload = update_page
+        script.onerror = record_error
     except: # pylint: disable=bare-except
         # There is no update_page for the student interface
         pass
