@@ -1151,6 +1151,8 @@ def spy_close():
     document.getElementById('spy').style.display = 'none'
 
 def spy_cursor(source):
+    if not spy.sources[0]:
+        return
     bar = document.getElementById('time')
     cursor = bar.lastChild
     first = spy.sources[0][0] - BEFORE_FIRST
@@ -1173,6 +1175,8 @@ def spy_cursor(source):
 
 def spy_it(event=None):
     """Display the selected source"""
+    if not spy.sources[0]:
+        return
     bar = document.getElementById('time')
     first = spy.sources[0][0] - BEFORE_FIRST
     last = spy.sources[-1][0]
@@ -1248,17 +1252,20 @@ def spy(sources, login, infos):
         '<div id="time" onmousedown="spy_it(event)"',
         ' onmousemove="if (event.buttons) spy_it(event)">']
     sources.sort()
-    first = sources[0][0] - BEFORE_FIRST
-    last = sources[-1][0]
-    width = (last - first) or 1
-    spy.sources = []
-    for source in sources:
-        spy.sources.append(source)
-        content.append(
-            '<span style="left:' + 100*(source[0] - first)/width
-            + '%" class="' + source[2] + '">'
-            + (source[2] == 'a' and (source[1]+1) or '')
-            + '</span>')
+    if sources[0]:
+        first = sources[0][0] - BEFORE_FIRST
+        last = sources[-1][0]
+        width = (last - first) or 1
+        spy.sources = []
+        for source in sources:
+            spy.sources.append(source)
+            content.append(
+                '<span style="left:' + 100*(source[0] - first)/width
+                + '%" class="' + source[2] + '">'
+                + (source[2] == 'a' and (source[1]+1) or '')
+                + '</span>')
+    else:
+        content.append("Aucune sauvegarde n'a été faite.")
     content.append('<span class="cursor right"></span>')
     content.append('</div><pre id="source"></pre>')
     div.innerHTML = ''.join(content)
