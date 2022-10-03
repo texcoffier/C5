@@ -610,6 +610,11 @@ server {{
     proxy_pass http://127.0.0.1:{C5_HTTP};
     }}
   }}
+server {{
+    listen 80;
+    server_name {C5_URL};
+    rewrite  ^/(.*)$  https://{C5_URL}/$1  permanent;
+}}
 %
             systemctl restart nginx
 '
