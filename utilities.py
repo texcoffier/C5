@@ -559,6 +559,8 @@ def print_help():
    * restart : servers
    * compile : create JS
    * open : launch web browser (second argument may be js|python|cpp|remote)
+   * cp : copy local files to production ones
+   * diff : compare local files to production ones
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py | grep -v grep")
@@ -590,6 +592,16 @@ ACTIONS = {
     'cp': f"""
         tar -cf - $(git ls-files | grep -v DOCUMENTATION) |
         ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -xvf -'
+        """,
+    'diff': f"""
+        mkdir DIFF
+        ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -cf - .' |
+        (cd DIFF && tar -xf -)
+        for I in $(git ls-files | grep -v DOCUMENTATION)
+        do
+        diff -u $I DIFF/$I
+        done
+        rm -rf DIFF
         """,
     'nginx': f"""#C5_ROOT
         sudo sh -c '
