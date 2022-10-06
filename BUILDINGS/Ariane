@@ -38,17 +38,17 @@
 +------------+                                                                           +------------+
 [TP21]                                        ARIANE DEUXIÈME                        [TP25]          
 +-ww--ww--ww--ww-+                                                                   +-ww--ww--ww--ww-+
-|   sa  sa  sa   |[TP22]           [TP23]           [TP24]                           |   as  as  as   |
-|   sb   c   c   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   c   c   bs   |
-|   sa  sb  sb   d   sa  sa  sa   |   as  as  as   d   sa  sa  sa   |                d   bs  bs  as   |
-|   sb   c   c   d   sb   c   c   |   c   c   bs   d   sb   c   c   |                d   c   c   bs   |
-|   sa  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |                |   as  as  as   |
-|   sb   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |                |   c   c   bs   |
-|   sa  sb  sb   |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |        +-----dd+   bs  bs  as   |
-|    c   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |        d       |   c   c   c    |
-|   sb  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |        d       |   as  as  bs   |
-|TP21            |    c   c   c   |   c   c   c    |    c   c   c   |        +--+    |TP25            |
-+------+-----+-dd+   sb  sa  sa   |   as  as  bs   |   sb  sa  sa   |           |    +-dd+-----+------+
+|   as  as  as   |[TP22]           [TP23]           [TP24]                           |   as  as  as   |
+|   bs  bs  bs   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   bs  bs  bs   |
+|   as  as  as   d   as  as  as   d   as  as  as   d   as  as  as   |                d   as  as  as   |
+|   bs  bs  bs   d   bs  bs  bs   d   bs  bs  bs   d   bs  bs  bs   |                d   bs  bs  bs   |
+|   as  as  as   |   as  as  as   |   as  as  as   |   as  as  as   |                |   as  as  as   |
+|   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |                |   bs  bs  bs   |
+|   as  as  as   |   as  as  as   |   as  as  as   |   as  as  as   |        +-----dd+   as  as  as   |
+|   bs  bs       |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |        d       |       bs  bs   |
+|   as           |   as  as  as   |   as  as  as   |   as  as  as   |        d       |       as       |
+|TP21            |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |        +--+    |TP25            |
++------+-----+-dd+                |                |                |           |    +-dd+-----+------+
 |      |     d   |TP22            |TP23            |TP24            |           |        d     |      |
 |      |     d   +-dd-------------+-dd-+-----------+-------------dd-+-----------+        d     |      |
 |      +-----+       |            |                 VIRTUA / LAB                         +-----+      |

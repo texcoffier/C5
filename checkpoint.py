@@ -1044,7 +1044,7 @@ def create_page(building_name):
         CANVAS { position: absolute; left: 0px; width: 100%; top: 0px; height: 100% }
         #waiting { display: inline }
         #top {z-index: 2; position: absolute;
-              top: 0px; left: 0px; width: 100%; height: 5em;
+              top: 0px; left: 0px; width: 100%;
               background: ''', TOP_INACTIVE, '''}
         #top * { vertical-align: middle }
         #top .course { font-size: 200%; }
