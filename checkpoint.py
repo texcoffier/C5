@@ -32,15 +32,14 @@ except ValueError:
     pass
 
 RELOAD_INTERVAL = 60 # Number of seconds between update data
-HELP_LINES = 8
-LEFT = 10
+HELP_LINES = 10
 BOLD_TIME = 180 # In seconds for new students in checking room
 BOLD_TIME_ACTIVE = 300 # In seconds for last activity
 MENU_WIDTH = 9
 MENU_HEIGHT = 10
 MENU_LINE = 0.6
-TOP_INACTIVE = 'linear-gradient(to bottom, #FFFF, #FFFE, #FFFE, #FFF0)'
-TOP_ACTIVE = 'linear-gradient(to bottom, #8F8F, #8F87)'
+TOP_INACTIVE = '#FFFD'
+TOP_ACTIVE = '#8F8D'
 ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
 BEFORE_FIRST = 60 # Time scroll bar padding left in seconds
@@ -98,7 +97,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     drag_x_current = drag_x_start = drag_y_current = drag_y_start = None
     scale = min_scale = 0
     top = 0
-    left = LEFT
+    left = 0
     x_max = 0
     moving = False
     students = []
@@ -139,7 +138,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 2 * self.scale * self.lines_height[2*line]]
     def get_column_row(self, pos_x, pos_y):
         """Return character position (float) in the character map"""
-        if pos_y < self.menu.offsetHeight:
+        if pos_y < self.TOP or pos_x < self.LEFT:
             return [-1, -1]
         column = -1
         for i, position in enumerate(self.columns_x):
@@ -190,8 +189,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             building = 'empty'
         self.lines = BUILDINGS[building].split('\n')
         self.x_max = max([len(line) for line in self.lines]) + 1
-        self.top = self.menu.offsetHeight
-        self.left = LEFT
+        self.LEFT = self.menu.offsetWidth # LEFT
+        self.TOP = 0 # self.menu.offsetHeight
+        self.left = self.LEFT
+        self.top = self.TOP
         self.drag_x_current = self.drag_x_start = None
         self.drag_y_current = self.drag_y_start = None
         self.moving = False
@@ -636,14 +637,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.update_sizes(0.5)
             self.update_visible()
             self.scale = self.min_scale = min(
-                (self.width - LEFT) / self.columns_x[2 * self.x_max - 1],
-                (self.height - self.menu.offsetHeight) / self.lines_y[2 * len(self.lines) - 1 - HELP_LINES])
-            self.top = self.menu.offsetHeight
+                (self.width - self.LEFT) / self.columns_x[2 * self.x_max - 1],
+                (self.height - self.TOP) / self.lines_y[2 * len(self.lines) - 1 - HELP_LINES])
+            self.top = self.TOP
             if not document.getElementById('my_rooms').checked:
                 self.top += HELP_LINES * self.scale
-            self.left = LEFT
         ctx = canvas.getContext("2d")
-        self.left_column, self.top_line = self.get_column_row(0, self.menu.offsetHeight+1)
+        self.left_column, self.top_line = self.get_column_row(0, self.TOP+1)
         self.left_column = Math.max(self.left_column, 0) - 1
         self.top_line = Math.max(self.top_line, 0) - 2
         self.right_column, self.bottom_line = self.get_column_row(self.width, self.height)
@@ -664,7 +664,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.draw_square_feedback(ctx)
         self.draw_help(ctx)
         self.draw_times.append(Date().getTime() - start)
-        if len(self.draw_times) > 10:
+        if LOGIN == 'thierry.excoffier' and len(self.draw_times) > 10:
             self.draw_times = self.draw_times[1:]
             ctx.font = "16px sans-serif"
             ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms', self.width - 70, 50)
@@ -869,7 +869,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     if not self.rooms_on_screen[room_name]:
                         continue
                 else:
-                    style = 'background: #FFC'
+                    style = 'background: #FFCA'
                 content.append(student.box(style))
         document.getElementById('waiting').innerHTML = ' '.join(content)
     def update_messages(self):
@@ -891,7 +891,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         login = event.currentTarget.getAttribute('login')
         Student.moving_student = STUDENT_DICT[login]
         Student.moving_element = event.currentTarget
-        Student.moving_element.style.position = 'absolute'
+        Student.moving_element.style.position = 'fixed'
         document.body.onmousemove = document.body.ontouchmove = bind(self.move_student, self)
         window.onmouseup = document.body.ontouchend = bind(self.stop_move_student, self)
         self.move_student(event)
@@ -1008,8 +1008,7 @@ class Student: # pylint: disable=too-many-instance-attributes
             ' ontouchstart="ROOM.start_move_student(event)" login="',
             self.login, '">',
             # '<span>', self.login, '</span>',
-            '<div>', self.surname, '</div>',
-            '<div>', self.firstname, '</div>',
+            '<div>', self.surname, ' ', self.firstname, ' ', self.login, '</div>',
             # '<span>', self.room, '</span>',
             '</div>'])
 
@@ -1035,19 +1034,24 @@ def create_page(building_name):
     """Fill the page content"""
     content = ['<title>ⒶⒷ', COURSE.split('=')[1], '</title>',
         '''<style>
-        .name, LABEL { display: inline-block; background: #EEE; vertical-align: top;
+        .name, LABEL { display: inline-block; vertical-align: top;
             cursor: pointer; user-select: none;
         }
+        .filter { background: #EEE; }
+        .name { background: #EEEA; display: block; white-space: nowrap;
+             padding-top: 0.3em; padding-bottom: 0.3em;
+              overflow: hidden; }
         BODY { font-family: sans-serif}
         .name:hover { background: #FFF }
         .name SPAN { color: #888 }
         CANVAS { position: absolute; left: 0px; width: 100%; top: 0px; height: 100% }
         #waiting { display: inline }
         #top {z-index: 2; position: absolute;
-              top: 0px; left: 0px; width: 100%;
+              top: 0px; left: 0px; width: 12em; padding-right: 2em; height: 100vh;
+              overflow-y: scroll; overflow-x: visible;
               background: ''', TOP_INACTIVE, '''}
         #top * { vertical-align: middle }
-        #top .course { font-size: 200%; }
+        #top .course { font-size: 150%; }
         #top SELECT { font-size: 150%; }
         #top .drag_and_drop { display: inline-block }
         #top .reload { font-family: emoji; font-size: 300%; cursor: pointer; }
@@ -1079,20 +1083,25 @@ def create_page(building_name):
         #time SPAN.cc { color: #000 ; }
         #time SPAN.cs { color: #00F ; }
         </style>
-        <div id="top"><span class="reload" onclick="reload_page()">⟳</span>''',
-
-        '<span class="course">', COURSE, '</span>',
-        ' <select onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
+        <div id="top">
+        <span class="reload" onclick="reload_page()">⟳</span>
+          
+        <span class="send_alert" onclick="send_alert()">🚨</span>
+          
+        ''',
+        '<span class="course">',
+        COURSE.split('=')[1].replace(RegExp('_', 'g'), ' '),
+        '</span>',
+        ' <select style="width:100%" onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
         ''.join(['<option'
                  + (building == building_name and ' selected' or '')
                  + '>' + building.replace('empty', LOGIN) + '</option>'
                  for building in BUILDINGS_SORTED]),
         '''</select>
         <label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()" type="checkbox"
-               >Seulement<br>mes salles</label>
+               >Seulement mes salles</label>
         <label class="filter">Mettre en évidence les logins :<br>
         <input onchange="filters(this)" onblur="filters(this)" style="box-sizing: border-box; width:100%"></label>
-        <span class="send_alert" onclick="send_alert()">🚨</span>
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
         <div id="messages"></div>
