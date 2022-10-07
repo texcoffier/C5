@@ -292,6 +292,18 @@ async def adm_config(request): # pylint: disable=too-many-branches
             feedback = f"«{course}» The session is no more highlighted in the student list"
         else:
             feedback = f"«{course}» The session (even in the future) is displayed in green to the student session list."
+    elif action == 'delete':
+        if not os.path.exists('Trash'):
+            os.mkdir('Trash')
+        dirname, filename = config.dirname.split('/')
+        dirname = f"Trash/{dirname}"
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
+        for extension in ('', '.cf', '.py', '.js'):
+            if os.path.exists(config.dirname + extension):
+                os.rename(config.dirname + extension, f'{dirname}/{filename}{extension}')
+        del utilities.CourseConfig.configs[config.dirname]
+        feedback = f"«{course}» moved to Trash directory."
 
     return await adm_home(request, feedback)
 

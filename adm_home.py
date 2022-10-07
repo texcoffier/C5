@@ -167,6 +167,9 @@ def display(): # pylint: disable=too-many-statements
         text.append('<td>')
         add_input('/adm/config/' + course.course + '/theme/', course.theme,
                   disable=not i_am_a_teacher)
+        text.append('<td>')
+        if i_am_a_teacher:
+            add_button('/adm/config/' + course.course + '/delete/', '🗑')
         text.append('</tr>\n')
     text.append('</table><p>')
     text.append('''
