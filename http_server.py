@@ -244,7 +244,7 @@ async def adm_config(request): # pylint: disable=too-many-branches
     course = request.match_info['course']
     config = utilities.CourseConfig.get(utilities.get_course(course))
     action = request.match_info['action']
-    value = request.match_info['value']
+    value = request.match_info.get('value', '')
     if value == 'now':
         value = time.strftime('%Y-%m-%d %H:%M:%S')
     if action == 'stop':
@@ -795,6 +795,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/home', adm_home),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/config/{course}/{action}/{value}', adm_config),
+                web.get('/adm/config/{course}/{action}/', adm_config),
                 web.get('/adm/c5/{action}/{value}', adm_c5),
                 web.get('/config/reload', config_reload),
                 web.get('/checkpoint/*', checkpoint_list),
