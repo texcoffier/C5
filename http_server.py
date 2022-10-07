@@ -539,7 +539,7 @@ async def checkpoint_list(request):
         TABLE TD, TABLE TH { border: 1px solid #AAA ; }
         </style>
         <table>
-        <tr><th>Course<th>Students<th>Waiting<th>Working<th>Done<th>With me</tr>
+        <tr><th>Course<th>Stud<br>ents<th>Wait<br>ing<th>Work<br>ing<th>Done<th>With me<th>Start date<th>Stop date</tr>
         '''
         ]
     utilities.CourseConfig.load_all_configs()
@@ -561,11 +561,7 @@ async def checkpoint_list(request):
                     done.append(student)
                 else:
                     waiting.append(student)
-        if session.login in course.teachers:
-            checkurl = f'''<a href="/checkpoint/{course.course}?ticket={session.ticket}"
-            >Checkpoint</a>'''
-        else:
-            checkurl = ' '.join(course.teachers)
+        # if session.login in course.teachers:
         content.append(f'''
         <tr>
         <td>{course.course}
@@ -574,7 +570,18 @@ async def checkpoint_list(request):
         <td>{len(working)}
         <td>{len(done)}
         <td>{len(with_me)}
-        <td>{checkurl}
+        <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
+        <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
+        <td {'style="background:#8F8"'
+             if course.start > "2001"
+             and course.stop < "2100"
+             and course.status('').startswith('running')
+             else ''}
+        >{'Exam' if course.checkpoint else ''}
+        <td><a href="/checkpoint/{course.course}?ticket={session.ticket}"
+            {'style="background:#8F8"' if course.highlight else ''}
+        >Checkpoint</a>
+        <td style="white-space: nowrap">{' '.join(course.teachers)}
         </tr>''')
     return web.Response(
         body=''.join(content),
