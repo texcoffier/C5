@@ -167,11 +167,21 @@ async def log(request):
         )
     data = urllib.request.unquote(post['line'])
     # Must do sanity check on logged data
-    utilities.student_log(course.dirname, session.login, data)
+    try:
+        json.loads(data)
+        bad_json = 0
+    except: # pylint: disable=bare-except
+        bad_json = 10
+    if bad_json:
+        utilities.student_log(
+            course.dirname, session.login, json.dumps([int(time.time()), ["HACK", data]]))
+    else:
+        utilities.student_log(course.dirname, session.login, data)
+
     if session.login in course.active_teacher_room:
         infos = course.active_teacher_room[session.login]
         infos[3] = int(time.time())
-        infos[4] += data.count('Blur')
+        infos[4] += data.count('"Blur"') + bad_json
         infos[5] += data.count('["answer",')
 
     return web.Response(
