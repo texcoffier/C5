@@ -263,8 +263,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Send a new job if free and update the screen"""
         if self.state == 'started':
             return # Compiler is running
-        if (self.options['automatic_compilation'] or self.compile_now
-           ) and self.source != self.old_source:
+        if (self.options['automatic_compilation'] and self.source != self.old_source
+            or self.compile_now):
+            print('compile')
             self.compile_now = False
             self.old_source = self.source # Do not recompile the same thing
             self.clear_highlight_errors()
@@ -316,9 +317,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def compilation_run(self):
         """Run one compilation"""
-        self.options['automatic_compilation'] = True
+        self.compile_now = True
         self.scheduler()
-        self.options['automatic_compilation'] = False
 
     def unlock_worker(self):
         """ Unlock worker on input waiting to finish MessageEvent"""
