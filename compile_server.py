@@ -10,6 +10,7 @@ import sys
 import atexit
 import signal
 import time
+import psutil
 import resource
 import websockets
 import utilities
@@ -88,14 +89,20 @@ class Process: # pylint: disable=too-many-instance-attributes
         """May ask for input"""
         # pylint: disable=cell-var-from-loop
         self.input_done = asyncio.Event()
+        process_info = psutil.Process(self.process.pid)
+        period = 0.1
         while True:
-            await asyncio.sleep(0.5)
-            print("TIMEOUT", self.process)
+            times = process_info.cpu_times()
+            before = times.user + times.system + times.children_user + times.children_system
+            await asyncio.sleep(period)
             if not self.process:
                 return
-            await self.websocket.send(json.dumps(['input', '']))
-            await self.input_done.wait()
-            self.input_done.clear()
+            times = process_info.cpu_times()
+            after = times.user + times.system + times.children_user + times.children_system
+            if after - before < period * 0.8:
+                await self.websocket.send(json.dumps(['input', '']))
+                await self.input_done.wait()
+                self.input_done.clear()
 
     async def runner(self):
         """Pass the process output to the socket"""

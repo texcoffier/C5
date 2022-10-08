@@ -572,7 +572,7 @@ ACTIONS = {
         sudo sh -c '
             set -e
             apt update
-            apt -y install astyle nginx certbot python3-websockets python3-ldap python3-aiohttp npm
+            apt -y install astyle nginx certbot python3-websockets python3-ldap python3-aiohttp python3-psutil npm
             apt -y upgrade
             # set-timezone Europe/Paris
             '
