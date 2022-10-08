@@ -561,6 +561,7 @@ def print_help():
    * open : launch web browser (second argument may be js|python|cpp|remote)
    * cp : copy local files to production ones
    * diff : compare local files to production ones
+   * getall : copy production course and logs into locals logs
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py | grep -v grep")
@@ -602,6 +603,9 @@ ACTIONS = {
         diff -u $I DIFF/$I
         done
         rm -rf DIFF
+        """,
+    'getall': f"""
+        ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -cf - COMPILE_*/' | tar -xf -
         """,
     'nginx': f"""#C5_ROOT
         sudo sh -c '
