@@ -107,8 +107,13 @@ class Process: # pylint: disable=too-many-instance-attributes
                 self.process.kill()
                 break
         if self.process:
+            return_value = await self.process.wait()
+            if return_value < 0:
+                more = f'\n⚠️{signal.strsignal(-return_value)}'
+            else:
+                more = ''
             await self.websocket.send(json.dumps(
-                ['return', "\nCode de fin d'exécution = " + str(await self.process.wait())]))
+                ['return', f"\nCode de fin d'exécution = {return_value}{more}"]))
             self.cleanup()
     async def compile(self, data):
         """Compile"""

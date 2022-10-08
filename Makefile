@@ -1,7 +1,7 @@
 
 PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 
-%.js:%.py compatibility.py compile.py question.py compile_*.py
+%.js:%.py compatibility.py compile.py question.py compile_[!s]*.py
 	@echo '$*.py → $*.js'
 	@case $* in \
 	COMPILE*) \
