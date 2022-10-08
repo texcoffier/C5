@@ -117,6 +117,8 @@ class Process: # pylint: disable=too-many-instance-attributes
             return_value = await self.process.wait()
             if return_value < 0:
                 more = f'\n⚠️{signal.strsignal(-return_value)}'
+                if return_value == -9:
+                    more += '\nVotre programme ne se termine pas,\navez-vous fait une boucle infinie ?'
             else:
                 more = ''
             await self.websocket.send(json.dumps(
