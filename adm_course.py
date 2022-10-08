@@ -15,7 +15,7 @@ except ValueError:
 MAX_WIDTH = 400
 SNAIL = 4
 
-def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+def analyse(http_server, debug): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Extract statistiques from log"""
     answered = []
     key_stroke = 0
@@ -39,7 +39,7 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
         line = eval(line) # pylint: disable=eval-used
         current_time = line[0]
         for cell in line[1:]:
-            if not isNaN(cell):
+            if type(cell) == "Number":
                 current_time += cell
                 continue
             if cell.toLowerCase:
@@ -116,6 +116,7 @@ TABLE TD { vertical-align: top; border: 1px solid #888; padding: 0px; white-spac
 TEXTAREA { border: 0px; min-height:10em; font-size:60%; width:10em; height:100% }
 BUTTON { width: 100% }
 E { font-family: emoji }
+TABLE TR:hover TD { background: #EEE }
 """]
     for i, color in enumerate(COLORS):
         text.append(
@@ -135,7 +136,7 @@ E { font-family: emoji }
     for login in students:
         print(login)
         student = STUDENTS[login]
-        cache[login] = analyse(student.http_server)
+        cache[login] = analyse(student.http_server, login == 'p2202699')
         for i, seconds in enumerate(cache[login]['time_sum']):
             if not question_times[i]:
                 question_times[i] = []
