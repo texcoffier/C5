@@ -666,18 +666,18 @@ async def checkpoint_student(request):
     if room == 'STOP':
         old[0] = 0
         utilities.student_log(course.dirname, student,
-                              f'[{seconds},[["checkpoint_stop",{repr(session.login)}]]]\n')
+                              f'[{seconds},["checkpoint_stop",{repr(session.login)}]]\n')
     elif room == 'RESTART':
         old[0] = 1
         old[1] = session.login
         utilities.student_log(course.dirname, student,
-                              f'[{seconds},[["checkpoint_restart",{repr(session.login)}]]]\n')
+                              f'[{seconds},["checkpoint_restart",{repr(session.login)}]]\n')
     elif room == 'EJECT':
         old[0] = 0
         old[1] = old[2] = ''
         old[3] = seconds # Make it bold for other teachers
         utilities.student_log(course.dirname, student,
-                              f'[{seconds},[["checkpoint_eject",{repr(session.login)}]]]\n')
+                              f'[{seconds},["checkpoint_eject",{repr(session.login)}]]\n')
     else:
         if old[1] == '':
             old[0] = 1 # A moved STOPed student must not be reactivated
@@ -685,7 +685,7 @@ async def checkpoint_student(request):
         old[2] = room
         utilities.student_log(
             course.dirname, student,
-            f'[{seconds},[["checkpoint_move",{repr(session.login)},"{room}"]]]\n')
+            f'[{seconds},["checkpoint_move",{repr(session.login)},"{room}"]]\n')
     course.record()
     return await update_browser_data(course)
 
