@@ -59,16 +59,13 @@ def do_post_data(dictionary, url, target=None):
     form.setAttribute("enctype", "multipart/form-data")
     form.setAttribute("encoding", "multipart/form-data") # For IE
     if not target:
-        target = document.getElementById('do_post_data')
-        if not target:
-            target = document.createElement("IFRAME")
-            target.id = 'do_post_data'
-            target.setAttribute('name', 'do_post_data')
-            target.style.position = 'absolute'
-            target.style.left = '-1000px'
-            document.body.appendChild(target)
-        target = 'do_post_data'
-    form.setAttribute("target", target)
+        target = document.createElement("IFRAME")
+        target.id = 'do_post_data' + millisecs()
+        target.setAttribute('name', target.id)
+        target.style.position = 'absolute'
+        target.style.left = '-1000px'
+        document.body.appendChild(target)
+    form.setAttribute("target", target.id)
 
     for key in dictionary:
         hiddenField = document.createElement("input")
