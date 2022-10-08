@@ -141,6 +141,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             if os.path.exists(self.filename.replace('.cf', '.js')):
                 self.record()
                 self.time = time.time()
+        except SyntaxError:
+            print(f"Invalid configuration file: {self.filename}", flush=True)
+            raise
         # Update old data structure
         for active_teacher_room in self.config['active_teacher_room'].values():
             if len(active_teacher_room) == 7:
