@@ -121,6 +121,12 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
             self.post('state', "stopped")
             return True
         try:
+            if not self.socket:
+                self.connect()
+                def retry():
+                    self.run_compiler(source)
+                setTimeout(retry, 100)
+                return 'Wait...'
             self.socket.send(JSON.stringify( # pylint: disable=undefined-variable
                 ['compile', [
                     self.config.COURSE,
