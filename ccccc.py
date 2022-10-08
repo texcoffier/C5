@@ -536,7 +536,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Key down"""
         if self.close_popup(event):
             return
-        if event.target.tagName == 'INPUT':
+        if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9'):
             return
         self.record(event.key)
         self.clear_highlight_errors()
