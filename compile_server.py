@@ -90,7 +90,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         # pylint: disable=cell-var-from-loop
         self.input_done = asyncio.Event()
         process_info = psutil.Process(self.process.pid)
-        period = 0.1
+        period = 0.2 # 0.1 does not works
         while True:
             times = process_info.cpu_times()
             before = times.user + times.system + times.children_user + times.children_system
@@ -99,7 +99,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 return
             times = process_info.cpu_times()
             after = times.user + times.system + times.children_user + times.children_system
-            if after - before < period * 0.8:
+            if process_info.is_running() and after - before < 0.01:
                 await self.websocket.send(json.dumps(['input', '']))
                 await self.input_done.wait()
                 self.input_done.clear()
