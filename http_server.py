@@ -9,7 +9,6 @@ import json
 import collections
 import tempfile
 import zipfile
-import html
 import asyncio
 import logging
 import ast
@@ -149,7 +148,7 @@ async def log(request):
     course = utilities.CourseConfig.get(utilities.get_course(post['course']))
     if not course.running(session.login, session.client_ip):
         return web.Response(
-            body=r"""
+            body=r"""<!DOCTYPE html>
             <script>
             alert("Ce que vous faites n'est plus enregistré :\n"
                   + "  * L'examen est terminé\n"
@@ -158,6 +157,7 @@ async def log(request):
                  )
             </script>""",
             content_type="text/html",
+            charset='utf-8',
             headers={
                 "Cross-Origin-Opener-Policy": "same-origin",
                 "Cross-Origin-Embedder-Policy": "require-corp",
@@ -173,7 +173,17 @@ async def log(request):
         infos[3] = int(time.time())
         infos[4] += data.count('Blur')
         infos[5] += data.count('["answer",')
-    return File('favicon.ico').response()
+
+    return web.Response(
+        body="<!DOCTYPE html>\n<script>window.parent.ccccc.record_done()</script>",
+        content_type="text/html",
+        charset='utf-8',
+        headers={
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp",
+            'Cache-Control': 'no-cache',
+        }
+    )
 
 async def load_student_infos():
     """Load all student info in order to answer quickly"""

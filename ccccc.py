@@ -100,6 +100,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     record_to_send = []
     record_last_time = 0
     record_start = 0
+    last_record_to_send = []
     popup_done = False
     compile_now = False
     editor_lines = []
@@ -441,8 +442,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     'course': self.course,
                     'line': encodeURIComponent(JSON.stringify(self.record_to_send) + '\n'),
                 }, 'log?ticket=' + TICKET)
+            self.last_record_to_send = self.record_to_send
             self.record_to_send = []
             self.record_last_time = 0
+
+    def record_done(self):
+        """The server saved the recorded value"""
+        for item in self.last_record_to_send:
+            if item[0] == 'save':
+                self.save_button.style.transition = 'transform 1s, opacity 1s'
+                self.save_button.style.transform = 'scale(1)'
+                self.save_button.style.opacity = 1
+                if self.do_stop:
+                    record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
+                    self.options['close'] = ''
+                    document.body.innerHTML = self.options['stop_done']
 
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
@@ -615,11 +629,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_button.style.transition = ''
             self.save_button.style.transform = 'scale(8)'
             self.save_button.style.opacity = 0.1
-            def stop():
-                self.save_button.style.transition = 'transform 1s, opacity 1s'
-                self.save_button.style.transform = 'scale(1)'
-                self.save_button.style.opacity = 1
-            setTimeout(stop, 100)
             self.record(['save', self.current_question, self.source], send_now=True)
             self.worker.postMessage(['source', self.current_question, self.source])
             self.last_answer[self.current_question] = self.source
@@ -637,10 +646,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def stop(self):
         """The student stop its session"""
         if confirm(self.options['stop_confirm']):
-            self.save()
-            record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP')
-            self.options['close'] = ''
-            document.body.innerHTML = self.options['stop_done']
+            self.do_stop = True
+            if not self.save():
+                record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
 
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
         """Interprete messages from the worker: update self.messages"""
