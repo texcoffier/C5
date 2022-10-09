@@ -113,8 +113,10 @@ class Process: # pylint: disable=too-many-instance-attributes
             if size > 10000: # Maximum allowed output
                 self.process.kill()
                 break
+            self.log(("RUN", line))
         if self.process:
             return_value = await self.process.wait()
+            self.log(("EXIT", return_value))
             if return_value < 0:
                 more = f'\n⚠️{signal.strsignal(-return_value)}'
                 if return_value == -9:
@@ -157,6 +159,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             else:
                 stderr = stderr.decode('utf-8')
         await self.websocket.send(json.dumps(['compiler', stderr]))
+        self.log(("ERRORS", stderr.count(': error:'), stderr.count(': warning:')))
         os.unlink(self.source_file)
     async def indent(self, data):
         """Indent"""
