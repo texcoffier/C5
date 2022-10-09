@@ -199,21 +199,22 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             active_teacher_room = self.active_teacher_room[login] = [
                 0, '', '', now, 0, 0, client_ip, 0]
             self.record()
-            student_log(self.dirname, login,
-                        f'[{now},["checkpoint_in",{repr(client_ip)}]]\n')
+            to_log = [now, ["checkpoint_in", client_ip]]
         elif client_ip and client_ip != active_teacher_room[6]:
             # Student IP changed
             if self.checkpoint:
                 # Undo checkpointing
                 active_teacher_room[6] = client_ip # Update
                 active_teacher_room[0] = 0
-                student_log(self.dirname, login,
-                            f'[{now},["checkpoint_ip_change_eject",{repr(client_ip)}]]\n')
+                to_log = [now, ["checkpoint_ip_change_eject", client_ip]]
             else:
                 # No checkpoint: so allows the room change
                 active_teacher_room[6] = client_ip # Update
-                student_log(self.dirname, login,
-                            f'[{now},["checkpoint_ip_change",{repr(client_ip)}]]\n')
+                to_log = [now, ["checkpoint_ip_change", client_ip]]
+        else:
+            to_log = None
+        if to_log:
+            student_log(self.dirname, login, json.dumps(to_log) + '\n')
         return active_teacher_room
 
     def status(self, login, client_ip=None): # pylint: disable: too-many-return-statements

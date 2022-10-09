@@ -94,7 +94,7 @@ def handle(base=''):
                 course = utilities.CourseConfig.get(utilities.get_course(filename[1:]))
                 if not course.dirname:
                     return session.message('unknown')
-                answers = get_answers(course.dirname, session.login, saved=True)
+                answers, _blurs = get_answers(course.dirname, session.login, saved=True)
                 for key, value in answers.items():
                     for _source, answer in value:
                         if answer == 1:
@@ -456,19 +456,27 @@ async def adm_get(request):
 def get_answers(course, user, saved=False):
     """Get question answers"""
     answers = collections.defaultdict(list)
+    blurs = collections.defaultdict(int)
     try:
         with open(f'{course}/{user}/http_server.log') as file:
             for line in file:
-                if ',["answer",' in line  or  saved and ',["save",' in line:
+                line = line.strip()
+                if line:
                     for cell in json.loads(line)[1:]:
                         if isinstance(cell, list):
-                            if cell[0] == 'answer':
+                            what = cell[0]
+                            if what == 'answer':
                                 answers[cell[1]].append([cell[2], 1])
-                            elif saved and cell[0] == 'save':
+                            elif what == 'question':
+                                question = cell[1]
+                            elif saved and what == 'save':
                                 answers[cell[1]].append([cell[2], 0])
+                        elif isinstance(cell, str):
+                            if cell == 'Blur':
+                                blurs[question] += 1
     except IOError:
-        return {}
-    return answers
+        return {}, {}
+    return answers, blurs
 
 async def adm_answers(request):
     """Get students answers"""
@@ -477,20 +485,35 @@ async def adm_answers(request):
     saved = int(request.match_info['saved'])
     assert '/.' not in course and course.endswith('.zip')
     course = utilities.get_course(course[:-4])
+    config = utilities.CourseConfig(course)
     fildes, filename = tempfile.mkstemp()
+    if course.startswith('SQL'):
+        comment = '-- '
+    elif course.startswith('PYTHON'):
+        comment = '# '
+    else:
+        comment = '// '
     try:
         zipper = zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w")
         for user in sorted(os.listdir(course)):
             await asyncio.sleep(0)
-            answers = get_answers(course, user, saved)
+            answers, blurs = get_answers(course, user, saved)
             if answers:
+                infos = config.active_teacher_room.get(user)
+                building, pos_x, pos_y, version = ((infos[2] or '?') + ',?,?,?').split(',')[:4]
+                version = version.upper()
+                where = f'Surveillant: {infos[1]}, {building} {pos_x}×{pos_y}, Version: {version}'
                 zipper.writestr(
                     f'{course}/{user}#answers',
-                    ''.join(
-                        '#' * 80 + '\n###################    '
-                        + f'{user}     Question {question+1}     Answer {i+1}   Good {answer[1]}\n'
-                        + '#' * 80 + '\n'
-                        + answer[0] + '\n'
+                    ''.join(f"""
+{comment} ##################################################################
+{comment} {where}
+{comment} {f'Nombre de pertes de focus : {blurs[question]}' if blurs[question] else ''}
+{comment} {user}     Question {question+1}     Answer {i+1}   Good {answer[1]}
+{comment} ##################################################################
+
+{answer[0]}
+"""
                         for question in sorted(answers)
                         for i, answer in enumerate(answers[question])),
                     )
@@ -675,27 +698,23 @@ async def checkpoint_student(request):
     old = course.active_teacher_room[student]
     if room == 'STOP':
         old[0] = 0
-        utilities.student_log(course.dirname, student,
-                              f'[{seconds},["checkpoint_stop",{repr(session.login)}]]\n')
+        to_log = [seconds, ["checkpoint_stop", session.login]]
     elif room == 'RESTART':
         old[0] = 1
         old[1] = session.login
-        utilities.student_log(course.dirname, student,
-                              f'[{seconds},["checkpoint_restart",{repr(session.login)}]]\n')
+        to_log = [seconds, ["checkpoint_restart", session.login]]
     elif room == 'EJECT':
         old[0] = 0
         old[1] = old[2] = ''
         old[3] = seconds # Make it bold for other teachers
-        utilities.student_log(course.dirname, student,
-                              f'[{seconds},["checkpoint_eject",{repr(session.login)}]]\n')
+        to_log = [seconds, ["checkpoint_eject", session.login]]
     else:
         if old[1] == '':
             old[0] = 1 # A moved STOPed student must not be reactivated
         old[1] = session.login
         old[2] = room
-        utilities.student_log(
-            course.dirname, student,
-            f'[{seconds},["checkpoint_move",{repr(session.login)},"{room}"]]\n')
+        to_log = [seconds, ["checkpoint_move", session.login, room]]
+    utilities.student_log(course.dirname, student, json.dumps(to_log) + '\n')
     course.record()
     return await update_browser_data(course)
 
