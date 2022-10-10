@@ -96,7 +96,7 @@ def handle(base=''):
                     return session.message('unknown')
                 answers, _blurs = get_answers(course.dirname, session.login, saved=True)
                 for key, value in answers.items():
-                    for _source, answer in value:
+                    for _source, answer, _time in value:
                         if answer == 1:
                             value[-1][1] = 1 # Correct answer even if changed after
                             break
@@ -459,24 +459,42 @@ def get_answers(course, user, saved=False):
     blurs = collections.defaultdict(int)
     try:
         with open(f'{course}/{user}/http_server.log') as file:
+            question = 0
             for line in file:
                 line = line.strip()
                 if line:
-                    for cell in json.loads(line)[1:]:
+                    seconds = 0
+                    for cell in json.loads(line):
                         if isinstance(cell, list):
                             what = cell[0]
                             if what == 'answer':
-                                answers[cell[1]].append([cell[2], 1])
+                                answers[cell[1]].append([cell[2], 1, seconds])
                             elif what == 'question':
                                 question = cell[1]
                             elif saved and what == 'save':
-                                answers[cell[1]].append([cell[2], 0])
+                                answers[cell[1]].append([cell[2], 0, seconds])
                         elif isinstance(cell, str):
                             if cell == 'Blur':
                                 blurs[question] += 1
+                        else:
+                            seconds += cell
     except IOError:
         return {}, {}
     return answers, blurs
+
+
+def get_compiled(course, student):
+    """Returns a dict with last version of each compiled question"""
+    d = {}
+    try:
+        with open(f'{course.dirname}/{student}/compile_server.log') as file:
+            for line in file:
+                if "('COMPILE'," in line:
+                    line = ast.literal_eval(line)
+                    d[line[2][1][1]] = [line[0], line[2][1][6]]
+    except (IndexError, FileNotFoundError):
+        pass
+    return d
 
 async def adm_answers(request):
     """Get students answers"""
@@ -498,6 +516,7 @@ async def adm_answers(request):
         for user in sorted(os.listdir(course)):
             await asyncio.sleep(0)
             answers, blurs = get_answers(course, user, saved)
+            compiled = get_compiled(config, user)
             if answers:
                 infos = config.active_teacher_room.get(user)
                 building, pos_x, pos_y, version = ((infos[2] or '?') + ',?,?,?').split(',')[:4]
@@ -509,13 +528,26 @@ async def adm_answers(request):
 {comment} ##################################################################
 {comment} {where}
 {comment} {f'Nombre de pertes de focus : {blurs[question]}' if blurs[question] else ''}
-{comment} {user}     Question {question+1}     Answer {i+1}   Good {answer[1]}
+{comment} {user}     Question {question+1}   Good {answer[1]}
+{comment} Date sauvegarde : {time.ctime(answer[2])}
 {comment} ##################################################################
 
 {answer[0]}
+
+{
+ f'''{comment} --------------------------------------------------------------
+{comment} Date compilation : {time.ctime(compiled[question][0])}
+{comment} --------------------------------------------------------------
+
+{compiled[question][1]}
+ '''
+ if question in compiled
+    and compiled[question][0] > answer[2]
+    and compiled[question][1].strip() != answer[0].strip()
+ else ''}
 """
                         for question in sorted(answers)
-                        for i, answer in enumerate(answers[question])),
+                        for answer in answers[question][-1:]),
                     )
         zipper.close()
         with open(filename, 'rb') as file:
