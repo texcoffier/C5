@@ -107,7 +107,10 @@ class Process: # pylint: disable=too-many-instance-attributes
     async def runner(self):
         """Pass the process output to the socket"""
         size = 0
-        async for line in self.process.stdout:
+        while True:
+            line = await self.process.stdout.read(10000)
+            if not line:
+                break
             await self.websocket.send(json.dumps(['executor', line.decode("utf-8")]))
             size += len(line)
             if size > 10000: # Maximum allowed output
