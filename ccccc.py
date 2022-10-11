@@ -511,20 +511,23 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         self.record('MouseDown')
         self.editor.focus()
-    def oncopy(self, event):
+    def oncopy(self, event, what='Copy'):
         """Copy"""
         if self.options['allow_copy_paste']:
-            self.record('Copy')
+            self.record(what)
             return
         text = window.getSelection().toString().replace(RegExp('\r', 'g'), '')
         if text.strip() not in self.source and text not in self.question.innerText:
-            self.record('CopyRejected')
+            self.record(what + 'Rejected')
             self.popup_message(self.options['forbiden'])
             event.preventDefault(True)
             return
-        self.record('CopyAllowed')
+        self.record(what + 'Allowed')
         self.copied = text
-
+    def oncut(self, event):
+        """Cut"""
+        self.oncopy(event, 'Cut')
+        setTimeout(bind(self.coloring, self), 100)
     def insert_text(self, event, text):
         """Insert the pasted text"""
         self.overlay_hide()
@@ -793,7 +796,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.top = document.createElement('DIV')
         self.top.onmousedown = bind(self.onmousedown, self)
         self.top.oncopy = bind(self.oncopy, self)
-        self.top.oncut = bind(self.oncopy, self)
+        self.top.oncut = bind(self.oncut, self)
         self.top.onpaste = bind(self.onpaste, self)
         self.top.ondrop = bind(self.onpaste, self)
         self.top.onkeydown = bind(self.onkeydown, self)

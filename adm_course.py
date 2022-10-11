@@ -22,6 +22,8 @@ def analyse(http_server, debug): # pylint: disable=too-many-locals,too-many-bran
     mouse_click = 0
     copy_bad = 0
     copy_ok = 0
+    cut_bad = 0
+    cut_ok = 0
     paste_bad = 0
     paste_ok = 0
     nr_answered = 0
@@ -47,12 +49,16 @@ def analyse(http_server, debug): # pylint: disable=too-many-locals,too-many-bran
                     mouse_click += 1
                 elif cell == 'CopyRejected':
                     copy_bad += 1
+                elif cell == 'CutRejected':
+                    cut_bad += 1
                 elif cell == 'PasteRejected':
                     paste_bad += 1
                 elif cell.startswith('Paste'):
                     paste_ok += 1
                 elif cell.startswith('Copy'):
                     copy_ok += 1
+                elif cell.startswith('Cut'):
+                    cut_ok += 1
                 elif cell.startswith('Blur'):
                     nr_blurs += 1
                 else:
@@ -87,6 +93,7 @@ def analyse(http_server, debug): # pylint: disable=too-many-locals,too-many-bran
     return {'questions': text, 'key_stroke': key_stroke, 'mouse_click': mouse_click,
             'copy_bad': copy_bad, 'copy_ok': copy_ok,
             'paste_bad': paste_bad, 'paste_ok': paste_ok,
+            'cut_bad': cut_bad, 'cut_ok': cut_ok,
             'nr_answered': nr_answered,
             'nr_blurs': nr_blurs,
             'time_sum': time_sum,
@@ -94,7 +101,7 @@ def analyse(http_server, debug): # pylint: disable=too-many-locals,too-many-bran
            }
 
 WHAT = ['nr_answered', 'time', 'key_stroke', 'mouse_click',
-        'copy_ok', 'copy_bad', 'paste_ok', 'paste_bad', 'nr_blurs'
+        'copy_ok', 'copy_bad', 'cut_ok', 'cut_bad', 'paste_ok', 'paste_bad', 'nr_blurs'
        ]
 
 COLORS = ["888", "F44", "FF0", "0F0", "0FF", "88F", "F0F", "CCC"]
@@ -128,7 +135,7 @@ TABLE TR:hover TD { background: #EEE }
 <p>
 <table border>
     <tr><th>Login<th>Time<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Time<br>in sec.<th>Keys
-        <th>Mouse<th>Copy<th>Copy<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Time per question<br>
+        <th>Mouse<th>Copy<th>Copy<br>Fail<th>Cut<th>Cut<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Time per question<br>
         <E>🐌</E> : clipped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
 """)
     cache = {}
