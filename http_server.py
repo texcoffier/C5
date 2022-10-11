@@ -505,12 +505,21 @@ async def adm_answers(request):
     course = utilities.get_course(course[:-4])
     config = utilities.CourseConfig(course)
     fildes, filename = tempfile.mkstemp()
-    if course.startswith('SQL'):
+    if config.compiler == 'SQL':
         comment = '-- '
-    elif course.startswith('PYTHON'):
+        extension = 'sql'
+    elif config.compiler == 'PYTHON':
         comment = '# '
+        extension = 'py'
+    elif config.compiler in ('REMOTE', 'CPP'):
+        comment = '//'
+        extension = 'cpp'
+    elif config.compiler == 'JS':
+        comment = '//'
+        extension = 'js'
     else:
         comment = '// '
+        extension = config.compiler
     try:
         zipper = zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w")
         for user in sorted(os.listdir(course)):
@@ -523,9 +532,10 @@ async def adm_answers(request):
                 version = version.upper()
                 where = f'Surveillant: {infos[1]}, {building} {pos_x}×{pos_y}, Version: {version}'
                 zipper.writestr(
-                    f'{course}/{user}#answers',
+                    f'{course}/{user}#answers.{extension}',
                     ''.join(f"""
 {comment} ##################################################################
+{comment} {config.session}
 {comment} {where}
 {comment} {f'Nombre de pertes de focus : {blurs[question]}' if blurs[question] else ''}
 {comment} {user}     Question {question+1}   Good {answer[1]}

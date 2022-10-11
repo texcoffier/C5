@@ -99,6 +99,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             self.dirname = ''
             return
         self.course = course.replace('COMPILE_', '').replace('/', '=')
+        self.compiler, self.session = self.course.split('=', 1)
         self.filename = course + '.cf'
         self.dirname = course
         self.time = 0
