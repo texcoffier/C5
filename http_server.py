@@ -106,7 +106,8 @@ def handle(base=''):
                     stop = course.get_stop(session.login)
                 else:
                     stop = ''
-                if not session.is_admin():
+                is_admin = session.is_admin(course)
+                if not is_admin:
                     if status == 'done':
                         return session.message('done')
                     if status == 'pending':
@@ -121,7 +122,7 @@ def handle(base=''):
                     <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
                     <script>
                         SOCK = "wss://{utilities.C5_WEBSOCKET}";
-                        ADMIN = "{int(session.is_admin())}";
+                        ADMIN = "{int(is_admin)}";
                         STOP = "{stop}";
                         CP = {course.config['copy_paste']};
                         SAVE_UNLOCK = {int(course.config['save_unlock'])};
@@ -136,7 +137,7 @@ def handle(base=''):
                 course = utilities.CourseConfig.get(utilities.get_course(filename))
                 filename = course.filename.replace('.cf', '.js')
                 status = course.status(login, session.client_ip)
-                if not session.is_admin() and not status.startswith('running'):
+                if not session.is_admin(course) and not status.startswith('running'):
                     return session.message('done')
         return File.get(filename).response()
     return real_handle

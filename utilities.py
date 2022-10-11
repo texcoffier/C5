@@ -452,8 +452,10 @@ class Session:
         if not session.login:
             await session.get_login(str(request.url).split('?')[0])
         return session
-    def is_admin(self):
-        """The user is admin"""
+    def is_admin(self, course=None):
+        """The user is C5 admin or course admin"""
+        if course and self.login in course.teachers:
+            return True
         return CONFIG.is_admin(self.login)
     def is_student(self):
         """The user is a student"""
