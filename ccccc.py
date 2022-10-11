@@ -19,6 +19,7 @@ try:
     bind = bind
     hljs = hljs
     window = window
+    screen = screen
     confirm = confirm
     millisecs = millisecs
     html = html
@@ -80,7 +81,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
     index = reset_button = popup_element = save_button = local_button = line_numbers = None
-    stop_button = None
+    stop_button = fullscreen = None
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -248,6 +249,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.stop_button.onclick = bind(self.stop, self)
         self.local_button.onclick = bind(self.save_local, self)
 
+        self.fullscreen = document.createElement('DIV')
+        self.fullscreen.className = 'fullscreen'
+        self.fullscreen.innerHTML = """Appuyez sur la touche F11 pour passer en plein écran.<br>
+        <small>Mettez le curseur sur <span>⏱</span> pour voir le temps restant</small>
+        """
+        self.top.appendChild(self.fullscreen)
+
     def save_local(self):
         """Save the source on a local file"""
         bb = eval('new Blob([' + JSON.stringify(self.source) + '], {"type": "text/plain"})')
@@ -259,6 +267,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def scheduler(self): # pylint: disable=too-many-branches
         """Send a new job if free and update the screen"""
+        if not self.options['allow_copy_paste'] and screen.height != max(window.innerHeight, window.outerHeight):
+            self.fullscreen.style.display = 'block'
+        else:
+            self.fullscreen.style.display = 'none'
+
         if self.state == 'started':
             return # Compiler is running
         if (self.options['automatic_compilation'] and self.source != self.old_source

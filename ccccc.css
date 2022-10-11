@@ -257,4 +257,23 @@ H2:hover .timer SPAN {
     padding: 2em;
 }
 
+.fullscreen {
+    position: fixed;
+    right: 0px;
+    bottom: 0px;
+    display: none;
+    background: #F00;
+    color: #FFF;
+    font-size: 100%;
+    padding: 0.5em;
+}
+.fullscreen SPAN {
+    color: #000;
+    background: #DFD;
+    border-radius: 0.5em;
+    border: 1px solid #0F0;
+    padding: 0.2em;
+}
+
+
 LABEL, .index DIV, .save_button, .reset_button, .local_button { cursor: pointer }
