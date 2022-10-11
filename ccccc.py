@@ -735,7 +735,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         span.focus()
                 self.input_index += 1
             else:
-                span = document.createElement('SPAN')
+                span = document.createElement('DIV')
                 # The first space is replaced by an unsecable space
                 # in order to display it on span start <span> foo</span>
                 span.innerHTML = value.replace(' ', ' ')

@@ -26,6 +26,15 @@ DIV.tester {
     overflow: auto;
 }
 
+DIV.question > DIV:first-child,
+DIV.tester > DIV:first-child,
+DIV.compiler > DIV:first-child,
+DIV.executor > DIV:first-child
+{
+    position: sticky;
+    top: 0px;
+}
+
 .error,
 .warning {
     position: absolute;
@@ -116,8 +125,6 @@ H2 {
     padding-left: 0.5em;
     padding-top: 0.3em;
     padding-bottom: 0.3em;
-    position: sticky;
-    top: 0px;
     background: linear-gradient(#0002, #FFFF, #0002);
     border-radius: 1em;
 }
