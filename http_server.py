@@ -626,6 +626,56 @@ async def config_reload(request):
         headers={'Cache-Control': 'no-cache'}
     )
 
+def checkpoint_line(session, course, content):
+    """A line in the checkpoint table"""
+    waiting = []
+    working = []
+    with_me = []
+    done = []
+    for student, active_teacher_room in course.active_teacher_room.items():
+        if active_teacher_room[0]:
+            working.append(student)
+            if active_teacher_room[1] == session.login:
+                with_me.append(student)
+        else:
+            if active_teacher_room[2]:
+                done.append(student)
+            else:
+                waiting.append(student)
+    # if session.login in course.teachers:
+    content.append(f'''
+    <tr>
+    <td>{course.course}
+    <td>{len(course.active_teacher_room)}
+    <td>{len(waiting)}
+    <td>{len(working)}
+    <td>{len(done)}
+    <td>{len(with_me)}
+    <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
+    <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
+    <td {'style="background:#8F8"'
+            if course.start > "2001"
+            and course.stop < "2100"
+            and course.status('').startswith('running')
+            else ''}
+    >{'Exam' if course.checkpoint else ''}
+    <td><a href="/checkpoint/{course.course}?ticket={session.ticket}"
+        {'style="background:#8F8"' if course.highlight else ''}
+    >Checkpoint</a>
+    <td style="white-space: nowrap">{' '.join(course.teachers)}
+    </tr>''')
+
+def checkpoint_table(session, courses, test, content):
+    """A checkpoint table"""
+    content.append('''
+        <table>
+        <tr><th>Course<th>Stud<br>ents<th>Wait<br>ing<th>Work<br>ing<th>Done<th>With me<th>Start date<th>Stop date</tr>
+        ''')
+    for course in courses:
+        if test(course):
+            checkpoint_line(session, course, content)
+    content.append('</table>')
+
 async def checkpoint_list(request):
     """Liste all checkpoints"""
     session = await utilities.Session.get(request)
@@ -636,51 +686,25 @@ async def checkpoint_list(request):
         TABLE { border-collapse: collapse }
         TABLE TD, TABLE TH { border: 1px solid #AAA ; }
         </style>
-        <table>
-        <tr><th>Course<th>Stud<br>ents<th>Wait<br>ing<th>Work<br>ing<th>Done<th>With me<th>Start date<th>Stop date</tr>
-        '''
-        ]
+        ''']
     utilities.CourseConfig.load_all_configs()
     now = time.time()
-    for _course_name, course in sorted(utilities.CourseConfig.configs.items()):
-        if now > course.stop_tt_timestamp:
-            continue # Exam done
-        waiting = []
-        working = []
-        with_me = []
-        done = []
-        for student, active_teacher_room in course.active_teacher_room.items():
-            if active_teacher_room[0]:
-                working.append(student)
-                if active_teacher_room[1] == session.login:
-                    with_me.append(student)
-            else:
-                if active_teacher_room[2]:
-                    done.append(student)
-                else:
-                    waiting.append(student)
-        # if session.login in course.teachers:
-        content.append(f'''
-        <tr>
-        <td>{course.course}
-        <td>{len(course.active_teacher_room)}
-        <td>{len(waiting)}
-        <td>{len(working)}
-        <td>{len(done)}
-        <td>{len(with_me)}
-        <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
-        <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
-        <td {'style="background:#8F8"'
-             if course.start > "2001"
-             and course.stop < "2100"
-             and course.status('').startswith('running')
-             else ''}
-        >{'Exam' if course.checkpoint else ''}
-        <td><a href="/checkpoint/{course.course}?ticket={session.ticket}"
-            {'style="background:#8F8"' if course.highlight else ''}
-        >Checkpoint</a>
-        <td style="white-space: nowrap">{' '.join(course.teachers)}
-        </tr>''')
+    courses = [
+        course
+        for _course_name, course in sorted(utilities.CourseConfig.configs.items())
+        ]
+    content.append("<h2>Pas encore commencé</h2>")
+    checkpoint_table(session, courses,
+        lambda course: now < course.start_timestamp,
+        content)
+    content.append("<h2>En cours</h2>")
+    checkpoint_table(session, courses,
+        lambda course: now > course.start_timestamp and now < course.stop_tt_timestamp,
+        content)
+    content.append("<h2>Terminé</h2>")
+    checkpoint_table(session, courses,
+        lambda course: now > course.stop_tt_timestamp,
+        content)
     return web.Response(
         body=''.join(content),
         content_type='text/html',
