@@ -16,6 +16,7 @@ try:
     setInterval = setInterval
     setTimeout = setTimeout
     Number = Number
+    RegExp = RegExp
     bind = bind
     hljs = hljs
     window = window
@@ -515,7 +516,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.options['allow_copy_paste']:
             self.record('Copy')
             return
-        text = window.getSelection().toString()
+        text = window.getSelection().toString().replace(RegExp('\r', 'g'), '')
         if text.strip() not in self.source and text not in self.question.innerText:
             self.record('CopyRejected')
             self.popup_message(self.options['forbiden'])
@@ -537,6 +538,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onpaste(self, event):
         """Mouse down"""
         text = (event.clipboardData or event.dataTransfer).getData("text")
+        text = text.replace(RegExp('\r', 'g'), '')
         if self.options['allow_copy_paste']:
             self.record('Paste')
             self.insert_text(event, text)
