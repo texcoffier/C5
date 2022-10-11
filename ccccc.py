@@ -291,6 +291,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     delta = str(delta) + ' ' + opts['time_seconds']
                     if timer.className != 'done':
                         timer.className = "minus60"
+                elif delta < 120:
+                    delta = mins + opts['time_m'] + secs
+                    if timer.className != 'done':
+                        timer.className = "minus120"
                 elif delta < 3600:
                     if delta < 300 and timer.className != 'done':
                         timer.className = "minus300"

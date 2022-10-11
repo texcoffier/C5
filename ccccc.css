@@ -233,6 +233,9 @@ H2:hover .timer SPAN {
     visibility: visible;
 }
 .timer .minus60 {
+    font-size: 200%;
+}
+.timer .minus120, .timer .minus60 {
     color: #F00;
     visibility: visible;
 }
