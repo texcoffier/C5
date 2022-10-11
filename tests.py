@@ -365,7 +365,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.select_all()
         self.control('v')
         self.control('v')
-        self.check('.executor', {'innerText': Contains('court\nJe')})
+        self.check('.executor', {'innerText': Contains('court\n\nJe')})
     def test_question_index(self):
         """Test question index"""
         self.load_page('=JS=introduction')
