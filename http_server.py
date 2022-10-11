@@ -497,6 +497,39 @@ def get_compiled(course, student):
         pass
     return d
 
+def question_source(config, comment, where, user, question, answers, compiled, blurs):
+    """Nice source content"""
+    content = [
+        f"""
+{comment} ##################################################################
+{comment} {config.session}
+{comment} {where}
+{comment} {f'Nombre de pertes de focus : {blurs[question]}' if blurs[question] else ''}
+{comment} {user}     Question {question+1}
+{comment} ##################################################################"""]
+
+    answer = answers.get(question, (None,))[-1] # Only last answer
+    if answer:
+        content.append(f"""
+{comment} Date sauvegarde : {time.ctime(answer[2])}
+{comment} ##################################################################
+
+{answer[0]}
+""")
+
+    if question in compiled:
+        source = compiled[question]
+        if not answer or source[0] > answer[2] and source[1].strip() != answer[0].strip():
+            content.append(f'''
+{comment} --------------------------------------------------------------
+{comment} Date compilation : {time.ctime(source[0])}
+{comment} --------------------------------------------------------------
+
+{source[1]}
+''')
+
+    return ''.join(content)
+
 async def adm_answers(request):
     """Get students answers"""
     _session = await get_admin_login(request)
@@ -527,39 +560,18 @@ async def adm_answers(request):
             await asyncio.sleep(0)
             answers, blurs = get_answers(course, user, saved)
             compiled = get_compiled(config, user)
-            if answers:
-                infos = config.active_teacher_room.get(user)
-                building, pos_x, pos_y, version = ((infos[2] or '?') + ',?,?,?').split(',')[:4]
-                version = version.upper()
-                where = f'Surveillant: {infos[1]}, {building} {pos_x}×{pos_y}, Version: {version}'
+            infos = config.active_teacher_room.get(user)
+            building, pos_x, pos_y, version = ((infos[2] or '?') + ',?,?,?').split(',')[:4]
+            version = version.upper()
+            where = f'Surveillant: {infos[1]}, {building} {pos_x}×{pos_y}, Version: {version}'
+            questions = sorted(set(answers) | set(compiled))
+            if questions:
                 zipper.writestr(
                     f'{course}/{user}#answers.{extension}',
-                    ''.join(f"""
-{comment} ##################################################################
-{comment} {config.session}
-{comment} {where}
-{comment} {f'Nombre de pertes de focus : {blurs[question]}' if blurs[question] else ''}
-{comment} {user}     Question {question+1}   Good {answer[1]}
-{comment} Date sauvegarde : {time.ctime(answer[2])}
-{comment} ##################################################################
-
-{answer[0]}
-
-{
- f'''{comment} --------------------------------------------------------------
-{comment} Date compilation : {time.ctime(compiled[question][0])}
-{comment} --------------------------------------------------------------
-
-{compiled[question][1]}
- '''
- if question in compiled
-    and compiled[question][0] > answer[2]
-    and compiled[question][1].strip() != answer[0].strip()
- else ''}
-"""
-                        for question in sorted(answers)
-                        for answer in answers[question][-1:]),
-                    )
+                    ''.join(
+                        question_source(config, comment, where, user, question, answers, compiled, blurs)
+                        for question in questions
+                    ))
         zipper.close()
         with open(filename, 'rb') as file:
             data = file.read()
