@@ -1119,6 +1119,7 @@ def create_page(building_name):
         <div id="spy"></div>
         ''']
     document.body.innerHTML = ''.join(content)
+    document.body.onkeydown = key_event_handler
 
 def send_alert():
     """Sent an on map alert message to all teachers"""
@@ -1162,6 +1163,11 @@ def open_exam(login):
 def spy_close():
     """Close the student source code"""
     document.getElementById('spy').style.display = 'none'
+
+def key_event_handler(event):
+    """The spy popup receive a keypress"""
+    if event.key == 'Escape':
+        spy_close()
 
 def spy_cursor(source):
     if not spy.sources[0]:
