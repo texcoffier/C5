@@ -12,6 +12,7 @@ alert = alert # pylint: disable=undefined-variable
 document = document # pylint: disable=undefined-variable
 TICKET = TICKET # pylint: disable=undefined-variable
 update_page = update_page # pylint: disable=undefined-variable
+JSON = JSON # pylint: disable=undefined-variable
 
 def str(txt): # pylint: disable=redefined-builtin
     """Python like"""
@@ -63,3 +64,16 @@ def record(action):
         # There is no update_page for the student interface
         pass
     document.body.append(script)
+
+def parse_grading(history):
+    """Get grading dictionary from text history"""
+    grading = {}
+    if not history:
+        return grading
+    d = Date()
+    for line in history.split('\n'):
+        if line:
+            line = JSON.parse(line)
+            d.setTime(line[0]*1000)
+            grading[line[2]] = [line[3], d + '\n' + line[1]]
+    return grading

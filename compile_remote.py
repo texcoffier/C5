@@ -125,7 +125,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
                 self.connect()
                 def retry():
                     self.run_compiler(source)
-                setTimeout(retry, 100)
+                setTimeout(retry, 1000)
                 return eval("function _() {}") # pylint: disable=eval-used
             self.socket.send(JSON.stringify( # pylint: disable=undefined-variable
                 ['compile', [

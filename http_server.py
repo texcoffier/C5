@@ -82,33 +82,55 @@ class File:
             cls.file_cache[filename] = File(filename)
         return cls.file_cache[filename]
 
-def editor(session, is_admin, course, login):
-    """Return the editor page"""
-    answers, _blurs = get_answers(course.dirname, session.login, saved=True)
+async def editor(session, is_admin, course, login, saved):
+    """Return the editor page
+        saved :
+            0: validated questions
+            1: saved questions
+            2: compiled questions
+    """
+    answers, _blurs = get_answers(course.dirname, login, saved=saved)
     for key, value in answers.items():
         for _source, answer, _time in value:
             if answer == 1:
                 value[-1][1] = 1 # Correct answer even if changed after
                 break
-        answers[key] = value[-1] # Only the last answer
+            answers[key] = value[-1] # Only the last answer
+    if saved == 2:
+        for key, (timestamp, source) in get_compiled(course, login).items():
+            # Use compiled only if more recent than saved
+            if key not in answers or timestamp > answers[key][2]:
+                answers[key] = [source, 0, timestamp]
     if course:
-        stop = course.get_stop(session.login)
+        stop = course.get_stop(login)
     else:
         stop = ''
+    grading = int(session.login != login)
+    if grading:
+        notation = f"NOTATION = {json.dumps(course.notation)};"
+        infos = await utilities.LDAP.infos(login)
+        title = infos['sn'].upper() + ' ' + infos['fn'].title()
+    else:
+        notation = 'NOTATION = "";'
+        infos = session.infos
+        title = course.course.split('=', 1)[1]
     return File.get('ccccc.html').response(
         session.header() + f'''
-        <title>{course.course.split('=', 1)[1]}</title>
+        <title>{title}</title>
         <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
         <link rel="stylesheet" href="/ccccc.css?ticket={session.ticket}">
         <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         <script>
+            GRADING = {grading};{notation}
+            STUDENT = "{login}";
+            COURSE = "{course.course}";
             SOCK = "wss://{utilities.C5_WEBSOCKET}";
             ADMIN = "{int(is_admin)}";
             STOP = "{stop}";
             CP = {course.config['copy_paste']};
             SAVE_UNLOCK = {int(course.config['save_unlock'])};
             SEQUENTIAL = {int(course.config['sequential'])};
-            INFOS = {json.dumps(session.infos)};
+            INFOS = {infos};
             CHECKPOINT = {course.checkpoint};
             ANSWERS = {json.dumps(answers)};
             WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0)))};
@@ -143,7 +165,7 @@ def handle(base=''):
                         return session.message('pending')
                     if status == 'checkpoint':
                         return session.message('checkpoint')
-                return editor(session, is_admin, course, session.login)
+                return await editor(session, is_admin, course, session.login, 1)
             if '=' in filename:
                 course = utilities.CourseConfig.get(utilities.get_course(filename))
                 filename = course.filename.replace('.cf', '.js')
@@ -152,6 +174,16 @@ def handle(base=''):
                     return session.message('done')
         return File.get(filename).response()
     return real_handle
+
+# https://pundit.univ-lyon1.fr:4201/grade/REMOTE=LIFAPI_Seq1TPnotep/p2100091
+async def grade(request):
+    """Display the grading page"""
+    session, course = await get_teacher_login_and_course(request)
+    is_admin = session.is_admin(course)
+    if not is_admin:
+        return response("Vous n'êtes pas autorisé à noter.")
+    return await editor(session, True, course, request.match_info['login'],
+        int(request.match_info['saved']))
 
 async def log(request):
     """Log user actions"""
@@ -188,6 +220,27 @@ async def log(request):
         infos[5] += data.count('["answer",')
 
     return response("<!DOCTYPE html>\n<script>window.parent.ccccc.record_done()</script>")
+
+async def record_grade(request):
+    """Log a grade"""
+    session, course = await get_teacher_login_and_course(request)
+    is_admin = session.is_admin(course)
+    if not is_admin:
+        return response("Vous n'êtes pas autorisé à noter.")
+    post = await request.post()
+    login = post['student']
+    if not os.path.exists(f'{course.dirname}/{login}'):
+        return response("Hacker?")
+    grade_file = f'{course.dirname}/{login}/grades.log'
+    if 'grade' in post:
+        with open(grade_file, "a") as file:
+            file.write(json.dumps([int(time.time()), session.login, post['grade'], post['value']]) + '\n')
+    if os.path.exists(grade_file):
+        with open(grade_file, "r") as file:
+            grades = file.read()
+    else:
+        grades = ''
+    return response(f"<!DOCTYPE html>\n<script>window.parent.ccccc.update_grading({json.dumps(grades)})</script>")
 
 async def load_student_infos():
     """Load all student info in order to answer quickly"""
@@ -236,6 +289,9 @@ async def adm_course(request):
             student['status'] = course.status(user)
             with open(f'{course.dirname}/{user}/http_server.log') as file:
                 student['http_server'] = file.read()
+
+            with open(f'{course.dirname}/{user}/grades.log') as file:
+                student['grades'] = file.read()
         except IOError:
             pass
 
@@ -296,6 +352,9 @@ async def adm_config(request): # pylint: disable=too-many-branches
             feedback = f"«{course}» All questions are accessible in a random order."
         else:
             feedback = f"«{course}» Questions are accessible only if the previous are corrects."
+    elif action == 'notation':
+        config.set_parameter('notation', value)
+        feedback = f"«{course}» Notation set to {value[:100]}"
     elif action == 'highlight':
         config.set_parameter('highlight', value)
         if value == '0':
@@ -757,6 +816,8 @@ async def checkpoint_student(request):
         to_log = [seconds, ["checkpoint_move", session.login, room]]
     utilities.student_log(course.dirname, student, json.dumps(to_log) + '\n')
     course.record()
+    if session.is_student():
+        return response('''<script>document.body.innerHTML = "C'est fini."</script>''')
     return await update_browser_data(course)
 
 async def checkpoint_bonus(request):
@@ -893,8 +954,10 @@ APP.add_routes([web.get('/', home),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
                 web.get('/update/{course}', update_browser),
+                web.get('/grade/{course}/{login}/{saved}', grade),
                 web.post('/upload_course', upload_course),
                 web.post('/log', log),
+                web.post('/record_grade/{course}', record_grade),
                 ])
 APP.on_startup.append(startup)
 logging.basicConfig(level=logging.DEBUG)

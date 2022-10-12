@@ -9,6 +9,8 @@ try:
     window = window
     isNaN = isNaN
     Math = Math
+    parse_grading = parse_grading
+    Number = Number
 except ValueError:
     pass
 
@@ -100,7 +102,7 @@ def analyse(http_server, debug): # pylint: disable=too-many-locals,too-many-bran
             'time_bonus': time_bonus,
            }
 
-WHAT = ['nr_answered', 'time', 'key_stroke', 'mouse_click',
+WHAT = ['nr_answered', 'grades', 'time', 'key_stroke', 'mouse_click',
         'copy_ok', 'copy_bad', 'cut_ok', 'cut_bad', 'paste_ok', 'paste_bad', 'nr_blurs'
        ]
 
@@ -134,7 +136,7 @@ TABLE TR:hover TD { background: #EEE }
 </style>
 <p>
 <table border>
-    <tr><th>Login<th>Time<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Time<br>in sec.<th>Keys
+    <tr><th>Login<th>Time<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Time<br>in sec.<th>Keys
         <th>Mouse<th>Copy<th>Copy<br>Fail<th>Cut<th>Cut<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Time per question<br>
         <E>🐌</E> : clipped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
 """)
@@ -144,6 +146,11 @@ TABLE TR:hover TD { background: #EEE }
         print(login)
         student = STUDENTS[login]
         cache[login] = analyse(student.http_server, login == 'p2202699')
+        grading = parse_grading(student['grades'])
+        grade = 0
+        for question in grading:
+            grade += Number(grading[question][0])
+        cache[login]['grades'] = grade
         for i, seconds in enumerate(cache[login]['time_sum']):
             if not question_times[i]:
                 question_times[i] = []

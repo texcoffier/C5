@@ -27,6 +27,12 @@ try:
     Date = Date
     Math = Math
     record = record
+    parse_grading = parse_grading
+    alert = alert
+    COURSE = COURSE
+    GRADING = GRADING
+    STUDENT = STUDENT
+    NOTATION = NOTATION
     JSON = JSON
     LOGIN = LOGIN
     ANSWERS = ANSWERS
@@ -108,6 +114,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     seconds = 0
     do_not_clear = {}
     inputs = {} # User input in execution bloc
+    grading_history = ''
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -133,26 +140,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def __init__(self):
         print("GUI: start")
-        course = None
-        if window.location.pathname:
-            path = str(window.location.pathname)
-            if path[:2] == '/=':
-                course = path[2:]
-        if not course:
-            course = 'JS=introduction'
-        self.course = course
-        self.worker = Worker(course + "?ticket=" + TICKET) # pylint: disable=undefined-variable
+        self.course = COURSE
+        self.worker = Worker(COURSE + "?ticket=" + TICKET) # pylint: disable=undefined-variable
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
         self.worker.onerror = bind(self.onerror, self)
         self.worker.postMessage(['config', {
             'TICKET': TICKET,
+            'GRADING': GRADING,
             'LOGIN': LOGIN,
             'SOCK': SOCK,
             'ADMIN': ADMIN,
             'STOP': STOP,
             'ANSWERS': ANSWERS,
-            'COURSE': course,
+            'COURSE': COURSE,
             'WHERE': WHERE,
             'SEQUENTIAL': SEQUENTIAL,
             'INFOS': INFOS,
@@ -268,7 +269,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def scheduler(self): # pylint: disable=too-many-branches
         """Send a new job if free and update the screen"""
-        if not self.options['allow_copy_paste'] and screen.height != max(window.innerHeight, window.outerHeight):
+        if (not GRADING
+                and not self.options['allow_copy_paste']
+                and screen.height != max(window.innerHeight, window.outerHeight)
+           ):
             self.fullscreen.style.display = 'block'
         else:
             self.fullscreen.style.display = 'none'
@@ -441,6 +445,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def record(self, data, send_now=False):  # pylint: disable=no-self-use
         """Append event to record to 'record_to_send'"""
+        if GRADING:
+            return
         time = Math.floor(Date().getTime()/1000)
         if time != self.record_last_time:
             if len(self.record_to_send):
@@ -675,6 +681,53 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if not self.save():
                 record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
 
+    def update_grading(self, history=None):
+        """Colorize buttons"""
+        if history:
+            self.grading_history = history
+        buttons = document.getElementById('grading')
+        if not buttons:
+            setTimeout(bind(self.update_grading, self), 100)
+            return
+        grading = parse_grading(self.grading_history)
+        grading_sum = 0
+        for button in buttons.getElementsByTagName('BUTTON'):
+            g = button.getAttribute('g')
+            if g in grading and button.innerText == grading[g][0]:
+                button.title = grading[g][1]
+                button.className = 'grade_selected'
+                grading_sum += Number(grading[g][0])
+            else:
+                button.className = 'grade_unselected'
+        document.getElementById('grading_sum').textContent = 'Σ=' + grading_sum
+
+    def get_grading(self):
+        """HTML of the grading interface"""
+        content = ['<pre id="grading" onclick="grade(event)">']
+        i = 0
+        for item in NOTATION.split('{'):
+            options = item.split('}')
+            if len(options) == 1 or not options[0].match(RegExp('^.*:[-0-9,.]+$')):
+                if i != 0:
+                    content.append('{')
+                content.append(html(item))
+                continue
+            values = options[0].replace(RegExp('.*:'), '')
+            label = options[0].replace(RegExp(':[-0-9,.]+$'), '')
+            content.append('<span>' + html(label))
+            for choice in values.split(','):
+                content.append('<button g="' + i + '">' + choice + '</button>')
+            content.append('</span>')
+            j = 0
+            for after in options[1:]:
+                if j:
+                    content.append('}')
+                j = 1
+                content.append(html(after))
+            i += 1
+        content.append('<span id="grading_sum"></span></pre>')
+        return ''.join(content)
+
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
@@ -741,11 +794,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 span.innerHTML = value.replace(' ', ' ')
                 self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
-            value = ('<div class="questions"><a href="/' + window.location.search
-                     + '">🏠</a><div class="tips">Accueil C5</div></div><br>' + value)
+            content = ('<div class="questions"><a href="/' + window.location.search + '">🏠</a>'
+                + '<div class="tips">Accueil C5</div></div><br>')
+            if GRADING:
+                content += '<div class="version">' + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ') + '</div>'
+            content += value
             if ADMIN: # pylint: disable=undefined-variable
-                value += '<br><a href="javascript:window.location.pathname=\'/adm/home\'">#</a>'
-            self[what].innerHTML = value # pylint: disable=unsubscriptable-object
+                content += '<br><a href="javascript:window.location.pathname=\'/adm/home\'">#</a>'
+            self[what].innerHTML = content # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question
             message = value + '\n\n\n'
@@ -754,6 +810,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.question_original[value[0]] = value[1]
         elif what in ('tester', 'compiler', 'question', 'time'):
             self.clear_if_needed(what)
+            if what == 'question' and GRADING and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
+                value = self.get_grading() + value
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
             span = document.createElement('DIV')
@@ -763,6 +821,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 self[what].style.background = self[what].background # pylint: disable=unsubscriptable-object
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
+            if what == 'question' and GRADING:
+                self.update_grading()
         elif what == 'eval':
             eval(value) # pylint: disable=eval-used
         elif what == 'stop':
@@ -784,7 +844,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def onbeforeunload(self, event):
         """Prevent page closing"""
-        if self.options['close'] == '':
+        if self.options['close'] == '' or GRADING:
             return None
         self.record("Close", send_now=True)
         event.preventDefault()
@@ -830,4 +890,23 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.top.appendChild(div)
         self.popup_element = div
 
+def grade(event):
+    """Set the grade"""
+    if 'grade_selected' in event.target.className:
+        value = ''
+    else:
+        value = event.target.textContent
+    grade_id = event.target.getAttribute('g')
+    if grade_id is None:
+        return
+    do_post_data(
+        {
+            'grade': grade_id,
+            'value': value,
+            'student': STUDENT,
+        }, 'record_grade/' + COURSE + '?ticket=' + TICKET)
+
 ccccc = CCCCC()
+if GRADING:
+    # Get grades
+    do_post_data({'student': STUDENT}, 'record_grade/' + COURSE + '?ticket=' + TICKET)

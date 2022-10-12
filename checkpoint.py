@@ -1256,26 +1256,50 @@ def set_time_bonus(element, login):
 def spy(sources, login, infos):
     """Display the infos source code"""
     student = STUDENT_DICT[login]
+    sources.sort()
     if student.active:
         state = '<button onclick="close_exam(\'' + login + '\')">Clôturer examen</button>'
     else:
         state = '<button onclick="open_exam(\'' + login + '\')">Rouvrir examen</button>'
     if not student.good_room:
         state += ' (Adresse IP dans la mauvaise salle)'
+    last_save = {}
+    last_compile = {}
+    grade_compile = ''
+    grade_save = ''
+    for source in sources:
+        if source[2] == 's':
+            last_save[source[1]] = source
+            if not grade_save:
+                grade_save = ('<button onclick="window.open(\'/grade/'
+                    + COURSE + '/' + login + '/1?ticket=' + TICKET
+                    + '\')">Noter sauvegarde</button>')
+        elif source[2] == 'c':
+            last_compile[source[1]] = source
+    for question in last_compile:
+        if (not last_save[question]
+            or last_compile[question][0] > last_save[question][0]
+                and last_compile[question][3].strip() != last_save[question][3].strip()
+           ):
+            grade_compile = ('<button onclick="window.open(\'/grade/'
+                + COURSE + '/' + login + '/2?ticket=' + TICKET
+                + '\')">Noter dernière compilation</button>')
+            break
+
     div = document.getElementById('spy')
     content = [
         '<button onclick="spy_close()">Fermer</button> ',
         login, ' ', infos.fn, ' ', infos.sn, ' ', state,
         '(<input onchange="set_time_bonus(this,\'' + login
             + '\')" value="' + student.bonus_time/60 + '">Minutes bonus)',
+        grade_save, grade_compile,
         '<div id="time" onmousedown="spy_it(event)"',
         ' onmousemove="if (event.buttons) spy_it(event)">']
-    sources.sort()
+    spy.sources = []
     if sources[0]:
         first = sources[0][0] - BEFORE_FIRST
         last = sources[-1][0]
         width = (last - first) or 1
-        spy.sources = []
         for source in sources:
             spy.sources.append(source)
             content.append(

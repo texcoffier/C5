@@ -119,6 +119,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'sequential': '1',
                        'theme': 'a11y-light',
                        'highlight': '0',
+                       'notation': '',
                        'messages': [],
                        # For each student login :
                        #   [0] Active: True is the examination is possible.
@@ -165,6 +166,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.checkpoint = int(self.config['checkpoint'])
         self.sequential = int(self.config['sequential'])
         self.highlight = int(self.config['highlight'])
+        self.notation = self.config['notation']
         self.theme = self.config['theme']
         self.active_teacher_room = self.config['active_teacher_room']
         self.messages = self.config['messages']

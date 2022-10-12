@@ -282,5 +282,43 @@ H2:hover .timer SPAN {
     padding: 0.2em;
 }
 
-
 LABEL, .index DIV, .save_button, .reset_button, .local_button { cursor: pointer }
+
+.index > .version {
+    background: #0F0;
+    font-size: 100%;
+}
+
+#grading {
+    background: #FFFE;
+    font-size: 80%;
+    padding: 0px;
+    margin-left: -7px;
+    margin-right: -9px;
+}
+#grading BUTTON {
+    font-size: 100%;
+    border: 1px solid #FFF;
+}
+#grading BUTTON.grade_unselected {
+    background: #EEE;
+}
+#grading BUTTON.grade_selected {
+    background: #0F0;
+}
+#grading BUTTON:hover {
+    border: 1px solid #040;
+}
+#grading SPAN {
+    font-family: sans-serif;
+    position: absolute;
+    right: 0px;
+    color: #00F;
+}
+
+#grading #grading_sum {
+    color: #080;
+    font-size: 200%;
+    background: #FFFD;
+}
+
