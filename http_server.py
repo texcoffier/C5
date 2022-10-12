@@ -22,6 +22,18 @@ for i in ('http_proxy', 'https_proxy'):
     if i in os.environ:
         del os.environ[i]
 
+def response(content, content_type="text/html", charset='utf-8'):
+    return web.Response(
+        body=content,
+        content_type=content_type,
+        charset=charset,
+        headers={
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp",
+            'Cache-Control': 'no-cache',
+        }
+    )
+
 class File:
     """Manage file answer"""
     file_cache = {}
@@ -58,16 +70,10 @@ class File:
         return self.content
     def response(self, content=''):
         """Get the response to send"""
-        return web.Response(
-            body=content or self.get_content(),
+        return response(
+            content or self.get_content(),
             content_type=self.mime,
             charset=self.charset,
-            headers={
-                "Cross-Origin-Opener-Policy": "same-origin",
-                "Cross-Origin-Embedder-Policy": "require-corp",
-                'Cache-Control': 'no-cache',
-                # 'Cache-Control': 'max-age=60',
-            }
         )
     @classmethod
     def get(cls, filename):
@@ -75,6 +81,40 @@ class File:
         if filename not in cls.file_cache:
             cls.file_cache[filename] = File(filename)
         return cls.file_cache[filename]
+
+def editor(session, is_admin, course, login):
+    """Return the editor page"""
+    answers, _blurs = get_answers(course.dirname, session.login, saved=True)
+    for key, value in answers.items():
+        for _source, answer, _time in value:
+            if answer == 1:
+                value[-1][1] = 1 # Correct answer even if changed after
+                break
+        answers[key] = value[-1] # Only the last answer
+    if course:
+        stop = course.get_stop(session.login)
+    else:
+        stop = ''
+    return File.get('ccccc.html').response(
+        session.header() + f'''
+        <title>{course.course.split('=', 1)[1]}</title>
+        <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
+        <link rel="stylesheet" href="/ccccc.css?ticket={session.ticket}">
+        <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
+        <script>
+            SOCK = "wss://{utilities.C5_WEBSOCKET}";
+            ADMIN = "{int(is_admin)}";
+            STOP = "{stop}";
+            CP = {course.config['copy_paste']};
+            SAVE_UNLOCK = {int(course.config['save_unlock'])};
+            SEQUENTIAL = {int(course.config['sequential'])};
+            INFOS = {json.dumps(session.infos)};
+            CHECKPOINT = {course.checkpoint};
+            ANSWERS = {json.dumps(answers)};
+            WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0)))};
+        </script>
+        <script src="/ccccc.js?ticket={session.ticket}"></script>''')
+
 
 def handle(base=''):
     """Send the file content"""
@@ -94,18 +134,7 @@ def handle(base=''):
                 course = utilities.CourseConfig.get(utilities.get_course(filename[1:]))
                 if not course.dirname:
                     return session.message('unknown')
-                answers, _blurs = get_answers(course.dirname, session.login, saved=True)
-                for key, value in answers.items():
-                    for _source, answer, _time in value:
-                        if answer == 1:
-                            value[-1][1] = 1 # Correct answer even if changed after
-                            break
-                    answers[key] = value[-1] # Only the last answer
                 status = course.status(login, session.client_ip)
-                if course:
-                    stop = course.get_stop(session.login)
-                else:
-                    stop = ''
                 is_admin = session.is_admin(course)
                 if not is_admin:
                     if status == 'done':
@@ -114,25 +143,7 @@ def handle(base=''):
                         return session.message('pending')
                     if status == 'checkpoint':
                         return session.message('checkpoint')
-                return File.get('ccccc.html').response(
-                    session.header() + f'''
-                    <title>{course.course.split('=', 1)[1]}</title>
-                    <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
-                    <link rel="stylesheet" href="/ccccc.css?ticket={session.ticket}">
-                    <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
-                    <script>
-                        SOCK = "wss://{utilities.C5_WEBSOCKET}";
-                        ADMIN = "{int(is_admin)}";
-                        STOP = "{stop}";
-                        CP = {course.config['copy_paste']};
-                        SAVE_UNLOCK = {int(course.config['save_unlock'])};
-                        SEQUENTIAL = {int(course.config['sequential'])};
-                        INFOS = {json.dumps(session.infos)};
-                        CHECKPOINT = {course.checkpoint};
-                        ANSWERS = {json.dumps(answers)};
-                        WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0)))};
-                    </script>
-                    <script src="/ccccc.js?ticket={session.ticket}"></script>''')
+                return editor(session, is_admin, course, session.login)
             if '=' in filename:
                 course = utilities.CourseConfig.get(utilities.get_course(filename))
                 filename = course.filename.replace('.cf', '.js')
@@ -148,24 +159,15 @@ async def log(request):
     post = await request.post()
     course = utilities.CourseConfig.get(utilities.get_course(post['course']))
     if not course.running(session.login, session.client_ip):
-        return web.Response(
-            body=r"""<!DOCTYPE html>
+        return response(
+            """<!DOCTYPE html>
             <script>
             alert("Ce que vous faites n'est plus enregistré :\n"
                   + "  * L'examen est terminé\n"
                   + "  * ou bien votre adresse IP a changé !\n"
                   + "Contactez l'enseignant."
                  )
-            </script>""",
-            content_type="text/html",
-            charset='utf-8',
-            headers={
-                "Cross-Origin-Opener-Policy": "same-origin",
-                "Cross-Origin-Embedder-Policy": "require-corp",
-                'Cache-Control': 'no-cache',
-                # 'Cache-Control': 'max-age=60',
-            }
-        )
+            </script>""")
     data = urllib.request.unquote(post['line'])
     # Must do sanity check on logged data
     try:
@@ -185,16 +187,7 @@ async def log(request):
         infos[4] += data.count('"Blur"') + bad_json
         infos[5] += data.count('["answer",')
 
-    return web.Response(
-        body="<!DOCTYPE html>\n<script>window.parent.ccccc.record_done()</script>",
-        content_type="text/html",
-        charset='utf-8',
-        headers={
-            "Cross-Origin-Opener-Policy": "same-origin",
-            "Cross-Origin-Embedder-Policy": "require-corp",
-            'Cache-Control': 'no-cache',
-        }
-    )
+    return response("<!DOCTYPE html>\n<script>window.parent.ccccc.record_done()</script>")
 
 async def load_student_infos():
     """Load all student info in order to answer quickly"""
@@ -246,18 +239,14 @@ async def adm_course(request):
         except IOError:
             pass
 
-    return web.Response(
-        body=session.header() + f"""
+    return response(
+        session.header() + f"""
             <script>
             STUDENTS = {json.dumps(students)};
             COURSE = '{course.course}';
             </script>
             <script src="/adm_course.js?ticket={session.ticket}"></script>
-            """,
-        content_type='text/html',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+            """)
 
 async def adm_config(request): # pylint: disable=too-many-branches
     """Course details page for administrators"""
@@ -416,13 +405,9 @@ async def adm_home(request, more=''):
         attrs.pop('messages')
         courses.append(attrs)
 
-    return web.Response(
-        body=session.header(courses, more)
-        + f'<script src="/adm_home.js?ticket={session.ticket}"></script>',
-        content_type='text/html',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return response(
+        session.header(courses, more)
+        + f'<script src="/adm_home.js?ticket={session.ticket}"></script>')
 
 async def adm_get(request):
     """Get a file or a ZIP"""
@@ -432,9 +417,9 @@ async def adm_get(request):
         content = 'Hacker'
     else:
         if filename.endswith('.zip'):
-            response = web.StreamResponse()
-            response.content_type = 'application/zip'
-            await response.prepare(request)
+            stream = web.StreamResponse()
+            stream.content_type = 'application/zip'
+            await stream.prepare(request)
             course = filename[:-4]
             process = await asyncio.create_subprocess_exec(
                 'zip', '-r', '-', course, course + '.py', course + '.cf',
@@ -443,16 +428,11 @@ async def adm_get(request):
             data = 'Go!'
             while data:
                 data = await process.stdout.read(64 * 1024)
-                await response.write(data)
-            return response
+                await stream.write(data)
+            return stream
         with open(filename, 'r') as file:
             content = file.read()
-    return web.Response(
-        body=content,
-        content_type='text/plain',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return response(content, content_type='text/plain')
 
 def get_answers(course, user, saved=False):
     """Get question answers"""
@@ -579,11 +559,7 @@ async def adm_answers(request):
         os.unlink(filename)
         del zipper
 
-    return web.Response(
-        body=data,
-        content_type='application/zip',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return response(data, content_type='application/zip')
 
 async def upload_course(request): # pylint: disable=too-many-branches
     """Add a new course"""
@@ -634,10 +610,7 @@ async def config_reload(request):
     """For regression tests"""
     _session = await utilities.Session.get(request)
     utilities.CONFIG.load()
-    return web.Response(
-        body='done',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return response('done')
 
 def checkpoint_line(session, course, content):
     """A line in the checkpoint table"""
@@ -718,18 +691,13 @@ async def checkpoint_list(request):
     checkpoint_table(session, courses,
         lambda course: now > course.stop_tt_timestamp,
         content)
-    return web.Response(
-        body=''.join(content),
-        content_type='text/html',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return response(''.join(content))
 
 async def checkpoint(request):
     """Display the students waiting checkpoint"""
     session, course = await get_teacher_login_and_course(request)
-    return web.Response(
-        body=session.header() + f'''
+    return response(
+        session.header() + f'''
         <script>
         COURSE = {json.dumps(course.course)};
         STUDENTS = {json.dumps(await course.get_students())};
@@ -740,24 +708,17 @@ async def checkpoint(request):
         <script src="/checkpoint.js?ticket={session.ticket}"></script>
         <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
         <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
-        ''',
-        content_type='text/html',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+        ''')
 
 async def update_browser_data(course):
     """Send update values"""
-    return web.Response(
-        body=f'''
+    return response(
+        f'''
         STUDENTS = {json.dumps(await course.get_students())};
         MESSAGES = {json.dumps(course.messages)};
         CONFIG.computers = {json.dumps(utilities.CONFIG.computers)};
         ''',
-        content_type='application/javascript',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+        content_type='application/javascript')
 
 async def update_browser(request):
     """Send update values"""
@@ -832,12 +793,7 @@ async def home(request):
         content.append(
             f'<li> <a href="/={course.course}?ticket={session.ticket}"{style}>{course_name}</a>')
 
-    return web.Response(
-        body=''.join(content),
-        content_type='text/html',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return response(''.join(content))
 
 async def checkpoint_buildings(request):
     """Building list"""
@@ -846,12 +802,9 @@ async def checkpoint_buildings(request):
     for filename in os.listdir('BUILDINGS'):
         with open('BUILDINGS/' + filename) as file:
             buildings[filename] = file.read()
-    return web.Response(
-        body=f'BUILDINGS = {json.dumps(buildings)};',
-        content_type='application/javascript',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return response(
+        f'BUILDINGS = {json.dumps(buildings)};',
+        content_type='application/javascript')
 
 async def computer(request):
     """Set value for computer"""
@@ -902,26 +855,20 @@ async def checkpoint_spy(request):
     except (IndexError, FileNotFoundError):
         pass
 
-    return web.Response(
-        body=f'''spy({json.dumps(answers)},
-                     {json.dumps(student)},
-                     {json.dumps(await utilities.LDAP.infos(student))})''',
-        content_type='application/javascript',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return response(
+        f'''spy({json.dumps(answers)},
+               {json.dumps(student)},
+               {json.dumps(await utilities.LDAP.infos(student))})''',
+        content_type='application/javascript')
 
 async def checkpoint_message(request):
     """The last answer from the student"""
     session, course = await get_teacher_login_and_course(request)
     course.messages.append([session.login, int(time.time()), request.match_info['message']])
     course.set_parameter('messages', course.messages)
-    return web.Response(
-        body=f'''MESSAGES.push({json.dumps(course.messages[-1])});ROOM.update_messages()''',
-        content_type='application/javascript',
-        charset='utf-8',
-        headers={'Cache-Control': 'no-cache'}
-    )
+    return response(
+        f'''MESSAGES.push({json.dumps(course.messages[-1])});ROOM.update_messages()''',
+        content_type='application/javascript')
 
 APP = web.Application()
 APP.add_routes([web.get('/', home),
