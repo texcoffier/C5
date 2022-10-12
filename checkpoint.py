@@ -479,10 +479,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 else:
                     ctx.fillStyle = "#080"
             else:
-                if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
-                    ctx.fillStyle = "#888"
+                if student.active:
+                    if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
+                        ctx.fillStyle = "#888"
+                    else:
+                        ctx.fillStyle = "#88F"
                 else:
-                    ctx.fillStyle = "#88F"
+                    ctx.fillStyle = "#484"
             if not student.good_room:
                 ctx.fillStyle = "#F88"
             ctx.globalAlpha = 1
@@ -573,6 +576,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         line += size
         ctx.fillStyle = "#080"
         ctx.fillText("Examen terminé.", column, line)
+        line += size
+        ctx.fillStyle = "#800"
+        ctx.fillText("Dans la mauvaise salle.", column, line)
 
         line = line_top
         column = self.left + 20 * size * 2
@@ -985,8 +991,6 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.full_room_name = None
         self.short_room_name = None
         self.good_room = None
-        if not self.active:
-            return
         if self.building != ROOM.building:
             # Not on this map
             return
