@@ -112,6 +112,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     do_not_register_this_blur = False
     init_done = False
     seconds = 0
+    start_time = 0
     do_not_clear = {}
     inputs = {} # User input in execution bloc
     grading_history = ''
@@ -140,6 +141,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def __init__(self):
         print("GUI: start")
+        self.start_time = millisecs()
         self.course = COURSE
         self.worker = Worker(COURSE + "?ticket=" + TICKET) # pylint: disable=undefined-variable
         self.worker.onmessage = bind(self.onmessage, self)
@@ -649,6 +651,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def reset(self):
         """Reset the editor to the first displayed value"""
+        if millisecs() - self.start_time < 1000:
+            return # Hide a bug: do not display reset on start
         if confirm(self.options['reset_confirm']):
             self.set_editor_content(self.question_original[self.current_question])
 

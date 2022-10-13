@@ -330,6 +330,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§')})
+        time.sleep(1.1) # Reset not allowed just on loading (see CCCCC.reset())
         self.check('.reset_button').click()
         self.check_alert(accept=False)
         self.check('.editor', {'innerHTML': Contains('§')})
@@ -473,6 +474,7 @@ class Tests: # pylint: disable=too-many-public-methods
         """Test editor line insert"""
         self.load_page('=JS=introduction')
         self.check('.index STYLE + DIV').click() # Returns to the first question
+        time.sleep(1.1) # Reset not allowed just on loading (see CCCCC.reset())
         self.check('.reset_button').click() # Returns to the original text
         self.check_alert(accept=True)
 
