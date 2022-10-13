@@ -628,7 +628,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.options['forget_input']:
                 event.target.disabled = True
             else:
-                for value in event.target.parentNode.getElementsByTagName('INPUT'):
+                inputs = event.target.parentNode.getElementsByTagName('INPUT')
+                for value in inputs:
+                    if value == inputs[-1] and len(value.value) == 0:
+                        continue
                     self.inputs[self.current_question][value.input_index] = value.value
             if event.target.run_on_change:
                 self.old_source = ''
