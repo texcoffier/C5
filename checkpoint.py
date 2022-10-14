@@ -366,7 +366,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Create list of chars to display"""
         # 🪑 🛗 not working on phone
         translate = {'c': '⑁', 's': '💻', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
-                     'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' ', 'a': 'Ⓐ', 'b': 'Ⓑ'}
+                     'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' ', 'a': 'Ⓐ', 'b': 'Ⓑ',
+                     'g': '📝'}
         self.chars = {}
         for line, chars in enumerate(self.lines):
             for column, char in enumerate(chars):
@@ -779,6 +780,27 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.moving = False
             return True
         return False
+    def drag_stop_click_on_grade(self, column, line):
+        """Click on computer"""
+        if column != -1 and self.lines[line][column] == 'g':
+            room = self.rooms[self.get_room_name(column, line)]
+            if len(room.students) == 0:
+                alert('Aucun étudiant à noter dans cette salle')
+            else:
+                logins = []
+                for student in room.students:
+                    logins.append(student.login)
+                if confirm("Ouvrir " + len(logins) + ' onglets pour noter '
+                    + ' '.join(logins)):
+                    if confirm("OK pour noter la dernière sauvegarde\nCancel pour noter la dernière compilation"):
+                        what = '1'
+                    else:
+                        what = '2'
+                    for login in logins:
+                        window.open('/grade/' + COURSE + '/' + login + '/' + what
+                            + '?ticket=' + TICKET)
+            return True
+        return False
     def drag_stop_click_on_room(self, event, column, line):
         """Click on a room to zoom"""
         if (column != -1
@@ -826,6 +848,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Simple click
             if (not self.drag_stop_click_on_computer_menu()
                     and not self.drag_stop_click_on_computer(column, line)
+                    and not self.drag_stop_click_on_grade(column, line)
                     and not self.drag_stop_click_on_room(event, column, line)
                ):
                 # No special click

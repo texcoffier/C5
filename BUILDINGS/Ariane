@@ -8,9 +8,9 @@
 |   sb   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |   c   c   bs   |
 |   sa  sb  sb   |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |   bs  bs  as   |
 |    c   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |   c   c   c    |
-|   sb  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |   as  as  bs   |
+|g  sb  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |g  as  as  bs   |
 |TP01            |    c   c   c   |   c   c   c    |    c   c   c   |   c   c   c    |TP06            |
-+------+-----+-dd+   sb  sa  sa   |   as  as  bs   |   sb  sa  sa   |   as  as  bs   +-dd+-----+------+
++------+-----+-dd+g  sb  sa  sa   |g  as  as  bs   |g  sb  sa  sa   |g  as  as  bs   +-dd+-----+------+
 |      |     d   |TP02            |TP03            |TP04            |TP05            |   d     |      |
 |      |     d   +-dd-------------+-dd-+-------+---+----------+--dd-+-------------dd-+   d     |      |
 |      +-----+                         |       |              |                          +-----+      |
@@ -27,9 +27,9 @@
 |   sb   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |   c   c   bs   |
 |   sa  sb  sb   |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |   bs  bs  as   |
 |    c   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |   c   c   c    |
-|   sb  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |   as  as  bs   |
+|g  sb  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |g  as  as  bs   |
 |TP11            |    c   c   c   |   c   c   c    |    c   c   c   |   c   c   c    |TP16            |
-+------+-----+-dd+   sb  sa  sa   |   as  as  bs   |   sb  sa  sa   |   as  as  bs   +-dd+-----+------+
++------+-----+-dd+g  sb  sa  sa   |g  as  as  bs   |g  sb  sa  sa   |g  as  as  bs   +-dd+-----+------+
 |      |     d   |TP12            |TP13            |TP14            |TP15            |   d     |      |
 |      |     d   +-dd-------------+-dd-+-----------+-------------dd-+-------------dd-+   d     |      |
 |      +-----+                                                                           +-----+      |
@@ -46,9 +46,9 @@
 |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |                |   bs  bs  bs   |
 |   as  as  as   |   as  as  as   |   as  as  as   |   as  as  as   |        +-----dd+   as  as  as   |
 |   bs  bs       |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |        d       |       bs  bs   |
-|   as           |   as  as  as   |   as  as  as   |   as  as  as   |        d       |       as       |
+|g  as           |   as  as  as   |   as  as  as   |   as  as  as   |        d       |g      as       |
 |TP21            |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |        +--+    |TP25            |
-+------+-----+-dd+                |                |                |           |    +-dd+-----+------+
++------+-----+-dd+g               |g               |g               |           |    +-dd+-----+------+
 |      |     d   |TP22            |TP23            |TP24            |           |        d     |      |
 |      |     d   +-dd-------------+-dd-+-----------+-------------dd-+-----------+        d     |      |
 |      +-----+       |            |                 VIRTUA / LAB                         +-----+      |
