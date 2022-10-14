@@ -24,6 +24,8 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
             'language': 'cpp',
             'extension': 'cpp',
             })
+        if self.config.GRADING:
+            return
         self.popup("""
         <p>
         ATTENTION
