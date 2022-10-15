@@ -277,6 +277,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     self.columns_width[i] = 0.5
                 for i in range(2*line_start, 2*(line_start + room_height)):
                     self.lines_height[i] = 0.5
+        self.left = self.LEFT
+        self.top = self.TOP
         self.update_visible()
     def update_visible(self):
         """Update lines/columns positions from their heights/widths"""
