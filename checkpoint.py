@@ -20,6 +20,8 @@ try:
     prompt = prompt
     encodeURIComponent = encodeURIComponent
     JSON = JSON
+    RegExp = RegExp
+    alert = alert
     Math = Math
     bind = bind
     Date = Date
@@ -1207,10 +1209,52 @@ def spy_close():
     """Close the student source code"""
     document.getElementById('spy').style.display = 'none'
 
+
+def canonize(txt):
+    """Cleanup name"""
+    return txt.lower().replace(RegExp('[ -_]', 'g'), '')
+
+def get_login(student):
+    """Get login from any information"""
+    if not student:
+        return student
+    if student in STUDENT_DICT:
+        return student
+    if 'p' + student[1:] in STUDENT_DICT:
+        return student
+    possibles = []
+    student = canonize(student)
+    for login in STUDENT_DICT:
+        verify = STUDENT_DICT[login]
+        if not verify.building:
+            continue
+        if canonize(verify.firstname) == student or canonize(verify.surname) == student:
+            possibles.append([login, verify.surname, verify.firstname])
+    if len(possibles) == 1:
+        return possibles[0][0]
+    if len(possibles) == 0:
+        return None
+    choices = '\n'.join([
+        str(i) + ' ' + choice[0] + ' ' + choice[1] + ' ' + choice[2]
+        for i, choice in enumerate(possibles)])
+    i = prompt(choices)
+    if i:
+        print(possibles[i][0])
+        return possibles[i][0]
+    return None
+
 def key_event_handler(event):
     """The spy popup receive a keypress"""
     if event.key == 'Escape':
         spy_close()
+    if event.key == 'f' and event.ctrlKey:
+        spy_close();
+        student = prompt("Numéro d'étudiant ou nom ou prénom à chercher")
+        student = get_login(student)
+        if student:
+            ROOM.zoom_student(student)
+        else:
+            alert('Introuvable')
 
 def spy_cursor(source):
     if not spy.sources[0]:
