@@ -82,7 +82,7 @@ class File:
             cls.file_cache[filename] = File(filename)
         return cls.file_cache[filename]
 
-async def editor(session, is_admin, course, login, saved):
+async def editor(session, is_admin, course, login, saved, grading=0):
     """Return the editor page
         saved :
             0: validated questions
@@ -105,7 +105,6 @@ async def editor(session, is_admin, course, login, saved):
         stop = course.get_stop(login)
     else:
         stop = ''
-    grading = int(session.login != login)
     if grading:
         notation = f"NOTATION = {json.dumps(course.notation)};"
         infos = await utilities.LDAP.infos(login)
@@ -183,7 +182,7 @@ async def grade(request):
     if not is_admin:
         return response("Vous n'êtes pas autorisé à noter.")
     return await editor(session, True, course, request.match_info['login'],
-        int(request.match_info['saved']))
+        int(request.match_info['saved']), grading=1)
 
 async def log(request):
     """Log user actions"""
