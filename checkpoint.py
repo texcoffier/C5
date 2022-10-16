@@ -976,6 +976,20 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if pos[0] == -1:
             update_page()
 
+    def zoom_student(self, login):
+        "Zoom on this student"
+        student = STUDENT_DICT[login]
+        if student.building != ROOM.building:
+            self.change(student.building)
+            update_page()
+            document.getElementById('buildings').value = student.building
+        self.scale = self.width / 5
+        self.left = self.top = 0
+        left, top, _dx, _dy = self.xys(student.column, student.line)
+        self.left = self.LEFT - left + (self.width - self.LEFT) / 2
+        self.top = self.TOP - top + (self.height - self.TOP) / 2
+        self.draw()
+
 STUDENT_DICT = {}
 
 class Student: # pylint: disable=too-many-instance-attributes
@@ -1121,7 +1135,7 @@ def create_page(building_name):
         '<span class="course">',
         COURSE.split('=')[1].replace(RegExp('_', 'g'), ' '),
         '</span>',
-        ' <select style="width:100%" onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
+        ' <select style="width:100%" id="buildings" onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
         ''.join(['<option'
                  + (building == building_name and ' selected' or '')
                  + '>' + building.replace('empty', LOGIN) + '</option>'
@@ -1168,6 +1182,10 @@ def update_page():
     ROOM.compute_rooms_on_screen()
     ROOM.update_waiting_room()
     ROOM.update_messages()
+    student = window.location.hash
+    if student and len(student) > 1:
+        ROOM.zoom_student(student[1:])
+        window.location.hash = ''
 
 def reload_page():
     """Update data now"""

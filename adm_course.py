@@ -5,6 +5,7 @@ try:
     # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
     STUDENTS = STUDENTS
     COURSE = COURSE
+    TICKET = TICKET
     document = document
     window = window
     isNaN = isNaN
@@ -180,7 +181,11 @@ TABLE TR:hover TD { background: #EEE }
         student = STUDENTS[login]
         stats = cache[login]
         text.append('<tr><td>')
-        text.append(login)
+        if student.status != 'checkpoint':
+            text.append('<a href="/checkpoint/' + COURSE + '?ticket=' + TICKET + '#' + login
+                + '" target="_blank">' + login + '</a>')
+        else:
+            text.append(login)
         text.append('<td>')
         if stats['time_bonus']:
             text.append(stats['time_bonus'] / 60 + " min.")
