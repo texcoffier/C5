@@ -292,6 +292,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.worker.postMessage(self.source) # Start compile/execute/test
         seconds = int(millisecs() / 1000)
         if self.seconds != seconds:
+            if seconds == 10:
+                self.record_now()
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
@@ -445,7 +447,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.overlay.appendChild(marker)
         self.overlay_show()
 
-    def record(self, data, send_now=False):  # pylint: disable=no-self-use
+    def record_now(self):
+        """Record on the server"""
+        if len(self.record_to_send) == 0:
+            return
+        do_post_data(
+            {
+                'course': self.course,
+                'line': encodeURIComponent(JSON.stringify(self.record_to_send) + '\n'),
+            }, 'log?ticket=' + TICKET)
+        self.last_record_to_send = self.record_to_send
+        self.record_to_send = []
+        self.record_last_time = 0
+
+    def record(self, data, send_now=False):
         """Append event to record to 'record_to_send'"""
         if GRADING:
             return
@@ -459,15 +474,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record_last_time = time
         self.record_to_send.append(data)
         if send_now or time - self.record_start > 60:
-            # Record on the server
-            do_post_data(
-                {
-                    'course': self.course,
-                    'line': encodeURIComponent(JSON.stringify(self.record_to_send) + '\n'),
-                }, 'log?ticket=' + TICKET)
-            self.last_record_to_send = self.record_to_send
-            self.record_to_send = []
-            self.record_last_time = 0
+            self.record_now()
 
     def record_done(self):
         """The server saved the recorded value"""
