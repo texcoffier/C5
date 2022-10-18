@@ -130,6 +130,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        #   [5] Number of questions
                        #   [6] IP address
                        #   [7] Bonus time in seconds
+                       #   [8] Grade
                        # Active : examination is running
                        # Inactive & Room=='' : wait access to examination
                        # Inactive & Room!='' : examination done
@@ -150,6 +151,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         for active_teacher_room in self.config['active_teacher_room'].values():
             if len(active_teacher_room) == 7:
                 active_teacher_room.append(0)
+            if len(active_teacher_room) == 8:
+                active_teacher_room.append('')
 
     def update(self):
         """Compute some values"""
@@ -200,7 +203,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                 client_ip = 'broken_cf_file'
             # Add to the checkpoint room
             active_teacher_room = self.active_teacher_room[login] = [
-                0, '', '', now, 0, 0, client_ip, 0]
+                0, '', '', now, 0, 0, client_ip, 0, '']
             self.record()
             to_log = [now, ["checkpoint_in", client_ip]]
         elif client_ip and client_ip != active_teacher_room[6]:

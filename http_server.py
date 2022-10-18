@@ -132,7 +132,7 @@ async def editor(session, is_admin, course, login, saved, grading=0):
             INFOS = {infos};
             CHECKPOINT = {course.checkpoint};
             ANSWERS = {json.dumps(answers)};
-            WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0)))};
+            WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0,'')))};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')
 
@@ -237,6 +237,15 @@ async def record_grade(request):
     if os.path.exists(grade_file):
         with open(grade_file, "r") as file:
             grades = file.read()
+            grading = {}
+            for line in grades.split('\n'):
+                if line:
+                    line = json.loads(line)
+                    if line[3]:
+                        grading[line[2]] = float(line[3])
+                    else:
+                        grading.pop(line[2], None)
+            course.active_teacher_room[login][8] = [sum(grading.values()), len(grading)]
     else:
         grades = ''
     return response(f"<!DOCTYPE html>\n<script>window.parent.ccccc.update_grading({json.dumps(grades)})</script>")

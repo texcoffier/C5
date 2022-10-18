@@ -496,6 +496,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
             ctx.fillText(student.surname, x_pos, y_pos + y_size/3)
+            if student.grade != '':
+                ctx.fillStyle = "#000"
+                ctx.fillText(student.grade[0] + '(' + student.grade[1] + 'notes)', x_pos, y_pos + 2*y_size/3)
         ctx.globalAlpha = 1
     def draw_map(self, ctx, canvas):
         """Draw the character map"""
@@ -1013,6 +1016,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.nr_questions_done = data[1][5] or 0
         self.client_ip = data[1][6]
         self.bonus_time = data[1][7]
+        self.grade = data[1][8]
         self.firstname = data[2]['fn']
         self.surname = data[2]['sn']
         self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
@@ -1255,6 +1259,7 @@ def key_event_handler(event):
             ROOM.zoom_student(student)
         else:
             alert('Introuvable')
+        event.preventDefault()
 
 def spy_cursor(source):
     if not spy.sources[0]:

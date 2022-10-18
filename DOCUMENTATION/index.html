@@ -435,6 +435,13 @@ def default_answer(self):
         <li> Mise à jour du questionnaire.</li>
         <li> Liste des surveillants.</li>
         <li> Thème «highlight.js».</li>
+        <li> Le barème de notation de la session en texte libre.
+            Les élements de notations sont indiqués par <tt>{Une explication:0,0.5,1,1.5,2}</tt>
+            en en mettant un par ligne au maximum.
+            Le barème est sur l'ensemble des questions.
+            Ne pas rien changer dans le barème une fois que la correction à commencé
+            à part les typos.
+        </li>
     </ul>
     <p>
         Au dessous de la liste :
@@ -895,16 +902,14 @@ server {
         Fonctionnalités manquantes :
     </p>
     <ul>
-        <li> Ménage fichiers log. </li>
         <li> Fonctions graphiques pour que les étudiants puissent faire des dessins (grapic?).</li>
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
-        <li> Destruction d'une session.</li>
         <li> Affichage d'un corrigé.</li>
         <li> Lors du dépôt choisir le compilateur avec un menu et pas dans le nom du fichier.</li>
         <li> Permettre l'édition intéractive du sujet sur la page web.</li>
         <li> Affichage de seulement ses sujets.</li>
         <li> Exportation vers TOMUSS dans une colonne de type Notation.
-            Ajout du barème aux questions.
+            Ajout du barème aux questions (en plus du barème global).
         </li>
         <li> Choix du thème de coloriage syntaxique.</li>
         <li> Ajouter un compilateur qui ne fait rien (examen texte pur).</li>
@@ -928,6 +933,12 @@ server {
         </li>
         <li>
             Griser l'icone de sauvegarde si rien à sauvegarder.
+        </li>
+        <li>
+            Désactiver intéractivement la sauvegarde des INPUTs ?
+        </li>
+        <li>
+            Commenter le code de l'étudiant
         </li>
     </ul>
 </body>
