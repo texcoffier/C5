@@ -698,15 +698,24 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         grading = parse_grading(self.grading_history)
         grading_sum = 0
+        nr_grades = 0
         for button in buttons.getElementsByTagName('BUTTON'):
             g = button.getAttribute('g')
             if g in grading and button.innerText == grading[g][0]:
                 button.title = grading[g][1]
                 button.className = 'grade_selected'
                 grading_sum += Number(grading[g][0])
+                nr_grades += 1
             else:
                 button.className = 'grade_unselected'
-        document.getElementById('grading_sum').textContent = 'Σ=' + grading_sum
+        element = document.getElementById('grading_sum')
+        element.textContent = 'Σ=' + grading_sum
+        if len(grading) == nr_grades:
+            element.style.background = "#0F0"
+            element.style.color = "#000"
+        else:
+            element.style.background = "#FFF"
+            element.style.color = "#0F0"
 
     def get_grading(self):
         """HTML of the grading interface"""
