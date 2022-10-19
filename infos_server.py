@@ -44,7 +44,7 @@ while True:
             infos = LDAP.search_s(
                 C5_LDAP_BASE, ldap.SCOPE_SUBTREE,
                 f'(sAMAccountName={login})',
-                ('givenName', 'sn'))
+                ('givenName', 'sn', 'mail'))
             for item in infos:
                 print(item, file=sys.stderr)
             if (not infos
@@ -59,6 +59,7 @@ while True:
                 infos = {
                     'fn': infos['givenName'][0].decode(C5_LDAP_ENCODING, errors='replace').title(),
                     'sn': infos['sn'][0].decode(C5_LDAP_ENCODING, errors='replace').upper(),
+                    'mail': infos['mail'][0].decode(C5_LDAP_ENCODING, errors='replace')
                     }
                 sys.stdout.write(json.dumps([login, infos]) + '\n')
                 sys.stdout.flush()
