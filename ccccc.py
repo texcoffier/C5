@@ -771,13 +771,47 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 button.className = 'grade_unselected'
         element = document.getElementById('grading_sum')
-        element.textContent = 'Σ=' + grading_sum
+        element.textContent = 'Envoyer un mail Σ=' + grading_sum
+        element.onclick = bind(self.send_mail, self)
         if len(grading) == nr_grades:
             element.style.background = "#0F0"
             element.style.color = "#000"
         else:
             element.style.background = "#FFF"
             element.style.color = "#0F0"
+
+    def send_mail(self):
+        """Send a mail to the student"""
+        width = 0
+        for line in self.source.split("\n"):
+            width = max(width, len(line))
+        content = ['<pre>']
+        to_fill = []
+        for i, line in enumerate(self.source.split("\n")):
+            content.append(html(line))
+            for _ in range(width - len(line)):
+                content.append(' ')
+            content.append('//')
+            comment = self.all_comments[self.current_question]
+            if comment:
+                comment = comment[self.version]
+                if comment:
+                    comment = comment[i]
+                    if comment:
+                        for comment_line in comment.split('\n'):
+                            to_fill.append(comment_line)
+            if len(to_fill):
+                content.append(html(to_fill[0]))
+                to_fill.splice(0, 1)
+            content.append('\n')
+        content.append("</pre>")
+
+        window.location = ("mailto:" + INFOS['mail']
+            + "?subject=" + encodeURIComponent(COURSE.split('=')[1])
+            + "&html-body="
+            + encodeURIComponent(''.join(content))
+            )
+
 
     def get_grading(self):
         """HTML of the grading interface"""
