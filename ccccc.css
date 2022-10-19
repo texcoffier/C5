@@ -77,6 +77,41 @@ DIV.executor > DIV:first-child
     position: absolute;
     width: 2em;
 }
+.comments {
+    z-index: 1000;
+    overflow: hidden;
+    pointer-events: none;
+}
+.comments TEXTAREA {
+    position: absolute;
+    display: block;
+    opacity: 0.7;
+    font-size: 80%;
+    pointer-events: all;
+}
+
+.comments TEXTAREA.empty {
+    width: 1vw;
+    height: 1vw;
+}
+
+.comments TEXTAREA.empty:focus {
+    width: auto;
+    height: auto;
+}
+
+.comments TEXTAREA.filled, .comments TEXTAREA:focus {
+    z-index: 2;
+}
+.comments TEXTAREA.saving {
+    background: #F88;
+}
+.comments TEXTAREA.filled {
+    background: #DFD;
+}
+.comments TEXTAREA:focus {
+    background: #FFF;
+}
 
 BODY>DIV>DIV {
     padding-left: var(--pad);

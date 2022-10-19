@@ -265,6 +265,28 @@ async def record_grade(request):
         grades = ''
     return response(f"<!DOCTYPE html>\n<script>window.parent.ccccc.update_grading({json.dumps(grades)})</script>")
 
+async def record_comment(request):
+    """Log a comment"""
+    session, course = await get_teacher_login_and_course(request)
+    is_admin = session.is_admin(course)
+    if not is_admin:
+        return response("Vous n'êtes pas autorisé à noter.")
+    post = await request.post()
+    login = post['student']
+    if not os.path.exists(f'{course.dirname}/{login}'):
+        return response("Hacker?")
+    comment_file = f'{course.dirname}/{login}/comments.log'
+    if 'comment' in post:
+        with open(comment_file, "a") as file:
+            file.write(json.dumps([int(time.time()), session.login, int(post['question']),
+                                   int(post['version']), int(post['line']), post['comment']]) + '\n')
+    if os.path.exists(comment_file):
+        with open(comment_file, "r") as file:
+            comments = file.read()
+    else:
+        comments = ''
+    return response(f"<!DOCTYPE html>\n<script>window.parent.ccccc.update_comments({json.dumps(comments)})</script>")
+
 async def load_student_infos():
     """Load all student info in order to answer quickly"""
     utilities.CourseConfig.load_all_configs()
@@ -991,6 +1013,7 @@ APP.add_routes([web.get('/', home),
                 web.post('/upload_course', upload_course),
                 web.post('/log', log),
                 web.post('/record_grade/{course}', record_grade),
+                web.post('/record_comment/{course}', record_comment),
                 ])
 APP.on_startup.append(startup)
 logging.basicConfig(level=logging.DEBUG)

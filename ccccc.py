@@ -91,7 +91,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
     index = reset_button = popup_element = save_button = local_button = line_numbers = None
-    stop_button = fullscreen = None
+    stop_button = fullscreen = comments = None
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -120,6 +120,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     do_not_clear = {}
     inputs = {} # User input in execution bloc
     grading_history = ''
+    all_comments = {}
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -207,6 +208,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Set the bloc position and background"""
         self.options['positions']['overlay'] = self.options['positions']['editor']
         self.options['positions']['overlay'][4] = '#0000'
+        if GRADING:
+            left, width, top, height, background = self.options['positions']['editor']
+            self.options['positions']['comments'] = [
+                left + width, 100 - (left + width), top, height]
         for key in self.options['positions']:
             left, width, top, height, background = self.options['positions'][key]
             e = self[key] # pylint: disable=unsubscriptable-object
@@ -227,10 +232,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.local_button.innerHTML = self.options['icon_local']
         if self.stop_button:
             self.stop_button.innerHTML = self.options['icon_stop']
-
+        if GRADING:
+            self.save_button.style.display = 'none'
+            self.reset_button.style.display = 'none'
+            self.stop_button.style.display = 'none'
     def create_gui(self):
         """The text editor container"""
         self.options['positions']['overlay'] = self.options['positions']['editor']
+        if GRADING:
+            self.options['positions']['comments'] = [] # Filled by update_gui()
         for key in self.options['positions']:
             if key == 'stop_button' and not CHECKPOINT:
                 continue
@@ -433,19 +443,30 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         meter = document.createRange()
         line_height = 0
+        comments = self.all_comments[self.current_question] or {}
+        comments = comments[self.version] or {}
         for i, line in enumerate(self.editor_lines):
             if line.getBoundingClientRect:
                 rect = line.getBoundingClientRect()
             else:
                 meter.selectNodeContents(line)
                 rect = meter.getBoundingClientRect()
-            if not self.line_numbers.childNodes[i]:
-                self.line_numbers.appendChild(document.createElement('DIV'))
-                self.line_numbers.childNodes[i].textContent = i+1 
             if rect.top:
                 top = rect.top + self.editor.scrollTop
             else:
                 top = line.offsetTop
+            if not self.line_numbers.childNodes[i]:
+                self.line_numbers.appendChild(document.createElement('DIV'))
+                self.line_numbers.childNodes[i].textContent = i+1
+            if GRADING:
+                if not self.comments.childNodes[i]:
+                    comment = document.createElement('TEXTAREA')
+                    comment.line = i
+                    comment.style.top = top + 'px'
+                    self.comments.appendChild(comment)
+                self.comments.childNodes[i].textContent = comments[i] or ''
+                self.comments.childNodes[i].className = comments[i] and 'filled' or 'empty'
+
             self.line_numbers.childNodes[i].style.top = top + 'px'
             if line_height == 0:
                 # Assume the first line is not wrapped
@@ -460,6 +481,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             marker.style.width = rect.width + 'px'
             marker.style.height = rect.height - line_height + 'px'
             self.overlay.appendChild(marker)
+        if GRADING:
+            self.comments.firstChild.style.top = self.line_numbers.lastChild.offsetTop + 'px'
         self.overlay_show()
 
     def record_now(self):
@@ -625,6 +648,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay_hide()
     def onkeyup(self, event):
         """Key up"""
+        if event.target.tagName == 'TEXTAREA':
+            # The teacher enter a comment
+            return
         if event.key not in ('Left', 'Right', 'Up', 'Down'):
             self.coloring()
     def onkeypress(self, event):
@@ -643,6 +669,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.oldScrollTop = None
         else:
             self.line_numbers.scrollTop = self.editor.scrollTop
+            self.comments.scrollTop = self.editor.scrollTop
             self.overlay.scrollTop = self.editor.scrollTop
     def oninput(self, event):
         """Send the input to the worker"""
@@ -710,6 +737,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if not self.save():
                 record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
 
+    def update_comments(self, comments):
+        """Fill comments"""
+        for infos in comments.split('\n'):
+            if not infos:
+                continue
+            _timestamp, _login, question, version, line, comment = JSON.parse(infos)
+            if question not in self.all_comments:
+                self.all_comments[question] = {}
+            if version not in self.all_comments[question]:
+                self.all_comments[question][version] = {}
+            self.all_comments[question][version][line] = comment
+        self.coloring()
+
     def update_grading(self, history=None):
         """Colorize buttons"""
         if history:
@@ -746,6 +786,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                      ]
         now = Date()
         for i, version in enumerate(VERSIONS[self.current_question]):
+            self.version = ANSWERS[self.current_question][1]
             content.append('<option')
             if ANSWERS[self.current_question][1] == i:
                 content.append(' selected')
@@ -928,6 +969,25 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_gui()
         self.update_gui()
         setInterval(bind(self.scheduler, self), 200)
+        if GRADING:
+            self.comments.onclick = bind(self.add_comment, self)
+            self.comments.onblur = bind(self.save_comment, self)
+
+    def add_comment(self, event):
+        """Clic on a comment"""
+        if event.target.tagName == 'TEXTAREA':
+            event.target.onchange = bind(self.save_comment, self)
+    def save_comment(self, event):
+        """Save a comment"""
+        do_post_data(
+            {
+                'question': self.current_question,
+                'line': event.target.line,
+                'comment': event.target.value,
+                'student': STUDENT,
+                'version': self.version,
+            }, 'record_comment/' + COURSE + '?ticket=' + TICKET)
+        event.target.className = "saving"
 
     def close_popup(self, event):
         """Returns True if the popup was closed"""
@@ -969,6 +1029,7 @@ def grade(event):
 def version_change(select):
     """Change the displayed version"""
     source, _what, _time = VERSIONS[ccccc.current_question][select.selectedIndex]
+    ccccc.version = select.selectedIndex
     ccccc.save_cursor()
     ccccc.set_editor_content(source)
 
@@ -976,3 +1037,4 @@ ccccc = CCCCC()
 if GRADING:
     # Get grades
     do_post_data({'student': STUDENT}, 'record_grade/' + COURSE + '?ticket=' + TICKET)
+    do_post_data({'student': STUDENT}, 'record_comment/' + COURSE + '?ticket=' + TICKET)
