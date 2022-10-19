@@ -223,10 +223,8 @@ TABLE TR:hover TD { background: #EEE }
             text.append('</a>')
     text.append('''
 <tr><td><td><td><td>Sources:
-<button onclick="window.location.pathname = '/adm/answers/0/' + COURSE + '.zip'"
->Validated questions<br>txt ZIP</button>
-<button onclick="window.location.pathname = '/adm/answers/1/' + COURSE + '.zip'"
->Saved questions<br>txt ZIP</button>
+<button onclick="window.location.pathname = '/adm/answers/' + COURSE + '.zip'"
+>Sources<br>txt ZIP</button>
 ''')
     for what in WHAT:
         text.append('<td><textarea>' + sums[what] + '</textarea>')

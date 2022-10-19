@@ -82,25 +82,39 @@ class File:
             cls.file_cache[filename] = File(filename)
         return cls.file_cache[filename]
 
-async def editor(session, is_admin, course, login, saved, grading=0):
-    """Return the editor page
-        saved :
-            0: validated questions
-            1: saved questions
-            2: compiled questions
+def filter_last_answer(answers):
+    """Return the last answer of each status"""
+    last = [None, None, None, None]
+    for source_answer_time in answers:
+        last[source_answer_time[1]] = source_answer_time
+    return last
+
+async def editor(session, is_admin, course, login, grading=0):
+    """Return the editor page.
+       'saved' : see 'get_answer' comment.
     """
-    answers, _blurs = get_answers(course.dirname, login, saved=saved)
-    for key, value in answers.items():
-        for _source, answer, _time in value:
-            if answer == 1:
-                value[-1][1] = 1 # Correct answer even if changed after
-                break
-            answers[key] = value[-1] # Only the last answer
-    if saved == 2:
-        for key, (timestamp, source) in get_compiled(course, login).items():
-            # Use compiled only if more recent than saved
-            if key not in answers or timestamp > answers[key][2]:
-                answers[key] = [source, 0, timestamp]
+    answers, _blurs = get_answers(course.dirname, login, compiled = grading)
+    versions = {}
+    if grading:
+        # The last save or ok or compiled or snapshot
+        for key, value in answers.items():
+            last = filter_last_answer(value)
+            for item in (last[3], last[2], last[1], last[0]):
+                if item:
+                    answers[key] = item
+                    break
+            versions[key] = last
+    else:
+        # The last save
+        for key, value in answers.items():
+            good = 0
+            for _source, answer, _time in value:
+                if answer == 0:
+                    answers[key] = value[-1] # Only the last answer
+                    value[-1][1] = good
+                elif answer == 1:
+                    good = 1 # Correct answer even if changed after
+
     if course:
         stop = course.get_stop(login)
     else:
@@ -113,6 +127,7 @@ async def editor(session, is_admin, course, login, saved, grading=0):
         notation = 'NOTATION = "";'
         infos = session.infos
         title = course.course.split('=', 1)[1]
+        last = ''
     return File.get('ccccc.html').response(
         session.header() + f'''
         <title>{title}</title>
@@ -126,6 +141,7 @@ async def editor(session, is_admin, course, login, saved, grading=0):
             SOCK = "wss://{utilities.C5_WEBSOCKET}";
             ADMIN = "{int(is_admin)}";
             STOP = "{stop}";
+            VERSIONS = {json.dumps(versions)};
             CP = {course.config['copy_paste']};
             SAVE_UNLOCK = {int(course.config['save_unlock'])};
             SEQUENTIAL = {int(course.config['sequential'])};
@@ -164,7 +180,7 @@ def handle(base=''):
                         return session.message('pending')
                     if status == 'checkpoint':
                         return session.message('checkpoint')
-                return await editor(session, is_admin, course, session.login, 1)
+                return await editor(session, is_admin, course, session.login)
             if '=' in filename:
                 course = utilities.CourseConfig.get(utilities.get_course(filename))
                 filename = course.filename.replace('.cf', '.js')
@@ -181,8 +197,7 @@ async def grade(request):
     is_admin = session.is_admin(course)
     if not is_admin:
         return response("Vous n'êtes pas autorisé à noter.")
-    return await editor(session, True, course, request.match_info['login'],
-        int(request.match_info['saved']), grading=1)
+    return await editor(session, True, course, request.match_info['login'], grading=1)
 
 async def log(request):
     """Log user actions"""
@@ -261,7 +276,8 @@ async def startup(app):
     """For student names and computer names"""
     app['ldap'] = asyncio.create_task(utilities.LDAP.start())
     app['dns'] = asyncio.create_task(utilities.DNS.start())
-    app['load_student_infos'] = asyncio.create_task(load_student_infos())
+    if utilities.C5_VALIDATE:
+        app['load_student_infos'] = asyncio.create_task(load_student_infos())
     print("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
 
 async def get_admin_login(request):
@@ -501,8 +517,13 @@ async def adm_get(request):
             content = file.read()
     return response(content, content_type='text/plain')
 
-def get_answers(course, user, saved=False):
-    """Get question answers"""
+def get_answers(course, user, compiled=False):
+    """Get question answers.
+         * 0 : saved source
+         * 1 : source passing the test
+         * 2 : compilation (if compiled is True)
+         * 3 : snapshot (5 seconds before examination end)
+    """
     answers = collections.defaultdict(list)
     blurs = collections.defaultdict(int)
     try:
@@ -517,10 +538,12 @@ def get_answers(course, user, saved=False):
                             what = cell[0]
                             if what == 'answer':
                                 answers[cell[1]].append([cell[2], 1, seconds])
+                            elif what == 'save':
+                                answers[cell[1]].append([cell[2], 0, seconds])
+                            elif what == 'snapshot':
+                                answers[cell[1]].append([cell[2], 3, seconds])
                             elif what == 'question':
                                 question = cell[1]
-                            elif saved and what == 'save':
-                                answers[cell[1]].append([cell[2], 0, seconds])
                         elif isinstance(cell, str):
                             if cell == 'Blur':
                                 blurs[question] += 1
@@ -528,23 +551,21 @@ def get_answers(course, user, saved=False):
                             seconds += cell
     except IOError:
         return {}, {}
+
+    if compiled:
+        try:
+            with open(f'{course}/{user}/compile_server.log') as file:
+                for line in file:
+                    if "('COMPILE'," in line:
+                        line = ast.literal_eval(line)
+                        answers[line[2][1][1]].append([line[2][1][6], 2, line[0]])
+        except (IndexError, FileNotFoundError):
+            pass
+        for value in answers.values():
+            value.sort(key=lambda x: x[2]) # Sort by timestamp
     return answers, blurs
 
-
-def get_compiled(course, student):
-    """Returns a dict with last version of each compiled question"""
-    d = {}
-    try:
-        with open(f'{course.dirname}/{student}/compile_server.log') as file:
-            for line in file:
-                if "('COMPILE'," in line:
-                    line = ast.literal_eval(line)
-                    d[line[2][1][1]] = [line[0], line[2][1][6]]
-    except (IndexError, FileNotFoundError):
-        pass
-    return d
-
-def question_source(config, comment, where, user, question, answers, compiled, blurs):
+def question_source(config, comment, where, user, question, answers, blurs):
     """Nice source content"""
     content = [
         f"""
@@ -553,27 +574,34 @@ def question_source(config, comment, where, user, question, answers, compiled, b
 {comment} {where}
 {comment} {f'Nombre de pertes de focus : {blurs[question]}' if blurs[question] else ''}
 {comment} {user}     Question {question+1}
-{comment} ##################################################################"""]
-
-    answer = answers.get(question, (None,))[-1] # Only last answer
-    if answer:
-        content.append(f"""
-{comment} Date sauvegarde : {time.ctime(answer[2])}
 {comment} ##################################################################
 
-{answer[0]}
+"""]
+
+    last = filter_last_answer(answers)
+    current = 0
+    last_source = ''
+    for infos, what in zip(last, (
+        "sauvegarde manuelle par l'étudiant",
+        'test réussi',
+        'compilation faites après la sauvegarde manuelle (pouvant ajouter des bugs)',
+        'sauvegarde de dernière seconde (aucune sauvegarde ni compilation)')):
+        if not infos:
+            continue
+        source, _what, timestamp = infos
+        if timestamp < current:
+            continue
+        if last_source == source:
+            continue
+        last_source = source
+        current = timestamp
+        content.append(f"""
+{comment} ------------------------------------------------------------------
+{comment} {time.ctime(timestamp)} : {what}
+{comment} ------------------------------------------------------------------
+
+{source}
 """)
-
-    if question in compiled:
-        source = compiled[question]
-        if not answer or source[0] > answer[2] and source[1].strip() != answer[0].strip():
-            content.append(f'''
-{comment} --------------------------------------------------------------
-{comment} Date compilation : {time.ctime(source[0])}
-{comment} --------------------------------------------------------------
-
-{source[1]}
-''')
 
     return ''.join(content)
 
@@ -581,7 +609,6 @@ async def adm_answers(request):
     """Get students answers"""
     _session = await get_admin_login(request)
     course = request.match_info['course']
-    saved = int(request.match_info['saved'])
     assert '/.' not in course and course.endswith('.zip')
     course = utilities.get_course(course[:-4])
     config = utilities.CourseConfig(course)
@@ -605,19 +632,17 @@ async def adm_answers(request):
         zipper = zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w")
         for user in sorted(os.listdir(course)):
             await asyncio.sleep(0)
-            answers, blurs = get_answers(course, user, saved)
-            compiled = get_compiled(config, user)
+            answers, blurs = get_answers(course, user, compiled=True)
             infos = config.active_teacher_room.get(user)
             building, pos_x, pos_y, version = ((infos[2] or '?') + ',?,?,?').split(',')[:4]
             version = version.upper()
             where = f'Surveillant: {infos[1]}, {building} {pos_x}×{pos_y}, Version: {version}'
-            questions = sorted(set(answers) | set(compiled))
-            if questions:
+            if answers:
                 zipper.writestr(
                     f'{course}/{user}#answers.{extension}',
                     ''.join(
-                        question_source(config, comment, where, user, question, answers, compiled, blurs)
-                        for question in questions
+                        question_source(config, comment, where, user, question, answers[question], blurs)
+                        for question in answers
                     ))
         zipper.close()
         with open(filename, 'rb') as file:
@@ -945,7 +970,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/node_modules/{filename:.*}', handle('node_modules')),
                 web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
                 web.get('/adm/get/{filename:.*}', adm_get),
-                web.get('/adm/answers/{saved}/{course:.*}', adm_answers),
+                web.get('/adm/answers/{course:.*}', adm_answers),
                 web.get('/adm/home', adm_home),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/config/{course}/{action}/{value}', adm_config),
@@ -962,7 +987,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
                 web.get('/update/{course}', update_browser),
-                web.get('/grade/{course}/{login}/{saved}', grade),
+                web.get('/grade/{course}/{login}', grade),
                 web.post('/upload_course', upload_course),
                 web.post('/log', log),
                 web.post('/record_grade/{course}', record_grade),

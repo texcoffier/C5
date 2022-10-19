@@ -41,6 +41,7 @@ try:
     SOCK = SOCK
     STOP = STOP
     CHECKPOINT = CHECKPOINT
+    VERSIONS = VERSIONS
     CP = CP
     SAVE_UNLOCK = SAVE_UNLOCK
     SEQUENTIAL = SEQUENTIAL
@@ -54,6 +55,8 @@ try:
             """Send a message to the worker"""
 except: # pylint: disable=bare-except
     pass
+
+EXPLAIN = {0: "Sauvegardée", 1: "Validée", 2: "Compilée", 3: "Dernière seconde"}
 
 def two_digit(number):
     """ 6 → 06 """
@@ -108,6 +111,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     last_record_to_send = []
     popup_done = False
     compile_now = False
+    last_compile = {}
     editor_lines = []
     do_not_register_this_blur = False
     init_done = False
@@ -120,7 +124,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
         'close': "Voulez-vous vraiment quitter cette page ?",
-        'allow_copy_paste': CP,
+        'allow_copy_paste': CP or GRADING,
         'save_unlock': SAVE_UNLOCK,
         'display_reset': True,
         'positions' : {
@@ -157,7 +161,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'ANSWERS': ANSWERS,
             'COURSE': COURSE,
             'WHERE': WHERE,
-            'SEQUENTIAL': SEQUENTIAL,
+            'SEQUENTIAL': SEQUENTIAL and not GRADING,
             'INFOS': INFOS,
             }])
         try:
@@ -290,14 +294,25 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.unlock_worker()
             self.state = 'started'
             self.worker.postMessage(self.source) # Start compile/execute/test
+            self.last_compile[self.current_question] = self.source
         seconds = int(millisecs() / 1000)
         if self.seconds != seconds:
-            if seconds == 10:
-                self.record_now()
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
                 delta = STOP - seconds # pylint: disable=undefined-variable
+                if delta == 10:
+                    self.record_now()
+                if delta == 5:
+                    if ((not self.last_answer[self.current_question]
+                            or self.question_original[self.current_question].strip()
+                                == self.last_answer[self.current_question].strip()
+                        )
+                        and self.question_original[self.current_question].strip()
+                            == self.last_compile[self.current_question].strip()
+                    ):
+                        # The student never saved nor compiled the source
+                        self.record(['snapshot', self.current_question, self.source], send_now=True)
                 if delta < 0:
                     timer.className = "done"
                     message = self.options['time_done']
@@ -726,7 +741,29 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def get_grading(self):
         """HTML of the grading interface"""
-        content = ['<pre id="grading" onclick="grade(event)">']
+        content = ['<pre id="grading" onclick="grade(event)">',
+                    'Version <select style="background:#FF0" onchange="version_change(this)">',
+                     ]
+        now = Date()
+        for i, version in enumerate(VERSIONS[self.current_question]):
+            content.append('<option')
+            if ANSWERS[self.current_question][1] == i:
+                content.append(' selected')
+            if not version:
+                content.append(' disabled')
+            content.append('>')
+            content.append(EXPLAIN[i])
+            if version:
+                now.setTime(version[2] * 1000)
+                content.append(' ')
+                content.append(two_digit(now.getHours()))
+                content.append(':')
+                content.append(two_digit(now.getMinutes()))
+                content.append(':')
+                content.append(two_digit(now.getSeconds()))
+            content.append('</option>')
+        content.append('</select>')
+
         i = 0
         for item in NOTATION.split('{'):
             options = item.split('}')
@@ -928,6 +965,12 @@ def grade(event):
             'value': value,
             'student': STUDENT,
         }, 'record_grade/' + COURSE + '?ticket=' + TICKET)
+
+def version_change(select):
+    """Change the displayed version"""
+    source, _what, _time = VERSIONS[ccccc.current_question][select.selectedIndex]
+    ccccc.save_cursor()
+    ccccc.set_editor_content(source)
 
 ccccc = CCCCC()
 if GRADING:

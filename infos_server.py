@@ -24,6 +24,7 @@ print(f"\nStart at {time.ctime()}", file=sys.stderr)
 
 while True:
     try:
+        print(f"Before LDAP bind", file=sys.stderr)
         LDAP = ldap.ldapobject.ReconnectLDAPObject(
             C5_LDAP,
             retry_max=10,
@@ -34,6 +35,7 @@ while True:
         LDAP.set_option(ldap.OPT_REFERRALS, 0)
         LDAP.set_option(ldap.OPT_X_KEEPALIVE_IDLE, True)
         LDAP.simple_bind_s(C5_LDAP_LOGIN, C5_LDAP_PASSWORD)
+        print(f"After LDAP bind", file=sys.stderr)
 
         for line in sys.stdin:
             start = time.time()

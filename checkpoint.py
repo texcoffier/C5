@@ -799,12 +799,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     logins.append(student.login)
                 if confirm("Ouvrir " + len(logins) + ' onglets pour noter '
                     + ' '.join(logins)):
-                    if confirm("OK pour noter la dernière sauvegarde\nCancel pour noter la dernière compilation"):
-                        what = '1'
-                    else:
-                        what = '2'
+                    # if confirm("OK pour noter la dernière sauvegarde\nCancel pour noter la dernière compilation"):
+                    #     what = '1'
+                    # else:
+                    #     what = '2'
                     for login in logins:
-                        window.open('/grade/' + COURSE + '/' + login + '/' + what
+                        window.open('/grade/' + COURSE + '/' + login
                             + '?ticket=' + TICKET)
             return True
         return False
@@ -1355,36 +1355,15 @@ def spy(sources, login, infos):
         state = '<button onclick="open_exam(\'' + login + '\')">Rouvrir examen</button>'
     if not student.good_room:
         state += ' (Adresse IP dans la mauvaise salle)'
-    last_save = {}
-    last_compile = {}
-    grade_compile = ''
-    grade_save = ''
-    for source in sources:
-        if source[2] == 's':
-            last_save[source[1]] = source
-            if not grade_save:
-                grade_save = ('<button onclick="window.open(\'/grade/'
-                    + COURSE + '/' + login + '/1?ticket=' + TICKET
-                    + '\')">Noter sauvegarde</button>')
-        elif source[2] == 'c':
-            last_compile[source[1]] = source
-    for question in last_compile:
-        if (not last_save[question]
-            or last_compile[question][0] > last_save[question][0]
-                and last_compile[question][3].strip() != last_save[question][3].strip()
-           ):
-            grade_compile = ('<button onclick="window.open(\'/grade/'
-                + COURSE + '/' + login + '/2?ticket=' + TICKET
-                + '\')">Noter dernière compilation</button>')
-            break
 
     div = document.getElementById('spy')
     content = [
         '<button onclick="spy_close()">Fermer</button> ',
         login, ' ', infos.fn, ' ', infos.sn, ' ', state,
-        '(<input onchange="set_time_bonus(this,\'' + login
-            + '\')" value="' + student.bonus_time/60 + '">Minutes bonus)',
-        grade_save, grade_compile,
+        '(<input onchange="set_time_bonus(this,\'' + login,
+        '\')" value="', student.bonus_time/60, '">Minutes bonus)',
+        '<button onclick="window.open(\'/grade/', COURSE, '/', login, '?ticket=', TICKET,
+        "')\">Noter l'étudiant</button>",
         '<div id="time" onmousedown="spy_it(event)"',
         ' onmousemove="if (event.buttons) spy_it(event)">']
     spy.sources = []
