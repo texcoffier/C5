@@ -331,6 +331,10 @@ LABEL, .index DIV, .save_button, .reset_button, .local_button { cursor: pointer 
     margin-left: -7px;
     margin-right: -9px;
 }
+#grading SELECT {
+    font-size: 100%;
+}
+
 #grading BUTTON {
     font-size: 100%;
     border: 1px solid #FFF;
