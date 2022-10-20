@@ -976,6 +976,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         else:
             self.editor.scrollTop = 0
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
+        self.highlight_errors = []
         self.coloring()
 
     def onbeforeunload(self, event):
@@ -1070,5 +1071,7 @@ def version_change(select):
     ccccc.version = select.selectedIndex
     ccccc.save_cursor()
     ccccc.set_editor_content(source)
+    ccccc.update_source()
+    ccccc.compile_now = True
 
 ccccc = CCCCC()
