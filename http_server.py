@@ -99,10 +99,7 @@ async def editor(session, is_admin, course, login, grading=0):
         # The last save or ok or compiled or snapshot
         for key, value in answers.items():
             last = filter_last_answer(value)
-            for item in (last[3], last[2], last[1], last[0]):
-                if item:
-                    answers[key] = item
-                    break
+            answers[key] = max(last, key=lambda x: x[2] if x else 0) # Last time
             versions[key] = last
     else:
         # The last save
