@@ -442,7 +442,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.add_highlight_errors(line_nr, char_nr, what)
 
         meter = document.createRange()
-        line_height = 0
+        line_height = 1000
         comments = self.all_comments[self.current_question] or {}
         comments = comments[self.version] or {}
         for i, line in enumerate(self.editor_lines):
@@ -468,11 +468,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.comments.childNodes[i].className = comments[i] and 'filled' or 'empty'
 
             self.line_numbers.childNodes[i].style.top = top + 'px'
-            if line_height == 0:
-                # Assume the first line is not wrapped
-                line_height = rect.height * 1.1
+            if rect.height and rect.height < line_height:
+                line_height = rect.height
                 continue
-            if rect.height < line_height:
+            if rect.height < line_height * 1.8:
                 continue
             marker = document.createElement('DIV')
             marker.className = 'wrapped'
@@ -481,8 +480,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             marker.style.width = rect.width + 'px'
             marker.style.height = rect.height - line_height + 'px'
             self.overlay.appendChild(marker)
-        if GRADING:
-            self.comments.firstChild.style.top = self.line_numbers.lastChild.offsetTop + 'px'
         self.overlay_show()
 
     def record_now(self):
@@ -669,7 +666,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.oldScrollTop = None
         else:
             self.line_numbers.scrollTop = self.editor.scrollTop
-            self.comments.scrollTop = self.editor.scrollTop
+            if GRADING:
+                self.comments.scrollTop = self.editor.scrollTop
             self.overlay.scrollTop = self.editor.scrollTop
     def oninput(self, event):
         """Send the input to the worker"""
@@ -1007,6 +1005,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if GRADING:
             self.comments.onclick = bind(self.add_comment, self)
             self.comments.onblur = bind(self.save_comment, self)
+            # Get grades
+            do_post_data({'student': STUDENT}, 'record_grade/' + COURSE + '?ticket=' + TICKET)
+            do_post_data({'student': STUDENT}, 'record_comment/' + COURSE + '?ticket=' + TICKET)
 
     def add_comment(self, event):
         """Clic on a comment"""
@@ -1069,7 +1070,3 @@ def version_change(select):
     ccccc.set_editor_content(source)
 
 ccccc = CCCCC()
-if GRADING:
-    # Get grades
-    do_post_data({'student': STUDENT}, 'record_grade/' + COURSE + '?ticket=' + TICKET)
-    do_post_data({'student': STUDENT}, 'record_comment/' + COURSE + '?ticket=' + TICKET)
