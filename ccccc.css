@@ -187,7 +187,8 @@ H2 {
 
 .time {
     background: #FFF;
-    opacity: 0.3
+    opacity: 0.3;
+    font-size: 80%;
 }
 
 .index>DIV {

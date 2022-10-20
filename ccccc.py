@@ -218,6 +218,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             e = self[key] # pylint: disable=unsubscriptable-object
             if not e:
                 continue
+            if left >= 100 or top >= 100:
+                e.style.display = 'none'
+            else:
+                e.style.display = 'block'
             e.style.left = left + '%'
             e.style.right = (100 - left - width) + '%'
             e.style.top = top + '%'
