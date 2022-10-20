@@ -773,7 +773,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         element = document.getElementById('grading_sum')
         element.textContent = 'Envoyer un mail Σ=' + grading_sum
         element.onclick = bind(self.send_mail, self)
-        if len(grading) == nr_grades:
+        if self.nr_grades == nr_grades:
             element.style.background = "#0F0"
             element.style.color = "#000"
         else:
@@ -860,6 +860,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 j = 1
                 content.append(html(after))
             i += 1
+        self.nr_grades = i
         content.append('<span id="grading_sum"></span></pre>')
         return ''.join(content)
 
