@@ -121,6 +121,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     inputs = {} # User input in execution bloc
     grading_history = ''
     all_comments = {}
+    focus_on_next_input = False
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -671,6 +672,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':
+            self.focus_on_next_input = True
             if self.options['forget_input']:
                 event.target.disabled = True
             else:
@@ -917,7 +919,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     self.send_input(span.value)
                     span.run_on_change = True
                 else:
-                    if document.activeElement and document.activeElement.tagName == 'INPUT':
+                    if self.focus_on_next_input:
+                        self.focus_on_next_input = False
                         span.focus()
                 self.input_index += 1
             else:
