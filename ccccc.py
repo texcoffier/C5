@@ -460,13 +460,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.line_numbers.appendChild(document.createElement('DIV'))
                 self.line_numbers.childNodes[i].textContent = i+1
             if GRADING:
-                if not self.comments.childNodes[i]:
+                comment = self.comments.childNodes[i]
+                if not comment:
                     comment = document.createElement('TEXTAREA')
                     comment.line = i
                     comment.style.top = top + 'px'
                     self.comments.appendChild(comment)
-                self.comments.childNodes[i].textContent = comments[i] or ''
-                self.comments.childNodes[i].className = comments[i] and 'filled' or 'empty'
+                comment.textContent = (comments[i] or '').strip()
+                comment.className = comments[i] and 'filled' or 'empty'
+                if comments[i]:
+                    lines = comments[i].strip().split('\n')
+                    comment.rows = len(lines)
+                    comment.cols = min(max([len(line) for line in lines]), 50)
+                else:
+                    comment.rows = 3
+                    comment.cols = 40
 
             self.line_numbers.childNodes[i].style.top = top + 'px'
             if rect.height and rect.height < line_height:
