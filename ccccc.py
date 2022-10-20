@@ -560,7 +560,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.close_popup(event):
             return
         self.record('MouseDown')
-        self.editor.focus()
     def oncopy(self, event, what='Copy'):
         """Copy"""
         if self.options['allow_copy_paste']:
