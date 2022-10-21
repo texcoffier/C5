@@ -924,10 +924,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         document.getElementById('messages').innerHTML = ' '.join(content)
     def start_move_student(self, event):
         """Move student bloc"""
+        self.get_event(event)
         login = event.currentTarget.getAttribute('login')
         Student.moving_student = STUDENT_DICT[login]
         Student.moving_element = event.currentTarget
         Student.moving_element.style.position = 'fixed'
+        Student.moving_student_position = [self.event_x, self.event_y]
         document.body.onmousemove = document.body.ontouchmove = bind(self.move_student, self)
         window.onmouseup = document.body.ontouchend = bind(self.stop_move_student, self)
         self.move_student(event)
@@ -970,6 +972,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         pos = self.get_coord(event)
         if pos[0] != -1:
             self.move_student_to(Student.moving_student, pos[0], pos[1])
+        else:
+            if Student.moving_student_position == [self.event_x, self.event_y]:
+                record('/checkpoint/SPY/' + COURSE + '/' + Student.moving_student.login)
         document.body.onmousemove = document.body.ontouchmove = None
         window.onmouseup = document.body.ontouchend = None
         del Student.moving_element.style.position
