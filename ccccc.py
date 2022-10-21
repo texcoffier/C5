@@ -654,6 +654,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.oldScrollTop = self.editor.scrollTop
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
+        if event.target.tagName == 'TEXTAREA':
+            # The teacher enter a comment
+            return
         self.overlay_hide()
     def onkeyup(self, event):
         """Key up"""
