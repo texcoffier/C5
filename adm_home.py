@@ -179,6 +179,13 @@ def display(): # pylint: disable=too-many-statements
         for example «JS=foo_loop.py», the session name must not yet exists.''')
     form('', False)
     text.append('<hr>')
+    text.append('Roots: ')
+    for root in CONFIG.roots:
+        add_button('/adm/c5/del_root/' + root, '🗑',
+                   name='del_root_' + root.replace('.', '_')) # For regtests
+        text.append(' ' + root + ', ')
+    add_input('/adm/c5/add_root/', '', name="add_root")
+    text.append('<hr>')
     text.append('Masters: ')
     for master in CONFIG.masters:
         add_button('/adm/c5/del_master/' + master, '🗑',

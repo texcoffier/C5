@@ -283,11 +283,13 @@ def get_course(txt):
 class Config:
     """C5 configuration"""
     masters = []
+    roots = []
     ticket_ttl = 86400
     computers = []
     student = None
     def __init__(self):
         self.config = {
+            'roots': self.roots,
             'masters': self.masters,
             'ticket_ttl': self.ticket_ttl,
             'computers': [],
@@ -314,6 +316,7 @@ class Config:
     def update(self):
         """Update configuration attributes"""
         self.masters = self.config['masters']
+        self.roots = self.config['roots']
         self.ticket_ttl = self.config['ticket_ttl']
         self.computers = self.config['computers']
         self.student = re.compile(self.config['student'])
@@ -329,6 +332,13 @@ class Config:
         self.config[key] = value
         self.save()
         self.update()
+    def is_root(self, login):
+        """Returns True if it is an root login"""
+        if login in self.roots:
+            return True
+        if self.roots:
+            return False
+        return not self.is_student(login)
     def is_admin(self, login):
         """Returns True if it is an admin login"""
         if login in self.masters:

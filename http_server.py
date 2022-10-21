@@ -449,6 +449,16 @@ async def adm_c5(request): # pylint: disable=too-many-branches
             utilities.CONFIG.masters.remove(value)
             utilities.CONFIG.set_value('masters', utilities.CONFIG.masters)
             more = f"Master «{value}» removed"
+    elif action == 'add_root':
+        if value not in utilities.CONFIG.roots:
+            utilities.CONFIG.roots.append(value)
+            utilities.CONFIG.set_value('roots', utilities.CONFIG.roots)
+            more = f"Root «{value}» added"
+    elif action == 'del_root':
+        if value in utilities.CONFIG.roots:
+            utilities.CONFIG.roots.remove(value)
+            utilities.CONFIG.set_value('roots', utilities.CONFIG.roots)
+            more = f"Root «{value}» removed"
     elif action == 'ips_per_room':
         try:
             utilities.CONFIG.set_value(action, text_to_dict(value))
