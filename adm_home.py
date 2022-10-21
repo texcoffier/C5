@@ -178,40 +178,6 @@ def display(): # pylint: disable=too-many-statements
         Add a new session, filename must be as «{JS|CPP|PYTHON|REMOTE}=SESSION.py»
         for example «JS=foo_loop.py», the session name must not yet exists.''')
     form('', False)
-    text.append('<hr>')
-    text.append('Roots: ')
-    for root in CONFIG.roots:
-        add_button('/adm/c5/del_root/' + root, '🗑',
-                   name='del_root_' + root.replace('.', '_')) # For regtests
-        text.append(' ' + root + ', ')
-    add_input('/adm/c5/add_root/', '', name="add_root")
-    text.append('<hr>')
-    text.append('Masters: ')
-    for master in CONFIG.masters:
-        add_button('/adm/c5/del_master/' + master, '🗑',
-                   name='del_master_' + master.replace('.', '_')) # For regtests
-        text.append(' ' + master + ', ')
-    add_input('/adm/c5/add_master/', '', name="add_master")
-    text.append('<hr>')
-    text.append('Session ticket time to live in seconds: ')
-    add_input('/adm/c5/ticket_ttl/', CONFIG.ticket_ttl, name="ticket_ttl")
-    text.append(' ')
-    add_button('/adm/c5/remove_old_tickets/0', 'Remove old tickets now', name="remove_olds")
-    text.append('<hr>')
-    text.append('For each room indicate the computers IP:')
-    content = []
-    for room in CONFIG.ips_per_room:
-        content.append(room + ' ' + CONFIG.ips_per_room[room])
-    add_textarea('/adm/c5/ips_per_room/', '\n'.join(content))
-    text.append('<hr>')
-    text.append('It is a student if the login match regexp: ')
-    add_input('/adm/c5/student/', CONFIG.student, name="student")
-    text.append('<hr>')
-    text.append('User messages:')
-    content = []
-    for message in CONFIG.messages:
-        content.append(message + ' ' + CONFIG.messages[message])
-    add_textarea('/adm/c5/messages/', '\n'.join(content))
     document.body.innerHTML = text.join('') # pylint: disable=no-member
     def anime():
         more = document.getElementById('more')

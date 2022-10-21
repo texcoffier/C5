@@ -299,6 +299,7 @@ class Config:
                 'unknown': "Cette session n'existe pas",
                 'checkpoint': "Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen.<br>Rechargez cette page quand l'intervenant vous le dira.",
                 'done': "La session d'exercice ou d'examen est terminée",
+                'not_root': "Vous n'êtes pas root C5",
                 'not_admin': "Vous n'êtes pas administrateur C5",
                 'not_teacher': "Vous ne surveillez pas cet examen",
                 'pending': "La session d'exercice ou d'examen n'a pas commencé",
@@ -341,7 +342,7 @@ class Config:
         return not self.is_student(login)
     def is_admin(self, login):
         """Returns True if it is an admin login"""
-        if login in self.masters:
+        if login in self.masters or login in self.roots:
             return True
         if self.masters:
             return False
@@ -472,6 +473,9 @@ class Session:
         if course and self.login in course.teachers:
             return True
         return CONFIG.is_admin(self.login)
+    def is_root(self):
+        """The user is C5 root"""
+        return CONFIG.is_root(self.login)
     def is_student(self):
         """The user is a student"""
         return CONFIG.is_student(self.login)

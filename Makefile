@@ -35,7 +35,7 @@ favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
 prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js node_modules/alasql sandbox \
-	ccccc.js adm_home.js adm_course.js checkpoint.js favicon.ico
+	ccccc.js adm_root.js adm_home.js adm_course.js checkpoint.js favicon.ico
 	@$(MAKE) $$(echo COMPILE_*/*.py | sed 's/\.py/.js/g')
 	@if [ ! -d SSL ] ; then ./utilities.py SSL-SS ; fi
 

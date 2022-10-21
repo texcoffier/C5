@@ -306,6 +306,13 @@ async def get_admin_login(request):
         raise session.message('not_admin', exception=True)
     return session
 
+async def get_root_login(request):
+    """Get the root login or redirect to home page if it isn't one"""
+    session = await utilities.Session.get(request)
+    if not session.is_root():
+        raise session.message('not_root', exception=True)
+    return session
+
 async def get_teacher_login_and_course(request, allow=None):
     """Get the teacher login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
@@ -435,7 +442,7 @@ def text_to_dict(text):
 
 async def adm_c5(request): # pylint: disable=too-many-branches
     """Remove a C5 master"""
-    _session = await get_admin_login(request)
+    _session = await get_root_login(request)
     action = request.match_info['action']
     value = request.match_info['value']
     more = "Nothing to do"
@@ -493,7 +500,7 @@ async def adm_c5(request): # pylint: disable=too-many-branches
         more = f"{nr_deleted} tickets deleted."
     else:
         more = "You are a hacker!"
-    return await adm_home(request, more)
+    return await adm_root(request, more)
 
 async def adm_home(request, more=''):
     """Home page for administrators"""
@@ -520,6 +527,19 @@ async def adm_home(request, more=''):
     return response(
         session.header(courses, more)
         + f'<script src="/adm_home.js?ticket={session.ticket}"></script>')
+
+async def adm_root(request, more=''):
+    """Home page for roots"""
+    if more:
+        if more.endswith('!'):
+            more = '<div id="more" style="background: #F88">' + more + '</div>'
+        else:
+            more = '<div id="more">' + more + '</div>'
+
+    session = await get_root_login(request)
+    return response(
+        session.header((), more)
+        + f'<script src="/adm_root.js?ticket={session.ticket}"></script>')
 
 async def adm_get(request):
     """Get a file or a ZIP"""
@@ -897,6 +917,8 @@ async def checkpoint_bonus(request):
 async def home(request):
     """Test the user rights to display the good home page"""
     session = await utilities.Session.get(request)
+    if session.is_root():
+        return await adm_root(request)
     if session.is_admin():
         return await adm_home(request)
     if not session.is_student():
@@ -1001,6 +1023,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/get/{filename:.*}', adm_get),
                 web.get('/adm/answers/{course:.*}', adm_answers),
                 web.get('/adm/home', adm_home),
+                web.get('/adm/root', adm_root),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/config/{course}/{action}/{value}', adm_config),
                 web.get('/adm/config/{course}/{action}/', adm_config),
