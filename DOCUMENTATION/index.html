@@ -121,6 +121,9 @@
                 <li> Les étudiants placés sur les chaises.</li>
                 <li> Leur avancement dans les exercices.</li>
                 <li> Le nombre de fois qu'ils ont changé de fenêtre.</li>
+                <li> En cliquant sur l'étudiant il peut voir son travail,
+                    le noté suivant un barème et l'annoter.
+                </li>
             </ul>
         </li>
     </ul>
@@ -402,15 +405,17 @@ def default_answer(self):
             et tout gérer.
         </li>
         <li>
-            Les surveillants d'examens qui gèrent les étudiants qui
-            composent avec eux.
+            Les enseignants qui gèrent les étudiants qui composent avec eux.
+        </li>
+        <li>
+            Les correcteurs qui notent les copies.
         </li>
         <li>
             Les étudiants.
         </li>
     </ul>
     <p>
-        La page d'accueil va être différente pour ces 3 catégories de personnes.
+        La page d'accueil va être différente pour ces 4 catégories de personnes.
     </p>
     <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-admin.png">
     <h3>Administrateur : page d'accueil</h3>
@@ -436,7 +441,7 @@ def default_answer(self):
         <li> Liste des surveillants.</li>
         <li> Thème «highlight.js».</li>
         <li> Le barème de notation de la session en texte libre.
-            Les élements de notations sont indiqués par <tt>{Une explication:0,0.5,1,1.5,2}</tt>
+            Les éléments de notations sont indiqués par <tt>{Une explication:0,0.5,1,1.5,2}</tt>
             en en mettant un par ligne au maximum.
             Le barème est sur l'ensemble des questions.
             Ne pas rien changer dans le barème une fois que la correction à commencé
@@ -527,6 +532,9 @@ def default_answer(self):
             Cette liste est mise à jour en fin de déplacement,
             pas pendant que le plan bouge sur l'écran.
         </li>
+        <li>
+            Si l'étudiant a été noté, sa note est indiquée.
+        </li>
     </ul>
     <p>
         Le haut du plan contient la légende et comment l'utiliser.
@@ -568,6 +576,17 @@ def default_answer(self):
         la salle afin qu'il ne puisse pas continuer l'examen à l'extérieur.
         L'étudiant a un bouton EXIT sur l'éditeur de source pour terminer l'examen.
     </p>
+    <p>
+        Le bouton «Noter l'étudiant» permet de noter le source de l'étudiant :
+    </p>
+    <ul>
+        <li> Le source ayant passé le test.</li>
+        <li> Le source sauvegardé par l'étudiant.</li>
+        <li> Le source compilé avec <tt>compile_remote</tt>.</li>
+        <li> Si aucun des précédents : le source qui était sur
+            l'écran 5 secondes avant la fin de l'examen.
+        </li>
+    </ul>
 
     <h3>Étudiant</h3>
     <img style="float: right" src="screen-student.png">
@@ -785,6 +804,11 @@ server {
             <td>favicon.ico
             <td>L'icone des pages web, calculée à partir de <tt>c5.svg</tt>.
         </tr>
+        <tr class="executable">
+            <td>dns_server.py
+            <td>Un filtre (stdin/stdout) calculant le nom de la machine à
+                partir de son adresse IP.
+        </tr>
         <tr class="serveur">
             <td>http_server.py
             <td>Le serveur web C5 pouvant fonctionner seul ou derrière
@@ -855,14 +879,20 @@ server {
     <ul>
         <li> <tt>http_server.log</tt> toutes les requêtes web reçues.</li>
         <li> <tt>compile_server.log</tt> toutes les demandes de compilation reçues.</li>
+        <li> <tt>dns_server.log</tt> toutes les requêtes DNS faites.</li>
         <li> <tt>infos_server.log</tt> toutes les requêtes nom/prénom faites.</li>
         <li> <tt>tests.log</tt> Résumé des tests de régression.</li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL}/nom_sujet/LOGIN/http_server.log</tt> toutes les actions de
-            l'étudiant.<br>
-            <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL}/nom_sujet/LOGIN/</tt>
+            <ul>
+            <li> <tt>http_server.log</tt> toutes les actions de l'étudiant.<br>
+                <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
+            <li> <tt>compile_server.log</tt><br>
+                toutes les compilations/exécutions faites par l'étudiant.</li>
+            <li> <tt>grades.log</tt><br>
+                les notes de l'étudiant.</li>
+            <li> <tt>comments.log</tt><br>
+                les commentaires sur les codes de l'étudiant.</li>
         </li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL}/nom_sujet/LOGIN/compile_server.log</tt><br>
-            toutes les compilations/exécutions faites par l'étudiant.</li>
     </ul>
     <p>
         Divers fichiers générés à l'installation ou à l'utilisation :
@@ -908,9 +938,8 @@ server {
         <li> Lors du dépôt choisir le compilateur avec un menu et pas dans le nom du fichier.</li>
         <li> Permettre l'édition intéractive du sujet sur la page web.</li>
         <li> Affichage de seulement ses sujets.</li>
-        <li> Exportation vers TOMUSS dans une colonne de type Notation.
-            Ajout du barème aux questions (en plus du barème global).
-        </li>
+        <li> Exportation vers TOMUSS dans une colonne de type Notation.</li>
+        <li> Ajout du barème aux questions (en plus du barème global).</li>
         <li> Choix du thème de coloriage syntaxique.</li>
         <li> Ajouter un compilateur qui ne fait rien (examen texte pur).</li>
         <li> Icone pour passer en plein écran.</li>
@@ -936,9 +965,6 @@ server {
         </li>
         <li>
             Désactiver intéractivement la sauvegarde des INPUTs ?
-        </li>
-        <li>
-            Commenter le code de l'étudiant
         </li>
         <li>
             ZIP des étudiants d'une salle.
