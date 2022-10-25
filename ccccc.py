@@ -122,6 +122,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     grading_history = ''
     all_comments = {}
     focus_on_next_input = False
+    cursor_position = 0
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -261,6 +262,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.autocapitalize = False
         self.editor.autocomplete = False
         self.editor.onscroll = bind(self.onscroll, self)
+        self.editor.onmouseup = bind(self.update_cursor_position, self)
+        self.editor.onkeyup = bind(self.update_cursor_position, self)
         self.editor.focus()
 
         self.reset_button.style.fontFamily = 'emoji'
@@ -616,10 +619,22 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.popup_message(self.options['forbiden'])
         event.preventDefault(True)
 
+    def update_cursor_position(self):
+        """Get the cursor position"""
+        cursor = document.getSelection().getRangeAt(0).cloneRange()
+        cursor.setStart(self.editor.firstChild, 0)
+        pos = 0
+        for child in cursor.cloneContents().childNodes:
+            if child.tagName:
+                pos += 1
+            else:
+                pos += child.textContent.length
+        self.cursor_position = pos
+
     def save_cursor(self):
         """Save the cursor position"""
-        self.last_answer_cursor[self.current_question] = [self.editor.scrollTop]
-
+        self.last_answer_cursor[self.current_question] = [self.editor.scrollTop,
+                                                          self.cursor_position]
     def onkeydown(self, event):
         """Key down"""
         if self.close_popup(event):
@@ -985,9 +1000,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay_hide()
         self.editor.innerText = message
         if self.last_answer_cursor[self.current_question]:
-            scrollpos = self.last_answer_cursor[self.current_question]
+            scrollpos, cursorpos = self.last_answer_cursor[self.current_question]
             self.editor.scrollTop = scrollpos
-            # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
+            for line in self.editor.childNodes:
+                if line.tagName:
+                    cursorpos -= 1
+                    if cursorpos < 0:
+                        document.getSelection().collapse(line, 0)
+                        break
+                    continue
+                cursorpos -= len(line.textContent)
+                if cursorpos < 0:
+                    document.getSelection().collapse(line, cursorpos + len(line.textContent))
+                    break
         else:
             self.editor.scrollTop = 0
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
