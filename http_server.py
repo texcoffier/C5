@@ -107,10 +107,10 @@ async def editor(session, is_admin, course, login, grading=0):
             good = 0
             for _source, answer, _time in value:
                 if answer == 0:
-                    answers[key] = value[-1] # Only the last answer
                     value[-1][1] = good
                 elif answer == 1:
                     good = 1 # Correct answer even if changed after
+            answers[key] = value[-1] # Only the last answer
 
     if course:
         stop = course.get_stop(login)
