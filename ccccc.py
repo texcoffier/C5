@@ -123,6 +123,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     all_comments = {}
     focus_on_next_input = False
     cursor_position = 0
+    insert_on_keyup = None
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -620,16 +621,34 @@ class CCCCC: # pylint: disable=too-many-public-methods
         event.preventDefault(True)
 
     def update_cursor_position(self):
-        """Get the cursor position"""
+        """Get the cursor position
+        pos = [current_position, do_div_br_collapse]
+        """
         cursor = document.getSelection().getRangeAt(0).cloneRange()
         cursor.setStart(self.editor.firstChild, 0)
-        pos = 0
-        for child in cursor.cloneContents().childNodes:
-            if child.tagName:
-                pos += 1
-            else:
-                pos += child.textContent.length
-        self.cursor_position = pos
+        def walk(node, pos):
+            for child in node.childNodes:
+                if child.tagName == 'BR':
+                    #print('BR', pos, '+1')
+                    pos[0] += 1
+                    pos[1] = True
+                elif child.tagName: # DIV so newline
+                    #print('DIV before', pos)
+                    walk(child, pos)
+                    #print('DIV after', pos)
+                    if not pos[1]:
+                        pos[0] += 1
+                else:
+                    #print('TEXT', pos, '+' + child.textContent.length , child.textContent)
+                    pos[0] += child.textContent.length
+                    if child.textContent.length:
+                        pos[1] = False
+        pos = [0, False]
+        left = cursor.cloneContents()
+        walk(left, pos)
+        if left.lastChild and left.lastChild.tagName == 'DIV':
+            pos[0] -= 1
+        self.cursor_position = pos[0]
 
     def save_cursor(self):
         """Save the cursor position"""
@@ -670,6 +689,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
             self.oldScrollTop = self.editor.scrollTop
+            self.update_cursor_position()
+            self.update_source()
+            i = self.cursor_position
+            while i > 0 and self.source[i-1] != '\n':
+                i -= 1
+            j = i
+            while j < len(self.source) and self.source[j] in '\t ':
+                j += 1
+            if j != i:
+                self.insert_on_keyup = self.source[i:j]
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
         if event.target.tagName == 'TEXTAREA':
@@ -682,7 +711,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # The teacher enter a comment
             return
         if event.key not in ('Left', 'Right', 'Up', 'Down'):
+            if self.insert_on_keyup:
+                document.execCommand('insertHTML', False, self.insert_on_keyup)
+                self.insert_on_keyup = None
             self.coloring()
+        #print("CURSOR", self.cursor_position,
+        #    JSON.stringify(self.source[self.cursor_position-10:self.cursor_position]),
+        #    JSON.stringify(self.source[self.cursor_position:self.cursor_position+10]))
     def onkeypress(self, event):
         """Key press"""
     def onblur(self, _event):
