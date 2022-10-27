@@ -770,6 +770,7 @@ def checkpoint_line(session, course, content):
             else:
                 waiting.append(student)
     # if session.login in course.teachers:
+    status = course.status('')
     content.append(f'''
     <tr>
     <td>{course.course}
@@ -783,9 +784,14 @@ def checkpoint_line(session, course, content):
     <td {'style="background:#8F8"'
             if course.start > "2001"
             and course.stop < "2100"
-            and course.status('').startswith('running')
+            and status.startswith('running')
             else ''}
     >{'Exam' if course.checkpoint else ''}
+    <td> {
+        f'<a target="_blank" href="/={course.course}?ticket={session.ticket}">Try</a>'
+        if status.startswith('running') or status == 'done' or session.login in course.teachers
+        else ''
+    }
     <td><a href="/checkpoint/{course.course}?ticket={session.ticket}"
         {'style="background:#8F8"' if course.highlight else ''}
     >Checkpoint</a>
@@ -796,7 +802,8 @@ def checkpoint_table(session, courses, test, content):
     """A checkpoint table"""
     content.append('''
         <table>
-        <tr><th>Course<th>Stud<br>ents<th>Wait<br>ing<th>Work<br>ing<th>Done<th>With me<th>Start date<th>Stop date</tr>
+        <tr><th>Course<th>Stud<br>ents<th>Wait<br>ing<th>Work<br>ing<th>Done<th>With me
+        <th>Start date<th>Stop date<th>Exam<th>Try<th>WaitRoom<th>Teachers</tr>
         ''')
     for course in courses:
         if test(course):
