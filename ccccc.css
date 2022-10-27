@@ -36,7 +36,8 @@ DIV.executor > DIV:first-child
 }
 
 .error,
-.warning {
+.warning,
+.cursor {
     position: absolute;
     right: 0;
     left: 0;
@@ -54,8 +55,17 @@ DIV.executor > DIV:first-child
     background: #FFA500;
 }
 
+.cursor {
+    background: #FF0;
+    opacity: 0.5;
+}
+
 .char {
     border: 2px solid #000
+}
+
+.char.cursor {
+    border: 0px solid #000
 }
 
 .wrapped {

@@ -392,11 +392,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay.style.visibility = 'visible'
     def clear_highlight_errors(self):
         """Make space fo the new errors"""
-        self.highlight_errors = {}
+        for key in self.highlight_errors:
+            if self.highlight_errors[key] != 'cursor':
+                self.highlight_errors[key] = None
         while (self.overlay.lastChild
                and self.overlay.lastChild.className
                and 'ERROR' in self.overlay.lastChild.className):
             self.overlay.removeChild(self.overlay.lastChild)
+        self.update_cursor_position()
     def update_source(self):
         def clear_text(state):
             if state.node.tagName == 'DIV':
@@ -542,6 +545,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
+        if not what:
+            return
         box = document.createRange()
         def insert(element, class_name, move_right=0):
             """Set the element to the same place than the range"""
@@ -556,11 +561,23 @@ class CCCCC: # pylint: disable=too-many-public-methods
             element.className = class_name
             self.overlay.appendChild(element)
         line = self.editor_lines[line_nr - 1]
+        # Goto first text element of the line
+        while line.previousSibling and not line.previousSibling.tagName:
+            line = line.previousSibling
+        # Search the text element containing the column
+        while char_nr > len(line.nodeValue or line.innerText):
+            if line.nextSibling.tagName:
+                print('BUG')
+                char_nr = len(line.nodeValue or line.innerText)
+                break
+            char_nr -= len(line.nodeValue or line.innerText)
+            line = line.nextSibling
         box.selectNode(line)
         error = document.createElement('DIV')
-        insert(error, 'ERROR ' + what)
+        if what != 'cursor':
+            insert(error, 'ERROR ' + what)
         try:
-            if char_nr >= (line.nodeValue or line.innerText).length:
+            if char_nr > (line.nodeValue or line.innerText).length:
                 char_nr -= 1
                 move_right = 1
             else:
@@ -620,7 +637,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.popup_message(self.options['forbiden'])
         event.preventDefault(True)
 
-    def update_cursor_position(self):
+    def get_line_column(self, position):
+        """Get the cursor coordinates from the text"""
+        lines = self.source[:position].split('\n')
+        return len(lines), len(lines[-1])
+
+    def update_cursor_position(self, coloring=True):
         """Get the cursor position
         pos = [current_position, do_div_br_collapse]
         """
@@ -628,6 +650,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         cursor.setStart(self.editor.firstChild, 0)
         def walk(node, pos):
             for child in node.childNodes:
+                pos[2] = None
                 if child.tagName == 'BR':
                     #print('BR', pos, '+1')
                     pos[0] += 1
@@ -643,12 +666,51 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     pos[0] += child.textContent.length
                     if child.textContent.length:
                         pos[1] = False
-        pos = [0, False]
+                        pos[2] = child.textContent[-1]
+        pos = [0, False, None]
         left = cursor.cloneContents()
         walk(left, pos)
         if left.lastChild and left.lastChild.tagName == 'DIV':
             pos[0] -= 1
         self.cursor_position = pos[0]
+        if pos[2] in '{}[]()':
+            # Remove old cursor position
+            for key in self.highlight_errors:
+                if self.highlight_errors[key] == 'cursor':
+                    self.highlight_errors[key] = None
+
+            closing = pos[2]
+            opening = {'}': '{', ')': '(', ']': '[',
+                       '{': '}', '(': ')', '[': ']'}[closing]
+            if pos[2] in '}])':
+                direction = -1
+                i = self.cursor_position + 2 * direction
+            else:
+                direction = 1
+                i = self.cursor_position
+
+            nr = 1
+            while nr and i and i < len(self.source):
+                char = self.source[i]
+                if char == closing:
+                    nr += 1
+                elif char == opening:
+                    nr -= 1
+                i += direction
+
+            if direction == 1:
+                line_open, column_open = self.get_line_column(i)
+            else:
+                line_open, column_open = self.get_line_column(i+2)
+            line_close, column_close = self.get_line_column(self.cursor_position)
+            self.highlight_errors[line_open + ':' + column_open] = 'cursor'
+            self.highlight_errors[line_close + ':' + column_close] = 'cursor'
+            if coloring != False:
+                self.coloring()
+        # print(self.source[self.cursor_position-5:self.cursor_position]
+        #       + '|'
+        #       + self.source[self.cursor_position:self.cursor_position+5],
+        #       self.get_line_column(self.cursor_position))
 
     def save_cursor(self):
         """Save the cursor position"""
@@ -689,7 +751,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
             self.oldScrollTop = self.editor.scrollTop
-            self.update_cursor_position()
+            self.update_cursor_position(False)
             self.update_source()
             i = self.cursor_position
             while i > 0 and self.source[i-1] != '\n':
@@ -1097,7 +1159,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         else:
             self.editor.scrollTop = 0
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
-        self.highlight_errors = []
+        self.highlight_errors = {}
         self.coloring()
 
     def onbeforeunload(self, event):
