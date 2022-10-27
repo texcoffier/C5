@@ -633,8 +633,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def save_cursor(self):
         """Save the cursor position"""
-        self.last_answer_cursor[self.current_question] = [self.editor.scrollTop,
-                                                          self.cursor_position]
+        self.last_answer_cursor[self.current_question] = [
+            self.editor.scrollTop,
+            self.cursor_position,
+            self.source[:self.cursor_position]
+            ]
     def onkeydown(self, event):
         """Key down"""
         if self.close_popup(event):
@@ -1000,7 +1003,50 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay_hide()
         self.editor.innerText = message
         if self.last_answer_cursor[self.current_question]:
-            scrollpos, cursorpos = self.last_answer_cursor[self.current_question]
+            scrollpos, cursorpos, left = self.last_answer_cursor[self.current_question]
+            if message[:cursorpos] != left:
+                def nr_letters(txt):
+                    return len(txt.replace(RegExp('[ \t\n]', 'g'), ''))
+                nr_letters_old = nr_letters(left)
+                nr_letters_new = nr_letters(message[:cursorpos])
+                i = cursorpos
+                size = len(message)
+                while True: # Search position not using white space
+                    if nr_letters_old > nr_letters_new:
+                        if message[i] not in ' \t\n':
+                            nr_letters_new += 1
+                        i += 1
+                    elif nr_letters_old < nr_letters_new:
+                        i -= 1
+                        if i < size and message[i] not in ' \t\n':
+                            nr_letters_new -= 1
+                    else:
+                        break
+                while i > 0 and message[i-1] in ' \t\n':
+                    i -= 1
+                # Search the good line
+                nr_newline_before = 0
+                for char in left[::-1]:
+                    if char == '\n':
+                        nr_newline_before += 1
+                    elif char not in ' \t':
+                        break
+                while nr_newline_before and i < size and message[i] in ' \t\n':
+                    if message[i] == '\n':
+                        nr_newline_before -= 1
+                    i += 1
+                # Search the good space
+                nr_space_before = 0
+                for char in left[::-1]:
+                    if char in ' \t':
+                        nr_space_before += 1
+                    else:
+                        break
+                while nr_space_before and i < size and message[i] in ' \t':
+                    nr_space_before -= 1
+                    i += 1
+                cursorpos = i
+
             self.editor.scrollTop = scrollpos
             for line in self.editor.childNodes:
                 if line.tagName:
