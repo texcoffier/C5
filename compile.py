@@ -25,7 +25,11 @@ def onmessage(event):
             Compile.worker.set_config(event.data[1])
             if init_needed:
                 Compile.worker.start_question()
+                Compile.worker.set_default_options()
+                Compile.worker.send_options()
                 Compile.worker.init()
+                Compile.worker.set_default_options()
+                Compile.worker.send_options()
                 print("Worker: init done. current_question_max=",
                       Compile.worker.current_question_max)
 
@@ -82,9 +86,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.questions = questions
         self.allow_tip = True
         self.allow_goto = True
-        # Get the option changed by the course
-        for option in COURSE_OPTIONS:
-            self.options[option] = COURSE_OPTIONS[option]
 
     def init(self):
         """Your own compiler init, for example:
@@ -94,9 +95,16 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def set_options(self, options):
         """Set course options and send them"""
-        self.post('options', options)
         for key in options:
             self.options[key] = options[key]
+
+    def set_default_options(self):
+        """Set course default options and send them"""
+        self.set_options(COURSE_OPTIONS)
+
+    def send_options(self):
+        """Send current options to the GUI"""
+        self.post('options', self.options)
 
     def popup(self, message):
         """Display a popup (only one per load)"""
@@ -106,6 +114,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Record config, update old question answer, jump to the last question"""
         self.config = config
         self.set_options(self.options)
+        self.send_options()
         for question in config['ANSWERS']:
             question = Number(question)
             if self.questions[question] and config['ANSWERS'][question]:
@@ -173,6 +182,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def start_question(self):
         """Start a new question"""
         # print("START QUESTION", self.current_question, '/', self.current_question_max)
+        self.set_default_options()
         if self.quest:
             self.quest.last_answer = self.source
         if self.current_question > self.current_question_max:
@@ -184,10 +194,12 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         else:
             self.source = self.quest.default_answer()
         self.previous_source += 'force recompilation'
-        self.post('editor', self.source)
         self.post('question', self.question_initial_content())
         self.post('question', self.quest.question())
         self.post('index', self.index_initial_content())
+        self.send_options()
+        self.post('editor', self.source)
+
     def goto(self, question):
         """Change question"""
         self.current_question = question
