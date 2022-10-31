@@ -147,6 +147,21 @@ class Tests: # pylint: disable=too-many-public-methods
                 ]
             config['ticket_ttl'] = 86400
         self.update_config(clean)
+    def make_me_root(self):
+        """Make root the current login"""
+        self.update_config(lambda config: config['roots'].append('Anon#' + self.ticket))
+        self.goto('config/reload')
+        self.check_alert(required=False, nbr=2)
+    def clean_up_root(self):
+        """Remove all anonymous logins from admin list"""
+        def clean(config):
+            config['roots'] = [
+                login
+                for login in config['roots']
+                if '#' not in login and not login.isdigit() and not login == 'john.doe'
+                ]
+            config['ticket_ttl'] = 86400
+        self.update_config(clean)
     @contextlib.contextmanager
     def admin_rights(self):
         """Take temporarely the admin rights"""
@@ -155,6 +170,14 @@ class Tests: # pylint: disable=too-many-public-methods
             yield
         finally:
             self.clean_up_admin()
+    @contextlib.contextmanager
+    def root_rights(self):
+        """Take temporarely the root rights"""
+        try:
+            self.make_me_root()
+            yield
+        finally:
+            self.clean_up_root()
     def select_all(self, path='.editor'):
         """Select the full editor content"""
         self.move_cursor(path, 10, 10)
@@ -439,8 +462,8 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('TR.JS_introduction', {'className': Contains('running')})
     def test_master_change(self):
         """Test add and remove master"""
-        with self.admin_rights():
-            self.goto('adm/home')
+        with self.root_rights():
+            self.goto('adm/root')
             self.check('.add_master').send_keys('john.doe')
             self.check('.add_master').send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains('Master «john.doe» added')})
@@ -456,8 +479,8 @@ class Tests: # pylint: disable=too-many-public-methods
         with open(to_keep, "w") as file:
             file.write(f"('1.1.1.1', 'Browser', 'john.doe', {time.time() - ttl + 60})")
 
-        with self.admin_rights():
-            self.goto('adm/home')
+        with self.root_rights():
+            self.goto('adm/root')
             self.select_all('.ticket_ttl')
             self.check('.ticket_ttl').send_keys('X')
             self.check('.ticket_ttl').send_keys(Keys.ENTER)

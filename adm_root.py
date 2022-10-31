@@ -40,7 +40,8 @@ def display(): # pylint: disable=too-many-statements
         top: 0px;
         transform: scale(5, 5);
         transform-origin: top right;
-        transition: transform 1s
+        transition: transform 1s;
+        pointer-events: none;
         }
     </style>
     ''']
