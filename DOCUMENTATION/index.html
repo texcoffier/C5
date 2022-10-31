@@ -728,6 +728,10 @@ server {
             <td>COMPILE_SQL/test.py
             <td>Exemple d'utilisation de compile_sql pour tester s'il fonctionne.
         </tr>
+        <tr class="cours">
+            <td>COMPILE_TEXT/demo.py
+            <td>Exemple d'utilisation de compile_text pour la saisie de texte libre.
+        </tr>
         <tr>
             <td>DOCUMENTATION/index.html
             <td>Cette page d'explication.
@@ -796,6 +800,14 @@ server {
             <td>compile_remote.py
             <td>Contacte compile_server.py pour compiler et exécuter.
         </tr>
+        <tr class="compilateur">
+            <td>compile_sql.py
+            <td>Interpréteur SQL (alasql).
+        </tr>
+        <tr class="compilateur">
+            <td>compile_text.py
+            <td>Compilateur ne faisant rien pour réponses en texte libre
+        </tr>
         <tr class="serveur">
             <td>compile_server.py
             <td>Serveur de compilation et exécution de C++ avec différents
@@ -862,7 +874,7 @@ server {
                 <li> La liste des ordinateurs en panne.
             </ul>
         </li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL}/nom_sujet.cf</tt> est la configuration d'un cours
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT}/nom_sujet.cf</tt> est la configuration d'un cours
             <ul>
                 <li> Dates de début et fin.</li>
                 <li> Listes des étudiants avec un tiers-temps.</li>

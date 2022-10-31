@@ -1006,8 +1006,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.terminate_init()
             self.update_gui()
         elif what == 'current_question':
-            self.compile_now = True
-            self.old_source += 'force recompile'
             self.do_not_clear = {}
             self.update_source()
             self.save_cursor()
@@ -1072,6 +1070,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self[what].innerHTML = content # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question
+            self.compile_now = True
             message = value + '\n\n\n'
             self.set_editor_content(message)
         elif what == 'default':
