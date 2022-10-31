@@ -142,6 +142,7 @@ async def editor(session, is_admin, course, login, grading=0):
             CP = {course.config['copy_paste']};
             SAVE_UNLOCK = {int(course.config['save_unlock'])};
             SEQUENTIAL = {int(course.config['sequential'])};
+            COLORING = {int(course.config['coloring'])};
             INFOS = {infos};
             CHECKPOINT = {course.checkpoint};
             ANSWERS = {json.dumps(answers)};
@@ -387,6 +388,9 @@ async def adm_config(request): # pylint: disable=too-many-branches
     elif action == 'copy_paste':
         config.set_parameter('copy_paste', value)
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
+    elif action == 'coloring':
+        config.set_parameter('coloring', value)
+        feedback = f"«{course}» Syntax coloring: «{value != '0'}»"
     elif action == 'save_unlock':
         config.set_parameter('save_unlock', value)
         feedback = f"«{course}» Unlock next question on save «{'not' if value == '0' else ''} allowed»"

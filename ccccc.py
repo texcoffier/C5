@@ -131,6 +131,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'allow_copy_paste': CP or GRADING,
         'save_unlock': SAVE_UNLOCK,
         'display_reset': True,
+        'coloring': COLORING,
         'positions' : {
             'question': [1, 29, 0, 30, '#EFE'],
             'tester': [1, 29, 30, 70, '#EFE'],
@@ -447,7 +448,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.reset()
         self.overlay.innerHTML = html(self.source_with_newlines)
         self.overlay.className = 'overlay language-' + self.options['language']
-        hljs.highlightElement(self.overlay)
+        if self.options.coloring:
+            hljs.highlightElement(self.overlay)
         for line_char in self.highlight_errors:
             what = self.highlight_errors[line_char]
             line_nr, char_nr = line_char.split(':')

@@ -114,6 +114,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'tt': '',
                        'teachers': 'nobody',
                        'copy_paste': '0',
+                       'coloring': '1',
                        'checkpoint': '0',
                        'save_unlock': '0',
                        'sequential': '1',

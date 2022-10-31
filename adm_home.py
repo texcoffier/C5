@@ -142,6 +142,7 @@ def display(): # pylint: disable=too-many-statements
             add_button('/adm/config/' + course.course + '/stop/now', 'Now', 'stop_date')
         text.append('<td>')
         add_toggle('/adm/config/' + course.course + '/copy_paste/', course.copy_paste, 'Copy/Paste')
+        add_toggle('/adm/config/' + course.course + '/coloring/', course.coloring, 'Coloring')
         text.append('<br>')
         label = ('<a target="_blank" href="/checkpoint/' + course.course
                  + '?ticket=' + TICKET + '">Checkpoint</a>')
