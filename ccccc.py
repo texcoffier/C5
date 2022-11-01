@@ -1058,6 +1058,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 # The first space is replaced by an unsecable space
                 # in order to display it on span start <span> foo</span>
                 span.innerHTML = value.replace(' ', ' ')
+                if value[-1] not in '>\n':
+                    span.style.float = 'left'
                 self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
             content = ('<div class="questions"><a href="/' + window.location.search + '">🏠</a>'
