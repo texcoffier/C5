@@ -2,34 +2,79 @@
 LISP compiler and interpreter
 """
 
-# pylint: disable=self-assigning-variable,eval-used,len-as-condition
+def nothing():
+    """Do nothing"""
+    return {}
 
-importScripts('xxx-lips.min.js') # pylint: disable=undefined-variable
+document = {
+    'querySelectorAll': nothing,
+    'documentElement': {},
+    'addEventListener': nothing,
+}
+window = self # pylint: disable=undefined-variable
+
+importScripts('node_modules/@jcubic/lips/src/lips.js') # pylint: disable=undefined-variable
 
 class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     """LISP compiler and evaluator"""
     execution_result = ''
     execution_returns = None
+    environment = None
+    run_tester_after_exec = False
+    source = None
 
     def init(self):
         """Initialisations"""
-        self.set_options({'language': 'lisp', 'extension': 'rkt'})
+        self.set_options({
+            'language': 'lisp',
+            'extension': 'rkt',
+            'positions' : {
+                'question': [1, 29, 0, 30, '#EFE'],
+                'tester': [1, 29, 30, 70, '#EFE'],
+                'editor': [30, 40, 0, 100, '#FFF'],
+                'compiler': [100, 30, 0, 100, '#EEF'],
+                'executor': [70, 30, 0, 100, '#EEF'],
+                'time': [80, 20, 98, 2, '#0000'],
+                'index': [0, 1, 0, 100, '#0000'],
+                'reset_button': [68, 2, 0, 2, '#0000'],
+                'save_button': [66, 2, 0, 2, '#0000'],
+                'local_button': [64, 2, 0, 2, '#0000'],
+                'stop_button': [61, 2, 0, 2, '#0000'],
+                'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
+                }
+            })
 
     def run_compiler(self, source):
+        """All is done in executor"""
+        self.source = source
+        return nothing
+
+    def run_executor(self):
         """Compile, display errors and return the executable"""
-        try:
-            self.execution_result = ''
-            lips.exec(source)
-            return ''
-        except Error as err: # pylint: disable=undefined-variable
-            #for k in err:
-            #    print(k, err[k])
-            self.post(
-                'compiler',
-                '<error>'
-                + self.escape(err.msg) + '\n'
-                + 'Ligne ' + self.escape(err.lineno - OFFSET) + ' :\n'
-                + '<b>' + self.escape(err.text) + '</b>\n'
-                + '</error>')
-            self.post('error', [err.lineno - OFFSET, err.offset])
-            return True
+        source = self.source
+        if not source:
+            return None
+        def stdout(txt):
+            """Forward printing to GUI"""
+            if txt[0] != '(':
+                txt = txt[1:-1]
+            self.execution_result += txt
+            self.post('executor', html(txt))  # pylint: disable=undefined-variable
+        def read(resolve): # pylint: disable=unused-variable
+            resolve(self.read_input())
+        def stdin():
+            return eval('new Promise(read)') # pylint: disable=eval-used
+        environment = {'stdout': {'write': stdout}, # pylint: disable=unused-variable
+                       'stdin': {'read': stdin},
+                      }
+        self.environment = eval( # pylint: disable=eval-used
+            "new window.lips.Environment(environment, window.lips.global_environment)")
+        self.environment.set('=', self.environment.get('=='))
+        def onerror(error):
+            self.post('executor', '<error>' + str(error) + '<br>'
+                      + html(str(error.code or '')) + '<error>') # pylint: disable=undefined-variable
+        def done():
+            self.post('state', "stopped")
+            self.run_tester()
+        self.execution_result = ''
+        window.lips.exec(source, self.environment).catch(onerror).then(done, done) # pylint: disable=no-member

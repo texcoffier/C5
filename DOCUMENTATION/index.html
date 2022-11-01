@@ -158,10 +158,10 @@
     </p>
     <ul>
         <li> Le sujet est enregistré dans un des répertoires nommés
-            <tt>COMPILE_{JS|PYTHON|CPP|REMOTE|SQL}</tt>
+            <tt>COMPILE_{JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}</tt>
         </li>
         <li> Il est compilé en tapant : <tt>make prepare</tt></li>
-        <li> Il est utilisable avec l'URL : <tt>https://…/={JS|PYTHON|CPP|REMOTE|SQL}=<b>nom_sujet</b></tt></li>
+        <li> Il est utilisable avec l'URL : <tt>https://…/={JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}=<b>nom_sujet</b></tt></li>
     </ul>
     <p>
         Pour chaque question il y a une classe
@@ -382,6 +382,7 @@ def default_answer(self):
         <li> C++: <tt>COMPILE_CCP</tt>)
             ATTENTION : pas de classe, de structure ni de passage par référence.
         </li>
+        <li> Lisp: <tt>COMPILE_LISP</tt></li>
         <li> C++: <tt>COMPILE_REMOTE</tt> envoi des requêtes à
             <tt>compile_server.py</tt> pour compiler avec <tt>g++</tt>
             et exécuter. Supporte <tt>cin</tt> mais pas le graphique.
@@ -394,6 +395,7 @@ def default_answer(self):
                 mais cela casse le <i>undo</i>.
             </p>
         </li>
+        <li> Texte: <tt>COMPILE_TEXT</tt> ce compilateur ne fait rien.</li>
     </ul>
 
     <h2>Page d'accueil</h2>
@@ -455,7 +457,7 @@ def default_answer(self):
     <ul>
         <li> Ajout d'une nouvelle session.
             <b>Le fichier doit impérativement porter un nom de la forme
-                <tt>{JS|PYTHON|CPP|REMOTE|SQL}=nom_sujet.py</tt></b>
+                <tt>{JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}=nom_sujet.py</tt></b>
             afin de le ranger dans le bon répertoire.
             Il est conseillé de préfixer le nom du sujet
             par le code de l'UE.
@@ -713,6 +715,10 @@ server {
             <td>Un exemple minimaliste de cours pour commencer.
         </tr>
         <tr class="cours">
+            <td>COMPILE_LISP/conway.py
+            <td>Un exemple de programme LISP.
+        </tr>
+        <tr class="cours">
             <td>COMPILE_PYTHON/introduction.py
             <td>Un mini cours Python.
         </tr>
@@ -791,6 +797,10 @@ server {
         <tr class="compilateur">
             <td>compile_js.py
             <td>Interpréteur JavaScript.
+        </tr>
+        <tr class="compilateur">
+            <td>compile_lisp.py
+            <td>Interpréteur LISP.
         </tr>
         <tr class="compilateur">
             <td>compile_python.py
@@ -874,7 +884,7 @@ server {
                 <li> La liste des ordinateurs en panne.
             </ul>
         </li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT}/nom_sujet.cf</tt> est la configuration d'un cours
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/nom_sujet.cf</tt> est la configuration d'un cours
             <ul>
                 <li> Dates de début et fin.</li>
                 <li> Listes des étudiants avec un tiers-temps.</li>
@@ -895,7 +905,7 @@ server {
         <li> <tt>dns_server.log</tt> toutes les requêtes DNS faites.</li>
         <li> <tt>infos_server.log</tt> toutes les requêtes nom/prénom faites.</li>
         <li> <tt>tests.log</tt> Résumé des tests de régression.</li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL}/nom_sujet/LOGIN/</tt>
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/nom_sujet/LOGIN/</tt>
             <ul>
             <li> <tt>http_server.log</tt> toutes les actions de l'étudiant.<br>
                 <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>

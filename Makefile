@@ -35,7 +35,7 @@ favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
 prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js node_modules/alasql sandbox \
-	ccccc.js adm_root.js adm_home.js adm_course.js checkpoint.js favicon.ico
+	ccccc.js adm_root.js adm_home.js adm_course.js checkpoint.js favicon.ico node_modules/@jcubic/lips
 	@$(MAKE) $$(echo COMPILE_*/*.py | sed 's/\.py/.js/g')
 	@if [ ! -d SSL ] ; then ./utilities.py SSL-SS ; fi
 
@@ -54,7 +54,7 @@ HIGHLIGHT:
 	git clone https://github.com/highlightjs/highlight.js.git && \
 	cd highlight.js && \
 	npm install commander && \
-	node tools/build.js -t browser :common && \
+	node tools/build.js -t browser :common :lisp && \
 	cp build/highlight.min.js $$HERE/highlight.js && \
 	cp -r src/styles/* $$HERE
 	rm -rf /tmp/highlight.js
@@ -66,7 +66,8 @@ xxx-JSCPP.js:
 	GET https://raw.githubusercontent.com/felixhao28/JSCPP/gh-pages/dist/JSCPP.es5.min.js >$@
 node_modules/alasql:
 	npm install alasql@1.7.2
-
+node_modules/@jcubic/lips:
+	npm install @jcubic/lips
 ############# Misc ############
 lint:
 	pylint [^x]*.py
