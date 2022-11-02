@@ -660,14 +660,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Get the cursor position
         pos = [current_position, do_div_br_collapse]
         """
+        # Remove old cursor position
         for key in self.highlight_errors:
             if self.highlight_errors[key] == 'cursor':
                 self.highlight_errors[key] = None
+        self.do_coloring = True
         cursor = document.getSelection().getRangeAt(0).cloneRange()
         cursor.setStart(self.editor.firstChild, 0)
         def walk(node, pos):
             for child in node.childNodes:
-                pos[2] = None
                 if child.tagName == 'BR':
                     #print('BR', pos, '+1')
                     pos[0] += 1
@@ -683,42 +684,41 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     pos[0] += child.textContent.length
                     if child.textContent.length:
                         pos[1] = False
-                        pos[2] = child.textContent[-1]
-        pos = [0, False, None]
+        pos = [0, False]
         left = cursor.cloneContents()
         walk(left, pos)
         if left.lastChild and left.lastChild.tagName == 'DIV':
             pos[0] -= 1
         self.cursor_position = pos[0]
-        if pos[2] in '{}[]()':
-            # Remove old cursor position
-            closing = pos[2]
-            opening = {'}': '{', ')': '(', ']': '[',
-                       '{': '}', '(': ')', '[': ']'}[closing]
-            if pos[2] in '}])':
-                direction = -1
-                i = self.cursor_position + 2 * direction
-            else:
-                direction = 1
-                i = self.cursor_position
-
-            nr = 1
-            while nr and i and i < len(self.source):
-                char = self.source[i]
-                if char == closing:
-                    nr += 1
-                elif char == opening:
-                    nr -= 1
-                i += direction
-
-            if direction == 1:
-                line_open, column_open = self.get_line_column(i)
-            else:
-                line_open, column_open = self.get_line_column(i+2)
-            line_close, column_close = self.get_line_column(self.cursor_position)
-            self.highlight_errors[line_open + ':' + column_open] = 'cursor'
-            self.highlight_errors[line_close + ':' + column_close] = 'cursor'
-            self.do_coloring = True
+        if self.cursor_position == 0:
+            return
+        start = self.cursor_position - 1
+        counters = {'{': 0, '(': 0, '[': 0}
+        while start:
+            if self.source[start] in '{[(':
+                if counters[self.source[start]] == 0:
+                    break
+                counters[self.source[start]] -= 1
+            elif self.source[start] in '}])':
+                counters[{'}': '{', ')': '(', ']': '['}[self.source[start]]] += 1
+            start -= 1
+        if start == 0:
+            return
+        line_open, column_open = self.get_line_column(start + 1)
+        stop = start + 1
+        opening = self.source[start]
+        closing = {'{': '}', '(': ')', '[': ']'}[opening]
+        nr = 1
+        while nr and stop and stop < len(self.source):
+            char = self.source[stop]
+            if char == opening:
+                nr += 1
+            elif char == closing:
+                nr -= 1
+            stop += 1
+        line_close, column_close = self.get_line_column(stop)
+        self.highlight_errors[line_open + ':' + column_open] = 'cursor'
+        self.highlight_errors[line_close + ':' + column_close] = 'cursor'
         # print(self.source[self.cursor_position-5:self.cursor_position]
         #       + '|'
         #       + self.source[self.cursor_position:self.cursor_position+5],
