@@ -68,6 +68,8 @@ node_modules/alasql:
 	npm install alasql@1.7.2
 node_modules/@jcubic/lips:
 	npm install @jcubic/lips
+	sed -i 's/(token.token || token)/(token.toUpperCase ? token : token.token)/' \
+	    "node_modules/@jcubic/lips/src/lips.js"
 ############# Misc ############
 lint:
 	pylint [^x]*.py

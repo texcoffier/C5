@@ -78,3 +78,8 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
             self.run_tester()
         self.execution_result = ''
         window.lips.exec(source, self.environment).catch(onerror).then(done, done) # pylint: disable=no-member
+
+    def run_indent(self, source):
+        """LISP formatter"""
+        code = eval("new window.lips.Formatter(source)")
+        self.post('editor', code.format())
