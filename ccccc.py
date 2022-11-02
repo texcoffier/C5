@@ -47,6 +47,7 @@ try:
     SEQUENTIAL = SEQUENTIAL
     WHERE = WHERE
     INFOS = INFOS
+    COLORING = COLORING
     encodeURIComponent = encodeURIComponent
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
@@ -124,6 +125,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
     focus_on_next_input = False
     cursor_position = 0
     insert_on_keyup = None
+    do_coloring = True
+    do_update_cursor_position = True
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -302,6 +305,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.fullscreen.style.display = 'block'
         else:
             self.fullscreen.style.display = 'none'
+
+        if self.do_update_cursor_position:
+            self.update_source()
+            self.update_cursor_position_now()
+            self.do_update_cursor_position = False
+
+        if self.do_coloring:
+            self.coloring()
+            self.do_coloring = False
 
         if self.state == 'started':
             return # Compiler is running
@@ -612,16 +624,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def oncut(self, event):
         """Cut"""
         self.oncopy(event, 'Cut')
-        setTimeout(bind(self.coloring, self), 100)
+        self.do_coloring = self.do_update_cursor_position = True
     def insert_text(self, event, text):
         """Insert the pasted text"""
         self.overlay_hide()
         if event.type == 'drop':
-            setTimeout(bind(self.coloring, self), 100)
+            self.do_coloring = self.do_update_cursor_position = True
         else:
             document.execCommand('insertText', False, text)
             event.preventDefault(True)
-            self.coloring()
+            self.do_coloring = self.do_update_cursor_position = True
 
     def onpaste(self, event):
         """Mouse down"""
@@ -644,10 +656,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         lines = self.source[:position].split('\n')
         return len(lines), len(lines[-1])
 
-    def update_cursor_position(self, coloring=True):
+    def update_cursor_position_now(self):
         """Get the cursor position
         pos = [current_position, do_div_br_collapse]
         """
+        for key in self.highlight_errors:
+            if self.highlight_errors[key] == 'cursor':
+                self.highlight_errors[key] = None
         cursor = document.getSelection().getRangeAt(0).cloneRange()
         cursor.setStart(self.editor.firstChild, 0)
         def walk(node, pos):
@@ -677,10 +692,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.cursor_position = pos[0]
         if pos[2] in '{}[]()':
             # Remove old cursor position
-            for key in self.highlight_errors:
-                if self.highlight_errors[key] == 'cursor':
-                    self.highlight_errors[key] = None
-
             closing = pos[2]
             opening = {'}': '{', ')': '(', ']': '[',
                        '{': '}', '(': ')', '[': ']'}[closing]
@@ -707,12 +718,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
             line_close, column_close = self.get_line_column(self.cursor_position)
             self.highlight_errors[line_open + ':' + column_open] = 'cursor'
             self.highlight_errors[line_close + ':' + column_close] = 'cursor'
-            if coloring != False:
-                self.coloring()
+            self.do_coloring = True
         # print(self.source[self.cursor_position-5:self.cursor_position]
         #       + '|'
         #       + self.source[self.cursor_position:self.cursor_position+5],
         #       self.get_line_column(self.cursor_position))
+
+    def update_cursor_position(self):
+        """Queue cursor update position"""
+        self.do_update_cursor_position = True
 
     def save_cursor(self):
         """Save the cursor position"""
@@ -753,8 +767,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
             self.oldScrollTop = self.editor.scrollTop
-            self.update_cursor_position(False)
             self.update_source()
+            self.update_cursor_position_now()
             i = self.cursor_position
             while i > 0 and self.source[i-1] != '\n':
                 i -= 1
@@ -778,7 +792,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.insert_on_keyup:
                 document.execCommand('insertHTML', False, self.insert_on_keyup)
                 self.insert_on_keyup = None
-            self.coloring()
+            self.do_coloring = True
         #print("CURSOR", self.cursor_position,
         #    JSON.stringify(self.source[self.cursor_position-10:self.cursor_position]),
         #    JSON.stringify(self.source[self.cursor_position:self.cursor_position+10]))
@@ -879,7 +893,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if version not in self.all_comments[question]:
                 self.all_comments[question][version] = {}
             self.all_comments[question][version][line] = comment
-        self.coloring()
+        self.do_coloring = True
 
     def update_grading(self, history=None):
         """Colorize buttons"""
@@ -1163,7 +1177,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.editor.scrollTop = 0
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
         self.highlight_errors = {}
-        self.coloring()
+        self.do_coloring = True
 
     def onbeforeunload(self, event):
         """Prevent page closing"""
