@@ -25,11 +25,11 @@ class QEnd(Question): # pylint: disable=undefined-variable
         batiment, coord_x, coord_y = self.placement()
         version = self.version()
         return ("<p>Récupération des informations concernant la place de l'étudiant dans la salle."
-                + "<br>Surveillant :" + self.teacher()
-                + "<br>Bâtiment : " + batiment
-                + "<br>Poste X : " + coord_x
-                + "<br>Poste Y : " + coord_y
-                + "<br>Version sujet : " + version
+                + "<br>Surveillant :" + str(self.teacher())
+                + "<br>Bâtiment : " + str(batiment)
+                + "<br>Poste X : " + str(coord_x)
+                + "<br>Poste Y : " + str(coord_y)
+                + "<br>Version sujet : " + str(version)
                 )
     def tester(self):
         self.display('FINI !')

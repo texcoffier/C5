@@ -7,9 +7,14 @@ Python compiler and interpreter
 importScripts('node_modules/brython/brython.js') # pylint: disable=undefined-variable
 importScripts('node_modules/brython/brython_stdlib.js') # pylint: disable=undefined-variable
 
-__BRYTHON__ = __BRYTHON__ # pylint: disable=undefined-variable
-brython = brython # pylint: disable=undefined-variable,invalid-name
-Number = Number # pylint: disable=undefined-variable,invalid-name
+if False: # pylint: disable=using-constant-test
+    # pylint: disable=undefined-variable,invalid-name
+    __BRYTHON__ = __BRYTHON__
+    brython = brython
+    Number = Number
+    millisecs = millisecs
+    html = html
+    Question = Question
 
 brython({'debug': 1})
 
@@ -68,7 +73,9 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
             def __input__():
                 return self.read_input()
 
-            __BRYTHON__.mylocals = {'__print__': __print__, '__input__': __input__}
+            __BRYTHON__.mylocals = {'__print__': __print__, '__input__': __input__,
+                                    '__worker__': self, '__millisecs__': millisecs,
+                                    '__html__': html, '__Question__': Question}
             eval(self.executable.replace(
                 'var $locals___main__ = {}',
                 'var $locals___main__ = __BRYTHON__.mylocals ;'))

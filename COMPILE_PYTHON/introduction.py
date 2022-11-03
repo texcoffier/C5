@@ -73,7 +73,7 @@ class Q_variable(Question):
         return """
 # Comment créer des "variables"
 
-annee = """ + self.year + "      # Nomme «année» la valeur «" + self.year + """»
+annee = """ + str(self.year) + "      # Nomme «année» la valeur «" + str(self.year) + """»
 
 pi = 3.14          # Nomme «pi» la valeur «3.14»
 

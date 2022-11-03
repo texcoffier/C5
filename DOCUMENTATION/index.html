@@ -211,7 +211,7 @@
     </p>
     <ul>
         <li> Vous allez sur la page d'administration.</li>
-        <li> Vous déposez <tt>XXX=yyy.py</tt>.
+        <li> Vous déposez <tt>XXX=yyy.py</tt> (ou bien cliquez sur <tt>Edit</tt>)
             De préférence préfixez le nom de la session par le code du cours.
         </li>
         <li> Vous cliquez sur le bouton <tt>Try</tt></li>
@@ -390,19 +390,22 @@ def default_answer(self):
             <tt>exit_group</tt>),
             donc pas de problème de sécurité.
             Temps et espace limité pour la compilation et l'exécution.
-            <p>
-                Avec ce compilateur la touche F8 permet de reformater le code source,
-                mais cela casse le <i>undo</i>.
-            </p>
         </li>
         <li> Texte: <tt>COMPILE_TEXT</tt> ce compilateur ne fait rien.</li>
     </ul>
+    <p>
+        Avec COMPILE_REMOTE et COMPILE_LISP la touche F8 permet de
+        reformater le code source, mais cela casse le <i>undo</i>.
+    </p>
 
     <h2>Page d'accueil</h2>
     <p>
         Les utilisateurs sont :
     </p>
     <ul>
+        <li> Les roots qui définissent la configuration globale de C5
+            ainsi que les administrateurs.
+        </li>
         <li> Les administrateurs qui peuvent créer des sessions de cours
             et tout gérer.
         </li>
@@ -417,8 +420,24 @@ def default_answer(self):
         </li>
     </ul>
     <p>
-        La page d'accueil va être différente pour ces 4 catégories de personnes.
+        La page d'accueil va être différente pour ces 5 catégories de personnes.
     </p>
+
+    <h3>Root : page d'accueil</h3>
+    <ul>
+        <li> Modification de la liste des roots.</li>
+        <li> Modification de la liste des administrateurs.</li>
+        <li> Durée de vie des tickets de session.</li>
+        <li> Liste des noms des machines par salle, une ligne par salle :
+                <tt>Bâtiment,Salle Machine1 Machine2 Machine3...</tt>
+        </li>
+        <li> Expression régulière permettant d'identifier les logins étudiants.</li>
+        <li> Traduction des différents messages affichés (totalement incomplet).</li>
+    </ul>
+    <p>
+        Cette configuration est dans le fichier <tt>c5.cf</tt>
+    </p>
+
     <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-admin.png">
     <h3>Administrateur : page d'accueil</h3>
     <p>
@@ -440,8 +459,9 @@ def default_answer(self):
             et l'affiche même si elle n'a pas commencée.
         <li> Liste des étudiants ayant droit à un tiers temps.</li>
         <li> ZIP total avec tous les fichiers de log de la session.</li>
-        <li> Mise à jour du questionnaire.</li>
-        <li> Liste des surveillants.</li>
+        <li> Mise à jour du questionnaire avec un nouveau ou édition interactive
+            du questionnaire dans C5 (la sauvegarde met en production).</li>
+        <li> Liste des surveillants/correcteurs (le premier est l'administrateur).</li>
         <li> Thème «highlight.js».</li>
         <li> Le barème de notation de la session en texte libre.
             Les éléments de notations sont indiqués par <tt>{Une explication:0,0.5,1,1.5,2}</tt>
@@ -451,35 +471,34 @@ def default_answer(self):
             à part les typos.
         </li>
     </ul>
-    <p>
-        Au dessous de la liste :
+    <p> Ajout d'une nouvelle session.
+        <b>Le fichier doit impérativement porter un nom de la forme
+            <tt>{JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}=nom_sujet.py</tt></b>
+        afin de le ranger dans le bon répertoire.
+        Il est conseillé de préfixer le nom du sujet
+        par le code de l'UE.
     </p>
-    <ul>
-        <li> Ajout d'une nouvelle session.
-            <b>Le fichier doit impérativement porter un nom de la forme
-                <tt>{JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}=nom_sujet.py</tt></b>
-            afin de le ranger dans le bon répertoire.
-            Il est conseillé de préfixer le nom du sujet
-            par le code de l'UE.
-        </li>
-        <li> Modification de la liste des administrateurs.</li>
-        <li> Durée de vie des tickets de session.</li>
-    </ul>
     <p>
-        Cette configuration est dans le fichier <tt>c5.cf</tt>
-        plus un fichier <tt>COMPILE_*/nom_sujet.cf</tt> par session.
+        Cette configuration est enregistrée sous le nom <tt>COMPILE_*/nom_sujet.cf</tt>.
     </p>
+
 
     <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-course.png">
     <h3>Administrateur : détails d'un cours</h3>
     <p>
-        Les administrateurs peuvent regarder le détails de tous les cours.
+        Les administrateurs de session peuvent regarder le détails de tous les cours.
         Pour chaque étudiant on a le détail et le résumé de toute
         la colonne sur la dernière ligne (importable directement dans TOMUSS).
     </p>
     <ul>
         <li> Les questions réussies et leur nombre.
             En bas le code source des questions réussies ou des questions sauvegardées.
+        </li>
+        <li>
+            La note de la copie.
+        </li>
+        <li>
+            La ou les personnes ayant corrigé la copie.
         </li>
         <li>
             Le temps total pour faire l'examen en ajoutant la durée de chaque question
@@ -590,6 +609,24 @@ def default_answer(self):
             l'écran 5 secondes avant la fin de l'examen.
         </li>
     </ul>
+
+    <h3>Le correcteur</h3>
+    <p>
+        Il clique sur l'étudiant placé et arrive sur l'éditeur C5
+        avec le barème de notation affiché.
+        Il n'a plus qu'à cliquer pour mettre les notes qui
+        sont immédiatement enregistrées.
+        Si 2 enseignants notent en même temps le même étudiants,
+        dans le pire cas ils perdent une seule note.
+    </p>
+    <p>
+        Le correcteur peut ajouter des commentaires aux lignes
+        et envoyer un mail à l'étudiant avec son programme commenté.
+    </p>
+    <p>
+        Le correcteur peut essayer le code de l'étudiant pour le tester
+        et même le modifier temporairement pour voir ce que cela donne.
+    </p>
 
     <h3>Étudiant</h3>
     <img style="float: right" src="screen-student.png">
@@ -721,6 +758,13 @@ server {
         <tr class="cours">
             <td>COMPILE_PYTHON/introduction.py
             <td>Un mini cours Python.
+        </tr>
+        <tr class="">
+            <td>COMPILE_PYTHON/editor.py
+            <td>C'est l'éditeur interactif de questionnaire.
+                Les questionnaires étant écrits en Python,
+                il est nécessaire de les éditer et tester
+                dans l'environnement Python.                
         </tr>
         <tr class="cours">
             <td>COMPILE_REMOTE/test.py
@@ -959,12 +1003,10 @@ server {
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
         <li> Affichage d'un corrigé.</li>
         <li> Lors du dépôt choisir le compilateur avec un menu et pas dans le nom du fichier.</li>
-        <li> Permettre l'édition intéractive du sujet sur la page web.</li>
         <li> Affichage de seulement ses sujets.</li>
         <li> Exportation vers TOMUSS dans une colonne de type Notation.</li>
         <li> Ajout du barème aux questions (en plus du barème global).</li>
         <li> Choix du thème de coloriage syntaxique.</li>
-        <li> Ajouter un compilateur qui ne fait rien (examen texte pur).</li>
         <li> Icone pour passer en plein écran.</li>
         <li> Sur la page d'administration, trier les sujets par questionnaire et
             puis par compilateur.
@@ -976,6 +1018,7 @@ server {
         <li>
             Option pour désactiver la toute première compilation quand
             la compilation automatique est désactivée.
+            C'est complexe à faire.
         </li>
         <li>
             Affiche source étudiant : bascule entre le mode ascenseur temporel et tout le code.

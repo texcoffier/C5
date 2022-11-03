@@ -89,33 +89,37 @@ def filter_last_answer(answers):
         last[source_answer_time[1]] = source_answer_time
     return last
 
-async def editor(session, is_admin, course, login, grading=0):
+async def editor(session, is_admin, course, login, grading=0, author=0):
     """Return the editor page.
        'saved' : see 'get_answer' comment.
     """
-    answers, _blurs = get_answers(course.dirname, login, compiled = grading)
     versions = {}
-    if grading:
-        # The last save or ok or compiled or snapshot
-        for key, value in answers.items():
-            last = filter_last_answer(value)
-            answers[key] = max(last, key=lambda x: x[2] if x else 0) # Last time
-            versions[key] = last
+    stop = ''
+    if author and is_admin:
+        with open(course.dirname + '.py', 'r', encoding='utf-8') as file:
+            source = file.read()
+        answers = {'0': [source, 0, 0]}
+        course = utilities.CourseConfig.get('COMPILE_PYTHON/editor')
     else:
-        # The last save
-        for key, value in answers.items():
-            good = 0
-            for _source, answer, _time in value:
-                if answer == 0:
-                    value[-1][1] = good
-                elif answer == 1:
-                    good = 1 # Correct answer even if changed after
-            answers[key] = value[-1] # Only the last answer
-
-    if course:
-        stop = course.get_stop(login)
-    else:
-        stop = ''
+        answers, _blurs = get_answers(course.dirname, login, compiled = grading)
+        if grading:
+            # The last save or ok or compiled or snapshot
+            for key, value in answers.items():
+                last = filter_last_answer(value)
+                answers[key] = max(last, key=lambda x: x[2] if x else 0) # Last time
+                versions[key] = last
+        else:
+            # The last save
+            for key, value in answers.items():
+                good = 0
+                for _source, answer, _time in value:
+                    if answer == 0:
+                        value[-1][1] = good
+                    elif answer == 1:
+                        good = 1 # Correct answer even if changed after
+                answers[key] = value[-1] # Only the last answer
+        if course:
+            stop = course.get_stop(login)
     if grading:
         notation = f"NOTATION = {json.dumps(course.notation)};"
         infos = await utilities.LDAP.infos(login)
@@ -215,7 +219,7 @@ async def log(request):
     data = urllib.request.unquote(post['line'])
     # Must do sanity check on logged data
     try:
-        json.loads(data)
+        parsed_data = json.loads(data)
         bad_json = 0
     except: # pylint: disable=bare-except
         bad_json = 10
@@ -230,6 +234,30 @@ async def log(request):
         infos[3] = int(time.time())
         infos[4] += data.count('"Blur"') + bad_json
         infos[5] += data.count('["answer",')
+
+    if course.course == 'PYTHON=editor':
+        source = None
+        for item in parsed_data:
+            if isinstance(item, list) and item[0] == 'save':
+                source = item[2]
+        if source:
+            if not session.is_admin(session.edit):
+                return response('<script>alert("Vous n\'avez pas le droit !")</script>')
+            os.rename(session.edit.dirname + '.py', session.edit.dirname + '.py~')
+            os.rename(session.edit.dirname + '.js', session.edit.dirname + '.js~')
+            with open(session.edit.dirname + '.py', 'w', encoding="utf-8") as file:
+                file.write(source)
+            with os.popen(f'make {session.edit.dirname + ".js"} 2>&1', 'r') as file:
+                errors = file.read()
+            if 'ERROR' in errors:
+                os.rename(session.edit.dirname + '.py~', session.edit.dirname + '.py')
+                os.rename(session.edit.dirname + '.js~', session.edit.dirname + '.js')
+            return response(f'''<!DOCTYPE html>
+            <script>
+            window.parent.ccccc.record_done();
+            alert({json.dumps(errors)})
+            </script>
+            ''')
 
     return response("<!DOCTYPE html>\n<script>window.parent.ccccc.record_done()</script>")
 
@@ -572,10 +600,13 @@ async def adm_get(request):
 
 def get_answers(course, user, compiled=False):
     """Get question answers.
+       The types are:
          * 0 : saved source
          * 1 : source passing the test
          * 2 : compilation (if compiled is True)
          * 3 : snapshot (5 seconds before examination end)
+    Returns 'answers' and 'blurs'
+    answers is a dict from question to a list of [source, type, timestamp]
     """
     answers = collections.defaultdict(list)
     blurs = collections.defaultdict(int)
@@ -1026,6 +1057,15 @@ async def checkpoint_message(request):
         f'''MESSAGES.push({json.dumps(course.messages[-1])});ROOM.update_messages()''',
         content_type='application/javascript')
 
+async def adm_editor(request):
+    """Session questions editor"""
+    session, course = await get_teacher_login_and_course(request)
+    is_admin = session.is_admin(course)
+    if not is_admin:
+        return response("Vous n'êtes pas autorisé à modifier les questions.")
+    session.edit = course # XXX If server is restarted, this attribute is lost
+    return await editor(session, is_admin, course, session.login, author=1)
+
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
@@ -1036,6 +1076,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/home', adm_home),
                 web.get('/adm/root', adm_root),
                 web.get('/adm/course/{course}', adm_course),
+                web.get('/adm/editor/{course}', adm_editor),
                 web.get('/adm/config/{course}/{action}/{value}', adm_config),
                 web.get('/adm/config/{course}/{action}/', adm_config),
                 web.get('/adm/c5/{action}/{value}', adm_c5),

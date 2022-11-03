@@ -41,6 +41,7 @@ def display(): # pylint: disable=too-many-statements
         BUTTON.start_date, BUTTON.stop_date { height: 1.55em }
         BUTTON.start_date { margin-top: 0.2em }
         BUTTON.stop_date { margin-top: 0.1em }
+        BUTTON.edit { float: right }
         TABLE TD TEXTAREA { border: 0px; height: 3.5em; margin-bottom: 0px;
                             font-family: monospace,monospace }
         TABLE TD TEXTAREA.tt { width: 5em }
@@ -162,6 +163,7 @@ def display(): # pylint: disable=too-many-statements
             add_button('/adm/get/COMPILE_' + course.course.replace('=', '/') + '.zip', 'ZIP')
         text.append('<td>')
         form(course.course + '.py', not i_am_a_teacher)
+        add_button('/adm/editor/' + course.course, 'Edit', 'edit', True)
         text.append('<td>')
         add_textarea('/adm/config/' + course.course + '/teachers/', course.teachers,
                      disable=not i_am_a_teacher)
