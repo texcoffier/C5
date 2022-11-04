@@ -78,7 +78,7 @@ def display(): # pylint: disable=too-many-statements
     <table>
     <tr><th>Compiler<br>Session<th>Logs<th>Try
         <th>Start date/time<br>Stop date/time<th>Options<th>TT<br>logins
-        <th>full<br>ZIP<th>Update<br>course source<th>Teachers
+        <th>full<br>ZIP<th>Update<br>course source<th>Creator<th>Admins<th>Graders<th>Proctors
         <th>Highlight<br>theme<th>Notation
         </tr>
     ''']
@@ -115,16 +115,15 @@ def display(): # pylint: disable=too-many-statements
     def form(replace, disable):
         value = (
             '<form id="upload_course" method="POST" enctype="multipart/form-data" '
-            + 'action="/upload_course?ticket=' + TICKET + '">'
+            + 'action="/upload_course/' + replace + '?ticket=' + TICKET + '">'
             + '<input type="file" name="course" onchange="this.parentNode.submit()">'
-            + '<input type="hidden" name="replace" value="' + replace + '">'
             + '</form>')
         if disable:
             value = value.replace(RegExp("input ", "g"), "input disabled ")
         text.append(value)
 
     for course in COURSES:
-        i_am_a_teacher = LOGIN in course.teachers.replace('\n', ' ').split(' ')
+        i_am_a_teacher = LOGIN == course.creator or LOGIN in course.admins.replace('\n', ' ').split(' ')
         text.append('<tr class="' + course.status + ' '
                     + course.course.replace('=', '_') + '"><td>')
         text.append(course.course.replace('=', '<br><b>'))
@@ -163,10 +162,18 @@ def display(): # pylint: disable=too-many-statements
         if course.logs:
             add_button('/adm/get/COMPILE_' + course.course.replace('=', '/') + '.zip', 'ZIP')
         text.append('<td>')
-        form(course.course + '.py', not i_am_a_teacher)
+        form(course.course, not i_am_a_teacher)
         add_button('/adm/editor/' + course.course, 'Edit', 'edit', True)
         text.append('<td>')
-        add_textarea('/adm/config/' + course.course + '/teachers/', course.teachers,
+        text.append(course.creator)
+        text.append('<td>')
+        add_textarea('/adm/config/' + course.course + '/admins/', course.admins,
+                     disable=not i_am_a_teacher)
+        text.append('<td>')
+        add_textarea('/adm/config/' + course.course + '/graders/', course.graders,
+                     disable=not i_am_a_teacher)
+        text.append('<td>')
+        add_textarea('/adm/config/' + course.course + '/proctors/', course.proctors,
                      disable=not i_am_a_teacher)
         text.append('<td>')
         add_input('/adm/config/' + course.course + '/theme/', course.theme,
@@ -179,7 +186,7 @@ def display(): # pylint: disable=too-many-statements
         text.append('</tr>\n')
     text.append('</table><p>')
     text.append('''
-        Add a new session, filename must be as «{JS|CPP|PYTHON|REMOTE}=SESSION.py»
+        Add a new session, filename must be as «{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}=SESSION.py»
         for example «JS=foo_loop.py», the session name must not yet exists.''')
     form('', False)
     document.body.innerHTML = text.join('') # pylint: disable=no-member

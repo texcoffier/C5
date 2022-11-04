@@ -112,7 +112,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.config = {'start': "2000-01-01 00:00:00",
                        'stop': "2100-01-01 00:00:00",
                        'tt': '',
-                       'teachers': 'nobody',
+                       'creator': 'nobody',
+                       'admins': '',
+                       'graders': '',
+                       'proctors': '',
                        'copy_paste': '0',
                        'coloring': '1',
                        'checkpoint': '0',
@@ -166,7 +169,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.stop_tt = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.stop_tt_timestamp))
         self.tt_list = set(re.split('[ \n\r\t]+', self.config['tt']))
         self.tt_list.add('')
-        self.teachers = set(re.split('[ \n\r\t]+', self.config['teachers']))
+        if 'teachers' in self.config:
+            teachers = re.split('[ \n\r\t]+', self.config['teachers'])
+            self.config['creator'] = teachers[0]
+            self.config['graders'] = ' '.join(teachers[1:])
+            del self.config['teachers']
+        self.creator = self.config['creator']
+        self.admins = set(re.split('[ \n\r\t]+', self.config['admins']))
+        self.graders = set(re.split('[ \n\r\t]+', self.config['graders']))
+        self.proctors = set(re.split('[ \n\r\t]+', self.config['proctors']))
         self.checkpoint = int(self.config['checkpoint'])
         self.sequential = int(self.config['sequential'])
         self.highlight = int(self.config['highlight'])
@@ -276,6 +287,18 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         for course in sorted(glob.glob('COMPILE_*/*.py')):
             cls.get(course[:-3])
 
+    def is_admin(self, login):
+        """Is admin or creator"""
+        return login in self.admins or login == self.creator
+
+    def is_grader(self, login):
+        """Is grader or admin or creator"""
+        return login in self.graders or self.is_admin(login)
+
+    def is_proctor(self, login):
+        """Is proctor or grader or admin or creator"""
+        return login in self.proctors or self.is_grader(login)
+
 def get_course(txt):
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""
     compilator, course = txt.split('=')
@@ -303,6 +326,8 @@ class Config:
                 'checkpoint': "Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen.<br>Rechargez cette page quand l'intervenant vous le dira.",
                 'done': "La session d'exercice ou d'examen est terminée",
                 'not_root': "Vous n'êtes pas root C5",
+                'not_grader': "Vous n'êtes pas un correcteur de la session",
+                'not_proctor': "Vous n'êtes pas un surveillant de la session",
                 'not_admin': "Vous n'êtes pas administrateur C5",
                 'not_author': "Vous n'êtes pas créateur de session",
                 'not_teacher': "Vous ne surveillez pas cet examen",
@@ -476,12 +501,18 @@ class Session:
         return CONFIG.is_author(self.login)
     def is_admin(self, course=None):
         """The user is C5 admin or course admin"""
-        if course and self.login in course.teachers:
+        if course and course.is_admin(self.login):
             return True
         return CONFIG.is_admin(self.login)
     def is_course_admin(self, course):
         """The user is course admin"""
-        return self.login in course.teachers
+        return course.is_admin(self.login)
+    def is_course_grader(self, course):
+        """The user is course grader"""
+        return course.is_grader(self.login)
+    def is_course_proctor(self, course):
+        """The user is course proctor"""
+        return course.is_proctor(self.login)
     def is_root(self):
         """The user is C5 root"""
         return CONFIG.is_root(self.login)

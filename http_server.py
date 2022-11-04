@@ -196,8 +196,8 @@ def handle(base=''):
 async def grade(request):
     """Display the grading page"""
     session, course = await get_teacher_login_and_course(request)
-    is_admin = session.is_admin(course)
-    if not is_admin:
+    is_grader = session.is_course_grader(course)
+    if not is_grader:
         return response("Vous n'êtes pas autorisé à noter.")
     return await editor(session, True, course, request.match_info['login'], grading=1)
 
@@ -264,8 +264,8 @@ async def log(request):
 async def record_grade(request):
     """Log a grade"""
     session, course = await get_teacher_login_and_course(request)
-    is_admin = session.is_admin(course)
-    if not is_admin:
+    is_grader = session.is_course_grader(course)
+    if not is_grader:
         return response("Vous n'êtes pas autorisé à noter.")
     post = await request.post()
     login = post['student']
@@ -294,8 +294,8 @@ async def record_grade(request):
 async def record_comment(request):
     """Log a comment"""
     session, course = await get_teacher_login_and_course(request)
-    is_admin = session.is_admin(course)
-    if not is_admin:
+    is_grader = session.is_course_grader(course)
+    if not is_grader:
         return response("Vous n'êtes pas autorisé à noter.")
     post = await request.post()
     login = post['student']
@@ -355,13 +355,13 @@ async def get_teacher_login_and_course(request, allow=None):
     course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
     if session.is_student() and allow != session.login:
         raise session.message('not_teacher', exception=True)
-    # if session.login not in course.teachers:
-    #     raise session.message('not_teacher', exception=True)
     return session, course
 
 async def adm_course(request):
     """Course details page for administrators"""
     session, course = await get_teacher_login_and_course(request)
+    if not session.is_course_proctor(course):
+        raise session.message('not_proctor', exception=True)
     students = {}
     for user in sorted(os.listdir(course.dirname)):
         await asyncio.sleep(0)
@@ -412,9 +412,15 @@ async def adm_config(request): # pylint: disable=too-many-branches
     elif action == 'tt':
         config.set_parameter('tt', value)
         feedback = f"«{course}» TT list updated with «{value}»"
-    elif action == 'teachers':
-        config.set_parameter('teachers', value)
-        feedback = f"«{course}» Teachers list updated with «{value}»"
+    elif action == 'admins':
+        config.set_parameter('admins', value)
+        feedback = f"«{course}» Admins list updated with «{value}»"
+    elif action == 'graders':
+        config.set_parameter('graders', value)
+        feedback = f"«{course}» Graders list updated with «{value}»"
+    elif action == 'proctors':
+        config.set_parameter('proctors', value)
+        feedback = f"«{course}» Proctors list updated with «{value}»"
     elif action == 'theme':
         if os.path.exists(f'HIGHLIGHT/{value}.css'):
             config.set_parameter('theme', value)
@@ -745,50 +751,68 @@ async def adm_answers(request):
 
     return response(data, content_type='application/zip')
 
-async def upload_course(request): # pylint: disable=too-many-branches
-    """Add a new course"""
-    session = await get_admin_login(request)
+async def update_file(request, session, replace):
+    """Update questionnary on disc if allowed"""
     post = await request.post()
     filehandle = post['course']
+
     if not hasattr(filehandle, 'filename'):
-        more = "You must select a file!"
+        return "You must select a file!"
     src_filename = getattr(filehandle, 'filename', None)
-    replace = post.get('replace', '')
-    if src_filename:
-        dst_filename = replace or src_filename
-        if '=' in dst_filename:
-            compiler = f"compile_{dst_filename.split('=')[0].lower()}.py"
-            dst_filename = utilities.get_course(dst_filename[:-3]) # Remove .py
-    else:
-        more = "You must select a file!"
+    if not src_filename:
+        return "You must select a file!"
+    dst_filename = replace or src_filename
+    if '=' in dst_filename:
+        compiler = f"compile_{dst_filename.split('=')[0].lower()}.py"
+        dst_filename = utilities.get_course(dst_filename[:-3]) # Remove .py
     if src_filename is None:
-        more = "You forgot to select a course file!"
-    elif '=' not in src_filename:
-        more = """The file name shape must be : COMPILER=SESSION.py<br>
+        return "You forgot to select a course file!"
+    if '=' not in src_filename:
+        return f"""
+        Your choosen filename is «{src_filename}»<br>
+        The file name shape must be : COMPILER=SESSION.py<br>
         For example: «PYTHON=introduction.py» or «JS=example.py»!"""
-    elif not src_filename.endswith('.py'):
-        more = "Only «.py» file allowed!"
-    elif '/' in src_filename:
-        more = f"«{src_filename}» invalid name (/)!"
-    elif not os.path.exists(compiler):
-        more = f"«{src_filename}» use a not defined compiler: «{compiler}»!"
-    elif not replace and os.path.exists(dst_filename + '.py'):
-        more = f"«{dst_filename}.py» file exists!"
+    if not src_filename.endswith('.py'):
+        return "Only «.py» file allowed!"
+    if '/' in src_filename:
+        return f"«{src_filename}» invalid name (/)!"
+    if not os.path.exists(compiler):
+        return f"«{src_filename}» use a not defined compiler: «{compiler}»!"
+    if not replace and os.path.exists(dst_filename + '.py'):
+        return f"«{dst_filename}.py» file exists!"
+
+    # All seems fine
+
+    with open(dst_filename + '.py', "wb") as file:
+        file.write(filehandle.file.read())
+
+    process = await asyncio.create_subprocess_exec("make", dst_filename + '.js')
+    await process.wait()
+    if replace:
+        return f"Course «{src_filename}» replace «{dst_filename}.py» file"
+
+    config = utilities.CourseConfig.get(dst_filename)
+    config.set_parameter('creator', session.login)
+    config.set_parameter('stop', '2000-01-01 00:00:01')
+    return f"Course «{src_filename}» added into «{dst_filename}.py» file"
+
+
+async def upload_course(request): # pylint: disable=too-many-branches
+    """Add a new course"""
+    error = None
+    replace = request.match_info.get('course', '')
+    if replace:
+        replace += '.py'
+        session, course = await get_teacher_login_and_course(request)
+        if not session.is_admin(course):
+            error = "Session change is not allowed"
     else:
-        with open(dst_filename + '.py', "wb") as file:
-            file.write(filehandle.file.read())
-        config = utilities.CourseConfig.get(dst_filename)
-        if session.login not in config.teachers:
-            config.set_parameter('teachers', session.login + ' ' + config.config['teachers'])
-        if not replace:
-            config.set_parameter('stop', '2000-01-01 00:00:01')
-        process = await asyncio.create_subprocess_exec("make", dst_filename + '.js')
-        await process.wait()
-        if replace:
-            more = f"Course «{src_filename}» replace «{dst_filename}.py» file"
-        else:
-            more = f"Course «{src_filename}» added into «{dst_filename}.py» file"
-    return await adm_home(request, more)
+        session = await utilities.Session.get(request)
+        if not session.is_author():
+            error = "Session adding is not allowed"
+    if not error:
+        error = await update_file(request, session, replace)
+    return await adm_home(request, error)
 
 async def config_reload(request):
     """For regression tests"""
@@ -887,6 +911,8 @@ async def checkpoint_list(request):
 async def checkpoint(request):
     """Display the students waiting checkpoint"""
     session, course = await get_teacher_login_and_course(request)
+    if not session.is_proctor(course):
+        raise session.message('not_proctor', exception=True)
     return response(
         session.header() + f'''
         <script>
@@ -913,7 +939,9 @@ async def update_browser_data(course):
 
 async def update_browser(request):
     """Send update values"""
-    _session, course = await get_teacher_login_and_course(request)
+    session, course = await get_teacher_login_and_course(request)
+    if not session.is_proctor(course):
+        raise session.message('not_proctor', exception=True)
     return await update_browser_data(course)
 
 async def checkpoint_student(request):
@@ -926,6 +954,8 @@ async def checkpoint_student(request):
     else:
         allow = None
     session, course = await get_teacher_login_and_course(request, allow=allow)
+    if allow is None and not session.is_course_proctor(course):
+        raise session.message('not_proctor', exception=True)
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     if room == 'STOP':
@@ -957,6 +987,8 @@ async def checkpoint_bonus(request):
     student = request.match_info['student']
     bonus = request.match_info['bonus']
     session, course = await get_teacher_login_and_course(request)
+    if not session.is_course_proctor(course):
+        raise session.message('not_proctor', exception=True)
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     old[7] = int(bonus)
@@ -1024,7 +1056,9 @@ async def checkpoint_spy(request):
     """All the sources of the student as a list of:
            [timestamp, question, compile | save | answer, source]
     """
-    _session, course = await get_teacher_login_and_course(request)
+    session, course = await get_teacher_login_and_course(request)
+    if not session.is_course_proctor(course):
+        raise session.message('not_proctor', exception=True)
     student = request.match_info['student']
     answers = []
     try:
@@ -1059,10 +1093,21 @@ async def checkpoint_spy(request):
 async def checkpoint_message(request):
     """The last answer from the student"""
     session, course = await get_teacher_login_and_course(request)
+    if not session.is_course_proctor(course):
+        raise session.message('not_proctor', exception=True)
     course.messages.append([session.login, int(time.time()), request.match_info['message']])
     course.set_parameter('messages', course.messages)
     return response(
         f'''MESSAGES.push({json.dumps(course.messages[-1])});ROOM.update_messages()''',
+        content_type='application/javascript')
+
+async def course_config(request):
+    """The last answer from the student"""
+    session, course = await get_teacher_login_and_course(request)
+    if not session.is_admin(course):
+        raise session.message('not_admin', exception=True)
+    return response(
+        f'course_config({json.dumps(course.config)})',
         content_type='application/javascript')
 
 async def adm_editor(request):
@@ -1090,6 +1135,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/config/{course}/{action}/', adm_config),
                 web.get('/adm/c5/{action}/{value}', adm_c5),
                 web.get('/config/reload', config_reload),
+                web.get('/course_config/{course}', course_config),
                 web.get('/checkpoint/*', checkpoint_list),
                 web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
                 web.get('/checkpoint/{course}', checkpoint),
@@ -1101,7 +1147,8 @@ APP.add_routes([web.get('/', home),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
                 web.get('/update/{course}', update_browser),
                 web.get('/grade/{course}/{login}', grade),
-                web.post('/upload_course', upload_course),
+                web.post('/upload_course/{course}', upload_course),
+                web.post('/upload_course/', upload_course),
                 web.post('/log', log),
                 web.post('/record_grade/{course}', record_grade),
                 web.post('/record_comment/{course}', record_comment),
