@@ -57,7 +57,7 @@ try:
 except: # pylint: disable=bare-except
     pass
 
-EXPLAIN = {0: "Sauvegardée", 1: "Validée", 2: "Compilée", 3: "Dernière seconde"}
+EXPLAIN = {0: "Sauvée", 1: "Validée", 2: "Compilée", 3: "Dernière seconde"}
 
 def two_digit(number):
     """ 6 → 06 """
@@ -246,7 +246,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if GRADING:
             self.save_button.style.display = 'none'
             self.reset_button.style.display = 'none'
-            self.stop_button.style.display = 'none'
+            if self.stop_button:
+                self.stop_button.style.display = 'none'
     def create_gui(self):
         """The text editor container"""
         self.options['positions']['overlay'] = self.options['positions']['editor']
@@ -976,6 +977,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if version:
                 now.setTime(version[2] * 1000)
                 content.append(' ')
+                content.append(two_digit(now.getDate()))
+                content.append('/')
+                content.append(two_digit(now.getMonth() + 1))
+                content.append(' ')
                 content.append(two_digit(now.getHours()))
                 content.append(':')
                 content.append(two_digit(now.getMinutes()))
@@ -1078,7 +1083,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif what == 'index':
             content = ('<div class="questions"><a href="/' + window.location.search + '">🏠</a>'
                 + '<div class="tips">Accueil C5</div></div><br>')
-            if GRADING:
+            if GRADING and ',' in WHERE[2]:
                 content += '<div class="version">' + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ') + '</div>'
             content += value
             if ADMIN: # pylint: disable=undefined-variable
