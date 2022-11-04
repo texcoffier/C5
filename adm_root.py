@@ -82,6 +82,13 @@ def display(): # pylint: disable=too-many-statements
         text.append(' ' + master + ', ')
     add_input('/adm/c5/add_master/', '', name="add_master")
     text.append('<hr>')
+    text.append('Authors are allowed to create session: ')
+    for author in CONFIG.authors:
+        add_button('/adm/c5/del_author/' + author, '🗑',
+                   name='del_author_' + author.replace('.', '_')) # For regtests
+        text.append(' ' + author + ', ')
+    add_input('/adm/c5/add_author/', '', name="add_author")
+    text.append('<hr>')
     text.append('Session ticket time to live in seconds: ')
     add_input('/adm/c5/ticket_ttl/', CONFIG.ticket_ttl, name="ticket_ttl")
     text.append(' ')

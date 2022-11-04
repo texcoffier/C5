@@ -328,6 +328,13 @@ async def startup(app):
         app['load_student_infos'] = asyncio.create_task(load_student_infos())
     print("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
 
+async def get_author_login(request):
+    """Get the admin login or redirect to home page if it isn't one"""
+    session = await utilities.Session.get(request)
+    if not session.is_author():
+        raise session.message('not_author', exception=True)
+    return session
+
 async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
@@ -385,9 +392,10 @@ async def adm_course(request):
 
 async def adm_config(request): # pylint: disable=too-many-branches
     """Course details page for administrators"""
-    _session = await get_admin_login(request)
-    course = request.match_info['course']
-    config = utilities.CourseConfig.get(utilities.get_course(course))
+    session, config = await get_teacher_login_and_course(request)
+    if not session.is_admin(config):
+        raise session.message('not_author', exception=True)
+    course = config.course
     action = request.match_info['action']
     value = request.match_info.get('value', '')
     if value == 'now':
@@ -478,26 +486,17 @@ async def adm_c5(request): # pylint: disable=too-many-branches
     action = request.match_info['action']
     value = request.match_info['value']
     more = "Nothing to do"
-    if action == 'add_master':
-        if value not in utilities.CONFIG.masters:
-            utilities.CONFIG.masters.append(value)
-            utilities.CONFIG.set_value('masters', utilities.CONFIG.masters)
-            more = f"Master «{value}» added"
-    elif action == 'del_master':
-        if value in utilities.CONFIG.masters:
-            utilities.CONFIG.masters.remove(value)
-            utilities.CONFIG.set_value('masters', utilities.CONFIG.masters)
-            more = f"Master «{value}» removed"
-    elif action == 'add_root':
-        if value not in utilities.CONFIG.roots:
-            utilities.CONFIG.roots.append(value)
-            utilities.CONFIG.set_value('roots', utilities.CONFIG.roots)
-            more = f"Root «{value}» added"
-    elif action == 'del_root':
-        if value in utilities.CONFIG.roots:
-            utilities.CONFIG.roots.remove(value)
-            utilities.CONFIG.set_value('roots', utilities.CONFIG.roots)
-            more = f"Root «{value}» removed"
+    if action.startswith(('add_', 'del_')):
+        deladd, what = action.split('_')
+        logins = getattr(utilities.CONFIG, what + 's')
+        if deladd == 'add':
+            if value not in logins:
+                logins.append(value)
+        else:
+            if value in logins:
+                logins.remove(value)
+        utilities.CONFIG.set_value(what + 's', logins)
+        more = f"{what.title()} {deladd} «{value}»"
     elif action == 'ips_per_room':
         try:
             utilities.CONFIG.set_value(action, text_to_dict(value))
@@ -534,7 +533,7 @@ async def adm_c5(request): # pylint: disable=too-many-branches
         more = "You are a hacker!"
     return await adm_root(request, more)
 
-async def adm_home(request, more=''):
+async def adm_home(request, more='', author=False):
     """Home page for administrators"""
     if more:
         if more.endswith('!'):
@@ -543,9 +542,13 @@ async def adm_home(request, more=''):
             more = '<div id="more">' + more + '</div>'
 
     utilities.CourseConfig.load_all_configs()
-    session = await get_admin_login(request)
+    session = await get_author_login(request)
+    if not session.is_admin():
+        author = True
     courses = []
     for _course_name, config in sorted(utilities.CourseConfig.configs.items()):
+        if author and not session.is_course_admin(config):
+            continue
         attrs = {
             'course': config.course,
             'status': config.status(''),
@@ -558,7 +561,12 @@ async def adm_home(request, more=''):
 
     return response(
         session.header(courses, more)
+        + f'''<script>HOME="{'author' if author else 'home'}";</script>'''
         + f'<script src="/adm_home.js?ticket={session.ticket}"></script>')
+
+async def adm_author(request, more=''):
+    """Home page for author"""
+    return await adm_home(request, more, author=True)
 
 async def adm_root(request, more=''):
     """Home page for roots"""
@@ -1075,6 +1083,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/answers/{course:.*}', adm_answers),
                 web.get('/adm/home', adm_home),
                 web.get('/adm/root', adm_root),
+                web.get('/adm/author', adm_author),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/editor/{course}', adm_editor),
                 web.get('/adm/config/{course}/{action}/{value}', adm_config),

@@ -283,6 +283,7 @@ def get_course(txt):
 
 class Config:
     """C5 configuration"""
+    authors = []
     masters = []
     roots = []
     ticket_ttl = 86400
@@ -292,6 +293,7 @@ class Config:
         self.config = {
             'roots': self.roots,
             'masters': self.masters,
+            'authors': self.authors,
             'ticket_ttl': self.ticket_ttl,
             'computers': [],
             'ips_per_room': {"Nautibus,TP3": "b710l0301.univ-lyon1.fr b710l0302.univ-lyon1.fr"},
@@ -302,6 +304,7 @@ class Config:
                 'done': "La session d'exercice ou d'examen est terminée",
                 'not_root': "Vous n'êtes pas root C5",
                 'not_admin': "Vous n'êtes pas administrateur C5",
+                'not_author': "Vous n'êtes pas créateur de session",
                 'not_teacher': "Vous ne surveillez pas cet examen",
                 'pending': "La session d'exercice ou d'examen n'a pas commencé",
                 }
@@ -317,6 +320,7 @@ class Config:
         self.update()
     def update(self):
         """Update configuration attributes"""
+        self.authors = self.config['authors']
         self.masters = self.config['masters']
         self.roots = self.config['roots']
         self.ticket_ttl = self.config['ticket_ttl']
@@ -343,12 +347,10 @@ class Config:
         return not self.is_student(login)
     def is_admin(self, login):
         """Returns True if it is an admin login"""
-        if login in self.masters or login in self.roots:
-            return True
-        if self.masters:
-            return False
-        # No master, so all teachers are master
-        return not self.is_student(login)
+        return login in self.masters or login in self.roots
+    def is_author(self, login):
+        """Returns True if it is an author login"""
+        return login in self.authors or login in self.masters or login in self.roots
     def is_student(self, login):
         """The user is a student"""
         return self.student.search(login)
@@ -469,11 +471,17 @@ class Session:
         if not session.login:
             await session.get_login(str(request.url).split('?')[0])
         return session
+    def is_author(self):
+        """The user is C5 session creator"""
+        return CONFIG.is_author(self.login)
     def is_admin(self, course=None):
         """The user is C5 admin or course admin"""
         if course and self.login in course.teachers:
             return True
         return CONFIG.is_admin(self.login)
+    def is_course_admin(self, course):
+        """The user is course admin"""
+        return self.login in course.teachers
     def is_root(self):
         """The user is C5 root"""
         return CONFIG.is_root(self.login)
@@ -521,7 +529,7 @@ class Session:
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
             <link REL="icon" href="/favicon.ico?ticket={self.ticket}">
             </head>
-            <h1>{name} : {CONFIG.config['messages'][key]}</h1>
+            <h1>{name} : {CONFIG.config['messages'].get(key, key)}</h1>
             """,
             content_type='text/html',
             headers={'Cache-Control': 'no-cache'}

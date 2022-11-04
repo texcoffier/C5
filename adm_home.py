@@ -7,6 +7,7 @@ try:
     MORE = MORE
     LOGIN = LOGIN
     CONFIG = CONFIG
+    HOME = HOME
     history = history
     RegExp = RegExp
     encodeURIComponent = encodeURIComponent
@@ -20,7 +21,7 @@ except ValueError:
 def update_url():
     """Hide the last action from URL"""
     url = location.toString() # pylint: disable=undefined-variable
-    clean = url.replace(RegExp('(.*)/(adm|upload).*([?]ticket=.*)'), "$1/adm/home$3")
+    clean = url.replace(RegExp('(.*)/(adm|upload).*([?]ticket=.*)'), "$1/adm/" + HOME + "$3")
     history.replaceState('_a_', '_t_', clean)
 
 def display(): # pylint: disable=too-many-statements

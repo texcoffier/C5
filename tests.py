@@ -427,7 +427,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.load_page('=JS=introduction')
         self.check('.index > A').click()
         self.check_alert(required=False, nbr=10)
-        self.check('H1', {'innerText': Contains(utilities.CONFIG.config['messages']['not_admin'])})
+        self.check('H1', {'innerText': Contains(utilities.CONFIG.config['messages'].get('not_author', 'not_author'))})
         with self.admin_rights():
             self.load_page('=JS=introduction')
             self.check('.index > A').click()
