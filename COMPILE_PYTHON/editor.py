@@ -6,19 +6,21 @@ if False: # pylint: disable=using-constant-test
     Question = Question
     PREAMBLE = PREAMBLE
 
-COURSE_OPTIONS = {'positions' : {
-    'question': [1, 29, 0, 100, '#EFE'],
-    'tester': [100, 29, 30, 70, '#EFE'],
-    'editor': [30, 54, 0, 100, '#FFF'],
-    'compiler': [84, 16, 0, 30, '#EEF'],
-    'executor': [84, 16, 30, 70, '#EEF'],
-    'time': [80, 20, 98, 2, '#0000'],
-    'index': [0, 1, 0, 100, '#0000'],
-    'reset_button': [82, 2, 0, 2, '#0000'],
-    'save_button': [80, 2, 0, 2, '#0000'],
-    'local_button': [78, 2, 0, 2, '#0000'],
-    'stop_button': [75, 2, 0, 2, '#0000'],
-    'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
+COURSE_OPTIONS = {
+    'allow_copy_paste': True,
+    'positions' : {
+        'question': [1, 29, 0, 100, '#EFE'],
+        'tester': [100, 29, 30, 70, '#EFE'],
+        'editor': [30, 54, 0, 100, '#FFF'],
+        'compiler': [84, 16, 0, 30, '#EEF'],
+        'executor': [84, 16, 30, 70, '#EEF'],
+        'time': [80, 20, 98, 2, '#0000'],
+        'index': [0, 1, 0, 100, '#0000'],
+        'reset_button': [82, 2, 0, 2, '#0000'],
+        'save_button': [80, 2, 0, 2, '#0000'],
+        'local_button': [78, 2, 0, 2, '#0000'],
+        'stop_button': [75, 2, 0, 2, '#0000'],
+        'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
     }}
 
 PREAMBLE += """

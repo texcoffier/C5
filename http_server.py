@@ -390,7 +390,7 @@ async def adm_course(request):
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """)
 
-async def adm_config(request): # pylint: disable=too-many-branches
+async def adm_config(request, session_config=False): # pylint: disable=too-many-branches
     """Course details page for administrators"""
     session, config = await get_teacher_login_and_course(request)
     if not session.is_admin(config):
@@ -401,14 +401,28 @@ async def adm_config(request): # pylint: disable=too-many-branches
     if value == 'now':
         value = time.strftime('%Y-%m-%d %H:%M:%S')
     if action == 'stop':
-        config.set_parameter('stop', value)
-        if config.start > value:
-            config.set_parameter('start', value)
-        feedback = f"«{course}» Stop date updated to «{value}"
+        try:
+            if len(value) != 19:
+                value += ' '
+            time.strptime(value, '%Y-%m-%d %H:%M:%S')
+            config.set_parameter('stop', value)
+            if config.start > value:
+                config.set_parameter('start', value)
+            feedback = f"«{course}» Stop date updated to «{value}»"
+        except ValueError:
+            feedback = f"«{course}» Stop date invalid: «{value}»!"
     elif action == 'start':
-        config.set_parameter('start', value)
-        config.set_parameter('stop', '2100-01-01 00:00:00')
-        feedback = f"«{course}» Start date updated to «{value}»"
+        try:
+            time.strptime(value, '%4Y-%2m-%2d %2H:%2M:%2S')
+            config.set_parameter('start', value)
+            if len(value) != 19:
+                value += ' '
+            time.strptime(value, '%Y-%m-%d %H:%M:%S')
+            config.set_parameter('start', value)
+            config.set_parameter('stop', '2100-01-01 00:00:00')
+            feedback = f"«{course}» Start date updated to «{value}»"
+        except ValueError:
+            feedback = f"«{course}» Start date invalid: «{value}»!"
     elif action == 'tt':
         config.set_parameter('tt', value)
         feedback = f"«{course}» TT list updated with «{value}»"
@@ -426,7 +440,7 @@ async def adm_config(request): # pylint: disable=too-many-branches
             config.set_parameter('theme', value)
             feedback = f"«{course}» Highlight theme updated to «{value}»"
         else:
-            feedback = f"«{course}» Highlight theme «{value}» does not exists"
+            feedback = f"«{course}» Highlight theme «{value}» does not exists!"
     elif action == 'copy_paste':
         config.set_parameter('copy_paste', value)
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
@@ -470,7 +484,15 @@ async def adm_config(request): # pylint: disable=too-many-branches
         del utilities.CourseConfig.configs[config.dirname]
         feedback = f"«{course}» moved to Trash directory."
 
+    if session_config:
+        return response(
+            f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
+            content_type='application/javascript')
     return await adm_home(request, feedback)
+
+async def adm_session_config(request):
+    """Redirection"""
+    return await adm_config(request, session_config=True)
 
 def text_to_dict(text):
     """Transform a user text to a dict.
@@ -797,7 +819,7 @@ async def update_file(request, session, replace):
     return f"Course «{src_filename}» added into «{dst_filename}.py» file"
 
 
-async def upload_course(request): # pylint: disable=too-many-branches
+async def upload_course(request, session_course=False):
     """Add a new course"""
     error = None
     replace = request.match_info.get('course', '')
@@ -805,14 +827,22 @@ async def upload_course(request): # pylint: disable=too-many-branches
         replace += '.py'
         session, course = await get_teacher_login_and_course(request)
         if not session.is_admin(course):
-            error = "Session change is not allowed"
+            error = "Session change is not allowed!"
     else:
         session = await utilities.Session.get(request)
         if not session.is_author():
-            error = "Session adding is not allowed"
+            error = "Session adding is not allowed!"
     if not error:
         error = await update_file(request, session, replace)
+    if session_course:
+        return response(
+            f'<script>window.parent.update_course_config({json.dumps(course.config)}, {json.dumps(error)})</script>',
+            content_type='text/html')
     return await adm_home(request, error)
+
+async def upload_session_course(request):
+    """Replace a course"""
+    return await upload_course(request, session_course=True)
 
 async def config_reload(request):
     """For regression tests"""
@@ -1107,8 +1137,19 @@ async def course_config(request):
     if not session.is_admin(course):
         raise session.message('not_admin', exception=True)
     return response(
-        f'course_config({json.dumps(course.config)})',
+        f'update_course_config({json.dumps(course.config)})',
         content_type='application/javascript')
+
+async def adm_session(request):
+    """Session configuration for administrators"""
+    session, course = await get_teacher_login_and_course(request)
+    if not session.is_admin(course):
+        raise session.message('not_admin', exception=True)
+
+    return response(
+        session.header()
+        + f'<script>COURSE = {json.dumps(course.course)};</script>'
+        + f'<script src="/adm_session.js?ticket={session.ticket}"></script>')
 
 async def adm_editor(request):
     """Session questions editor"""
@@ -1129,6 +1170,9 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/home', adm_home),
                 web.get('/adm/root', adm_root),
                 web.get('/adm/author', adm_author),
+                web.get('/adm/session/{course}', adm_session),
+                web.get('/adm/session/{course}/{action}/{value}', adm_session_config),
+                web.get('/adm/session/{course}/{action}/', adm_session_config),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/editor/{course}', adm_editor),
                 web.get('/adm/config/{course}/{action}/{value}', adm_config),
@@ -1147,6 +1191,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
                 web.get('/update/{course}', update_browser),
                 web.get('/grade/{course}/{login}', grade),
+                web.post('/upload_session_course/{course}', upload_session_course),
                 web.post('/upload_course/{course}', upload_course),
                 web.post('/upload_course/', upload_course),
                 web.post('/log', log),

@@ -1,0 +1,157 @@
+BODY {
+    background: #EEE;
+    font-family: sans-serif;
+    --rights-widths: 12em;
+    --rights-heights: calc((100vh - 16em) / 3);
+    --state-widths: 12em;
+    --config-widths:  calc(100vw - var(--rights-widths) - var(--state-widths) - 3.6em);
+    --messages_height: 10em;
+    padding: 0px;
+    margin: 0px;
+    box-sizing: border-box;
+}
+
+#feedback {
+    height: 5em;
+    overflow: auto;
+    font-size: 70%;
+}
+
+.error {
+    background: #F00;
+    color: #FFF;
+    transform: scale(2,2);
+    transform-origin: right;
+}
+
+LABEL, INPUT, TEXTAREA, SELECT {
+    transition: background 0.5s;
+}
+
+.wait_answer {
+    background: #F88;
+    transition: background 0s;
+}
+.changed {
+    background: #FF8;
+}
+H1 {
+    text-align: center;
+    margin-top: 0em;
+    margin-bottom: 0.1em;
+}
+DIV.rights {
+    width: var(--rights-widths);
+    padding-right: 1em;
+    padding-left: 0.3em;
+}
+DIV.rights TEXTAREA {
+    height: var(--rights-heights);
+    width: 100%;
+    margin-top: 0em;
+}
+P.title {
+    font-weight: bold;
+    margin-bottom: 0.1em;
+}
+TEXTAREA#notation {
+    height: calc(100vh - 27em);
+    width: 100%;
+    margin-top: 0em;
+    white-space: pre;
+}
+TEXTAREA#tt {
+    height: 4em;
+    width: 100%;
+    margin-top: 0em;
+}
+DIV.rights, DIV.configs, DIV.state {
+    display: inline-block;
+    vertical-align: top;
+}
+LABEL {
+    display: block;
+}
+TEXTAREA, INPUT, SELECT {
+    font-size: 100%;
+    font-family: monospace, monospace;
+}
+INPUT {
+    margin-bottom: 0.2em;
+}
+DIV.configs {
+    width: var(--config-widths);
+    padding-right: 1em;
+}
+DIV.state {
+    width: var(--state-widths);
+    white-space: normal;
+}
+DIV.state A {
+    display: block;
+    width: 100%;
+    border: 2px outset #DDD;
+    background: #FFF;
+    padding: 0.1em;
+    border-radius: 0.5em;
+    margin-bottom: 0.2em;
+    text-decoration: none;
+    text-align: center;
+    color: #000;
+}
+DIV.state A:hover {
+    border: 2px inset #DDD;
+}
+
+#invalid_date {
+    background: #F00;
+    color: #FFF;
+    display: inline-block;
+}
+
+#messages {
+    height: var(--messages_height);
+}
+#messages > DIV > DIV {
+    top: 30em;
+}
+#messages > DIV {
+    margin-bottom: 0.2em;
+    border-bottom: 1px solid #000;
+}
+#active_teacher_room {
+    height: calc(100vh - var(--messages_height) - 29em);
+}
+#active_teacher_room > DIV {
+    line-height: 0em;
+    white-space: nowrap;
+    font-family: monospace, monospace;
+}
+#active_teacher_room > DIV > DIV {
+    bottom: 10em;
+    line-height: 1.2em;
+}
+#active_teacher_room > SPAN {
+    display: inline-block;
+    background: #F88;
+    height: 1.2em;
+    margin: 0px;
+    margin-bottom: -0.9em;
+}
+
+.tips {
+    overflow: auto;
+}
+.tips > DIV > DIV {
+    display: none;
+    position: absolute;
+    background: #FFD;
+    right: calc(var(--state-widths) + 1em);
+    text-align: right;
+}
+.tips > DIV:hover {
+    background: #FFD;
+}
+.tips > DIV:hover DIV {
+    display: block;
+}
