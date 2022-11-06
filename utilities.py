@@ -507,9 +507,15 @@ class Session:
     def is_course_admin(self, course):
         """The user is course admin"""
         return course.is_admin(self.login)
+    def is_grader(self, course):
+        """The user is course grader"""
+        return course.is_grader(self.login) or CONFIG.is_admin(self.login)
     def is_course_grader(self, course):
         """The user is course grader"""
         return course.is_grader(self.login)
+    def is_proctor(self, course):
+        """The user is course proctor"""
+        return course.is_proctor(self.login) or CONFIG.is_admin(self.login)
     def is_course_proctor(self, course):
         """The user is course proctor"""
         return course.is_proctor(self.login)

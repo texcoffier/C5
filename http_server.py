@@ -12,6 +12,7 @@ import zipfile
 import asyncio
 import logging
 import ast
+import re
 import urllib.request
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
@@ -406,20 +407,15 @@ async def adm_config(request, session_config=False): # pylint: disable=too-many-
                 value += ' '
             time.strptime(value, '%Y-%m-%d %H:%M:%S')
             config.set_parameter('stop', value)
-            if config.start > value:
-                config.set_parameter('start', value)
             feedback = f"«{course}» Stop date updated to «{value}»"
         except ValueError:
             feedback = f"«{course}» Stop date invalid: «{value}»!"
     elif action == 'start':
         try:
-            time.strptime(value, '%4Y-%2m-%2d %2H:%2M:%2S')
-            config.set_parameter('start', value)
             if len(value) != 19:
                 value += ' '
             time.strptime(value, '%Y-%m-%d %H:%M:%S')
             config.set_parameter('start', value)
-            config.set_parameter('stop', '2100-01-01 00:00:00')
             feedback = f"«{course}» Start date updated to «{value}»"
         except ValueError:
             feedback = f"«{course}» Start date invalid: «{value}»!"
@@ -838,7 +834,9 @@ async def upload_course(request, session_course=False):
         return response(
             f'<script>window.parent.update_course_config({json.dumps(course.config)}, {json.dumps(error)})</script>',
             content_type='text/html')
-    return await adm_home(request, error)
+    if error:
+        return response(error, content_type='text/html')
+    return await checkpoint_list(request)
 
 async def upload_session_course(request):
     """Replace a course"""
@@ -849,6 +847,15 @@ async def config_reload(request):
     _session = await utilities.Session.get(request)
     utilities.CONFIG.load()
     return response('done')
+
+def tipped(logins):
+    """The best way to display truncated text"""
+    logins = re.split('[ \t\n]+', logins.strip())
+    if not logins:
+        return '<td class="names"><div></div>'
+    if len(logins) == 1:
+        return '<td class="clipped names"><div>' + logins[0] + '</div>'
+    return '<td class="tipped names"><div>' + ' '.join(logins) + '</div>'
 
 def checkpoint_line(session, course, content):
     """A line in the checkpoint table"""
@@ -869,13 +876,12 @@ def checkpoint_line(session, course, content):
     # if session.login in course.teachers:
     status = course.status('')
     content.append(f'''
-    <tr>
-    <td>{course.course}
-    <td>{len(course.active_teacher_room)}
-    <td>{len(waiting)}
-    <td>{len(working)}
-    <td>{len(done)}
-    <td>{len(with_me)}
+    <tr{' style="background:#AFA"' if course.highlight else ''}>
+    <td class="clipped course"><div>{course.course.split('=')[1]}</div>
+    <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
+    <td>{len(course.active_teacher_room) or ''}
+    <td>{len(waiting) if course.checkpoint else ''}
+    <td>{len(with_me) or ''}
     <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
     <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
     <td {'style="background:#8F8"'
@@ -885,57 +891,124 @@ def checkpoint_line(session, course, content):
             else ''}
     >{'Exam' if course.checkpoint else ''}
     <td> {
+        f'<a target="_blank" href="/adm/session/{course.course}?ticket={session.ticket}">Edit</a>'
+        if session.is_admin(course) else ''
+    }
+    <td> {
         f'<a target="_blank" href="/={course.course}?ticket={session.ticket}">Try</a>'
-        if status.startswith('running') or status == 'done' or session.login in course.teachers
+        if status.startswith('running') or session.is_grader(course)
         else ''
     }
-    <td><a href="/checkpoint/{course.course}?ticket={session.ticket}"
-        {'style="background:#8F8"' if course.highlight else ''}
-    >Checkpoint</a>
-    <td style="white-space: nowrap">{' '.join(course.teachers)}
+    <td> {
+        f'<a target="_blank" href="/checkpoint/{course.course}?ticket={session.ticket}">Place</a>'
+        if session.is_proctor(course) else ''
+    }
+    <td class="clipped names"><div>{course.creator}</div>
+    {tipped(course.config['admins'])}
+    {tipped(course.config['graders'])}
+    {tipped(course.config['proctors'])}
     </tr>''')
 
-def checkpoint_table(session, courses, test, content):
+def checkpoint_table(session, courses, test, content, done):
     """A checkpoint table"""
-    content.append('''
-        <table>
-        <tr><th>Course<th>Stud<br>ents<th>Wait<br>ing<th>Work<br>ing<th>Done<th>With me
-        <th>Start date<th>Stop date<th>Exam<th>Try<th>WaitRoom<th>Teachers</tr>
-        ''')
     for course in courses:
         if test(course):
-            checkpoint_line(session, course, content)
-    content.append('</table>')
+            if course not in done:
+                checkpoint_line(session, course, content)
+                done.add(course)
 
 async def checkpoint_list(request):
     """Liste all checkpoints"""
     session = await utilities.Session.get(request)
+    titles = '''<tr><th>Session<th>Comp<br>iler<th>Stud<br>ents<th>Wait<br>ing<th>With<br>me
+        <th>Start date<th>Stop date<th>Exam<th>Edit<th>Try<th>Waiting<br>Room
+        <th>Creator<th>Admins<th>Graders<th>Proctors</tr>'''
     content = [
         session.header(),
         '''
         <style>
-        TABLE { border-collapse: collapse }
-        TABLE TD, TABLE TH { border: 1px solid #AAA ; }
+        BODY { font-family: sans-serif }
+        TABLE { border-spacing: 0px; border: 1px solid #AAA }
+        TABLE TD, TABLE TH { border: 1px solid #AAA ; padding: 2px }
+        TABLE TD.course DIV { width: 11em; }
+        TABLE TD.compiler DIV { width: 3em; }
+        TABLE TD.clipped DIV { overflow: hidden }
+        TABLE TR:hover TD.clipped:first-child DIV,
+        TABLE TD.clipped:hover DIV
+                 { background: #FF0; overflow: visible; position: absolute;
+                                         width: auto; padding-right: 1em }
+        TR:hover TD {
+            border-bottom: 3px solid #000 ;
+            padding-bottom: 0px;
+            border-top: 3px solid #000 ;
+            padding-top: 0px;
+            }
+        TD { vertical-align: top }
+        TD.names DIV { width: 6em ; }
+        TD.tipped DIV { white-space: nowrap; overflow: hidden }
+        TD.tipped:hover DIV { background: #FFE ; overflow: visible; position: absolute;
+                              white-space: normal; margin-left: 3em; border: 1px solid #880;
+                              margin-top: -1em; width: 10em; padding: 0.5em; }
+        TD.tipped:hover { background: #FF0 }
+        TH.header { background: #55F; color: #FFF }
+        TH { background: #EEF }
+        A { text-decoration: none }
         </style>
-        ''']
+        <table>''']
+    def hide_header():
+        if '<th>' in content[-1]:
+            content.pop()
+            content[-1] = content[-1].replace('<th', '<th style="color:#AAF"')
+    def add_header(label):
+        hide_header()
+        content.append(f'<tr><th class="header" colspan="{titles.count("th")}">{label}</tr>')
+        content.append(titles)
     utilities.CourseConfig.load_all_configs()
     now = time.time()
     courses = [
         course
-        for _course_name, course in sorted(utilities.CourseConfig.configs.items())
+        for course in sorted(utilities.CourseConfig.configs.values(),
+            key=lambda i: i.course.split('=')[::-1])
+        if session.is_proctor(course) or course.status('').startswith('running')
         ]
-    content.append("<h2>Pas encore commencé</h2>")
+    done = set()
+    # add_header("Sessions I created")
+    # checkpoint_table(session, courses,
+    #     lambda course: course.creator == session.login,
+    #     content, done)
+    # add_header("Sessions I am allowed to modify")
+    # checkpoint_table(session, courses,
+    #     lambda course: session.is_course_admin(course),
+    #     content, done)
+    # add_header("Sessions of examination running or not yet started")
+    # checkpoint_table(session, courses,
+    #     lambda course: now < course.stop_tt_timestamp and course.checkpoint,
+    #     content, done)
+    add_header("Sessions not yet started")
     checkpoint_table(session, courses,
         lambda course: now < course.start_timestamp,
-        content)
-    content.append("<h2>En cours</h2>")
+        content, done)
+    add_header("Sessions running")
     checkpoint_table(session, courses,
-        lambda course: now > course.start_timestamp and now < course.stop_tt_timestamp,
-        content)
-    content.append("<h2>Terminé</h2>")
+        lambda course: course.start_timestamp <= now <= course.stop_tt_timestamp,
+        content, done)
+    add_header("Sessions done")
     checkpoint_table(session, courses,
         lambda course: now > course.stop_tt_timestamp,
-        content)
+        content, done)
+    hide_header()
+    content.append('</table>')
+    if session.is_author():
+        content.append(f"""
+        <p>
+        Add a new session, filename must be as «{{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}}=SESSION.py»
+        for example «JS=foo_loop.py», the session name must not yet exists.
+        <form id="upload_course" method="POST" enctype="multipart/form-data"
+              action="/upload_course/?ticket={session.ticket}">
+        <input type="file" name="course" onchange="this.parentNode.submit()">
+        </form>
+        """)
+
     return response(''.join(content))
 
 async def checkpoint(request):
@@ -1035,6 +1108,7 @@ async def home(request):
         return await adm_home(request)
     if not session.is_student():
         return await checkpoint_list(request)
+    # Student
     utilities.CourseConfig.load_all_configs()
     now = time.time()
     content = [session.header()]
