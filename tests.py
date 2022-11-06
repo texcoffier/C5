@@ -454,11 +454,15 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.JS_introduction BUTTON.stop_date').click()
             self.check('TR.JS_introduction', {'className': Contains('running_tt')})
             self.check('.JS_introduction BUTTON.start_date').click()
+            set_date('.JS_introduction INPUT.stop_date',
+                     "2100-01-01 00:00:0", 'Stop date updated')
             self.check('TR.JS_introduction', {'className': Contains('running')})
             set_date('.JS_introduction INPUT.stop_date',
                      "2001-01-01 00:00:0", 'Stop date updated')
             self.check('TR.JS_introduction', {'className': Contains('done')})
             self.check('.JS_introduction BUTTON.start_date').click()
+            set_date('.JS_introduction INPUT.stop_date',
+                     "2100-01-01 00:00:0", 'Stop date updated')
             self.check('TR.JS_introduction', {'className': Contains('running')})
     def test_master_change(self):
         """Test add and remove master"""
@@ -466,9 +470,9 @@ class Tests: # pylint: disable=too-many-public-methods
             self.goto('adm/root')
             self.check('.add_master').send_keys('john.doe')
             self.check('.add_master').send_keys(Keys.ENTER)
-            self.check('#more', {'innerText': Contains('Master «john.doe» added')})
+            self.check('#more', {'innerText': Contains('Master add «john.doe»')})
             self.check("BUTTON.del_master_john_doe").click()
-            self.check('#more', {'innerText': Contains('Master «john.doe» removed')})
+            self.check('#more', {'innerText': Contains('Master del «john.doe»')})
     def test_ticket_ttl(self):
         """Test TTL change"""
         to_delete = "TICKETS/TO_DELETE"

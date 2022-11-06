@@ -354,7 +354,7 @@ async def get_teacher_login_and_course(request, allow=None):
     """Get the teacher login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
     course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
-    if session.is_student() and allow != session.login:
+    if session.is_student() and allow != session.login and not session.is_admin(course):
         raise session.message('not_teacher', exception=True)
     return session, course
 
