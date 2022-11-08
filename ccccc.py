@@ -1056,7 +1056,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.popup_message(messages[millisecs() % len(messages)])
         elif what == 'executor':
             self.clear_if_needed(what)
-            if value == '\000INPUT':
+            if value.startswith('\000EVAL'):
+                eval(value[5:])
+            elif value == '\000INPUT':
                 span = document.createElement('INPUT')
                 span.onkeypress = bind(self.oninput, self)
                 span.input_index = self.input_index

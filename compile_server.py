@@ -10,8 +10,8 @@ import sys
 import atexit
 import signal
 import time
-import psutil
 import resource
+import psutil
 import websockets
 import utilities
 
@@ -21,13 +21,13 @@ def set_limits():
     """Do not allow big processes"""
     resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
     resource.setrlimit(resource.RLIMIT_NOFILE, (10, 10))
-    resource.setrlimit(resource.RLIMIT_DATA, (1000000, 1000000))
+    resource.setrlimit(resource.RLIMIT_DATA, (4000000, 4000000))
     resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
 
 def set_compiler_limits():
     """Do not allow big processes"""
     resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
-    resource.setrlimit(resource.RLIMIT_DATA, (100000000, 100000000))
+    resource.setrlimit(resource.RLIMIT_DATA, (1000000000, 1000000000))
     resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
 
 
@@ -140,17 +140,22 @@ class Process: # pylint: disable=too-many-instance-attributes
         if compiler not in ('gcc', 'g++'):
             stderr += f'Compilateur non autorisé : «{compiler}»\n'
         for option in compile_options:
-            if option not in ('-Wall', '-pedantic', '-pthread'):
+            if option not in ('-Wall', '-pedantic', '-pthread', '-std=c++20'):
                 stderr += f'Option de compilation non autorisée : «{option}»\n'
         for option in ld_options:
             if option not in ('-lm',):
                 stderr += f"Option d'édition des liens non autorisée : «{option}»\n"
         for option in allowed:
-            if option not in ('brk',):
+            if option not in ('brk', 'access', 'arch_prctl', 'clock_nanosleep',
+                    'clone',
+                    'clone3', 'close', 'execve', 'getrandom', 'madvise', 'mmap',
+                    'mprotect', 'munmap', 'newfstatat', 'openat', 'pread64', 'prlimit64',
+                    'rseq', 'rt_sigaction', 'rt_sigprocmask', 'sched_yield',
+                    'set_robust_list', 'set_tid_address', 'getpid', 'gettid', 'tgkill'):
                 stderr += f"Appel système non autorisé : «{option}»\n"
         if not stderr:
             self.allowed = ':'.join(["fstat", "newfstatat", "write", "read",
-                                     "lseek", "futex", "exit_group"] + allowed)
+                                     "lseek", "futex", "exit_group", "exit"] + allowed)
             self.process = await asyncio.create_subprocess_exec(
                 compiler, *compile_options, self.source_file, *ld_options, '-o', self.exec_file,
                 stderr=asyncio.subprocess.PIPE,
@@ -184,6 +189,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
         self.log("RUN")
+        print(f"LD_PRELOAD=sandbox/libsandbox.so SECCOMP_SYSCALL_ALLOW={self.allowed} {self.course.dirname}/{self.login}/{self.conid}", flush=True)
         self.process = await asyncio.create_subprocess_exec(
             f"{self.course.dirname}/{self.login}/{self.conid}",
             stdout=asyncio.subprocess.PIPE,
