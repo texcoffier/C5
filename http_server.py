@@ -23,21 +23,26 @@ for i in ('http_proxy', 'https_proxy'):
     if i in os.environ:
         del os.environ[i]
 
-def response(content, content_type="text/html", charset='utf-8'):
+def response(content, content_type="text/html", charset='utf-8', cache=False):
+    headers = {
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp",
+        }
+    if cache:
+        headers['Cache-Control'] = 'max-age=86400'
+    else:
+        headers['Cache-Control'] = 'no-cache'
     return web.Response(
         body=content,
         content_type=content_type,
         charset=charset,
-        headers={
-            "Cross-Origin-Opener-Policy": "same-origin",
-            "Cross-Origin-Embedder-Policy": "require-corp",
-            'Cache-Control': 'no-cache',
-        }
+        headers=headers
     )
 
 class File:
     """Manage file answer"""
     file_cache = {}
+    cache = False
 
     def __init__(self, filename):
         self.filename = filename
@@ -65,6 +70,7 @@ class File:
             self.mtime = mtime
             with open(self.filename, "rb") as file:
                 content = file.read()
+                self.cache = len(content) > 200000 # checkpoint.js must no yet be cached
                 if self.charset is not None:
                     content = content.decode(self.charset)
                 self.content = content
@@ -75,6 +81,7 @@ class File:
             content or self.get_content(),
             content_type=self.mime,
             charset=self.charset,
+            cache=self.cache
         )
     @classmethod
     def get(cls, filename):
