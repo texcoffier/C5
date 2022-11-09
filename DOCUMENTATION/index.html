@@ -140,11 +140,11 @@
         <li> Outils pour la surveillance d'examen sur de nombreuses salles.</li>
     </ul>
     <p>
-        Présentation video de 5 minutes 32 :
+        Présentation video de 5 minutes 32 (complètement dépassée) :
         <b><a href="tuto_student.webm">la vue étudiant</a></b><br>
     </p>
 
-    <p> Présentation video de 4 minutes 14 :
+    <p> Présentation video de 4 minutes 14 (complètement dépassée) :
         <b><a href="tuto_teacher.webm">la vue surveillant</a></b><br>
     </p>
 
@@ -161,7 +161,8 @@
             <tt>COMPILE_{JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}</tt>
         </li>
         <li> Il est compilé en tapant : <tt>make prepare</tt></li>
-        <li> Il est utilisable avec l'URL : <tt>https://…/={JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}=<b>nom_sujet</b></tt></li>
+        <li> Il est utilisable avec l'URL : <tt>https://…/={JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}=<b>nom_sujet</b></tt>
+        </li>
     </ul>
     <p>
         Pour chaque question il y a une classe
@@ -205,7 +206,7 @@
     </p>
     <pre>Session([Q0(), Q1(), Q2(), Q3(), QEnd()])</pre>
 
-    <h3>Comment tester un sujet</h3>
+    <h2>Comment tester un sujet</h2>
     <p>
         Si vous travaillez sur un serveur distant :
     </p>
@@ -216,7 +217,7 @@
         </li>
         <li> Vous cliquez sur le bouton <tt>Try</tt></li>
         <li> Si votre sujet dépend de la place de l'étudiant, alors
-            vous devez allez sur le plan (checkpoint) pour vous
+            vous devez cliquer sur «Place» pour vous
             placer sur la bonne chaise et recharger la page contenant le sujet.
         </li>
     </ul>
@@ -233,7 +234,7 @@
         Les fois suivantes : édition, compilation, rechargement de la page web.
     </p>
 
-    <h3>Ajouter des images dans un questionnaire</h3>
+    <h2>Ajouter des images dans un questionnaire</h2>
     <p>
         C5 n'héberge pas de fichiers media pour le moment,
         il faut donc faire autrement :
@@ -253,7 +254,7 @@
         </li>
     </ul>
 
-    <h3>Attributs de la question</h3>
+    <h2>Attributs de la question</h2>
     <ul>
         <li> <tt>self.worker.execution_result</tt> résultat de l'exécution
             une fois toutes les lectures clavier (scanf, input, cin...) faites.</li>
@@ -263,7 +264,7 @@
         </li>
     </ul>
 
-    <h3>Méthodes et fonctions utilitaires</h3>
+    <h2>Méthodes et fonctions utilitaires</h2>
     <ul>
         <li> <tt>millisec()</tt> depuis le 1 janvier 1970</li>
         <li> <tt>self.display(html)</tt> affiche dans la zone de test</li>
@@ -278,9 +279,9 @@
         <li> <tt>self.teacher()</tt> donne le nom de l'enseignant qui surveille l'étudiant.</li>
         <li> <tt>batiment, coord_x, coord_y = self.placement()</tt>
             Permet de récupérer le bâtiment et les coordonnées sur le plan.
-            <li> <tt>sujet = self.version()</tt>
-                permet de récupérer la version du sujet suivant que
-                l'étudiant a été mis sur un Ⓐ ou Ⓑ sur le plan :
+        <li> <tt>sujet = self.version()</tt>
+            permet de récupérer la version du sujet suivant que
+            l'étudiant a été mis sur un Ⓐ ou Ⓑ sur le plan :
             <pre>def question(self):
     if self.sujet == 'a':
         return "Vous avez le sujet A : ..."
@@ -404,32 +405,25 @@ def default_answer(self):
     </p>
     <ul>
         <li> Les roots qui définissent la configuration globale de C5
-            ainsi que les administrateurs.
-        </li>
-        <li> Les administrateurs qui peuvent créer des sessions de cours
-            et tout gérer.
-        </li>
-        <li>
-            Les enseignants qui gèrent les étudiants qui composent avec eux.
-        </li>
-        <li>
-            Les correcteurs qui notent les copies.
-        </li>
-        <li>
-            Les étudiants.
-        </li>
+            ainsi que les administrateurs et créateur de session.</li>
+        <li> Les administrateurs qui peuvent modifier toutes les sessions.</li>
+        <li> Les créateur de session.</li>
+        <li> Les administrateurs de session.</li>
+        <li> Les correcteurs de session qui notent les copies.</li>
+        <li> Les surveillants.</li>
+        <li> Les étudiants.</li>
     </ul>
     <p>
         La page d'accueil va être différente pour ces 5 catégories de personnes.
     </p>
 
-    <h3>Root : page d'accueil</h3>
+    <h3>Root C5</h3>
     <ul>
         <li> Modification de la liste des roots.</li>
         <li> Modification de la liste des administrateurs.</li>
         <li> Durée de vie des tickets de session.</li>
         <li> Liste des noms des machines par salle, une ligne par salle :
-                <tt>Bâtiment,Salle Machine1 Machine2 Machine3...</tt>
+            <tt>Bâtiment,Salle Machine1 Machine2 Machine3...</tt>
         </li>
         <li> Expression régulière permettant d'identifier les logins étudiants.</li>
         <li> Traduction des différents messages affichés (totalement incomplet).</li>
@@ -439,38 +433,31 @@ def default_answer(self):
     </p>
 
     <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-admin.png">
-    <h3>Administrateur : page d'accueil</h3>
+    <h3>Administrateur C5, Administrateur session, Correcteur et surveillants</h3>
     <p>
-        Il voit la liste des sessions en cours :
+        Ces personnes voient la liste des sessions les concernant :
     </p>
     <ul>
-        <li> Logs : détail du travail de chaque étudiant.</li>
-        <li> Try : essaye le questionnaire en tant qu'étudiant.</li>
-        <li> Date de début et date de fin.</li>
-        <li> Copy/Paste : Autorise le copier/coller</li>
-        <li> Coloring : coloration syntaxique dans l'éditeur.</li>
-        <li> Checkpoint : le surveillant doit indiquer sur quelle machine
-            l'étudiant compose.
-            Le lien indiqué à coté permet de gérer la salle d'attente.
+        <li> Nom de la session.</li>
+        <li> Nombre de student qui se sont connectés sur la session.</li>
+        <li> Nombre d'étudiants attendant dans la salle d'attente de l'examen.</li>
+        <li> Nombre d'étudiants que j'ai placé sur le plan et que je surveille.</li>
+        <li> Date de début de session (si vide depuis toujours).</li>
+        <li> Date de fin de session (si vide à tout jamais).</li>
+        <li> Si c'est un exam (il y a une salle d'attente pour rentrer).</li>
+        <li> «Edit» permet de configurer la session si on est administrateur.</li>
+        <li> «Try» permet de tester la session (si elle n'est pas ouverte, il faut être administrateur de la session).
         </li>
-        <li> Sequential : les questions doivent être faites les unes après les autres.
-        <li> Save Unlock : sauvegarder une question (même si raté) débloque la suivante.
-        <li> Highlight : affiche la session en vert dans la liste des sessions de l'étudiant
-            et l'affiche même si elle n'a pas commencée.
-        <li> Liste des étudiants ayant droit à un tiers temps.</li>
-        <li> ZIP total avec tous les fichiers de log de la session.</li>
-        <li> Mise à jour du questionnaire avec un nouveau ou édition interactive
-            du questionnaire dans C5 (la sauvegarde met en production).</li>
-        <li> Liste des surveillants/correcteurs (le premier est l'administrateur).</li>
-        <li> Thème «highlight.js».</li>
-        <li> Le barème de notation de la session en texte libre.
-            Les éléments de notations sont indiqués par <tt>{Une explication:0,0.5,1,1.5,2}</tt>
-            en en mettant un par ligne au maximum.
-            Le barème est sur l'ensemble des questions.
-            Ne rien changer dans le barème une fois que la correction a commencé
-            à part les typos.
+        <li> «Place» permet de gérer la salle d'attente, placer les étudiants sur le plan
+            et d'accéder à leur travail pour le corriger.
         </li>
+        <li> «Creator» la personne qui a créé la session.</li>
+        <li> «Admins» les personnes qui peuvent modifier la session (en plus du créateur).</li>
+        <li> «Graders» les personnes qui peuvent corriger les copies
+            et tester l'examen avant son ouverture la session (en plus des admins).</li>
+        <li> «Proctors» les personnes pouvant surveiller l'examen (en plus des correcteurs).</li>
     </ul>
+
     <p> Ajout d'une nouvelle session.
         <b>Le fichier doit impérativement porter un nom de la forme
             <tt>{JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}=nom_sujet.py</tt></b>
@@ -482,9 +469,70 @@ def default_answer(self):
         Cette configuration est enregistrée sous le nom <tt>COMPILE_*/nom_sujet.cf</tt>.
     </p>
 
+    <h2>Editeur de session</h2>
+    <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-editor.png">
+    <p>
+        Il permet de définir les paramètres de la session en cours
+        et de surveillant son déroulement.
+    </p>
+    <p>
+        Colonne de gauche :
+    </p>
+    <ul>
+        <li> Le créateur de la session (non modifiable).</li>
+        <li> Les administrateurs pouvant modifier cette page.</li>
+        <li> Les personnes pouvant noter la session et la tester à l'avance.</li>
+        <li> Les surveillants qui placent les étudiants.</li>
+    </ul>
+    <p>
+        Partie centrale :
+    </p>
+    <ul>
+        <li> Dates de début et fin de session.</li>
+        <li> Des bascules permettant de configurer l'éditeur de source.</li>
+        <li> Les étudiants qui ont automatiquement un tiers-temps.</li>
+        <li> Le barème de notation de la session en texte libre.
+            Les éléments de notations sont indiqués par <tt>{Une explication:0,0.5,1,1.5,2}</tt>
+            en en mettant un par ligne au maximum.
+            Le barème est sur l'ensemble des questions.
+            Ne rien changer dans le barème une fois que la correction a commencé
+            à part les typos.
+        </li>
+
+
+        </li>
+    </ul>
+    <p>
+        Partie droite, en haut des boutons pour :
+    </p>
+    <ul>
+        <li> Upload new source : permet de remplacer le fichier Python définissant la question.</li>
+        <li> Edit source with C5 : permet d'éditer intéractivement le fichier précédent,
+            en faisant Ctrl+S cela le mettra en production.
+        </li>
+        <li> Try the exercises : Essaye le sujet.</li>
+        <li> Place Student : Accès à l'interface pour placer les étudiants sur le plan.</li>
+        <li> See students results : Affiche les détails de la session et permet
+            d'exporter le travaildes étudiants.
+        </li>
+        <li> Load full ZIP : charge l'ensemble des fichiers de la session y compris les logs.</li>
+        <li> Delete <b>ALL</b> : détruit complètement la session et les logs.</li>
+    </ul>
+    <p>
+        Partie droite, au dessous des boutons :
+    </p>
+    <ul>
+        <li> Une zone de retour utilisateur modifiée quand un changement est fait.</li>
+        <li> Les messages qui ont été postés sur le plan par les surveillants.</li>
+        <li> Les étudiants avec éventuellement leur surveillant, leur note et
+            si le surveillant leur a accordé plus de temps.
+            Si on clique sur l'étudiant on voit son travail.
+        </li>
+    </ul>
+
 
     <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-course.png">
-    <h3>Administrateur : détails d'un cours</h3>
+    <h2>Administrateur : détails d'une session</h2>
     <p>
         Les administrateurs de session peuvent regarder le détails de tous les cours.
         Pour chaque étudiant on a le détail et le résumé de toute
@@ -523,7 +571,7 @@ def default_answer(self):
     </ul>
 
     <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-checkpoint.png">
-    <h3>Surveillant</h3>
+    <h2>Surveillant</h2>
     <img style="float: right" src="screen-teacher-list.png">
     <p>
         Quand un surveillant (non administrateur) arrive sur C5
@@ -610,7 +658,7 @@ def default_answer(self):
         </li>
     </ul>
 
-    <h3>Le correcteur</h3>
+    <h2>Le correcteur</h2>
     <p>
         Il clique sur l'étudiant placé et arrive sur l'éditeur C5
         avec le barème de notation affiché.
@@ -628,7 +676,7 @@ def default_answer(self):
         et même le modifier temporairement pour voir ce que cela donne.
     </p>
 
-    <h3>Étudiant</h3>
+    <h2>Étudiant</h2>
     <img style="float: right" src="screen-student.png">
     <p>
         L'étudiant voit la liste de tous les examens en cours et à venir.
@@ -689,7 +737,7 @@ make</pre>
         <li> <tt>./c5 c5 ; ./c5 restart</tt> Mise à jour d'une nouvelle version à partir de GitHub</li>
     </ul>
 
-    <h3>Configuration NGINX</h3>
+    <h2>Configuration NGINX</h2>
     <p>
         Il faut remplacer /WebSocket/, 4201, 4202 par les bonnes valeurs.
     </p>
@@ -714,7 +762,7 @@ server {
         }
   }
             </pre>
-    <h3>Organisation des sources</h3>
+    <h2>Organisation des sources</h2>
     <p>
         Légende :
     </p>
@@ -764,7 +812,7 @@ server {
             <td>C'est l'éditeur interactif de questionnaire.
                 Les questionnaires étant écrits en Python,
                 il est nécessaire de les éditer et tester
-                dans l'environnement Python.                
+                dans l'environnement Python.
         </tr>
         <tr class="cours">
             <td>COMPILE_REMOTE/test.py
@@ -914,7 +962,7 @@ server {
         </tr>
     </table>
 
-    <h3>Organisation des fichiers générés</h3>
+    <h2>Organisation des fichiers générés</h2>
     <p>
         Les fichiers de configurations se terminent tous par <tt>.cf</tt>
         et contiennent une expression Python :
@@ -951,14 +999,15 @@ server {
         <li> <tt>tests.log</tt> Résumé des tests de régression.</li>
         <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/nom_sujet/LOGIN/</tt>
             <ul>
-            <li> <tt>http_server.log</tt> toutes les actions de l'étudiant.<br>
-                <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
-            <li> <tt>compile_server.log</tt><br>
-                toutes les compilations/exécutions faites par l'étudiant.</li>
-            <li> <tt>grades.log</tt><br>
-                les notes de l'étudiant.</li>
-            <li> <tt>comments.log</tt><br>
-                les commentaires sur les codes de l'étudiant.</li>
+                <li> <tt>http_server.log</tt> toutes les actions de l'étudiant.<br>
+                    <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
+                <li> <tt>compile_server.log</tt><br>
+                    toutes les compilations/exécutions faites par l'étudiant.</li>
+                <li> <tt>grades.log</tt><br>
+                    les notes de l'étudiant.</li>
+                <li> <tt>comments.log</tt><br>
+                    les commentaires sur les codes de l'étudiant.</li>
+                </ul>
         </li>
     </ul>
     <p>
@@ -977,7 +1026,7 @@ server {
     </ul>
 
 
-    <h3>Tests de régression</h3>
+    <h2>Tests de régression</h2>
     <p>
         Installer les paquets :
     </p>

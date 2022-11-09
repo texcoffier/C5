@@ -190,7 +190,7 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     >Edit source with C5</a>
     <a target="_blank" href="=""" + COURSE + '?ticket=' + TICKET + """">Try the exercises</a>
     <br>
-    <a target="_blank" href="/checkpoint/""" + COURSE + '?ticket=' + TICKET + """">Manage checkpoint</a>
+    <a target="_blank" href="/checkpoint/""" + COURSE + '?ticket=' + TICKET + """">Place students</a>
     <a target="_blank" href="/adm/course/""" + COURSE + '?ticket=' + TICKET + """">See students results</a>
     <a target="_blank" href="/adm/get/COMPILE_""" + COURSE.replace('=', '/') + '.zip?ticket=' + TICKET + """">Load full ZIP</a>
     <br>
