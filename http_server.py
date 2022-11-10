@@ -23,6 +23,13 @@ for i in ('http_proxy', 'https_proxy'):
     if i in os.environ:
         del os.environ[i]
 
+COMPILERS = [i[8:-3].upper()
+             for i in os.listdir('.')
+             if i.startswith('compile_')
+             and i.endswith('.py')
+             and i != 'compile_server.py'
+             ]
+
 def response(content, content_type="text/html", charset='utf-8', cache=False):
     headers = {
             "Cross-Origin-Opener-Policy": "same-origin",
@@ -398,7 +405,7 @@ async def adm_course(request):
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """)
 
-async def adm_config(request, session_config=False): # pylint: disable=too-many-branches
+async def adm_config(request): # pylint: disable=too-many-branches
     """Course details page for administrators"""
     session, config = await get_teacher_login_and_course(request)
     if not session.is_admin(config):
@@ -485,17 +492,11 @@ async def adm_config(request, session_config=False): # pylint: disable=too-many-
             if os.path.exists(config.dirname + extension):
                 os.rename(config.dirname + extension, f'{dirname}/{filename}{extension}')
         del utilities.CourseConfig.configs[config.dirname]
-        feedback = f"«{course}» moved to Trash directory."
+        return response(f"«{course}» moved to Trash directory. Now close this page.")
 
-    if session_config:
-        return response(
-            f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
-            content_type='application/javascript')
-    return await adm_home(request, feedback)
-
-async def adm_session_config(request):
-    """Redirection"""
-    return await adm_config(request, session_config=True)
+    return response(
+        f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
+        content_type='application/javascript')
 
 def text_to_dict(text):
     """Transform a user text to a dict.
@@ -563,41 +564,6 @@ async def adm_c5(request): # pylint: disable=too-many-branches
     else:
         more = "You are a hacker!"
     return await adm_root(request, more)
-
-async def adm_home(request, more='', author=False):
-    """Home page for administrators"""
-    if more:
-        if more.endswith('!'):
-            more = '<div id="more" style="background: #F88">' + more + '</div>'
-        else:
-            more = '<div id="more">' + more + '</div>'
-
-    utilities.CourseConfig.load_all_configs()
-    session = await get_author_login(request)
-    if not session.is_admin():
-        author = True
-    courses = []
-    for _course_name, config in sorted(utilities.CourseConfig.configs.items()):
-        if author and not session.is_course_admin(config):
-            continue
-        attrs = {
-            'course': config.course,
-            'status': config.status(''),
-            'logs': os.path.exists(config.dirname),
-        }
-        attrs.update(config.config)
-        attrs.pop('active_teacher_room')
-        attrs.pop('messages')
-        courses.append(attrs)
-
-    return response(
-        session.header(courses, more)
-        + f'''<script>HOME="{'author' if author else 'home'}";</script>'''
-        + f'<script src="/adm_home.js?ticket={session.ticket}"></script>')
-
-async def adm_author(request, more=''):
-    """Home page for author"""
-    return await adm_home(request, more, author=True)
 
 async def adm_root(request, more=''):
     """Home page for roots"""
@@ -776,7 +742,7 @@ async def adm_answers(request):
 
     return response(data, content_type='application/zip')
 
-async def update_file(request, session, replace):
+async def update_file(request, session, compiler, replace):
     """Update questionnary on disc if allowed"""
     post = await request.post()
     filehandle = post['course']
@@ -786,68 +752,65 @@ async def update_file(request, session, replace):
     src_filename = getattr(filehandle, 'filename', None)
     if not src_filename:
         return "You must select a file!"
-    dst_filename = replace or src_filename
-    if '=' in dst_filename:
-        compiler = f"compile_{dst_filename.split('=')[0].lower()}.py"
-        dst_filename = utilities.get_course(dst_filename[:-3]) # Remove .py
     if src_filename is None:
         return "You forgot to select a course file!"
-    if '=' not in src_filename:
-        return f"""
-        Your choosen filename is «{src_filename}»<br>
-        The file name shape must be : COMPILER=SESSION.py<br>
-        For example: «PYTHON=introduction.py» or «JS=example.py»!"""
     if not src_filename.endswith('.py'):
         return "Only «.py» file allowed!"
     if '/' in src_filename:
         return f"«{src_filename}» invalid name (/)!"
-    if not os.path.exists(compiler):
-        return f"«{src_filename}» use a not defined compiler: «{compiler}»!"
-    if not replace and os.path.exists(dst_filename + '.py'):
-        return f"«{dst_filename}.py» file exists!"
+    if replace and replace != src_filename:
+        return f"«{src_filename}» is not equal to «{replace}»!"
+    compiler_py = 'compile_' + compiler.lower() + '.py'
+    if not os.path.exists(compiler_py):
+        return f"«{src_filename}» use a not defined compiler: «{compiler_py}»!"
+
+    dst_filename = f'COMPILE_{compiler}/{replace or src_filename}'
+    if not replace and os.path.exists(dst_filename):
+        return f"«{dst_filename}» file exists!"
 
     # All seems fine
 
-    with open(dst_filename + '.py', "wb") as file:
+    with open(dst_filename, "wb") as file:
         file.write(filehandle.file.read())
 
-    process = await asyncio.create_subprocess_exec("make", dst_filename + '.js')
+    process = await asyncio.create_subprocess_exec("make", dst_filename[:-3] + '.js')
     await process.wait()
     if replace:
-        return f"Course «{src_filename}» replace «{dst_filename}.py» file"
+        return f"«{src_filename}» replace «{dst_filename}» file"
 
-    config = utilities.CourseConfig.get(dst_filename)
+    config = utilities.CourseConfig.get(dst_filename[:-3])
     config.set_parameter('creator', session.login)
     config.set_parameter('stop', '2000-01-01 00:00:01')
-    return f"Course «{src_filename}» added into «{dst_filename}.py» file"
+    return f"Course «{src_filename}» added into «{dst_filename}» file"
 
 
-async def upload_course(request, session_course=False):
+async def upload_course(request):
     """Add a new course"""
+    session = await utilities.Session.get(request)
     error = None
-    replace = request.match_info.get('course', '')
+    compiler = request.match_info['compiler']
+    replace = request.match_info['course']
+    if replace == '_new_':
+        replace = False
     if replace:
-        replace += '.py'
-        session, course = await get_teacher_login_and_course(request)
+        course = utilities.CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace}')
         if not session.is_admin(course):
             error = "Session change is not allowed!"
+        replace += '.py'
     else:
-        session = await utilities.Session.get(request)
         if not session.is_author():
             error = "Session adding is not allowed!"
     if not error:
-        error = await update_file(request, session, replace)
-    if session_course:
-        return response(
-            f'<script>window.parent.update_course_config({json.dumps(course.config)}, {json.dumps(error)})</script>',
-            content_type='text/html')
-    if error:
-        return response(error, content_type='text/html')
-    return await checkpoint_list(request)
-
-async def upload_session_course(request):
-    """Replace a course"""
-    return await upload_course(request, session_course=True)
+        error = await update_file(request, session, compiler, replace)
+    if '!' not in error and not replace:
+        return await checkpoint_list(request)
+    if '!' in error:
+        style = 'background:#FAA;'
+    else:
+        style = ''
+    return response('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
+        + '<div style="height:100%;' + style + '">'
+        + error + '</div>')
 
 async def config_reload(request):
     """For regression tests"""
@@ -960,6 +923,10 @@ async def checkpoint_list(request):
         TH.header { background: #55F; color: #FFF }
         TH { background: #EEF }
         A { text-decoration: none }
+        FORM { display: inline-block }
+        FORM INPUT { display: none }
+        FORM SPAN { border: 1px outset #888; border-radius: 0.5em; background: #EEE; padding: 0.2em }
+        FORM SPAN:hover { border: 1px inset #888; background: #DDD }
         </style>
         <table>''']
     def hide_header():
@@ -1006,15 +973,17 @@ async def checkpoint_list(request):
     hide_header()
     content.append('</table>')
     if session.is_author():
-        content.append(f"""
-        <p>
-        Add a new session, filename must be as «{{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}}=SESSION.py»
-        for example «JS=foo_loop.py», the session name must not yet exists.
-        <form id="upload_course" method="POST" enctype="multipart/form-data"
-              action="/upload_course/?ticket={session.ticket}">
-        <input type="file" name="course" onchange="this.parentNode.submit()">
-        </form>
-        """)
+        content.append("<br>Download a Python file to add a new session for the compiler: ")
+        for compiler in COMPILERS:
+            content.append(f'''
+            <form method="POST" enctype="multipart/form-data"
+                  action="/upload_course/{compiler}/_new_?ticket={session.ticket}">
+            <label>
+            <input type="file" name="course" accept="text/x-python"
+                   onchange="this.parentNode.parentNode.submit()">
+            <span>{compiler}</span>
+            </label>
+            </form>''')
 
     return response(''.join(content))
 
@@ -1111,8 +1080,6 @@ async def home(request):
     session = await utilities.Session.get(request)
     if session.is_root():
         return await adm_root(request)
-    if session.is_admin():
-        return await adm_home(request)
     if not session.is_student():
         return await checkpoint_list(request)
     # Student
@@ -1248,16 +1215,12 @@ APP.add_routes([web.get('/', home),
                 web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
                 web.get('/adm/get/{filename:.*}', adm_get),
                 web.get('/adm/answers/{course:.*}', adm_answers),
-                web.get('/adm/home', adm_home),
                 web.get('/adm/root', adm_root),
-                web.get('/adm/author', adm_author),
-                web.get('/adm/session/{course}', adm_session),
-                web.get('/adm/session/{course}/{action}/{value}', adm_session_config),
-                web.get('/adm/session/{course}/{action}/', adm_session_config),
+                web.get('/adm/session/{course}', adm_session), # Edit page
+                web.get('/adm/session/{course}/{action}/{value}', adm_config),
+                web.get('/adm/session/{course}/{action}/', adm_config),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/editor/{course}', adm_editor),
-                web.get('/adm/config/{course}/{action}/{value}', adm_config),
-                web.get('/adm/config/{course}/{action}/', adm_config),
                 web.get('/adm/c5/{action}/{value}', adm_c5),
                 web.get('/config/reload', config_reload),
                 web.get('/course_config/{course}', course_config),
@@ -1272,9 +1235,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
                 web.get('/update/{course}', update_browser),
                 web.get('/grade/{course}/{login}', grade),
-                web.post('/upload_session_course/{course}', upload_session_course),
-                web.post('/upload_course/{course}', upload_course),
-                web.post('/upload_course/', upload_course),
+                web.post('/upload_course/{compiler}/{course}', upload_course),
                 web.post('/log', log),
                 web.post('/record_grade/{course}', record_grade),
                 web.post('/record_comment/{course}', record_comment),

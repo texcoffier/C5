@@ -1088,8 +1088,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if GRADING and ',' in WHERE[2]:
                 content += '<div class="version">' + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ') + '</div>'
             content += value
-            if ADMIN: # pylint: disable=undefined-variable
-                content += '<br><a href="javascript:window.location.pathname=\'/adm/home\'">#</a>'
             self[what].innerHTML = content # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question

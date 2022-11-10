@@ -118,11 +118,23 @@ def update_course_config(config, feedback):
         else:
             div.className = ""
 
-def upload():
+def upload(element):
     """Send the source file"""
+    x = document.getElementById('script')
+    if x:
+        x.parentNode.removeChild(x)
+    x = document.createElement('IFRAME')
+    x.id = 'script'
+    x.name = 'script'
+    element.append(x)
+
     file = document.getElementById('file')
     event = eval("new MouseEvent('click', {'view': window, 'bubbles': true, 'cancelable': true})")
     file.dispatchEvent(event)
+
+def upload_course(element):
+    """Upload a course replacement"""
+    element.parentNode.submit()
 
 def onchange(event):
     """Send the change to the server"""
@@ -185,7 +197,7 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     <textarea id="notation"></textarea>
     </div>
     <div class="state">
-    <a target="_blank" onclick="javascript:upload()">Upload a new source</a>
+    <a target="_blank" onclick="javascript:upload(this)">Upload a new source</a>
     <a target="_blank" href="/adm/editor/""" + COURSE + '?ticket=' + TICKET + """"
     >Edit source with C5</a>
     <a target="_blank" href="=""" + COURSE + '?ticket=' + TICKET + """">Try the exercises</a>
@@ -194,7 +206,7 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     <a target="_blank" href="/adm/course/""" + COURSE + '?ticket=' + TICKET + """">See students results</a>
     <a target="_blank" href="/adm/get/COMPILE_""" + COURSE.replace('=', '/') + '.zip?ticket=' + TICKET + """">Load full ZIP</a>
     <br>
-    <a href="javascript:if(confirm('Really delete?'))window.location='/adm/config/""" + COURSE + '/delete/?ticket=' + TICKET + """'">
+    <a href="javascript:if(confirm('Really delete?'))window.location='/adm/session/""" + COURSE + '/delete/?ticket=' + TICKET + """'">
      Delete <b>ALL</b></a>
     <p class="title">Feedback</p>
     <div id="feedback"></div>
@@ -204,10 +216,9 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     <div id="active_teacher_room" class="tips"></div>
     </div>
     <form method="POST" enctype="multipart/form-data" style="display:none" target="script"
-          action="/upload_session_course/""" + COURSE + "?ticket=" + TICKET + """">
-          <input id="file" type="file" name="course" onchange="this.parentNode.submit()" value="Replace">
+          action="/upload_course/""" + COURSE.replace('=', '/') + "?ticket=" + TICKET + """">
+          <input id="file" type="file" name="course" onchange="upload_course(this)">
     </form>
-    <iframe name="script" id="script" style="display: none"></iframe>
     """
     add(div)
     setTimeout(load_config, 10) # Wait CSS loading

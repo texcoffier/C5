@@ -98,6 +98,7 @@ DIV.state A {
     text-decoration: none;
     text-align: center;
     color: #000;
+    cursor: pointer;
 }
 DIV.state A:hover {
     border: 2px inset #DDD;
@@ -120,7 +121,7 @@ DIV.state A:hover {
     border-bottom: 1px solid #000;
 }
 #active_teacher_room {
-    height: calc(100vh - var(--messages_height) - 29em);
+    height: calc(100vh - var(--messages_height) - 29em - 3.5em);
 }
 #active_teacher_room > DIV {
     line-height: 0em;
@@ -154,4 +155,14 @@ DIV.state A:hover {
 }
 .tips > DIV:hover DIV {
     display: block;
+}
+
+#script {
+    height: 3.5em;
+    border: 0px;
+    padding: 0px;
+    width: 100%;
+    background: #DDD;
+    border-radius: 0.5em;
+    pointer-events: none;
 }

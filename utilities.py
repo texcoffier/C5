@@ -788,7 +788,7 @@ With Firefox:
         rm http_server.pid compile_server.pid
         """,
     'open': f"""
-        xdg-open https://{C5_URL}/={sys.argv[2] if len(sys.argv) >= 3 else 'JS=introduction'}
+        xdg-open https://{C5_URL}/{'=' + sys.argv[2] if len(sys.argv) >= 3 else ''}
         """,
     'load': "./load_testing.py",
     'compile': fr"""#C5_LOGIN

@@ -206,13 +206,22 @@
     </p>
     <pre>Session([Q0(), Q1(), Q2(), Q3(), QEnd()])</pre>
 
-    <h2>Comment tester un sujet</h2>
+    <h2>Comment faire un sujet</h2>
     <p>
-        Si vous travaillez sur un serveur distant :
+        On suppose que le serveur a été lancé, les explications sont plus
+        loin sur la page si vous n'avez pas accès à un serveur existant.
     </p>
+    <p>
+        Il faut le créer une première fois pluis boucler sur tester/améliorer.
+    </p>
+
+
+    <h3>Création du sujet et test</h3>
+
     <ul>
-        <li> Vous allez sur la page d'administration.</li>
-        <li> Vous déposez <tt>XXX=yyy.py</tt> (ou bien cliquez sur <tt>Edit</tt>)
+        <li> On suppose que le super utilisateur root vous a indiqué comme «auteur».</li>
+        <li> Vous allez sur la page d'accueil.</li>
+        <li> Vous cliquez sur le bon compilateur et déposez <tt>yyy.py</tt>
             De préférence préfixez le nom de la session par le code du cours.
         </li>
         <li> Vous cliquez sur le bouton <tt>Try</tt></li>
@@ -221,18 +230,21 @@
             placer sur la bonne chaise et recharger la page contenant le sujet.
         </li>
     </ul>
-    <p>
-        Si vous travaillez en local, la première fois :
-    </p>
+
+    <h3>Modification du sujet</h3>
+
     <ul>
-        <li> Vous lancez le serveur : <tt>./127 start</tt></li>
-        <li> Vous éditer votre sujet <tt>COMPILE_XXX/yyy.py</tt></li>
-        <li> Vous compilez votre sujet : <tt>make COMPILE_XXX/yyy.js</tt></li>
-        <li> Vous testez votre sujet : <tt>./127 open COMPILE_XXX=yyy</tt></li>
+        <li> Vous cliquez sur «Edit»</li>
+        <li> Vous pouvez alors régler tous les paramètre de la session.</li>
+        <li> Si vous voulez déposer un nouveau fichier vous cliquez sur «Upload a new source»</li>
+        <li> Si vous voulez modifier directement le code source, cliquez sur «Edit source with C5»
+            et faites Ctrl+S pour mettre en production.
+        </li>
     </ul>
     <p>
-        Les fois suivantes : édition, compilation, rechargement de la page web.
+        Ensuite il ne reste qu'à recharger la page «Try» pour voir la nouvelle version.
     </p>
+
 
     <h2>Ajouter des images dans un questionnaire</h2>
     <p>
@@ -385,7 +397,7 @@ def default_answer(self):
         </li>
         <li> Lisp: <tt>COMPILE_LISP</tt></li>
         <li> C++: <tt>COMPILE_REMOTE</tt> envoi des requêtes à
-            <tt>compile_server.py</tt> pour compiler avec <tt>g++</tt>
+            <tt>compile_server.py</tt> pour compiler avec <tt>gcc</tt> ou<tt>g++</tt>
             et exécuter. Supporte <tt>cin</tt> mais pas le graphique.
             Tous les appels systèmes sont interdits (sauf <tt>fstat</tt>, <tt>write</tt>, <tt>read, </tt><tt>lseek</tt>,
             <tt>exit_group</tt>),
@@ -459,14 +471,15 @@ def default_answer(self):
     </ul>
 
     <p> Ajout d'une nouvelle session.
-        <b>Le fichier doit impérativement porter un nom de la forme
-            <tt>{JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}=nom_sujet.py</tt></b>
-        afin de le ranger dans le bon répertoire.
-        Il est conseillé de préfixer le nom du sujet
+        Vous cliquez sur le compilateur puis choisissez le fichier Python
+        définissant la question.
+        Il est conseillé de préfixer le nom du fichier Python
         par le code de l'UE.
     </p>
     <p>
-        Cette configuration est enregistrée sous le nom <tt>COMPILE_*/nom_sujet.cf</tt>.
+        Cette configuration est enregistrée sous le nom <tt>COMPILE_*/nom_sujet.cf</tt>
+        le sujet est dans <tt>COMPILE_*/nom_sujet.py</tt> et les logs des étudiants
+        dans le répertoire <tt>COMPILE_*/nom_sujet</tt>.
     </p>
 
     <h2>Editeur de session</h2>
@@ -698,9 +711,8 @@ git clone https://github.com/texcoffier/C5.git
 cd C5
 make</pre>
     <p>
-        Si tout s'est bien passé, une page web s'ouvre
-        sur le cours javascript.
-        L'interface d'administration est <tt>.../adm/home</tt>
+        Si tout s'est bien passé, une page web s'ouvre sur l'interface d'administration.
+        Vous pouvez alors cliquer sur «Session» pour choisir une session.
     </p>
     <h2>Configuration et gestion C5</h2>
     <p>
@@ -859,8 +871,8 @@ server {
             <td>Page d'accueil du cours avec les statistiques étudiants.
         </tr>
         <tr class="js">
-            <td>adm_home.py
-            <td>Page d'accueil administrateur listant tous les cours.
+            <td>adm_session.py
+            <td>Éditeur de session.
         </tr>
         <tr>
             <td>c5.svg
@@ -877,6 +889,7 @@ server {
         <tr class="js">
             <td>compatibility.py
             <td>Utilitaires pour ajouter des fonctions manquantes à JavaScript.
+                Et aussi des fonctions utiles pour plusieurs pages.
         </tr>
         <tr class="compilateur">
             <td>compile.py
@@ -1007,7 +1020,7 @@ server {
                     les notes de l'étudiant.</li>
                 <li> <tt>comments.log</tt><br>
                     les commentaires sur les codes de l'étudiant.</li>
-                </ul>
+            </ul>
         </li>
     </ul>
     <p>
@@ -1051,15 +1064,11 @@ server {
         <li> Fonctions graphiques pour que les étudiants puissent faire des dessins (grapic?).</li>
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
         <li> Affichage d'un corrigé.</li>
-        <li> Lors du dépôt choisir le compilateur avec un menu et pas dans le nom du fichier.</li>
         <li> Affichage de seulement ses sujets.</li>
         <li> Exportation vers TOMUSS dans une colonne de type Notation.</li>
         <li> Ajout du barème aux questions (en plus du barème global).</li>
         <li> Choix du thème de coloriage syntaxique.</li>
         <li> Icone pour passer en plein écran.</li>
-        <li> Sur la page d'administration, trier les sujets par questionnaire et
-            puis par compilateur.
-        </li>
         <li>
             Dépôt de fichiers média (images par exemple)
             pour simplifier l'inclusion dans les sujets.
@@ -1083,6 +1092,15 @@ server {
         </li>
         <li>
             ZIP des étudiants d'une salle.
+        </li>
+        <li>
+            ZIP des sources des questions quand l'étudiant fait une sauvegarde locale.
+        </li>
+        <li>
+            Permettre de renommer une session.
+        </li>
+        <li>
+            Sur la page listant les sessions ajouter : «Session à corriger» et «Session Archivée»
         </li>
     </ul>
 </body>

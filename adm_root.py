@@ -28,7 +28,7 @@ def display(): # pylint: disable=too-many-statements
     text = [
         '<title>Root</title>',
         MORE,
-        '<h1>Root (goto <a href="/adm/home?ticket=', TICKET, '">Adm page</a>)</h1>',
+        '<h1>Root (goto <a href="/checkpoint/*?ticket=', TICKET, '">Sessions</a>)</h1>',
     '''
     <style>
         BODY { font-family: sans-serif }
