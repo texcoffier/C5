@@ -494,7 +494,21 @@ async def adm_config(request): # pylint: disable=too-many-branches
             if os.path.exists(config.dirname + extension):
                 os.rename(config.dirname + extension, f'{dirname}/{filename}{extension}')
         del utilities.CourseConfig.configs[config.dirname]
-        return response(f"«{course}» moved to Trash directory. Now close this page.")
+        return response(f"«{course}» moved to Trash directory. Now close this page!")
+    elif action == 'rename':
+        value = value.replace('.py', '')
+        new_dirname = f'COMPILE_{config.compiler}/{value}'
+        if '.' in value or '/' in value or '-' in value:
+            return response(f"«{value}» invalid name because it contains /, ., -!")
+        for extension in ('', '.cf', '.py', '.js'):
+            if os.path.exists(f'{new_dirname}{extension}'):
+                return response(f"«{value}» exists!")
+        for extension in ('', '.cf', '.py', '.js'):
+            if os.path.exists(config.dirname + extension):
+                os.rename(config.dirname + extension, f'{new_dirname}{extension}')
+        del utilities.CourseConfig.configs[config.dirname] # Delete old
+        utilities.CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
+        return response(f"«{course}» Renamed as «{value}». Now close this page!")
 
     return response(
         f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',

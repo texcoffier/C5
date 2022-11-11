@@ -206,6 +206,8 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     <a target="_blank" href="/adm/course/""" + COURSE + '?ticket=' + TICKET + """">See students results</a>
     <a target="_blank" href="/adm/get/COMPILE_""" + COURSE.replace('=', '/') + '.zip?ticket=' + TICKET + """">Load full ZIP</a>
     <br>
+    <a href="javascript:name=prompt('New name?');if (name) window.location='/adm/session/'+COURSE+'/rename/'+name+'?ticket='+TICKET">
+     Rename session</a>
     <a href="javascript:if(confirm('Really delete?'))window.location='/adm/session/""" + COURSE + '/delete/?ticket=' + TICKET + """'">
      Delete <b>ALL</b></a>
     <p class="title">Feedback</p>

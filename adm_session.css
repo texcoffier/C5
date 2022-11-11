@@ -121,7 +121,7 @@ DIV.state A:hover {
     border-bottom: 1px solid #000;
 }
 #active_teacher_room {
-    height: calc(100vh - var(--messages_height) - 29em - 3.5em);
+    height: calc(100vh - var(--messages_height) - 30em - 3.6em);
 }
 #active_teacher_room > DIV {
     line-height: 0em;
