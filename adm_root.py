@@ -31,7 +31,7 @@ def display(): # pylint: disable=too-many-statements
         '<h1>Root (goto <a href="/checkpoint/*?ticket=', TICKET, '">Sessions</a>)</h1>',
     '''
     <style>
-        BODY { font-family: sans-serif }
+        BODY { font-family: sans-serif; background: #EEE }
         BODY > TEXTAREA { width: 100%; height: 10em }
         #more { border: 1px solid black ; background: #FFE;
         padding: 0.3em ; margin: 0.1em ;
@@ -43,6 +43,7 @@ def display(): # pylint: disable=too-many-statements
         transition: transform 1s;
         pointer-events: none;
         }
+    INPUT { font-size: 100% }
     </style>
     ''']
     def add_input(url, value, name='', disable=False):
@@ -108,6 +109,14 @@ def display(): # pylint: disable=too-many-statements
     for message in CONFIG.messages:
         content.append(message + ' ' + CONFIG.messages[message])
     add_textarea('/adm/c5/messages/', '\n'.join(content))
+    text.append('''Enter a Python expression to evaluate as:
+    <ul>
+    <li> utilities.CONFIG.is_admin("thierry.excoffier")
+    <li> utilities.CONFIG.load()
+    <li> _session.is_proctor(utilities.CourseConfig.get("COMPILE_PYTHON/editor"))
+    </ul>
+    ''')
+    add_textarea('/adm/c5/eval/', '')
     document.body.innerHTML = text.join('') # pylint: disable=no-member
     def anime():
         more = document.getElementById('more')

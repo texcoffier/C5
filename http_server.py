@@ -13,6 +13,8 @@ import asyncio
 import logging
 import ast
 import re
+import traceback
+import html
 import urllib.request
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
@@ -561,6 +563,12 @@ async def adm_c5(request): # pylint: disable=too-many-branches
             if session.too_old():
                 nr_deleted += 1
         more = f"{nr_deleted} tickets deleted."
+    elif action == 'eval':
+        try:
+            result = repr(eval(value)) # pylint: disable=eval-used
+        except: # pylint: disable=bare-except
+            result = traceback.format_exc()
+        more = '<b>' + html.escape(value) + '</b><pre>' + html.escape(result) + '</pre>'
     else:
         more = "You are a hacker!"
     return await adm_root(request, more)
