@@ -407,7 +407,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def clear_highlight_errors(self):
         """Make space fo the new errors"""
         for key in self.highlight_errors:
-            if self.highlight_errors[key] != 'cursor':
+            if self.highlight_errors[key] and not self.highlight_errors[key].startswith('cursor'):
                 self.highlight_errors[key] = None
         while (self.overlay.lastChild
                and self.overlay.lastChild.className
@@ -589,7 +589,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             line = line.nextSibling
         box.selectNode(line)
         error = document.createElement('DIV')
-        if what != 'cursor':
+        if not what.startswith('cursor'):
             insert(error, 'ERROR ' + what)
         try:
             if char_nr > (line.nodeValue or line.innerText).length:
@@ -657,13 +657,66 @@ class CCCCC: # pylint: disable=too-many-public-methods
         lines = self.source[:position].split('\n')
         return len(lines), len(lines[-1])
 
+    def highlight_bloc(self):
+        """Highlight first inner parenthesis containing the cursor"""
+        start = self.cursor_position - 1
+        counters = {'{': 0, '(': 0, '[': 0}
+        while start >= 0:
+            if self.source[start] in '{[(':
+                if counters[self.source[start]] == 0:
+                    break
+                counters[self.source[start]] -= 1
+            elif self.source[start] in '}])':
+                counters[{'}': '{', ')': '(', ']': '['}[self.source[start]]] += 1
+            start -= 1
+        if start == -1:
+            return
+        stop = start + 1
+        opening = self.source[start]
+        closing = {'{': '}', '(': ')', '[': ']'}[opening]
+        nr = 1
+        while nr and stop and stop < len(self.source):
+            char = self.source[stop]
+            if char == opening:
+                nr += 1
+            elif char == closing:
+                nr -= 1
+            stop += 1
+        if nr == 0:
+            line_open, column_open = self.get_line_column(start + 1)
+            self.highlight_errors[line_open + ':' + column_open] = 'cursor'
+            line_close, column_close = self.get_line_column(stop)
+            self.highlight_errors[line_close + ':' + column_close] = 'cursor'
+
+    def highlight_unbalanced(self, close='', start=0):
+        """Highlight unbalanced parenthesis. Returns the next character to check"""
+        origin = start
+        while start < len(self.source):
+            if self.source[start] in ')}]':
+                if self.source[start] == close:
+                    return start + 1
+                line_bad, column_bad = self.get_line_column(start + 1)
+                self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
+                if close:
+                    return start
+            elif self.source[start] in '([{':
+                start = self.highlight_unbalanced(
+                    close={'{': '}', '(': ')', '[': ']'}[self.source[start]],
+                    start=start+1)
+                continue
+            start += 1
+        if close:
+            line_bad, column_bad = self.get_line_column(origin)
+            self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
+        return start
+
     def update_cursor_position_now(self):
         """Get the cursor position
         pos = [current_position, do_div_br_collapse]
         """
         # Remove old cursor position
         for key in self.highlight_errors:
-            if self.highlight_errors[key] == 'cursor':
+            if self.highlight_errors[key] and self.highlight_errors[key].startswith('cursor'):
                 self.highlight_errors[key] = None
         self.do_coloring = True
         cursor = document.getSelection().getRangeAt(0).cloneRange()
@@ -691,39 +744,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if left.lastChild and left.lastChild.tagName == 'DIV':
             pos[0] -= 1
         self.cursor_position = pos[0]
-        if self.cursor_position == 0:
-            return
-        start = self.cursor_position - 1
-        counters = {'{': 0, '(': 0, '[': 0}
-        while start:
-            if self.source[start] in '{[(':
-                if counters[self.source[start]] == 0:
-                    break
-                counters[self.source[start]] -= 1
-            elif self.source[start] in '}])':
-                counters[{'}': '{', ')': '(', ']': '['}[self.source[start]]] += 1
-            start -= 1
-        if start == 0:
-            return
-        line_open, column_open = self.get_line_column(start + 1)
-        stop = start + 1
-        opening = self.source[start]
-        closing = {'{': '}', '(': ')', '[': ']'}[opening]
-        nr = 1
-        while nr and stop and stop < len(self.source):
-            char = self.source[stop]
-            if char == opening:
-                nr += 1
-            elif char == closing:
-                nr -= 1
-            stop += 1
-        line_close, column_close = self.get_line_column(stop)
-        self.highlight_errors[line_open + ':' + column_open] = 'cursor'
-        self.highlight_errors[line_close + ':' + column_close] = 'cursor'
-        # print(self.source[self.cursor_position-5:self.cursor_position]
-        #       + '|'
-        #       + self.source[self.cursor_position:self.cursor_position+5],
-        #       self.get_line_column(self.cursor_position))
+        self.highlight_unbalanced()
+        self.highlight_bloc()
 
     def update_cursor_position(self):
         """Queue cursor update position"""

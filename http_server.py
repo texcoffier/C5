@@ -213,7 +213,7 @@ def handle(base=''):
 async def grade(request):
     """Display the grading page"""
     session, course = await get_teacher_login_and_course(request)
-    is_grader = session.is_course_grader(course)
+    is_grader = session.is_grader(course)
     if not is_grader:
         return response("Vous n'êtes pas autorisé à noter.")
     return await editor(session, True, course, request.match_info['login'], grading=1)
