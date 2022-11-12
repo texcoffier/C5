@@ -965,7 +965,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     'Version <select style="background:#FF0" onchange="version_change(this)">',
                      ]
         now = Date()
-        for i, version in enumerate(VERSIONS[self.current_question]):
+        for i, version in enumerate(VERSIONS[self.current_question] or []):
             self.version = ANSWERS[self.current_question][1]
             content.append('<option')
             if ANSWERS[self.current_question][1] == i:
