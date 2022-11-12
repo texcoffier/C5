@@ -774,7 +774,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             while i > 0 and self.source[i-1] != '\n':
                 i -= 1
             j = i
-            while j < len(self.source) and self.source[j] in '\t ':
+            while j < self.cursor_position and self.source[j] in '\t ':
                 j += 1
             if j != i:
                 self.insert_on_keyup = self.source[i:j]
