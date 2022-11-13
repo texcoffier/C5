@@ -508,7 +508,7 @@ async def adm_config(request): # pylint: disable=too-many-branches
                 os.rename(config.dirname + extension, f'{new_dirname}{extension}')
         del utilities.CourseConfig.configs[config.dirname] # Delete old
         utilities.CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
-        return response(f"«{course}» Renamed as «{value}». Now close this page!")
+        return response(f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!")
 
     return response(
         f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
