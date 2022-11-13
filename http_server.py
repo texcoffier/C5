@@ -918,6 +918,7 @@ async def checkpoint_list(request):
     content = [
         session.header(),
         '''
+        <title>SESSIONS</title>
         <style>
         BODY { font-family: sans-serif }
         TABLE { border-spacing: 0px; border: 1px solid #AAA }

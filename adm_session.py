@@ -167,7 +167,8 @@ def init():
         themes.append('<option>' + theme + '</option>')
     themes = ''.join(themes)
     div.onchange = onchange
-    div.innerHTML = "<h1>" + COURSE + """</h1>
+    div.innerHTML = "<h1>" + html(COURSE.replace('=', '   ')) + """</h1>
+    <title>""" + html(COURSE.split('=')[1]) + """</title>
     <link rel="stylesheet" href="/adm_session.css?ticket=""" + TICKET + """">
     <div class="boxed rights">
     <p class="title" style="margin-top: 0px">Creator</p>
