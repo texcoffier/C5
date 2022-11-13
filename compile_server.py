@@ -38,6 +38,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.conid = str(id(websocket))
         self.process = None
         self.allowed = None
+        self.waiting = False
         self.tasks = ()
         self.input_done = None
         self.login = login
@@ -95,6 +96,10 @@ class Process: # pylint: disable=too-many-instance-attributes
             times = process_info.cpu_times()
             before = times.user + times.system + times.children_user + times.children_system
             await asyncio.sleep(period)
+            if self.waiting:
+                if self.waiting == "done":
+                    self.waiting = False
+                continue
             if not self.process:
                 return
             times = process_info.cpu_times()
@@ -111,9 +116,15 @@ class Process: # pylint: disable=too-many-instance-attributes
             line = await self.process.stdout.read(10000)
             if not line:
                 break
+            if b"\002WAIT" in line:
+                self.waiting = True
             await self.websocket.send(json.dumps(['executor', line.decode("utf-8")]))
+            if b"\002WAIT" in line:
+                await self.input_done.wait()
+                self.input_done.clear()
+                self.waiting = "done"
             size += len(line)
-            if size > 10000: # Maximum allowed output
+            if size > 1000000: # Maximum allowed output
                 self.process.kill()
                 break
             self.log(("RUN", line))
@@ -151,7 +162,8 @@ class Process: # pylint: disable=too-many-instance-attributes
                     'clone3', 'close', 'execve', 'getrandom', 'madvise', 'mmap',
                     'mprotect', 'munmap', 'newfstatat', 'openat', 'pread64', 'prlimit64',
                     'rseq', 'rt_sigaction', 'rt_sigprocmask', 'sched_yield',
-                    'set_robust_list', 'set_tid_address', 'getpid', 'gettid', 'tgkill'):
+                    'set_robust_list', 'set_tid_address', 'getpid', 'gettid', 'tgkill',
+                    'clock_nanosleep'):
                 stderr += f"Appel système non autorisé : «{option}»\n"
         if not stderr:
             self.allowed = ':'.join(["fstat", "newfstatat", "write", "read",

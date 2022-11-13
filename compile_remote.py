@@ -80,6 +80,8 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
                     self.execution_result += data[1]
                 else:
                     self.execution_returns += data[1]
+                if '\002WAIT' in data[1]:
+                    self.socket.send(JSON.stringify(['input', self.read_input(True)]))
                 if data[0] == 'return':
                     self.post('state', "stopped")
                     self.run_tester()

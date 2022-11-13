@@ -225,11 +225,12 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             return False
         return self.config.ANSWERS[question][1]
 
-    def read_input(self):
+    def read_input(self, hide=False):
         """Ask the webpage some input text, wait the answer."""
         if not self.shared_buffer:
             return "SharedArrayBuffer not allowed by HTTP server"
-        self.post('executor', '\000INPUT')
+        if not hide:
+            self.post('executor', '\001\002INPUT\001')
         self.post('state', "input")
         while self.shared_buffer[0] == 0:
             Atomics.wait(self.shared_buffer, 0, 0, 100) # pylint: disable=undefined-variable

@@ -760,6 +760,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             ]
     def onkeydown(self, event):
         """Key down"""
+        self.current_key = event.key
         if self.close_popup(event):
             return
         if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9'):
@@ -808,6 +809,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay_hide()
     def onkeyup(self, event):
         """Key up"""
+        self.current_key = ''
         if event.target.tagName == 'TEXTAREA':
             # The teacher enter a comment
             return
@@ -1078,32 +1080,51 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.popup_message(messages[millisecs() % len(messages)])
         elif what == 'executor':
             self.clear_if_needed(what)
-            if value.startswith('\000EVAL'):
-                eval(value[5:])
-            elif value == '\000INPUT':
-                span = document.createElement('INPUT')
-                span.onkeypress = bind(self.oninput, self)
-                span.input_index = self.input_index
-                if not self.inputs[self.current_question]:
-                    self.inputs[self.current_question] = {}
-                self.executor.appendChild(span)
-                if self.input_index in self.inputs[self.current_question]:
-                    span.value = self.inputs[self.current_question][self.input_index]
-                    self.send_input(span.value)
-                    span.run_on_change = True
+            for value in value.split('\001'):
+                if not value:
+                    continue
+                if value.startswith('\002EVAL'):
+                    eval(value[5:])
+                elif value.startswith('\002WAIT'):
+                    if value[5] == 'T':
+                        def answer():
+                            self.send_input('WAITDONE')
+                        setTimeout(answer, int(value[6:]))
+                    if value[5] == 'D':
+                        if self.current_key:
+                            self.send_input(self.current_key)
+                        else:
+                            self.send_input('None')
+                    if value[5] == 'K':
+                        def onkeypress(event):
+                            self.send_input(event.key + '\n')
+                            self.canvas.onkeyup = undefined
+                            event.preventDefault()
+                        self.canvas.onkeyup = onkeypress
+                elif value == '\002INPUT':
+                    span = document.createElement('INPUT')
+                    span.onkeypress = bind(self.oninput, self)
+                    span.input_index = self.input_index
+                    if not self.inputs[self.current_question]:
+                        self.inputs[self.current_question] = {}
+                    self.executor.appendChild(span)
+                    if self.input_index in self.inputs[self.current_question]:
+                        span.value = self.inputs[self.current_question][self.input_index]
+                        self.send_input(span.value)
+                        span.run_on_change = True
+                    else:
+                        if self.focus_on_next_input:
+                            self.focus_on_next_input = False
+                            span.focus()
+                    self.input_index += 1
                 else:
-                    if self.focus_on_next_input:
-                        self.focus_on_next_input = False
-                        span.focus()
-                self.input_index += 1
-            else:
-                span = document.createElement('DIV')
-                # The first space is replaced by an unsecable space
-                # in order to display it on span start <span> foo</span>
-                span.innerHTML = value.replace(' ', ' ')
-                if value[-1] not in '>\n':
-                    span.style.float = 'left'
-                self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
+                    span = document.createElement('DIV')
+                    # The first space is replaced by an unsecable space
+                    # in order to display it on span start <span> foo</span>
+                    span.innerHTML = value.replace(' ', ' ')
+                    if value[-1] not in '>\n':
+                        span.style.float = 'left'
+                    self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
             content = ('<div class="questions"><a href="/' + window.location.search + '">🏠</a>'
                 + '<div class="tips">Accueil C5</div></div><br>')
