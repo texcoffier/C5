@@ -12,6 +12,7 @@ import signal
 import time
 import resource
 import psutil
+import urllib.request
 import websockets
 import utilities
 
@@ -238,6 +239,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
         return
 
     login = session.login
+    course = urllib.request.unquote(course)
 
     process = Process(websocket, login, course)
     PROCESSES.append(process)
