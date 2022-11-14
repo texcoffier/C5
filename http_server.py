@@ -825,7 +825,7 @@ async def upload_course(request):
     if not error:
         error = await update_file(request, session, compiler, replace)
     if '!' not in error and not replace:
-        return await checkpoint_list(request)
+        raise web.HTTPFound(f'https://{utilities.C5_URL}/checkpoint/*?ticket={session.ticket}')
     if '!' in error:
         style = 'background:#FAA;'
     else:
