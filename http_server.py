@@ -377,7 +377,7 @@ async def get_teacher_login_and_course(request, allow=None):
 async def adm_course(request):
     """Course details page for administrators"""
     session, course = await get_teacher_login_and_course(request)
-    if not session.is_course_proctor(course):
+    if not session.is_proctor(course):
         raise session.message('not_proctor', exception=True)
     students = {}
     for user in sorted(os.listdir(course.dirname)):
@@ -1056,7 +1056,7 @@ async def checkpoint_student(request):
     else:
         allow = None
     session, course = await get_teacher_login_and_course(request, allow=allow)
-    if allow is None and not session.is_course_proctor(course):
+    if allow is None and not session.is_proctor(course):
         raise session.message('not_proctor', exception=True)
     seconds = int(time.time())
     old = course.active_teacher_room[student]
@@ -1089,7 +1089,7 @@ async def checkpoint_bonus(request):
     student = request.match_info['student']
     bonus = request.match_info['bonus']
     session, course = await get_teacher_login_and_course(request)
-    if not session.is_course_proctor(course):
+    if not session.is_proctor(course):
         raise session.message('not_proctor', exception=True)
     seconds = int(time.time())
     old = course.active_teacher_room[student]
@@ -1158,7 +1158,7 @@ async def checkpoint_spy(request):
            [timestamp, question, compile | save | answer, source]
     """
     session, course = await get_teacher_login_and_course(request)
-    if not session.is_course_proctor(course):
+    if not session.is_proctor(course):
         raise session.message('not_proctor', exception=True)
     student = request.match_info['student']
     answers = []
@@ -1194,7 +1194,7 @@ async def checkpoint_spy(request):
 async def checkpoint_message(request):
     """The last answer from the student"""
     session, course = await get_teacher_login_and_course(request)
-    if not session.is_course_proctor(course):
+    if not session.is_proctor(course):
         raise session.message('not_proctor', exception=True)
     course.messages.append([session.login, int(time.time()), request.match_info['message']])
     course.set_parameter('messages', course.messages)
