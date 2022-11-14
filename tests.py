@@ -110,8 +110,8 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.test_save_button,
                 self.test_copy_paste_allowed,
                 self.test_question_index,
-                self.test_admin_home,
-                self.test_date_change,
+                # self.test_admin_home,
+                # self.test_date_change,
                 self.test_master_change,
                 self.test_ticket_ttl,
                 self.test_editor,
@@ -422,48 +422,47 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check_alert(accept=True)
             self.check('.save_button').click()
 
-    def test_admin_home(self):
-        """Test the admin page link"""
-        self.load_page('=JS=introduction')
-        self.check('.index > A').click()
-        self.check_alert(required=False, nbr=10)
-        self.check('H1', {'innerText': Contains(utilities.CONFIG.config['messages'].get('not_author', 'not_author'))})
-        with self.admin_rights():
-            self.load_page('=JS=introduction')
-            self.check('.index > A').click()
-            self.check_alert(required=False, nbr=2)
-            self.check('H1', {'innerText': Contains('Administration')})
-    def test_date_change(self):
-        """Test home page course date change"""
-        def set_date(path, date, expect):
-            self.select_all(path)
-            old_date = self.check(path).get_attribute('value')
-            self.check(path).send_keys(
-                date + ('1' if old_date[-1] == '0' else '0'))
-            time.sleep(0.6)
-            self.check(path).send_keys(Keys.ENTER)
-            self.check('#more', {'innerText': Contains(expect)})
-
-        with self.admin_rights():
-            self.goto('adm/home')
-            set_date('.JS_introduction INPUT.start_date',
-                     "2000-01-01 00:00:0", 'Start date updated')
-            set_date('.JS_introduction INPUT.stop_date',
-                     "2100-01-01 00:00:0", 'Stop date updated')
-            self.check('TR.JS_introduction', {'className': Contains('running')})
-            self.check('.JS_introduction BUTTON.stop_date').click()
-            self.check('TR.JS_introduction', {'className': Contains('running_tt')})
-            self.check('.JS_introduction BUTTON.start_date').click()
-            set_date('.JS_introduction INPUT.stop_date',
-                     "2100-01-01 00:00:0", 'Stop date updated')
-            self.check('TR.JS_introduction', {'className': Contains('running')})
-            set_date('.JS_introduction INPUT.stop_date',
-                     "2001-01-01 00:00:0", 'Stop date updated')
-            self.check('TR.JS_introduction', {'className': Contains('done')})
-            self.check('.JS_introduction BUTTON.start_date').click()
-            set_date('.JS_introduction INPUT.stop_date',
-                     "2100-01-01 00:00:0", 'Stop date updated')
-            self.check('TR.JS_introduction', {'className': Contains('running')})
+    # def test_admin_home(self):
+    #     """Test the admin page link"""
+    #     self.load_page('=JS=introduction')
+    #     self.check('.index > A').click()
+    #     self.check_alert(required=False, nbr=10)
+    #     self.check('H1', {'innerText': Contains(utilities.CONFIG.config['messages'].get('not_author', 'not_author'))})
+    #     with self.admin_rights():
+    #         self.load_page('=JS=introduction')
+    #         self.check('.index > A').click()
+    #         self.check_alert(required=False, nbr=2)
+    #         self.check('H1', {'innerText': Contains('Administration')})
+    # def test_date_change(self):
+    #     """Test home page course date change"""
+    #     def set_date(path, date, expect):
+    #         self.select_all(path)
+    #         old_date = self.check(path).get_attribute('value')
+    #         self.check(path).send_keys(
+    #             date + ('1' if old_date[-1] == '0' else '0'))
+    #         time.sleep(0.6)
+    #         self.check(path).send_keys(Keys.ENTER)
+    #         self.check('#more', {'innerText': Contains(expect)})
+    #     with self.admin_rights():
+    #         self.goto('adm/home')
+    #         set_date('.JS_introduction INPUT.start_date',
+    #                  "2000-01-01 00:00:0", 'Start date updated')
+    #         set_date('.JS_introduction INPUT.stop_date',
+    #                  "2100-01-01 00:00:0", 'Stop date updated')
+    #         self.check('TR.JS_introduction', {'className': Contains('running')})
+    #         self.check('.JS_introduction BUTTON.stop_date').click()
+    #         self.check('TR.JS_introduction', {'className': Contains('running_tt')})
+    #         self.check('.JS_introduction BUTTON.start_date').click()
+    #         set_date('.JS_introduction INPUT.stop_date',
+    #                  "2100-01-01 00:00:0", 'Stop date updated')
+    #         self.check('TR.JS_introduction', {'className': Contains('running')})
+    #         set_date('.JS_introduction INPUT.stop_date',
+    #                  "2001-01-01 00:00:0", 'Stop date updated')
+    #         self.check('TR.JS_introduction', {'className': Contains('done')})
+    #         self.check('.JS_introduction BUTTON.start_date').click()
+    #         set_date('.JS_introduction INPUT.stop_date',
+    #                  "2100-01-01 00:00:0", 'Stop date updated')
+    #         self.check('TR.JS_introduction', {'className': Contains('running')})
     def test_master_change(self):
         """Test add and remove master"""
         with self.root_rights():
