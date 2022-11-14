@@ -11,8 +11,9 @@ import atexit
 import signal
 import time
 import resource
-import psutil
+import traceback
 import urllib.request
+import psutil
 import websockets
 import utilities
 
@@ -50,7 +51,6 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.log_file = f"{self.dir}/compile_server.log"
         self.exec_file = f"{self.dir}/{self.conid}"
         self.source_file = f"{self.dir}/{self.conid}.cpp"
-        self.log("START")
 
     def log(self, more):
         """Log action to COURSE/login/compile_server.log"""
@@ -63,7 +63,6 @@ class Process: # pylint: disable=too-many-instance-attributes
 
     def cleanup(self, erase_executable=False):
         """Close connection"""
-        print("cleanup")
         if erase_executable:
             try:
                 os.unlink(self.exec_file)
@@ -165,7 +164,8 @@ class Process: # pylint: disable=too-many-instance-attributes
                 stderr += f"Appel système non autorisé : «{option}»\n"
         if not stderr:
             self.allowed = ':'.join(["fstat", "newfstatat", "write", "read",
-                                     "lseek", "futex", "exit_group", "exit"] + allowed)
+                                     "lseek", "futex", "exit_group", "exit",
+                                     "clock_gettime"] + allowed)
             self.process = await asyncio.create_subprocess_exec(
                 compiler, *compile_options, self.source_file, *ld_options, '-o', self.exec_file,
                 stderr=asyncio.subprocess.PIPE,
@@ -181,7 +181,6 @@ class Process: # pylint: disable=too-many-instance-attributes
         os.unlink(self.source_file)
     async def indent(self, data):
         """Indent"""
-        self.log(("INDENT", data))
         self.cleanup(erase_executable=True)
         process = await asyncio.create_subprocess_exec(
                 'astyle',
@@ -198,7 +197,6 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
-        self.log("RUN")
         print(f"LD_PRELOAD=sandbox/libsandbox.so SECCOMP_SYSCALL_ALLOW={self.allowed} {self.course.dirname}/{self.login}/{self.conid}", flush=True)
         self.process = await asyncio.create_subprocess_exec(
             f"{self.course.dirname}/{self.login}/{self.conid}",
@@ -241,9 +239,10 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
     process = Process(websocket, login, course)
     PROCESSES.append(process)
     try:
+        process.log(("START", ticket))
         async for message in websocket:
-            print(message, flush=True)
             action, data = json.loads(message)
+            process.log(('ACTION', action))
             if not session.is_admin() and not process.course_running():
                 if action == 'compile':
                     await process.websocket.send(json.dumps(
@@ -257,7 +256,6 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
             elif action == 'indent':
                 await process.indent(data)
             elif action == 'kill':
-                process.log("KILL")
                 process.cleanup()
             elif action == 'input':
                 process.send_input(data)
@@ -266,7 +264,9 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
             else:
                 process.log(("BUG", action, data))
                 await websocket.send(json.dumps(['compiler', 'bug']))
-            print("ACTION DONE")
+            process.log("DONE")
+    except: # pylint: disable=bare-except
+        process.log(("EXCEPTION", traceback.format_exc()))
     finally:
         process.log("STOP")
         process.cleanup(erase_executable=True)
