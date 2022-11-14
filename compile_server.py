@@ -21,15 +21,12 @@ PROCESSES = []
 def set_limits():
     """Do not allow big processes"""
     resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
-    resource.setrlimit(resource.RLIMIT_NOFILE, (10, 10))
-    resource.setrlimit(resource.RLIMIT_DATA, (4000000, 4000000))
-    resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
+    resource.setrlimit(resource.RLIMIT_DATA, (100*1024*1024, 100*1024*1024))
 
 def set_compiler_limits():
     """Do not allow big processes"""
-    resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
-    resource.setrlimit(resource.RLIMIT_DATA, (1000000000, 1000000000))
-    resource.setrlimit(resource.RLIMIT_STACK, (1000000, 1000000))
+    resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
+    resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
 
 
 class Process: # pylint: disable=too-many-instance-attributes
