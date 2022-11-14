@@ -623,6 +623,7 @@ def print_help():
     print(f"""Arguments may be:
    * os : configure production OS
    * SSL-LE : create SSL Certificate with Let's Encrypt (NGINX does the encrypting)
+              or renew it if it exists.
    * SSL-SS : create a Self Signed certificate (c5 does the encrypting itself)
    * nginx : configure NGINX (needs SSL-LE certificate)
    * c5 : update C5 source (pull)
@@ -645,7 +646,7 @@ ACTIONS = {
         sudo sh -c '
             set -e
             apt update
-            apt -y install astyle nginx certbot python3-websockets python3-ldap python3-aiohttp python3-psutil npm
+            apt -y install astyle nginx certbot python3-websockets python3-ldap python3-aiohttp python3-psutil python3-certbot-nginx npm
             apt -y upgrade
             # set-timezone Europe/Paris
             '
@@ -712,6 +713,7 @@ server {{
             set -e
             if [ -d /etc/letsencrypt/live/{C5_URL} ]
                 then
+                certbot renew --nginx
                 exit 0
                 fi
             certbot certonly --standalone -d {C5_URL} -m {C5_MAIL}
