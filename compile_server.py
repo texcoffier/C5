@@ -165,7 +165,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         if not stderr:
             self.allowed = ':'.join(["fstat", "newfstatat", "write", "read",
                                      "lseek", "futex", "exit_group", "exit",
-                                     "clock_gettime"] + allowed)
+                                     "clock_gettime", "openat", "mmap","munmap", "close"] + allowed)
             self.process = await asyncio.create_subprocess_exec(
                 compiler, *compile_options, self.source_file, *ld_options, '-o', self.exec_file,
                 stderr=asyncio.subprocess.PIPE,

@@ -1270,9 +1270,15 @@ class AccessLogger(AbstractAccessLogger): # pylint: disable=too-few-public-metho
     """Logger for aiohttp"""
     def log(self, request, response, run_time): # pylint: disable=arguments-differ
         path = request.path.replace('\n', '\\n')
+        session = utilities.Session.session_cache.get(request.query_string.replace('ticket=', ''), None)
+        if session:
+            login = session.login
+        else:
+            login = ''
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
               f"{run_time:5.3f} {request.method[0]} "
-              f"{request.query_string.replace('ticket=ST-', '').split('-')[0]:>8}"
+              f"{request.query_string.replace('ticket=ST-', '').split('-')[0]} "
+              f"{login} "
               f"{path}",
               flush=True)
 
