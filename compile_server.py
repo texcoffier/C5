@@ -115,7 +115,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 break
             if b"\002WAIT" in line:
                 self.waiting = True
-            await self.websocket.send(json.dumps(['executor', line.decode("utf-8")]))
+            await self.websocket.send(json.dumps(['executor', line.decode("utf-8", "replace")]))
             if b"\002WAIT" in line:
                 await self.input_done.wait()
                 self.input_done.clear()
@@ -131,7 +131,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             if return_value < 0:
                 more = f'\n⚠️{signal.strsignal(-return_value)}'
                 if return_value == -9:
-                    more += '\nVotre programme ne se termine pas,\navez-vous fait une boucle infinie ?'
+                    more += "\nVotre programme utilise plus d'une seconde,\navez-vous fait une boucle infinie ?"
             else:
                 more = ''
             await self.websocket.send(json.dumps(
