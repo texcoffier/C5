@@ -40,7 +40,7 @@ def response(content, content_type="text/html", charset='utf-8', cache=False):
     if cache:
         headers['Cache-Control'] = 'max-age=86400'
     else:
-        headers['Cache-Control'] = 'no-cache'
+        headers['Cache-Control'] = 'no-store'
     return web.Response(
         body=content,
         content_type=content_type,
