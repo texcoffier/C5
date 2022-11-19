@@ -101,7 +101,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 return
             times = process_info.cpu_times()
             after = times.user + times.system + times.children_user + times.children_system
-            if process_info.is_running() and after - before < 0.01:
+            if process_info.is_running() and after - before < 0.005:
                 await self.websocket.send(json.dumps(['input', '']))
                 await self.input_done.wait()
                 self.input_done.clear()
@@ -109,19 +109,24 @@ class Process: # pylint: disable=too-many-instance-attributes
     async def runner(self):
         """Pass the process output to the socket"""
         size = 0
+        keep = b''
         while True:
-            line = await self.process.stdout.read(10000)
+            line = keep + await self.process.stdout.read(10000000)
+            keep = b''
             if not line:
                 break
             if b"\002WAIT" in line:
                 self.waiting = True
+            if b'\001' in line and not line.endswith(b'\001'):
+                line, keep = line.rsplit(b'\001', 1)
+                line += b'\001'
             await self.websocket.send(json.dumps(['executor', line.decode("utf-8", "replace")]))
             if b"\002WAIT" in line:
                 await self.input_done.wait()
                 self.input_done.clear()
                 self.waiting = "done"
             size += len(line)
-            if size > 1000000: # Maximum allowed output
+            if size > 10000000: # Maximum allowed output
                 self.process.kill()
                 break
             self.log(("RUN", line))
@@ -167,7 +172,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                                      "lseek", "futex", "exit_group", "exit",
                                      "clock_gettime", "openat", "mmap","munmap", "close"] + allowed)
             self.process = await asyncio.create_subprocess_exec(
-                compiler, *compile_options, self.source_file, *ld_options, '-o', self.exec_file,
+                compiler, *compile_options, '-I', '.', self.source_file, *ld_options, '-o', self.exec_file,
                 stderr=asyncio.subprocess.PIPE,
                 preexec_fn=set_compiler_limits,
                 )
@@ -258,7 +263,10 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
             elif action == 'kill':
                 process.cleanup()
             elif action == 'input':
-                process.send_input(data)
+                if data == '\000KILL':
+                    process.process.kill()
+                else:
+                    process.send_input(data)
             elif action == 'run':
                 await process.run()
             else:

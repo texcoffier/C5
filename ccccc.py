@@ -127,6 +127,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
     insert_on_keyup = None
     do_coloring = True
     do_update_cursor_position = True
+    mouse_pressed = -1
+    mouse_position = [0, 0]
     options = {
         'language': 'javascript',
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
@@ -606,9 +608,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def onmousedown(self, event):
         """Mouse down"""
+        self.mouse_pressed = event.button
         if self.close_popup(event):
             return
         self.record('MouseDown')
+    def onmouseup(self, event):
+        """Mouse up"""
+        self.mouse_pressed = -1
+    def onmousemove(self, event):
+        """Mouse move"""
+        if event.target.tagName == 'CANVAS':
+            self.mouse_position = [event.offsetX, event.offsetY]
     def oncopy(self, event, what='Copy'):
         """Copy"""
         if self.options['allow_copy_paste']:
@@ -1084,23 +1094,27 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if not value:
                     continue
                 if value.startswith('\002EVAL'):
+                    #print(value[5:])
                     eval(value[5:])
                 elif value.startswith('\002WAIT'):
+                    #print(value)
                     if value[5] == 'T':
                         def answer():
                             self.send_input('WAITDONE')
                         setTimeout(answer, int(value[6:]))
                     if value[5] == 'D':
-                        if self.current_key:
-                            self.send_input(self.current_key)
-                        else:
-                            self.send_input('None')
+                        key = (self.current_key or 'None')
+                        key += '\n' + self.mouse_pressed
+                        key += '\n' + self.mouse_position[0]
+                        key += '\n' + self.mouse_position[1]
+                        self.send_input(key)
                     if value[5] == 'K':
                         def onkeypress(event):
-                            self.send_input(event.key + '\n')
-                            self.canvas.onkeyup = undefined
+                            self.send_input(event.key)
+                            G.canvas.onkeyup = None
+                            event.stopPropagation()
                             event.preventDefault()
-                        self.canvas.onkeyup = onkeypress
+                        G.canvas.onkeyup = onkeypress
                 elif value == '\002INPUT':
                     span = document.createElement('INPUT')
                     span.onkeypress = bind(self.oninput, self)
@@ -1240,6 +1254,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Create the page content"""
         self.top = document.createElement('DIV')
         self.top.onmousedown = bind(self.onmousedown, self)
+        self.top.onmouseup = bind(self.onmouseup, self)
+        self.top.onmousemove = bind(self.onmousemove, self)
         self.top.oncopy = bind(self.oncopy, self)
         self.top.oncut = bind(self.oncut, self)
         self.top.onpaste = bind(self.onpaste, self)
@@ -1297,6 +1313,231 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.top.appendChild(div)
         self.popup_element = div
 
+class Plot:
+    def __init__(self, ctx, height, bcolor):
+        self.max = 10000
+        self.curves = []
+        self.ctx = ctx
+        self.height = height
+        self.bcolor = bcolor
+
+    def set_size(self, nb):
+        """Maximum number of points"""
+        self.max = nb
+
+    def add(self, x, y, curve=0):
+        """Add a point on the curve"""
+        points = self.curves[curve]
+        if not points:
+            self.curves[curve] = points = []
+        if len(points) == self.max:
+            points.splice(0, 1)
+        points.append([x, y])
+
+    def minmax(self):
+        """Size of plots"""
+        xmin = ymin = 1e100
+        xmax = ymax = -1e100
+        for curve in self.curves:
+            for x, y in curve:
+                if x < xmin:
+                    xmin = x
+                if x > xmax:
+                    xmax = x
+                if y < ymin:
+                    ymin = y
+                if y > ymax:
+                    ymax = y
+        return xmin, xmax, ymin, ymax
+
+    def draw(self, x1, y1, x2, y2, clear):
+        """Display the curves"""
+        if clear:
+            save_color = self.ctx.fillStyle
+            self.ctx.fillStyle = self.bcolor
+            self.ctx.fillRect(x1, self.height - y2, x2 - x1, y2 - y1)
+            self.ctx.fillStyle = save_color
+
+        xmin, xmax, ymin, ymax = self.minmax()
+        def X(x):
+            return (x - xmin) / (xmax - xmin) * (x2 - x1) + x1
+        def Y(y):
+            return self.height - ((y - ymin) / (ymax - ymin) * (y2 - y1) + y1)
+        for curve in self.curves:
+            self.ctx.beginPath()
+            self.ctx.moveTo(X(curve[0][0]), Y(curve[0][1]))
+            for x, y in curve[1:]:
+                self.ctx.lineTo(X(x), Y(y))
+            self.ctx.stroke()
+        self.ctx.beginPath()
+        self.ctx.moveTo(x1, self.height - y1)
+        self.ctx.lineTo(x1, self.height - y2)
+        self.ctx.stroke()
+        self.ctx.beginPath()
+        self.ctx.moveTo(x1, self.height - y1)
+        self.ctx.lineTo(x2, self.height - y1)
+        self.ctx.stroke()
+        self.ctx.fillText(xmin, x1, self.height - y1 + 15)
+        self.ctx.fillText(xmax, x2 - 50, self.height - y1 + 15)
+        self.ctx.fillText(ymin, x1 - 30, self.height - y1)
+        self.ctx.fillText(ymax, x1 - 30, self.height - y2)
+
+class Grapic:
+    """For the Grapic library emulator"""
+    canvas = bcolor = ctx = height = width = None
+    bcolor = '#000'
+    plots = []
+    def __init__(self, cccc):
+        self.ccccc = cccc
+
+    def init(self, width, height):
+        """Create the CANVAS"""
+        self.canvas = document.createElement('CANVAS')
+        self.canvas.tabIndex = 0
+        self.bcolor = '#FFF'
+        self.height = height
+        self.width = width
+        self.canvas.width = width
+        self.canvas.height = height
+        self.canvas.style.width = width + 'px'
+        self.canvas.style.height = height + 'px'
+        self.canvas.style.background = '#FFF'
+        self.ccccc.executor.appendChild(self.canvas)
+        self.ctx = self.canvas.getContext('2d')
+
+    def quit(self):
+        """Remove canvas"""
+        if self.canvas and self.canvas.parentNode:
+            self.canvas.parentNode.removeChild(self.canvas)
+
+    def backgroundColor(self, r, v, b, a):
+        """Set background color for erasing window"""
+        n = 256*(256*(256+r) + v) + b # Starts with 1
+        if a:
+            n = 256*n + a
+        self.bcolor = '#' + n.toString(16)[1:] # Remove the 1
+
+    def color(self, r, v, b):
+        """Set foreground coloe"""
+        n = 256*(256*(256+r) + v) + b # Starts with 1
+        self.ctx.fillStyle = self.ctx.strokeStyle = '#' + n.toString(16)[1:] # Remove the 1
+
+    def clear(self):
+        """Clear canvas"""
+        save_color = self.ctx.fillStyle
+        self.ctx.fillStyle = self.bcolor
+        self.ctx.fillRect(0, 0, 10000, 10000)
+        self.ctx.fillStyle = save_color
+
+    def fontSize(self, size):
+        """Set the font size"""
+        self.ctx.font = size + 'px sans-serif'
+
+    def print(self, x, y, text):
+        """Display text"""
+        self.ctx.fillText(text, x, self.height - y)
+
+    def rectangle(self, xmin, ymin, xmax, ymax):
+        """Rectangle"""
+        self.ctx.strokeRect(xmin, self.height - ymax, xmax - xmin, ymax - ymin)
+
+    def rectangleFill(self, xmin, ymin, xmax, ymax):
+        """Filled rectangle"""
+        self.ctx.fillRect(xmin, self.height - ymax, xmax - xmin, ymax - ymin)
+
+    def circle(self, x, y, radius):
+        """Circle"""
+        self.ctx.beginPath()
+        self.ctx.arc(x, self.height - y, radius, 0, 2*Math.PI)
+        self.ctx.closePath()
+        self.ctx.stroke()
+
+    def circleFill(self, x, y, radius):
+        """Disc"""
+        self.ctx.beginPath()
+        self.ctx.arc(x, self.height - y, radius, 0, 2*Math.PI)
+        self.ctx.closePath()
+        self.ctx.fill()
+
+    def ellipse(self, x, y, rx, ry):
+        """Ellipse"""
+        self.ctx.beginPath()
+        self.ctx.ellipse(x, self.height - y, rx, ry, 0, 0, 2*Math.PI)
+        self.ctx.closePath()
+        self.ctx.stroke()
+
+    def ellipseFill(self, x, y, rx, ry):
+        """Ellipse"""
+        self.ctx.beginPath()
+        self.ctx.ellipse(x, self.height - y, rx, ry, 0, 0, 2*Math.PI)
+        self.ctx.closePath()
+        self.ctx.fill()
+
+    def line(self, x1, y1, x2, y2):
+        """A segment"""
+        self.ctx.beginPath()
+        self.ctx.moveTo(x1, self.height - y1)
+        self.ctx.lineTo(x2, self.height - y2)
+        self.ctx.stroke()
+
+    def triangle(self, x1, y1, x2, y2, x3, y3):
+        """Triangle"""
+        self.ctx.beginPath()
+        self.ctx.moveTo(x1, self.height - y1)
+        self.ctx.lineTo(x2, self.height - y2)
+        self.ctx.lineTo(x3, self.height - y3)
+        self.ctx.closePath()
+        self.ctx.stroke()
+
+    def triangleFill(self, x1, y1, x2, y2, x3, y3):
+        """Triangle"""
+        self.ctx.beginPath()
+        self.ctx.moveTo(x1, self.height - y1)
+        self.ctx.lineTo(x2, self.height - y2)
+        self.ctx.lineTo(x3, self.height - y3)
+        self.ctx.closePath()
+        self.ctx.fill()
+
+    def path(self, points):
+        """Create a path"""
+        self.ctx.beginPath()
+        self.ctx.moveTo(points[0][0], self.height - points[0][1])
+        for x, y in points[1:]:
+            self.ctx.lineTo(x, self.height - y)
+        self.ctx.closePath()
+
+    def polygon(self, points):
+        """Polygon"""
+        self.path(points)
+        self.ctx.stroke()
+
+    def polygonFill(self, points):
+        """Polygon"""
+        self.path(points)
+        self.ctx.fill()
+
+    def grid(self, x1, y1, x2, y2, nx, ny):
+        """A Grid"""
+        # Horizontals
+        for i in range(ny+1):
+            self.ctx.beginPath()
+            self.ctx.moveTo(x1, self.height - y1 - i * (y2 - y1)/ny)
+            self.ctx.lineTo(x2, self.height - y1 - i * (y2 - y1)/ny)
+            self.ctx.stroke()
+        # Verticals
+        for i in range(nx+1):
+            self.ctx.beginPath()
+            self.ctx.moveTo(x1 + i * (x2 - x1)/nx, self.height - y1)
+            self.ctx.lineTo(x1 + i * (x2 - x1)/nx, self.height - y2)
+            self.ctx.stroke()
+
+    def plot(self, nr):
+        """Add a new plot"""
+        if nr == 0:
+            self.plots = []
+        self.plots.append(Plot(self.ctx, self.height, self.bcolor))
+
+
 def grade(event):
     """Set the grade"""
     if 'grade_selected' in event.target.className:
@@ -1323,3 +1564,4 @@ def version_change(select):
     ccccc.compile_now = True
 
 ccccc = CCCCC()
+G = Grapic(ccccc)

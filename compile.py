@@ -237,7 +237,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('state', "inputdone")
         if self.shared_buffer[0] == 2:
             self.post('state', "stopped")
-            raise ValueError('canceled')
+            return '\000KILL'
+            # raise ValueError('canceled')
         string = ''
         for i in self.shared_buffer[1:]:
             if i > 0:

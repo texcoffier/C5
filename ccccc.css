@@ -26,6 +26,10 @@ DIV.tester {
     overflow: auto;
 }
 
+DIV.editor, DIV.overlay {
+    scroll-behavior: auto;
+}
+
 DIV.question > DIV:first-child,
 DIV.tester > DIV:first-child,
 DIV.compiler > DIV:first-child,
