@@ -191,7 +191,7 @@ def handle(base=''):
                 if not course.dirname:
                     return session.message('unknown')
                 status = course.status(login, session.client_ip)
-                is_admin = session.is_admin(course)
+                is_admin = session.is_grader(course)
                 if not is_admin:
                     if status == 'done':
                         return session.message('done')
