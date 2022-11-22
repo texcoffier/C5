@@ -186,7 +186,6 @@ class Process: # pylint: disable=too-many-instance-attributes
         os.unlink(self.source_file)
     async def indent(self, data):
         """Indent"""
-        self.cleanup(erase_executable=True)
         process = await asyncio.create_subprocess_exec(
                 'astyle',
                 stdin=asyncio.subprocess.PIPE,
