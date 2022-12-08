@@ -1080,7 +1080,7 @@ async def checkpoint_student(request):
         to_log = [seconds, ["checkpoint_move", session.login, room]]
     utilities.student_log(course.dirname, student, json.dumps(to_log) + '\n')
     course.record()
-    if session.is_student():
+    if session.is_student() and not session.is_proctor(course):
         return response('''<script>document.body.innerHTML = "C'est fini."</script>''')
     return await update_browser_data(course)
 
