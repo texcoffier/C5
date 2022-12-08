@@ -551,6 +551,12 @@ async def adm_c5(request): # pylint: disable=too-many-branches
             more = f"IPs per room updated to<pre>{value}</pre>"
         except ValueError:
             more = "Invalid syntax!"
+    elif action == 'disabled':
+        try:
+            utilities.CONFIG.set_value(action, text_to_dict(value))
+            more = f"Disabled updated to<pre>{value}</pre>"
+        except ValueError:
+            more = "Invalid syntax!"
     elif action == 'messages':
         try:
             utilities.CONFIG.set_value(action, text_to_dict(value))
@@ -868,7 +874,9 @@ def checkpoint_line(session, course, content):
     # if session.login in course.teachers:
     status = course.status('')
     content.append(f'''
-    <tr{' style="background:#AFA"' if course.highlight else ''}>
+    <tr style="{'background:#AFA;' if course.highlight else ''}
+               {'opacity:0.3;' if course.disabled else ''}
+    ">
     <td class="clipped course"><div>{course.course.split('=')[1]}</div>
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
     <td>{len(course.active_teacher_room) or ''}
@@ -996,7 +1004,20 @@ async def checkpoint_list(request):
     hide_header()
     content.append('</table>')
     if session.is_author():
-        content.append("<br>Download a Python file to add a new session for the compiler: ")
+        content.append('''
+        <script>
+        function change(t)
+        {
+            var s = document.createElement('SCRIPT');
+            s.src = '/config/disable/' + t.value + '?ticket=' + TICKET;
+            document.body.appendChild(s);
+        }
+        </script>
+        <p>Disable all the sessions with a name (without the compiler) matching this regular expression:
+        <input onchange="change(this)" value="''')
+        content.append(utilities.CONFIG.config['disabled'].get(session.login, ''))
+        content.append('">')
+        content.append("<p>Download a Python file to add a new session for the compiler: ")
         for compiler in COMPILERS:
             content.append(f'''
             <form method="POST" enctype="multipart/form-data"
@@ -1114,6 +1135,8 @@ async def home(request):
             continue # No more running
         if now < course.start_timestamp and not course.highlight:
             continue # Not started nor highlighted
+        if course.disabled:
+            continue
         if course.highlight:
             style = ' style="background: #8F8"'
         else:
@@ -1231,6 +1254,22 @@ async def adm_editor(request):
     session.edit = course # XXX If server is restarted, this attribute is lost
     return await editor(session, is_admin, course, session.login, author=1)
 
+async def config_disable(request):
+    """Session questions editor"""
+    session = await utilities.Session.get(request)
+    if session.is_student():
+        raise session.message('not_teacher', exception=True)
+    disabled = utilities.CONFIG.config['disabled']
+    value = request.match_info['value']
+    if value:
+        disabled[session.login] = value
+    elif session.login in disabled:
+        del disabled[session.login]
+    else:
+        return response('', content_type='application/javascript') # No change
+    utilities.CONFIG.set_value('disabled', disabled)
+    return response('window.location.reload()', content_type='application/javascript')
+
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
@@ -1246,6 +1285,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/editor/{course}', adm_editor),
                 web.get('/adm/c5/{action}/{value}', adm_c5),
                 web.get('/config/reload', config_reload),
+                web.get('/config/disable/{value}', config_disable),
                 web.get('/course_config/{course}', course_config),
                 web.get('/checkpoint/*', checkpoint_list),
                 web.get('/checkpoint/BUILDINGS', checkpoint_buildings),

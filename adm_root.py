@@ -101,6 +101,12 @@ def display(): # pylint: disable=too-many-statements
         content.append(room + ' ' + CONFIG.ips_per_room[room])
     add_textarea('/adm/c5/ips_per_room/', '\n'.join(content))
     text.append('<hr>')
+    text.append('Sessions disabled by creators:')
+    content = []
+    for session in CONFIG.disabled:
+        content.append(session + ' ' + CONFIG.disabled[session])
+    add_textarea('/adm/c5/disabled/', '\n'.join(content))
+    text.append('<hr>')
     text.append('It is a student if the login match regexp: ')
     add_input('/adm/c5/student/', CONFIG.student, name="student")
     text.append('<hr>')

@@ -103,6 +103,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.filename = course + '.cf'
         self.dirname = course
         self.time = 0
+        self.disabled = False
         self.load()
         self.update()
         self.configs[course] = self
@@ -185,6 +186,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.theme = self.config['theme']
         self.active_teacher_room = self.config['active_teacher_room']
         self.messages = self.config['messages']
+        self.update_disabled()
+
+    def update_disabled(self):
+        """Compute disabled state on load or C5 configuration change"""
+        self.disabled = False
+        for login, regexp in CONFIG.disabled.items():
+            if login == self.creator or login in self.admins:
+                if regexp.match(self.session):
+                    self.disabled = True
+
     def record(self):
         """Record option on disk"""
         with open(self.filename, 'w') as file:
@@ -240,6 +251,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         if os.path.getmtime(self.filename) > self.time:
             self.load()
             self.update()
+        if self.disabled:
+            return 'disabled'
         now = int(time.time())
         if not login: # For adm home
             if now < self.start_timestamp:
@@ -312,6 +325,7 @@ class Config:
     ticket_ttl = 86400
     computers = []
     student = None
+    disabled = {}
     def __init__(self):
         self.config = {
             'roots': self.roots,
@@ -321,6 +335,8 @@ class Config:
             'computers': [],
             'ips_per_room': {"Nautibus,TP3": "b710l0301.univ-lyon1.fr b710l0302.univ-lyon1.fr"},
             'student': '[0-9][0-9]$',
+            # For each session creator/admin: a regexp of sessions to disable
+            'disabled': {},
             'messages': {
                 'unknown': "Cette session n'existe pas",
                 'checkpoint': "Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen.<br>Rechargez cette page quand l'intervenant vous le dira.",
@@ -351,6 +367,11 @@ class Config:
         self.ticket_ttl = self.config['ticket_ttl']
         self.computers = self.config['computers']
         self.student = re.compile(self.config['student'])
+        self.disabled = {login: re.compile(regexp)
+                         for login, regexp in self.config['disabled'].items()
+                        }
+        for course in CourseConfig.configs.values():
+            course.update_disabled()
     def json(self):
         """For browser or to save"""
         return json.dumps(self.config)
