@@ -881,6 +881,7 @@ def checkpoint_line(session, course, content):
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
     <td>{len(course.active_teacher_room) or ''}
     <td>{len(waiting) if course.checkpoint else ''}
+    <td>{course.number_of_active_students() or ''}
     <td>{len(with_me) or ''}
     <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
     <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
@@ -920,7 +921,7 @@ def checkpoint_table(session, courses, test, content, done):
 async def checkpoint_list(request):
     """Liste all checkpoints"""
     session = await utilities.Session.get(request)
-    titles = '''<tr><th>Session<th>Comp<br>iler<th>Stud<br>ents<th>Wait<br>ing<th>With<br>me
+    titles = '''<tr><th>Session<th>Comp<br>iler<th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
         <th>Start date<th>Stop date<th>Exam<th>Edit<th>Try<th>Waiting<br>Room
         <th>Creator<th>Admins<th>Graders<th>Proctors</tr>'''
     content = [

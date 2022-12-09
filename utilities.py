@@ -196,6 +196,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                 if regexp.match(self.session):
                     self.disabled = True
 
+    def number_of_active_students(self, last_seconds=600):
+        """Compute the number of active students the last seconds"""
+        nb_active = 0
+        now = time.time()
+        for info in self.active_teacher_room.values():
+            if now - info[3] < last_seconds:
+                nb_active += 1
+        return nb_active
+
     def record(self):
         """Record option on disk"""
         with open(self.filename, 'w') as file:
