@@ -29,6 +29,10 @@ def set_compiler_limits():
     resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
     resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
 
+def set_racket_limits():
+    """Do not allow big processes"""
+    resource.setrlimit(resource.RLIMIT_CPU, (5, 5))
+    resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
 
 class Process: # pylint: disable=too-many-instance-attributes
     """A websocket session"""
@@ -72,11 +76,14 @@ class Process: # pylint: disable=too-many-instance-attributes
             for task in self.tasks:
                 task.cancel()
             self.tasks = []
-            try:
-                self.process.kill()
-            except ProcessLookupError:
-                pass
-            self.process = None
+            if self.compiler != 'racket' or erase_executable:
+                # Racket process must not be killed each time
+                try:
+                    self.process.kill()
+                    self.log("ProcessKilled")
+                except ProcessLookupError:
+                    pass
+                self.process = None
     def send_input(self, data):
         """Send the data to the running process standard input"""
         self.log(("INPUT", data))
@@ -130,6 +137,10 @@ class Process: # pylint: disable=too-many-instance-attributes
                 self.process.kill()
                 break
             self.log(("RUN", line))
+            if b'\001\002RACKETFini !\001' in line:
+                self.log(("EXIT", 0))
+                await self.websocket.send(json.dumps(['return', f"\n"]))
+                return # For Racket (no cleanup)
         if self.process:
             return_value = await self.process.wait()
             self.log(("EXIT", return_value))
@@ -137,6 +148,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 more = f'\n⚠️{signal.strsignal(-return_value)}'
                 if return_value == -9:
                     more += "\nVotre programme utilise plus d'une seconde,\navez-vous fait une boucle infinie ?"
+                self.process = None
             else:
                 more = ''
             await self.websocket.send(json.dumps(
@@ -146,9 +158,25 @@ class Process: # pylint: disable=too-many-instance-attributes
         """Compile"""
         _course, _question, compiler, compile_options, ld_options, allowed, source = data
         self.log(("COMPILE", data))
-        self.cleanup(erase_executable=True)
-        with open(self.source_file, "w") as file:
+        if compiler != 'racket':
+            self.cleanup(erase_executable=True)
+        with open(self.source_file, "w", encoding="utf-8") as file:
             file.write(source)
+        self.compiler = compiler
+        if compiler == 'racket':
+            await self.websocket.send(json.dumps(['compiler', "Bravo, il n'y a aucune erreur"]))
+            if not self.process:
+                self.log("LAUNCH-RACKET")
+                self.process = await asyncio.create_subprocess_exec(
+                    compiler, "compile_racket.rkt",
+                stdout=asyncio.subprocess.PIPE,
+                stdin=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                preexec_fn=set_racket_limits,
+                close_fds=True,
+                )
+            self.process.stdin.write(self.source_file.encode('utf-8') + b'\n')
+            return
         stderr = ''
         if compiler not in ('gcc', 'g++'):
             stderr += f'Compilateur non autorisé : «{compiler}»\n'
@@ -175,6 +203,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 compiler, *compile_options, '-I', '.', self.source_file, *ld_options, '-o', self.exec_file,
                 stderr=asyncio.subprocess.PIPE,
                 preexec_fn=set_compiler_limits,
+                close_fds=True,
                 )
             stderr = await self.process.stderr.read()
             if not stderr:
@@ -197,6 +226,12 @@ class Process: # pylint: disable=too-many-instance-attributes
         await self.websocket.send(json.dumps(['indented', indented.decode('utf-8')]))
     async def run(self):
         """Launch process"""
+        if self.compiler == 'racket':
+            self.log("READ RACKET")
+            if not self.process:
+                bug
+            self.tasks = [asyncio.ensure_future(self.runner())]
+            return
         if not os.path.exists(self.exec_file):
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))

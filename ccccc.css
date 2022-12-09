@@ -41,6 +41,7 @@ DIV.executor > DIV:first-child
 
 .error,
 .warning,
+.eval,
 .cursor,
 .cursorbad {
     position: absolute;
@@ -74,8 +75,21 @@ DIV.executor > DIV:first-child
     border: 2px solid #000
 }
 
-.char.cursor, .char.cursorbad {
+.char.cursor, .char.cursorbad, .char.eval {
     border: 0px solid #000
+}
+
+.eval {
+    background: #FF0;
+    opacity: 0.5;
+}
+
+.executor > DIV > VAR {
+    font-size: 80%;
+    background: #FFF;
+    margin-left: 1em;
+    border: 1px solid #000;
+    white-space: nowrap;
 }
 
 .wrapped {

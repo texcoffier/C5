@@ -406,7 +406,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """The editor and the overlay are synched"""
         self.onscroll()
         self.overlay.style.visibility = 'visible'
-    def clear_highlight_errors(self):
+    def clear_highlight_errors(self, update_cursor=True):
         """Make space fo the new errors"""
         for key in self.highlight_errors:
             if self.highlight_errors[key] and not self.highlight_errors[key].startswith('cursor'):
@@ -415,7 +415,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                and self.overlay.lastChild.className
                and 'ERROR' in self.overlay.lastChild.className):
             self.overlay.removeChild(self.overlay.lastChild)
-        self.update_cursor_position()
+        if update_cursor:
+            self.update_cursor_position()
     def update_source(self):
         def clear_text(state):
             if state.node.tagName == 'DIV':
@@ -1096,6 +1097,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if value.startswith('\002EVAL'):
                     #print(value[5:])
                     eval(value[5:])
+                if value.startswith('\002RACKET'):
+                    self.racket(value[7:])
                 elif value.startswith('\002WAIT'):
                     #print(value)
                     if value[5] == 'T':
@@ -1312,6 +1315,31 @@ class CCCCC: # pylint: disable=too-many-public-methods
         div.innerHTML = content
         self.top.appendChild(div)
         self.popup_element = div
+
+    def racket(self, text):
+        text = text.split('\n')
+        if ':::' in text[0]:
+            position = int(text[0].split(':::')[1].split(' ')[0])
+        else:
+            text = ['', text[0]]
+        def highlight(event):
+            line, column = self.get_line_column(position)
+            self.add_highlight_errors(line, column, 'eval')
+            event.target.style.background = "#FF0"
+            line_number = document.createElement("VAR")
+            line_number.textContent = 'Ligne ' + line
+            event.target.appendChild(line_number)
+        def unhighlight(event):
+            event.target.style.background = ""
+            self.clear_highlight_errors(False)
+            event.target.removeChild(event.target.lastChild)
+        span = document.createElement('DIV')
+        span.innerHTML = '\n'.join(text[1:])
+        span.onmouseenter = highlight
+        span.onmouseleave = unhighlight
+        self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
+
+
 
 class Plot:
     def __init__(self, ctx, height, bcolor):
