@@ -71,6 +71,7 @@ DIV.rights, DIV.configs, DIV.state {
 }
 LABEL {
     display: block;
+    width: max-content;
 }
 TEXTAREA, INPUT, SELECT {
     font-size: 100%;
