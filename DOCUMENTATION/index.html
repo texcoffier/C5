@@ -1100,7 +1100,15 @@ server {
             Permettre de renommer une session.
         </li>
         <li>
-            Sur la page listant les sessions ajouter : «Session à corriger» et «Session Archivée»
+            Sur la page listant les sessions ajouter, il faut compléter :
+            <table>
+                <tr><td> Session en préparation <td>Draft<td> Seulement pour les créateurs et admins</tr>
+                <tr><td> Session future <td>Ready<td> Placement des étudiants. Testable par les Graders</tr>
+                <tr><td> Session en cours <td>Ready<td> Examen en cours.</tr>
+                <tr><td> Session à corriger <td>Grade<td> Correction en cours</tr>
+                <tr><td> Session terminée <td>Done<td> Correction fini, mais on peut revenir dessus.</tr>
+                <tr><td> Session Archivée <td>Archived<td> Seulement affichée aux créateurs et admins.</tr>
+            </table>
         </li>
     </ul>
 </body>

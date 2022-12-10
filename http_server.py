@@ -874,12 +874,32 @@ def checkpoint_line(session, course, content):
                 done.append(student)
             else:
                 waiting.append(student)
+
+    bools = ''
+    for attr, letter, tip in (
+        ('coloring', '🎨', 'Syntaxic source code coloring'),
+        ('copy_paste', '✂', 'Copy/Paste allowed'),
+        ('checkpoint', 'C', 'Checkpoint required'),
+        ('sequential', 'S', 'Sequential question access'),
+        ('save_unlock', '🔓', 'Save unlock next question'),
+        ('highlight', 'H', 'Highlight session in the list'),
+        ('allow_ip_change', 'IP', 'Allow IP change'),
+    ):
+        value = course.config.get(attr, 0)
+        if str(value).isdigit():
+            value = int(value)
+        if value:
+            if attr == 'coloring':
+                tip += ' «' + course.theme + '»'
+            if attr == 'highlight':
+                letter = '<b style="background:#0F0">' + letter + '</b>'
+            bools += '<span>' + letter + '<var>' + tip + '</var></span>'
+
+
     # if session.login in course.teachers:
     status = course.status('')
     content.append(f'''
-    <tr style="{'background:#AFA;' if course.highlight else ''}
-               {'opacity:0.3;' if course.disabled else ''}
-    ">
+    <tr style="{'opacity:0.3;' if course.disabled else ''}">
     <td class="clipped course"><div>{course.course.split('=')[1]}</div>
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
     <td>{len(course.active_teacher_room) or ''}
@@ -888,12 +908,7 @@ def checkpoint_line(session, course, content):
     <td>{len(with_me) or ''}
     <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
     <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
-    <td {'style="background:#8F8"'
-            if course.start > "2001"
-            and course.stop < "2100"
-            and status.startswith('running')
-            else ''}
-    >{'Exam' if course.checkpoint else ''}
+    <td>{bools}
     <td> {
         f'<a target="_blank" href="/adm/session/{course.course}?ticket={session.ticket}">Edit</a>'
         if session.is_admin(course) else ''
@@ -925,7 +940,7 @@ async def checkpoint_list(request):
     """Liste all checkpoints"""
     session = await utilities.Session.get(request)
     titles = '''<tr><th>Session<th>Comp<br>iler<th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
-        <th>Start date<th>Stop date<th>Exam<th>Edit<th>Try<th>Waiting<br>Room
+        <th>Start date<th>Stop date<th>Options<th>Edit<th>Try<th>Waiting<br>Room
         <th>Creator<th>Admins<th>Graders<th>Proctors</tr>'''
     content = [
         session.header(),
@@ -962,6 +977,9 @@ async def checkpoint_list(request):
         FORM INPUT { display: none }
         FORM SPAN { border: 1px outset #888; border-radius: 0.5em; background: #EEE; padding: 0.2em }
         FORM SPAN:hover { border: 1px inset #888; background: #DDD }
+        SPAN VAR { display: none; background: #FFE;  border: 1px solid #880; position: absolute; }
+        SPAN:hover VAR { display: block }
+        SPAN:hover { background: #FF0 }
         </style>
         <table>''']
     def hide_header():
