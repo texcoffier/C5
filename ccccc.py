@@ -460,7 +460,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def coloring(self): # pylint: disable=too-many-statements
         """Coloring of the text editor with an overlay."""
         self.update_source()
-        if self.source == '' and self.question_original[self.current_question] != '':
+        if self.source == '' and self.question_original[self.current_question].strip() != '':
             self.reset()
         self.overlay.innerHTML = html(self.source_with_newlines)
         self.overlay.className = 'overlay language-' + self.options['language']
