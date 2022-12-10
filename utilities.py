@@ -120,6 +120,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'copy_paste': '0',
                        'coloring': '1',
                        'checkpoint': '0',
+                       'allow_ip_change': '0',
                        'save_unlock': '0',
                        'sequential': '1',
                        'theme': 'a11y-light',
@@ -182,6 +183,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.checkpoint = int(self.config['checkpoint'])
         self.sequential = int(self.config['sequential'])
         self.highlight = int(self.config['highlight'])
+        self.allow_ip_change = int(self.config['allow_ip_change'])
         self.notation = self.config['notation']
         self.theme = self.config['theme']
         self.active_teacher_room = self.config['active_teacher_room']
@@ -240,7 +242,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             to_log = [now, ["checkpoint_in", client_ip]]
         elif client_ip and client_ip != active_teacher_room[6]:
             # Student IP changed
-            if self.checkpoint:
+            if self.checkpoint and not self.allow_ip_change:
                 # Undo checkpointing
                 active_teacher_room[6] = client_ip # Update
                 active_teacher_room[0] = 0
@@ -475,12 +477,12 @@ class Session:
         """Returns True if the session is valid.
         Do a redirection if possible (not in compile server)
         """
-        if self.client_ip != client_ip or self.browser != browser or self.too_old():
+        if (self.client_ip != client_ip and not self.allow_ip_change
+           ) or self.browser != browser or self.too_old():
             url = getattr(request, 'url', None)
             if url:
                 raise web.HTTPFound(str(request.url).split('?')[0])
-            else:
-                return None
+            return None
         return True
 
     @classmethod

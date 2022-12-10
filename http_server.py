@@ -456,6 +456,9 @@ async def adm_config(request): # pylint: disable=too-many-branches
     elif action == 'copy_paste':
         config.set_parameter('copy_paste', value)
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
+    elif action == 'allow_ip_change':
+        config.set_parameter('allow_ip_change', value)
+        feedback = f"«{course}» Allow IP change «{'not' if value == '0' else ''} allowed»"
     elif action == 'coloring':
         config.set_parameter('coloring', value)
         feedback = f"«{course}» Syntax coloring: «{value != '0'}»"

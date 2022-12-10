@@ -55,7 +55,7 @@ P.title {
     margin-bottom: 0.1em;
 }
 TEXTAREA#notation {
-    height: calc(100vh - 27em);
+    height: calc(100vh - 28em);
     width: 100%;
     margin-top: 0em;
     white-space: pre;

@@ -189,6 +189,7 @@ def init():
     <label><input type="checkbox" id="coloring"> Syntaxic coloring of source code with <select id="theme">
     """ + themes + """</select></label>
     <label><input type="checkbox" id="highlight"> The session is greenly higlighted in sessions lists.</label>
+    <label><input type="checkbox" id="allow_ip_change"> Allow IP change (bad Internet connection)</label>
     <p class="title"><b>Logins</b> of students with ⅓ more time to answer</p>
     <textarea id="tt"></textarea>
     <p class="title">Grading ladder</p>
