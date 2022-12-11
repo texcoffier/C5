@@ -407,14 +407,9 @@ async def adm_course(request):
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """)
 
-async def adm_config(request): # pylint: disable=too-many-branches
-    """Course details page for administrators"""
-    session, config = await get_teacher_login_and_course(request)
-    if not session.is_admin(config):
-        raise session.message('not_author', exception=True)
+async def adm_config_course(config, action, value): # pylint: disable=too-many-branches,too-many-statements
+    """Configure a course"""
     course = config.course
-    action = request.match_info['action']
-    value = request.match_info.get('value', '')
     if value == 'now':
         value = time.strftime('%Y-%m-%d %H:%M:%S')
     if action == 'stop':
@@ -516,6 +511,25 @@ async def adm_config(request): # pylint: disable=too-many-branches
     return response(
         f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
         content_type='application/javascript')
+
+async def adm_config(request): # pylint: disable=too-many-branches
+    """Course details page for administrators"""
+    action = request.match_info['action']
+    value = request.match_info.get('value', '')
+
+    session, config = await get_course_config(request)
+    course = config.course
+    if course.startswith('^'):
+        # Configuration of multiple session with regular expression
+        answer = None
+        for conf in utilities.CourseConfig.configs.values():
+            if session.is_admin(conf) and re.match(course, conf.session):
+                result = await adm_config_course(conf, action, value)
+                if conf.session == config.session:
+                    answer = result # The same display than first time
+        return answer
+    # Configuration of a single session
+    return await adm_config_course(config, action, value)
 
 def text_to_dict(text):
     """Transform a user text to a dict.
@@ -879,7 +893,7 @@ def checkpoint_line(session, course, content):
     for attr, letter, tip in (
         ('coloring', '🎨', 'Syntaxic source code coloring'),
         ('copy_paste', '✂', 'Copy/Paste allowed'),
-        ('checkpoint', 'C', 'Checkpoint required'),
+        ('checkpoint', '🚦', 'Checkpoint required'),
         ('sequential', 'S', 'Sequential question access'),
         ('save_unlock', '🔓', 'Save unlock next question'),
         ('highlight', 'H', 'Highlight session in the list'),
@@ -1028,17 +1042,57 @@ async def checkpoint_list(request):
     if session.is_author():
         content.append('''
         <script>
-        function change(t)
+        function disable()
         {
+            var t = document.getElementById('disable');
             var s = document.createElement('SCRIPT');
-            s.src = '/config/disable/' + t.value + '?ticket=' + TICKET;
+            s.src = '/config/disable/' + encodeURIComponent(t.value).replace(/\\./g, '%2E') + '?ticket=' + TICKET;
             document.body.appendChild(s);
         }
+        function edit(t)
+        {
+            var t = document.getElementById('edit');
+            var s = document.createElement('SCRIPT');
+            window.open('/adm/session/^' + encodeURIComponent(t.value).replace(/\\./g, '%2E') + '?ticket=' + TICKET);
+        }
+        function update(t)
+        {
+             var e = RegExp('^' + t.value);
+             var tr = document.getElementsByTagName('TR');
+             for(var i in tr)
+                if ( tr[i].cells && tr[i].cells[0] && tr[i].cells[13] ) {
+                    var found = e.exec(tr[i].cells[0].textContent);
+                    if ( t.value === '' || t.value === '^' )
+                        found = false;
+                    if ( tr[i].cells[12].textContent.indexOf(LOGIN) == -1
+                         && tr[i].cells[13].textContent.indexOf(LOGIN) == -1
+                         && CONFIG.roots.indexOf(LOGIN) == -1
+                         && CONFIG.masters.indexOf(LOGIN) == -1
+                       )
+                        found = false;
+                    if ( t.value === '' || t.value === '^' )
+                        if ( t.id == 'edit' )
+                            found = true;
+                    if ( (t.id == 'edit' && tr[i].cells[0].tagName == 'TH')
+                         || found )
+                        if ( t.id == 'edit' )
+                            tr[i].style.display = "table-row";
+                        else
+                            tr[i].style.opacity = 0.3;
+                    else
+                        if ( t.id == 'edit' )
+                            tr[i].style.display = "none";
+                        else
+                            tr[i].style.opacity = 1;
+                    }
+        }
         </script>
-        <p>Disable all the sessions with a name (without the compiler) matching this regular expression:
-        <input onchange="change(this)" value="''')
+        <p>Disable all the sessions with a name (without the compiler) starting with this regular expression:
+        <input id="disable" onkeyup="update(this)" value="''')
         content.append(utilities.CONFIG.config['disabled'].get(session.login, ''))
-        content.append('">')
+        content.append('"><button onclick="disable()">Disable</button>')
+        content.append('''<p>Edit all the session with a name (without the compiler) starting with this regular expression:
+        <input id="edit" onkeyup="update(this)"><button onclick="edit()">Edit</button>''')
         content.append("<p>Download a Python file to add a new session for the compiler: ")
         for compiler in COMPILERS:
             content.append(f'''
@@ -1247,24 +1301,44 @@ async def checkpoint_message(request):
         f'''MESSAGES.push({json.dumps(course.messages[-1])});ROOM.update_messages()''',
         content_type='application/javascript')
 
+async def get_course_config(request):
+    course = request.match_info['course']
+    if course.startswith('^'):
+        session = await utilities.Session.get(request)
+        matches = []
+        for config in utilities.CourseConfig.configs.values():
+            if session.is_admin(config) and re.match(course, config.session):
+                matches.append(config)
+        if not matches:
+            raise session.message('no_matching_session', exception=True)
+        class FakeConfig:
+            def __init__(self, **kargs):
+                self.__dict__.update(kargs)
+        first = min(matches, key=lambda x: x.course)
+        config = FakeConfig(
+            session=first.session,
+            course=course,
+            config=dict(first.config))
+    else:
+        session, config = await get_teacher_login_and_course(request)
+        if not session.is_admin(config):
+            raise session.message('not_admin', exception=True)
+    return session, config
+
+
 async def course_config(request):
     """The last answer from the student"""
-    session, course = await get_teacher_login_and_course(request)
-    if not session.is_admin(course):
-        raise session.message('not_admin', exception=True)
+    session, config = await get_course_config(request)
     return response(
-        f'update_course_config({json.dumps(course.config)})',
+        f'update_course_config({json.dumps(config.config)})',
         content_type='application/javascript')
 
 async def adm_session(request):
     """Session configuration for administrators"""
-    session, course = await get_teacher_login_and_course(request)
-    if not session.is_admin(course):
-        raise session.message('not_admin', exception=True)
-
+    session, config = await get_course_config(request)
     return response(
         session.header()
-        + f'<script>COURSE = {json.dumps(course.course)};</script>'
+        + f'<script>COURSE = {json.dumps(config.course)};</script>'
         + f'<script src="/adm_session.js?ticket={session.ticket}"></script>')
 
 async def adm_editor(request):
@@ -1282,7 +1356,7 @@ async def config_disable(request):
     if session.is_student():
         raise session.message('not_teacher', exception=True)
     disabled = utilities.CONFIG.config['disabled']
-    value = request.match_info['value']
+    value = request.match_info.get('value', '')
     if value:
         disabled[session.login] = value
     elif session.login in disabled:
@@ -1308,6 +1382,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/c5/{action}/{value}', adm_c5),
                 web.get('/config/reload', config_reload),
                 web.get('/config/disable/{value}', config_disable),
+                web.get('/config/disable/', config_disable),
                 web.get('/course_config/{course}', course_config),
                 web.get('/checkpoint/*', checkpoint_list),
                 web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
