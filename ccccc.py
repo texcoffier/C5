@@ -88,6 +88,10 @@ def do_post_data(dictionary, url, target=None):
     document.body.appendChild(form)
     form.submit()
 
+def cleanup(txt):
+    """Remove character badly handled by browser with getSelection().toString()"""
+    return txt.replace(RegExp('[  \n\r\t]', 'g'), '')
+
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
@@ -625,8 +629,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.options['allow_copy_paste']:
             self.record(what)
             return
-        text = window.getSelection().toString().replace(RegExp('\r', 'g'), '')
-        if text.strip() not in self.source and text not in self.question.innerText:
+        text = cleanup(window.getSelection().toString())
+        if text not in cleanup(self.source) and text not in cleanup(self.question.innerText):
             self.record(what + 'Rejected')
             self.popup_message(self.options['forbiden'])
             event.preventDefault(True)
@@ -650,12 +654,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onpaste(self, event):
         """Mouse down"""
         text = (event.clipboardData or event.dataTransfer).getData("text")
-        text = text.replace(RegExp('\r', 'g'), '')
+        text_clean = cleanup(text)
         if self.options['allow_copy_paste']:
             self.record('Paste')
             self.insert_text(event, text)
             return
-        if text.strip() in self.source or text.strip() in self.question.innerText or text == self.copied:
+        if (text_clean in cleanup(self.source)
+            or text_clean in cleanup(self.question.innerText)
+            or text_clean == self.copied):
             self.record('PasteOk')
             self.insert_text(event, text)
             return # auto paste allowed
