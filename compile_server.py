@@ -136,7 +136,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             if size > 10000000: # Maximum allowed output
                 self.process.kill()
                 break
-            self.log(("RUN", line))
+            self.log(("RUN", line[:1000]))
             if b'\001\002RACKETFini !\001' in line:
                 self.log(("EXIT", 0))
                 await self.websocket.send(json.dumps(['return', f"\n"]))
