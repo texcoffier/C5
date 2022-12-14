@@ -276,7 +276,9 @@ async def log(request):
             </script>
             ''')
 
-    return response("<!DOCTYPE html>\n<script>window.parent.ccccc.record_done()</script>")
+    return response(f"""<!DOCTYPE html>
+<script>window.parent.ccccc.record_done({course.get_stop(session.login)})</script>
+""")
 
 async def record_grade(request):
     """Log a grade"""

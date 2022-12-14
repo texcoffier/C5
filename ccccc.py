@@ -156,11 +156,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
             }
     }
+    stop_timestamp = 0
 
     def __init__(self):
         print("GUI: start")
         self.start_time = millisecs()
         self.course = COURSE
+        self.stop_timestamp = STOP
         self.worker = Worker(COURSE + "?ticket=" + TICKET) # pylint: disable=undefined-variable
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
@@ -339,7 +341,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
-                delta = STOP - seconds # pylint: disable=undefined-variable
+                delta = self.stop_timestamp - seconds # pylint: disable=undefined-variable
                 if delta == 10:
                     self.record_now()
                 if delta == 5:
@@ -553,8 +555,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if send_now or time - self.record_start > 60:
             self.record_now()
 
-    def record_done(self):
+    def record_done(self, stop_timestamp):
         """The server saved the recorded value"""
+        self.stop_timestamp = stop_timestamp
         for item in self.last_record_to_send:
             if item[0] == 'save':
                 self.save_button.style.transition = 'transform 1s, opacity 1s'
