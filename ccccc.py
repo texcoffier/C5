@@ -157,6 +157,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             }
     }
     stop_timestamp = 0
+    last_save = 0
 
     def __init__(self):
         print("GUI: start")
@@ -343,17 +344,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if timer:
                 delta = self.stop_timestamp - seconds # pylint: disable=undefined-variable
                 if delta == 10:
-                    self.record_now()
-                if delta == 5:
-                    if ((not self.last_answer[self.current_question]
-                            or self.question_original[self.current_question].strip()
-                                == self.last_answer[self.current_question].strip()
-                        )
-                        and self.question_original[self.current_question].strip()
-                            == self.last_compile[self.current_question].strip()
-                    ):
-                        # The student never saved nor compiled the source
+                    if seconds - self.last_save > 60 :
+                        # The student has not saved in the last minute
                         self.record(['snapshot', self.current_question, self.source], send_now=True)
+                    else:
+                        self.record_now()
                 if delta < 0:
                     timer.className = "done"
                     message = self.options['time_done']
@@ -909,6 +904,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record(['save', self.current_question, self.source], send_now=True)
             self.worker.postMessage(['source', self.current_question, self.source])
             self.last_answer[self.current_question] = self.source
+            self.last_save = millisecs() / 1000
             return True
         return False
 
