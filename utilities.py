@@ -701,16 +701,16 @@ ACTIONS = {
         """,
     'diff': f"""
         mkdir DIFF
-        ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -cf - .' |
-        (cd DIFF && tar -xf -)
-        for I in $(git ls-files | grep -v DOCUMENTATION)
+        git ls-files | grep -v DOCUMENTATION >xxx.tocopy
+        rsync --files-from=xxx.tocopy '{C5_LOGIN}@{C5_HOST}:{C5_DIR}' DIFF
+        for I in $(cat xxx.tocopy)
         do
         diff -u $I DIFF/$I
         done
         rm -rf DIFF
         """,
     'getall': f"""
-        ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -cf - COMPILE_*/' | tar -xf -
+        rsync --archive --verbose '{C5_LOGIN}@{C5_HOST}:{C5_DIR}/COMPILE_*' .
         """,
     'nginx': f"""#C5_ROOT
         sudo sh -c '
