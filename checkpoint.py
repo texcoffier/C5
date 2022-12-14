@@ -1115,6 +1115,12 @@ def create_page(building_name):
              }
         #spy BUTTON { font-size: 150%; }
         #spy .source {  white-space: pre; }
+        .spytop {
+            position: fixed;
+            width: calc(100% - 1em);
+            background: #FFF8;
+        }
+        #source { margin-top: 7em }
         .send_alert { font-size: 200% ; display: inline-block;
                       transition: transform 0.5s; cursor: pointer }
         .send_alert:hover { transform: scale(2, 2) }
@@ -1363,6 +1369,7 @@ def spy(sources, login, infos):
 
     div = document.getElementById('spy')
     content = [
+        '<div class="spytop">',
         '<button onclick="spy_close()">Fermer</button> ',
         login, ' ', infos.fn, ' ', infos.sn, ' ', state,
         '(<input onchange="set_time_bonus(this,\'' + login,
@@ -1386,7 +1393,7 @@ def spy(sources, login, infos):
     else:
         content.append("Aucune sauvegarde n'a été faite.")
     content.append('<span class="cursor right"></span>')
-    content.append('</div><pre id="source"></pre>')
+    content.append('</div></div><pre id="source"></pre>')
     div.innerHTML = ''.join(content)
     div.style.display = 'block'
     spy_concat(sources)
