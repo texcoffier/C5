@@ -417,6 +417,7 @@ CONFIG = Config()
 class Session:
     """Session management"""
     session_cache = {}
+    allow_ip_change = 0 # XXX defined by course, not session
     def __init__(self, ticket, client_ip, browser, # pylint: disable=too-many-arguments
                  login=None, creation_time=None, infos=None):
         self.ticket = ticket

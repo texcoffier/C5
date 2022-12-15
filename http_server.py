@@ -190,6 +190,7 @@ def handle(base=''):
                 course = utilities.CourseConfig.get(utilities.get_course(filename[1:]))
                 if not course.dirname:
                     return session.message('unknown')
+                session.allow_ip_change = course.allow_ip_change # XXX dangerous
                 status = course.status(login, session.client_ip)
                 is_admin = session.is_grader(course)
                 if not is_admin:
