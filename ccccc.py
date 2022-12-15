@@ -957,7 +957,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 button.className = 'grade_unselected'
         element = document.getElementById('grading_sum')
-        element.textContent = 'Envoyer un mail Σ=' + grading_sum
+        element.textContent = 'Préparer un mail pour l\'étudiant Σ=' + grading_sum
         element.onclick = bind(self.send_mail, self)
         if self.nr_grades == nr_grades:
             element.style.background = "#0F0"
@@ -966,7 +966,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
             element.style.background = "#FFF"
             element.style.color = "#0F0"
 
-    def send_mail(self):
+    def get_comment(self, line_number):
+        """Get the actual line comment"""
+        comment = self.all_comments[self.current_question]
+        if comment:
+            comment = comment[self.version]
+            if comment:
+                comment = comment[line_number]
+        return comment
+
+    def send_mail_right(self):
         """Send a mail to the student"""
         width = 0
         for line in self.source.split("\n"):
@@ -977,24 +986,45 @@ class CCCCC: # pylint: disable=too-many-public-methods
             for _ in range(width - len(line)):
                 content.append(' ')
             content.append('//')
-            comment = self.all_comments[self.current_question]
+            comment = self.get_comment(i)
             if comment:
-                comment = comment[self.version]
-                if comment:
-                    comment = comment[i]
-                    if comment:
-                        add_blank = False
-                        for comment_line in comment.split('\n'):
-                            if add_blank:
-                                content.append('\n')
-                                for _ in range(width):
-                                    content.append(' ')
-                                content.append('//')
-                            content.append(comment_line)
-                            add_blank = True
+                add_blank = False
+                for comment_line in comment.strip().split('\n'):
+                    if add_blank:
+                        content.append('\n')
+                        for _ in range(width):
+                            content.append(' ')
+                        content.append('//')
+                    content.append(html(comment_line))
+                    add_blank = True
             content.append('\n')
         content.append("</pre>")
+        return content
 
+    def send_mail_top(self):
+        """Send a mail to the student"""
+        content = ['<pre>']
+        for i, line in enumerate(self.source.split("\n")):
+            comment = self.get_comment(i)
+            if comment:
+                content.append('\n')
+                for comment_line in comment.strip().split('\n'):
+                    content.append('// ' + LOGIN + ' : ')
+                    content.append(html(comment_line))
+                    content.append('\n')
+            content.append(html(line))
+            content.append('\n')
+        content.append("</pre>")
+        return content
+
+    def send_mail(self, right=True):
+        """Prepare mail for student"""
+        if confirm('''OK pour mettre les commentaires à droite des lignes.
+
+CANCEL pour les mettre au dessus des lignes de code.'''):
+            content = self.send_mail_right()
+        else:
+            content = self.send_mail_top()
         window.location = ("mailto:" + INFOS['mail']
             + "?subject=" + encodeURIComponent(COURSE.split('=')[1])
             + "&html-body="
