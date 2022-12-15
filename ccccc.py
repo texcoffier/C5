@@ -972,7 +972,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         for line in self.source.split("\n"):
             width = max(width, len(line))
         content = ['<pre>']
-        to_fill = []
         for i, line in enumerate(self.source.split("\n")):
             content.append(html(line))
             for _ in range(width - len(line)):
@@ -984,11 +983,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if comment:
                     comment = comment[i]
                     if comment:
+                        add_blank = False
                         for comment_line in comment.split('\n'):
-                            to_fill.append(comment_line)
-            if len(to_fill):
-                content.append(html(to_fill[0]))
-                to_fill.splice(0, 1)
+                            if add_blank:
+                                content.append('\n')
+                                for _ in range(width):
+                                    content.append(' ')
+                                content.append('//')
+                            content.append(comment_line)
+                            add_blank = True
             content.append('\n')
         content.append("</pre>")
 
