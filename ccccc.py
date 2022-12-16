@@ -186,6 +186,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         except: # pylint: disable=bare-except
             self.shared_buffer = None
         self.worker.postMessage(['array', self.shared_buffer])
+        if GRADING:
+            self.options['positions']['grading'] = [0, 1, 0, 75, '#FFF8']
         print("GUI: wait worker")
 
     def terminate_init(self):
@@ -228,6 +230,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             left, width, top, height, background = self.options['positions']['editor']
             self.options['positions']['comments'] = [
                 left + width, 100 - (left + width), top, height]
+            left, width, top, height, background = self.options['positions']['question']
+            self.options['positions']['question'][2] = 75
+            self.options['positions']['question'][3] = 25
+            self.options['positions']['grading'] = [left, width, 0, 75, '#FFF8']
+
         for key in self.options['positions']:
             left, width, top, height, background = self.options['positions'][key]
             e = self[key] # pylint: disable=unsubscriptable-object
@@ -957,7 +964,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 button.className = 'grade_unselected'
         element = document.getElementById('grading_sum')
-        element.textContent = 'Préparer un mail pour l\'étudiant Σ=' + grading_sum
+        element.innerHTML = '<i style="color:#00F">Préparer mail</i> Σ=' + grading_sum
         element.onclick = bind(self.send_mail, self)
         if self.nr_grades == nr_grades:
             element.style.background = "#0F0"
@@ -1031,12 +1038,13 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             + encodeURIComponent(''.join(content))
             )
 
-
-    def get_grading(self):
+    def add_grading(self):
         """HTML of the grading interface"""
-        content = ['<pre id="grading" onclick="grade(event)">',
-                    'Version <select style="background:#FF0" onchange="version_change(this)">',
-                     ]
+        content = [
+            '''<div><h2>
+            Noter <select style="background:#FF0" onchange="version_change(this)">
+            '''
+            ]
         now = Date()
         for i, version in enumerate(VERSIONS[self.current_question] or []):
             self.version = ANSWERS[self.current_question][1]
@@ -1061,7 +1069,8 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 content.append(two_digit(now.getSeconds()))
             content.append('</option>')
         content.append('</select>')
-
+        content.append('<span id="grading_sum"></span>')
+        content.append('</h2></div><pre>')
         i = 0
         for item in NOTATION.split('{'):
             options = item.split('}')
@@ -1083,9 +1092,11 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 j = 1
                 content.append(html(after))
             i += 1
+        content.append('</pre>')
         self.nr_grades = i
-        content.append('<span id="grading_sum"></span></pre>')
-        return ''.join(content)
+        self.grading.id = "grading"
+        self.grading.onclick = grade
+        self.grading.innerHTML = ''.join(content)
 
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
         """Interprete messages from the worker: update self.messages"""
@@ -1196,10 +1207,10 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             self.question_original[value[0]] = value[1]
         elif what in ('tester', 'compiler', 'question', 'time'):
             self.clear_if_needed(what)
-            if what == 'question' and GRADING and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
-                value = self.get_grading() + value
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
+            if what == 'question' and GRADING and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
+                self.add_grading()
             span = document.createElement('DIV')
             span.innerHTML = value
             if '<error' in value:
@@ -1308,7 +1319,6 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         window.onblur = bind(self.onblur, self)
         document.getElementsByTagName('BODY')[0].appendChild(self.top)
         self.create_gui()
-        self.update_gui()
         setInterval(bind(self.scheduler, self), 200)
         if GRADING:
             self.comments.onclick = bind(self.add_comment, self)
@@ -1316,6 +1326,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             # Get grades
             do_post_data({'student': STUDENT}, 'record_grade/' + COURSE + '?ticket=' + TICKET)
             do_post_data({'student': STUDENT}, 'record_comment/' + COURSE + '?ticket=' + TICKET)
+        self.update_gui()
 
     def add_comment(self, event):
         """Clic on a comment"""

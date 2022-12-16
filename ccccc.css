@@ -30,6 +30,11 @@ DIV.editor, DIV.overlay {
     scroll-behavior: auto;
 }
 
+DIV.grading {
+    overflow: auto;
+}
+
+DIV.grading > DIV:first-child,
 DIV.question > DIV:first-child,
 DIV.tester > DIV:first-child,
 DIV.compiler > DIV:first-child,
@@ -37,6 +42,7 @@ DIV.executor > DIV:first-child
 {
     position: sticky;
     top: 0px;
+    z-index: 2;
 }
 
 .error,
@@ -179,7 +185,7 @@ TT {
     font-family: monospace, monospace;
 }
 
-PRE {
+.question PRE, .tester PRE {
     border: 1px solid #880;
     background: #FFD;
     margin: var(--pad);
@@ -359,40 +365,40 @@ LABEL, .index DIV, .save_button, .reset_button, .local_button { cursor: pointer 
     font-size: 100%;
 }
 
-#grading {
-    background: #FFFE;
+.grading {
     font-size: 80%;
-    padding: 0px;
-    margin-left: -7px;
-    margin-right: -9px;
 }
-#grading SELECT {
+.grading SELECT {
     font-size: 100%;
 }
 
-#grading BUTTON {
+.grading PRE {
+    position:relative;
+    padding-right: 0.5em;
+}
+
+.grading BUTTON {
     font-size: 100%;
     border: 1px solid #FFF;
 }
-#grading BUTTON.grade_unselected {
+.grading BUTTON.grade_unselected {
     background: #EEE;
 }
-#grading BUTTON.grade_selected {
+.grading BUTTON.grade_selected {
     background: #0F0;
 }
-#grading BUTTON:hover {
+.grading BUTTON:hover {
     border: 1px solid #040;
 }
-#grading SPAN {
+.grading SPAN {
     font-family: sans-serif;
     position: absolute;
     right: 0px;
     color: #00F;
 }
 
-#grading #grading_sum {
+.grading #grading_sum {
     color: #080;
-    font-size: 200%;
     background: #FFFD;
 }
 
