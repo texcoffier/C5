@@ -30,6 +30,8 @@ try:
     hljs = hljs
     record = record
     html = html
+    nice_date = nice_date
+    two_digit = two_digit
 except ValueError:
     pass
 
@@ -69,21 +71,6 @@ def mouse_enter():
 def mouse_leave():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = False
-
-def two_digit(number):
-    """ 6 → 06 """
-    return ('0' + str(int(number)))[-2:]
-
-def nice_date(secs):
-    """seconds → human date"""
-    js_date = Date()
-    js_date.setTime(secs*1000)
-    return (js_date.getFullYear()
-            + '-' + two_digit(js_date.getMonth() + 1)
-            + '-' + two_digit(js_date.getDate())
-            + ' ' + two_digit(js_date.getHours())
-            + ':' + two_digit(js_date.getMinutes())
-           )
 
 mouse_enter()
 

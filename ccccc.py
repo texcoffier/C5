@@ -29,6 +29,8 @@ try:
     record = record
     parse_grading = parse_grading
     alert = alert
+    nice_date = nice_date
+    two_digit = two_digit
     COURSE = COURSE
     GRADING = GRADING
     STUDENT = STUDENT
@@ -58,10 +60,6 @@ except: # pylint: disable=bare-except
     pass
 
 EXPLAIN = {0: "Sauvée", 1: "Validée", 2: "Compilée", 3: "Dernière seconde"}
-
-def two_digit(number):
-    """ 6 → 06 """
-    return ('0' + str(int(number)))[-2:]
 
 def do_post_data(dictionary, url, target=None):
     """POST a dictionnary"""

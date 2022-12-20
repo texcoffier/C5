@@ -77,3 +77,18 @@ def parse_grading(history):
             d.setTime(line[0]*1000)
             grading[line[2]] = [line[3], d + '\n' + line[1]]
     return grading
+
+def two_digit(number):
+    """ 6 → 06 """
+    return ('0' + str(int(number)))[-2:]
+
+def nice_date(seconds):
+    """Returns a string from seconds"""
+    js_date = Date()
+    js_date.setTime(seconds*1000)
+    return (js_date.getFullYear()
+            + '-' + two_digit(js_date.getMonth() + 1)
+            + '-' + two_digit(js_date.getDate())
+            + ' ' + two_digit(js_date.getHours())
+            + ':' + two_digit(js_date.getMinutes())
+           )
