@@ -50,6 +50,7 @@ try:
     WHERE = WHERE
     INFOS = INFOS
     COLORING = COLORING
+    ALL_SAVES = ALL_SAVES
     encodeURIComponent = encodeURIComponent
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
@@ -94,7 +95,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
     index = reset_button = popup_element = save_button = local_button = line_numbers = None
-    stop_button = fullscreen = comments = None
+    stop_button = fullscreen = comments = save_history = None
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -152,6 +153,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'local_button': [64, 2, 0, 2, '#0000'],
             'stop_button': [61, 2, 0, 2, '#0000'],
             'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
+            'save_history': [62, 2, 2, 4, '#0000'],
             }
     }
     stop_timestamp = 0
@@ -255,6 +257,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.reset_button.innerHTML = self.options['icon_reset']
         self.save_button.innerHTML = self.options['icon_save']
         self.local_button.innerHTML = self.options['icon_local']
+        self.save_history.innerHTML = '<select></select>'
         if self.stop_button:
             self.stop_button.innerHTML = self.options['icon_stop']
         if GRADING:
@@ -262,6 +265,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.reset_button.style.display = 'none'
             if self.stop_button:
                 self.stop_button.style.display = 'none'
+        self.update_save_history()
     def create_gui(self):
         """The text editor container"""
         self.options['positions']['overlay'] = self.options['positions']['editor']
@@ -344,6 +348,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.last_compile[self.current_question] = self.source
         seconds = int(millisecs() / 1000)
         if self.seconds != seconds:
+            if self.seconds % 60 == 0:
+                self.update_save_history()
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
@@ -898,6 +904,29 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if confirm(self.options['reset_confirm']):
             self.set_editor_content(self.question_original[self.current_question])
 
+    def update_save_history(self):
+        """The list of saved versions"""
+        content = []
+        now = millisecs() / 1000 / 60
+        for timestamp in (ALL_SAVES[self.current_question] or [])[::-1]:
+            delta = int(now - timestamp / 60)
+            if delta < 1:
+                content.append("<option>Sauvé à l'instant</option>")
+            elif delta < 60:
+                content.append('<option>Sauvé il y a ' + delta + ' minutes</option>')
+            elif delta < 10*60:
+                content.append('<option>Sauvé il y a ' + delta//60 + ' heures</option>')
+            else:
+                date = Date()
+                date.setTime(1000 * timestamp)
+                content.append('<option>' + nice_date(timestamp) + '</option>')
+        if len(content) == 0:
+            content.append('<option>JAMAIS SAUVEGARDÉ</option>')
+            self.save_history.firstChild.style.color = "#F00"
+        else:
+            self.save_history.firstChild.style.color = "#000"
+        self.save_history.firstChild.innerHTML = ''.join(content)
+
     def save(self):
         """Save the editor content"""
         self.update_source()
@@ -910,6 +939,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.worker.postMessage(['source', self.current_question, self.source])
             self.last_answer[self.current_question] = self.source
             self.last_save = millisecs() / 1000
+            if not ALL_SAVES[self.current_question]:
+                ALL_SAVES[self.current_question] = []
+            ALL_SAVES[self.current_question].append(self.last_save)
+            self.update_save_history()
             return True
         return False
 
@@ -1107,7 +1140,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                     for subkey in value[key]:
                         self.options[key][subkey] = value[key][subkey]
                 else:
-                self.options[key] = value[key]
+                    self.options[key] = value[key]
             self.terminate_init()
             self.update_gui()
         elif what == 'current_question':

@@ -112,6 +112,7 @@ async def editor(session, is_admin, course, login, grading=0, author=0):
     """
     versions = {}
     stop = ''
+    all_saves = collections.defaultdict(list)
     if author and is_admin:
         with open(course.dirname + '.py', 'r', encoding='utf-8') as file:
             source = file.read()
@@ -129,10 +130,12 @@ async def editor(session, is_admin, course, login, grading=0, author=0):
             # The last save
             for key, value in answers.items():
                 good = 0
-                for _source, answer, _time in value:
+                for _source, answer, time in value:
                     if answer == 0:
                         value[-1][1] = good
+                        all_saves[key].append(time)
                     elif answer == 1:
+                        all_saves[key].append(time)
                         good = 1 # Correct answer even if changed after
                 answers[key] = value[-1] # Only the last answer
         if course:
@@ -167,6 +170,7 @@ async def editor(session, is_admin, course, login, grading=0, author=0):
             INFOS = {infos};
             CHECKPOINT = {course.checkpoint};
             ANSWERS = {json.dumps(answers)};
+            ALL_SAVES = {json.dumps(all_saves)};
             WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0,'')))};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')
