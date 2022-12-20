@@ -525,7 +525,7 @@ async def adm_config(request): # pylint: disable=too-many-branches
     if course.startswith('^'):
         # Configuration of multiple session with regular expression
         answer = None
-        for conf in utilities.CourseConfig.configs.values():
+        for conf in tuple(utilities.CourseConfig.configs.values()):
             if session.is_admin(conf) and re.match(course, conf.session):
                 result = await adm_config_course(conf, action, value)
                 if conf.session == config.session:
