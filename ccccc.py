@@ -1105,6 +1105,10 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         value = event.data[1]
         if what == 'options':
             for key in value:
+                if key == 'positions':
+                    for subkey in value[key]:
+                        self.options[key][subkey] = value[key][subkey]
+                else:
                 self.options[key] = value[key]
             self.terminate_init()
             self.update_gui()
