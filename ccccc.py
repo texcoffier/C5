@@ -350,6 +350,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.seconds != seconds:
             if self.seconds % 60 == 0:
                 self.update_save_history()
+            if self.need_save():
+                self.save_button.style.opacity = 1
+            else:
+                self.save_button.style.opacity = 0.2
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
@@ -927,11 +931,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_history.firstChild.style.color = "#000"
         self.save_history.firstChild.innerHTML = ''.join(content)
 
+    def need_save(self):
+        return (not self.last_answer[self.current_question]
+                or self.last_answer[self.current_question].strip() != self.source.strip())
+
     def save(self):
         """Save the editor content"""
         self.update_source()
-        if (not self.last_answer[self.current_question]
-                or self.last_answer[self.current_question].strip() != self.source.strip()):
+        if self.need_save():
             self.save_button.style.transition = ''
             self.save_button.style.transform = 'scale(8)'
             self.save_button.style.opacity = 0.1
@@ -1148,11 +1155,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             self.update_source()
             self.save_cursor()
             if (self.current_question >= 0 and value != self.current_question
-                    and (
-                        not self.last_answer[self.current_question]
-                        or self.last_answer[self.current_question].strip() != self.source.strip()
-                    )
-               ):
+                    and self.need_save()):
                 self.save()
             self.current_question = value
             self.record(['question', self.current_question])
