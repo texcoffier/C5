@@ -158,6 +158,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     }
     stop_timestamp = 0
     last_save = 0
+    in_past_history = 0
 
     def __init__(self):
         print("GUI: start")
@@ -258,6 +259,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.save_button.innerHTML = self.options['icon_save']
         self.local_button.innerHTML = self.options['icon_local']
         self.save_history.innerHTML = '<select></select>'
+        self.save_history.onchange = bind(self.change_history, self)
         if self.stop_button:
             self.stop_button.innerHTML = self.options['icon_stop']
         if GRADING:
@@ -908,22 +910,43 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if confirm(self.options['reset_confirm']):
             self.set_editor_content(self.question_original[self.current_question])
 
+    def change_history(self, event):
+        """Put an old version in the editor"""
+        if not self.in_past_history:
+            self.save()
+        choosen = event.target.selectedOptions[0].getAttribute('timestamp')
+        if choosen:
+            choosen = int(choosen)
+            for (timestamp, source) in ALL_SAVES[self.current_question]:
+                if timestamp == choosen:
+                    self.set_editor_content(source)
+                    if timestamp == ALL_SAVES[self.current_question][-1][0]:
+                        self.in_past_history = 0 # Back to the present
+                    else:
+                        self.in_past_history = timestamp
+                    break
+
     def update_save_history(self):
         """The list of saved versions"""
         content = []
-        now = millisecs() / 1000 / 60
-        for timestamp in (ALL_SAVES[self.current_question] or [])[::-1]:
-            delta = int(now - timestamp / 60)
-            if delta < 1:
-                content.append("<option>Sauvé à l'instant</option>")
-            elif delta < 60:
-                content.append('<option>Sauvé il y a ' + delta + ' minutes</option>')
-            elif delta < 10*60:
-                content.append('<option>Sauvé il y a ' + delta//60 + ' heures</option>')
+        now = millisecs() / 1000
+        for (timestamp, _source) in (ALL_SAVES[self.current_question] or [])[::-1]:
+            delta = int(now - timestamp)
+            content.append('<option timestamp="' + timestamp + '"')
+            if self.in_past_history == timestamp:
+                content.append(' selected')
+            content.append('>')
+            if delta < 60:
+                content.append("Sauvé à l'instant")
+            elif delta < 60*60:
+                content.append('Sauvé il y a ' + delta//60 + 'm' + two_digit(delta%60))
+            elif delta < 10*60*60:
+                content.append('Sauvé il y a ' + delta//60//60 + 'h' + two_digit((delta//60)%60))
             else:
                 date = Date()
                 date.setTime(1000 * timestamp)
-                content.append('<option>' + nice_date(timestamp) + '</option>')
+                content.append(nice_date(timestamp))
+            content.append('</option>')
         if len(content) == 0:
             content.append('<option>JAMAIS SAUVEGARDÉ</option>')
             self.save_history.firstChild.style.color = "#F00"
@@ -948,7 +971,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.last_save = millisecs() / 1000
             if not ALL_SAVES[self.current_question]:
                 ALL_SAVES[self.current_question] = []
-            ALL_SAVES[self.current_question].append(self.last_save)
+            ALL_SAVES[self.current_question].append([int(self.last_save), self.source])
+            self.in_past_history = 0
             self.update_save_history()
             return True
         return False
@@ -963,7 +987,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def stop(self):
         """The student stop its session"""
-        if confirm(self.options['stop_confirm']):
+        if self.need_save() and confirm(self.options['stop_confirm']):
             self.do_stop = True
             if not self.save():
                 record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
@@ -1155,7 +1179,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             self.update_source()
             self.save_cursor()
             if (self.current_question >= 0 and value != self.current_question
-                    and self.need_save()):
+                    and self.need_save() and not self.in_past_history):
                 self.save()
             self.current_question = value
             self.record(['question', self.current_question])

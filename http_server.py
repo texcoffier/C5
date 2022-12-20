@@ -130,12 +130,12 @@ async def editor(session, is_admin, course, login, grading=0, author=0):
             # The last save
             for key, value in answers.items():
                 good = 0
-                for _source, answer, time in value:
+                for source, answer, timestamp in value:
                     if answer == 0:
                         value[-1][1] = good
-                        all_saves[key].append(time)
+                        all_saves[key].append([timestamp, source])
                     elif answer == 1:
-                        all_saves[key].append(time)
+                        all_saves[key].append([timestamp, source])
                         good = 1 # Correct answer even if changed after
                 answers[key] = value[-1] # Only the last answer
         if course:
