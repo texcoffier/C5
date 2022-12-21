@@ -159,6 +159,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     stop_timestamp = 0
     last_save = 0
     in_past_history = 0
+    allow_edit = 0
 
     def __init__(self):
         print("GUI: start")
@@ -321,6 +322,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def scheduler(self): # pylint: disable=too-many-branches
         """Send a new job if free and update the screen"""
+        if not self.allow_edit:
+            return
         if (not GRADING
                 and not self.options['allow_copy_paste']
                 and screen.height != max(window.innerHeight, window.outerHeight)
@@ -656,6 +659,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.copied = text
     def oncut(self, event):
         """Cut"""
+        if not self.allow_edit:
+            self.record(['allow_edit', 'oncut'])
+            event.preventDefault(True)
+            return
         self.oncopy(event, 'Cut')
         self.do_coloring = self.do_update_cursor_position = True
     def insert_text(self, event, text):
@@ -669,7 +676,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.do_coloring = self.do_update_cursor_position = True
 
     def onpaste(self, event):
-        """Mouse down"""
+        """Text paste"""
+        if not self.allow_edit:
+            self.record(['allow_edit', 'onpaste'])
+            event.preventDefault(True)
+            return
         text = (event.clipboardData or event.dataTransfer).getData("text")
         text_clean = cleanup(text)
         if self.options['allow_copy_paste']:
@@ -794,6 +805,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             ]
     def onkeydown(self, event):
         """Key down"""
+        if not self.allow_edit:
+            self.record(['allow_edit', 'onkeydown'])
+        if not self.allow_edit:
+            event.preventDefault(True)
+            return
         self.current_key = event.key
         if self.close_popup(event):
             return
@@ -843,6 +859,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay_hide()
     def onkeyup(self, event):
         """Key up"""
+        if not self.allow_edit:
+            self.record(['allow_edit', 'onkeyup'])
+            event.preventDefault(True)
+            return
         self.current_key = ''
         if event.target.tagName == 'TEXTAREA':
             # The teacher enter a comment
@@ -965,6 +985,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def save(self):
         """Save the editor content"""
+        if not self.allow_edit:
+            self.record(['allow_edit', 'save'])
+            return
         self.update_source()
         if self.need_save():
             self.save_button.style.transition = ''
@@ -1292,6 +1315,16 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         elif what == 'stop':
             alert("La session est terminée, rechargez la page pour la réactiver")
             window.location = window.location
+        elif what == 'allow_edit':
+            self.allow_edit = int(value)
+
+    def goto_question(self, index):
+        """Indicate the new question to the worker"""
+        if self.allow_edit:
+            self.unlock_worker()
+            self.worker.postMessage(['goto', index])
+        else:
+            self.record(['allow_edit', 'goto_question'])
 
     def set_editor_content(self, message):
         """Set the editor content (question change or reset)"""

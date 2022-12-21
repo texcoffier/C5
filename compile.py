@@ -182,6 +182,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def start_question(self):
         """Start a new question"""
         # print("START QUESTION", self.current_question, '/', self.current_question_max)
+        self.post('allow_edit', '0')
         self.set_default_options()
         if self.quest:
             self.quest.last_answer = self.source
@@ -199,6 +200,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('index', self.index_initial_content())
         self.send_options()
         self.post('editor', self.source)
+        self.post('allow_edit', '1')
 
     def goto(self, question):
         """Change question"""
@@ -301,13 +303,13 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         tips = []
         for i, _ in enumerate(self.questions):
             if self.allow_goto:
-                link = ('onclick="ccccc.unlock_worker();ccccc.worker.postMessage([\'goto\','
-                        + i + '])"')
+                link = 'onclick="ccccc.goto_question(' + i + ')"'
             else:
                 link = ''
             html_class = []
             if i == self.current_question:
                 html_class.append('current')
+                link = 'onclick="ccccc.record([\'click-same\'])"'
             if self.question_yet_solved(i):
                 html_class.append('good')
             else:
