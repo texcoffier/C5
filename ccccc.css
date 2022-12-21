@@ -30,6 +30,11 @@ DIV.editor, DIV.overlay {
     scroll-behavior: auto;
 }
 
+.save_history SELECT {
+    font-size: 0.7vw;
+    padding: 0px;
+}
+
 DIV.grading {
     overflow: auto;
 }
