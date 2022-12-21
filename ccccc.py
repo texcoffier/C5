@@ -260,6 +260,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.local_button.innerHTML = self.options['icon_local']
         self.save_history.innerHTML = '<select></select>'
         self.save_history.onchange = bind(self.change_history, self)
+        self.save_history.onenter = "print('show')"
+        self.save_history.onleave = "print('hide')"
         if self.stop_button:
             self.stop_button.innerHTML = self.options['icon_stop']
         if GRADING:
@@ -350,7 +352,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.last_compile[self.current_question] = self.source
         seconds = int(millisecs() / 1000)
         if self.seconds != seconds:
-            if self.seconds % 60 == 0:
+            if self.seconds % 5 == 0:
                 self.update_save_history()
             if self.need_save():
                 self.save_button.style.opacity = 1
@@ -928,6 +930,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def update_save_history(self):
         """The list of saved versions"""
+        select = self.save_history.firstChild
+        if select == document.activeElement:
+            return
         content = []
         now = millisecs() / 1000
         for (timestamp, _source) in (ALL_SAVES[self.current_question] or [])[::-1]:
@@ -949,10 +954,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             content.append('</option>')
         if len(content) == 0:
             content.append('<option>JAMAIS SAUVEGARDÉ</option>')
-            self.save_history.firstChild.style.color = "#F00"
+            select.style.color = "#F00"
         else:
-            self.save_history.firstChild.style.color = "#000"
-        self.save_history.firstChild.innerHTML = ''.join(content)
+            select.style.color = "#000"
+        select.innerHTML = ''.join(content)
 
     def need_save(self):
         return (not self.last_answer[self.current_question]
