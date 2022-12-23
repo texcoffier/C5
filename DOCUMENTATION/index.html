@@ -326,10 +326,8 @@ def default_answer(self):
         'compiler_title_button': 'Maintenant ! (F9)',
         'executor_title': 'Exécution',
         'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
-        'icon_reset': '🗑',
         'icon_save': '📩',
         'icon_stop': 'EXIT',
-        'reset_confirm': 'Vous voulez vraiment revenir à la version de départ ?',
         'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
         'stop_done': "&lt;h1&gt;C'est fini.&lt;/h1&gt;",
         'time_running': 'Fini dans',
@@ -340,7 +338,7 @@ def default_answer(self):
         'time_m': " m ",
         'time_h': " h ",
         'allow_copy_paste': False, # Valeur par défaut : définie dans l'interface d'administration.
-        'display_reset': True,
+        "display_local_save": False, # Icon in editor-bloc title
         'automatic_compilation': True, # Recompile dès que c'est possible
         'forget_input': False, # Ne mémorise pas les champs INPUT
         'positions' : {
@@ -353,10 +351,6 @@ def default_answer(self):
             'executor': [70, 30, 30, 70, '#EEF'],
             'time': [80, 20, 98, 2, '#0000'],
             'index': [0, 1, 0, 100, '#0000'],
-            'reset_button': [68, 2, 0, 2, '#0000'],
-            'save_button': [66, 2, 0, 2, '#0000'],
-            'local_button': [64, 2, 0, 2, '#0000'],
-            'stop_button': [61, 2, 0, 2, '#0000'],
             # Diminuer de 1 la largeur de 'question' et 'tester'
             # et remplacer par [29, 1, 0, 100, '#EEE']
             # pour placer les numéros de ligne à la gauche de l'éditeur.
@@ -378,7 +372,7 @@ def default_answer(self):
                 Pour les options qui restent constantes pour toutes les questions,
                 vous pouvez les indiquer dans la variable globale <tt>COURSE_OPTIONS</tt> :
             </p>
-            <tt>COURSE_OPTIONS = { 'display_reset': False }</tt>
+            <tt>COURSE_OPTIONS = { 'display_local_save': True }</tt>
         </li>
     </ul>
 

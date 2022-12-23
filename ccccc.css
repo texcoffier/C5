@@ -3,6 +3,7 @@ BODY {
     font-size: 1vw;
     --pad: 0.5em;
     --line_height: 1.18vw;
+    --header_height: 2.1em;
     overflow: hidden;
 }
 
@@ -14,6 +15,7 @@ DIV.question {
 DIV.compiler,
 DIV.executor,
 DIV.editor,
+DIV.editor_title,
 DIV.overlay {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -21,6 +23,14 @@ DIV.overlay {
     line-height: var(--line_height);
     overflow: auto;
 }
+
+DIV.editor_title H2 {
+    margin-bottom: 0px;
+}
+DIV.editor_title SELECT {
+    font-size: 90%
+}
+
 
 DIV.tester {
     overflow: auto;
@@ -30,13 +40,12 @@ DIV.editor, DIV.overlay {
     scroll-behavior: auto;
 }
 
-.save_history SELECT {
-    font-size: 0.7vw;
-    padding: 0px;
-}
-
 DIV.grading {
     overflow: auto;
+}
+
+DIV.editor {
+    outline: none;
 }
 
 DIV.grading > DIV:first-child,
@@ -343,6 +352,7 @@ H2:hover .timer SPAN {
     text-align: center;
     font-size: 200%;
     padding: 2em;
+    z-index: 2;
 }
 
 .fullscreen {
@@ -363,7 +373,27 @@ H2:hover .timer SPAN {
     padding: 0.2em;
 }
 
-LABEL, .index DIV, .save_button, .reset_button, .local_button { cursor: pointer }
+.stop_button {
+    float: right;
+    margin-right: 0.5em;
+}
+
+.icon_stop {
+    display:inline-block;
+    line-height: 1em;
+    cursor:pointer;
+    border: 1px solid #800;
+    font-family:sans-serif;
+    font-weight:bold;
+    font-size:60%;
+    color:#F00;
+    background:#FFF;
+    border-radius:0.5em;
+    padding:0.1em;
+    margin-top:-3px;
+}
+
+LABEL, .index DIV, .save_button, .local_button { cursor: pointer }
 
 .index > .version {
     background: #0F0;
@@ -373,8 +403,10 @@ LABEL, .index DIV, .save_button, .reset_button, .local_button { cursor: pointer 
 .grading {
     font-size: 80%;
 }
-.grading SELECT {
+SELECT {
     font-size: 100%;
+    padding: 0px;
+    margin-top: -3px;
 }
 
 .grading PRE {

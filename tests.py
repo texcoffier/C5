@@ -106,7 +106,6 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.test_f9,
                 self.test_inputs,
                 self.test_auto_compile,
-                self.test_reset_button,
                 self.test_save_button,
                 self.test_copy_paste_allowed,
                 self.test_question_index,
@@ -347,19 +346,6 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.compiler', {'innerHTML': Contains('sans')})
         self.check('.compiler LABEL').click()
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
-    def test_reset_button(self):
-        """Test reset button"""
-        self.load_page('=JS=introduction')
-        self.move_cursor('.editor')
-        self.check('.editor').send_keys('§')
-        self.check('.editor', {'innerHTML': Contains('§')})
-        time.sleep(1.1) # Reset not allowed just on loading (see CCCCC.reset())
-        self.check('.reset_button').click()
-        self.check_alert(accept=False)
-        self.check('.editor', {'innerHTML': Contains('§')})
-        self.check('.reset_button').click()
-        self.check_alert(accept=True, contains="départ")
-        self.check('.editor', {'innerHTML': ~Contains('§')})
     def test_save_button(self):
         """Test save button"""
         self.load_page('=JS=introduction')
@@ -418,7 +404,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.questions > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
         finally:
             time.sleep(0.5) # Wait save button animation end
-            self.check('.reset_button').click() # Returns to the original text
+            self.check('OPTION[timestamp="1").click() # Returns to the original text
             self.check_alert(accept=True)
             self.check('.save_button').click()
 
@@ -500,9 +486,6 @@ class Tests: # pylint: disable=too-many-public-methods
         """Test editor line insert"""
         self.load_page('=JS=introduction')
         self.check('.index STYLE + DIV').click() # Returns to the first question
-        time.sleep(1.1) # Reset not allowed just on loading (see CCCCC.reset())
-        self.check('.reset_button').click() # Returns to the original text
-        self.check_alert(accept=True)
 
         self.move_cursor('.editor').send_keys(Keys.ENTER)
         self.check('.overlay', {'innerHTML': Contains('\n\n<span class="hljs-comment">// Lisez')})

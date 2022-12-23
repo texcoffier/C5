@@ -16,10 +16,6 @@ COURSE_OPTIONS = {
                 'executor': [70, 30, 30, 70, '#EEF'],
                 'time': [80, 20, 98, 2, '#0000'],
                 'index': [0, 1, 0, 100, '#0000'],
-                'reset_button': [68, 2, 0, 2, '#0000'],
-                'save_button': [66, 2, 0, 2, '#0000'],
-                'local_button': [64, 2, 0, 2, '#0000'],
-                'stop_button': [61, 2, 0, 2, '#0000'],
                 'line_numbers': [29, 1, 0, 100, '#EEE'],
                 }
             }

@@ -62,6 +62,8 @@ except: # pylint: disable=bare-except
 
 EXPLAIN = {0: "Sauvée", 1: "Validée", 2: "Compilée", 3: "Dernière seconde"}
 
+DEPRECATED = ('save_button', 'local_button', 'stop_button', 'reset_button')
+
 def do_post_data(dictionary, url, target=None):
     """POST a dictionnary"""
     form = document.createElement("form")
@@ -94,8 +96,8 @@ def cleanup(txt):
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
-    index = reset_button = popup_element = save_button = local_button = line_numbers = None
-    stop_button = fullscreen = comments = save_history = None
+    index = popup_element = save_button = local_button = line_numbers = None
+    stop_button = fullscreen = comments = save_history = editor_title = None
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -138,8 +140,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'close': "Voulez-vous vraiment quitter cette page ?",
         'allow_copy_paste': CP or GRADING,
         'save_unlock': SAVE_UNLOCK,
-        'display_reset': True,
         'coloring': COLORING,
+        'display_local_save': 0,
         'positions' : {
             'question': [1, 29, 0, 30, '#EFE'],
             'tester': [1, 29, 30, 70, '#EFE'],
@@ -148,12 +150,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'executor': [70, 30, 30, 70, '#EEF'],
             'time': [80, 20, 98, 2, '#0000'],
             'index': [0, 1, 0, 100, '#0000'],
-            'stop_button': [53, 2, 0, 2, '#0000'],
-            'local_button': [56, 2, 0, 2, '#0000'],
-            'save_button': [58, 2, 0, 2, '#0000'],
-            'reset_button': [60, 2, 0, 2, '#0000'],
-            'save_history': [62, 2, 0, 2, '#0000'],
             'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
+            'editor_title': [30, 40, 0, 1, '#FFF'], # Overrided by current editor
             }
     }
     stop_timestamp = 0
@@ -226,6 +224,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def update_gui(self):
         """Set the bloc position and background"""
+        self.options['positions']['editor_title'] = self.options['positions']['editor']
         self.options['positions']['overlay'] = self.options['positions']['editor']
         self.options['positions']['overlay'][4] = '#0000'
         if GRADING:
@@ -238,6 +237,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.options['positions']['grading'] = [left, width, 0, 75, '#FFF8']
 
         for key in self.options['positions']:
+            if key in DEPRECATED:
+                continue # No more used button
             left, width, top, height, background = self.options['positions'][key]
             e = self[key] # pylint: disable=unsubscriptable-object
             if not e:
@@ -248,26 +249,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 e.style.display = 'block'
             e.style.left = left + '%'
             e.style.right = (100 - left - width) + '%'
-            e.style.top = top + '%'
-            e.style.bottom = (100 - top - height) + '%'
+            if key in ('editor', 'overlay'):
+                e.style.top = 'calc(' + top + '% + var(--header_height))'
+                e.style.bottom = 'calc(' + (100 - top - height) + '% - var(--header_height))' 
+            else:
+                e.style.top = top + '%'
+                e.style.bottom = (100 - top - height) + '%'
+            if key == 'editor_title':
+                e.style.bottom = 'calc(100% - var(--header_height))'
             e.style.background = background
             e.background = background
-        if self.options['display_reset']:
-            self.reset_button.style.display = 'block'
-        else:
-            self.reset_button.style.display = 'none'
-        self.reset_button.innerHTML = self.options['icon_reset']
-        self.save_button.innerHTML = self.options['icon_save']
-        self.local_button.innerHTML = self.options['icon_local']
-        self.save_history.innerHTML = '<select></select>'
         self.save_history.onchange = bind(self.change_history, self)
-        self.save_history.onenter = "print('show')"
-        self.save_history.onleave = "print('hide')"
-        if self.stop_button:
-            self.stop_button.innerHTML = self.options['icon_stop']
         if GRADING:
             self.save_button.style.display = 'none'
-            self.reset_button.style.display = 'none'
             if self.stop_button:
                 self.stop_button.style.display = 'none'
         self.update_save_history()
@@ -279,12 +273,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
         for key in self.options['positions']:
             if key == 'stop_button' and not CHECKPOINT:
                 continue
+            if key in DEPRECATED:
+                print(key, "this block position is no more used")
+                continue # No more used button
             e = document.createElement('DIV')
             e.className = key
             e.style.position = 'absolute'
             self.top.appendChild(e)
             self[key] = e # pylint: disable=unsupported-assignment-operation
-
         self.editor.contentEditable = True
         self.editor.spellcheck = False
         self.editor.autocorrect = False
@@ -295,14 +291,31 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.onkeyup = bind(self.update_cursor_position, self)
         self.editor.focus()
 
-        self.reset_button.style.fontFamily = 'emoji'
-        self.reset_button.onclick = bind(self.reset, self)
+        self.editor_title.innerHTML = "<h2>Code source </h2>"
+
+        self.save_button = document.createElement('TT')
+        self.save_button.innerHTML = self.options['icon_save']
         self.save_button.style.fontFamily = 'emoji'
         self.save_button.onclick = bind(self.save_unlock, self)
-        if self.stop_button:
+        self.save_button.className = 'save_button'
+        self.editor_title.firstChild.appendChild(self.save_button)
+
+        self.save_history = document.createElement('SELECT')
+        self.editor_title.firstChild.appendChild(self.save_history)
+
+        if self.options['display_local_save']:
+            self.local_button = document.createElement('TT')
+            self.local_button.innerHTML = ' ' + self.options['icon_local']
+            self.local_button.onclick = bind(self.save_local, self)
+            self.editor_title.firstChild.appendChild(self.local_button)
+
+        if CHECKPOINT:
+            self.stop_button = document.createElement('TT')
+            self.stop_button.innerHTML = self.options['icon_stop']
             self.stop_button.style.fontFamily = 'emoji'
             self.stop_button.onclick = bind(self.stop, self)
-        self.local_button.onclick = bind(self.save_local, self)
+            self.stop_button.className = 'stop_button'
+            self.editor_title.firstChild.appendChild(self.stop_button)
 
         self.fullscreen = document.createElement('DIV')
         self.fullscreen.className = 'fullscreen'
@@ -483,8 +496,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def coloring(self): # pylint: disable=too-many-statements
         """Coloring of the text editor with an overlay."""
         self.update_source()
-        if self.source == '' and self.question_original[self.current_question].strip() != '':
-            self.reset()
         self.overlay.innerHTML = html(self.source_with_newlines)
         self.overlay.className = 'overlay language-' + self.options['language']
         if self.options.coloring:
@@ -925,13 +936,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """When the worker die?"""
         print(event)
 
-    def reset(self):
-        """Reset the editor to the first displayed value"""
-        if millisecs() - self.start_time < 1000:
-            return # Hide a bug: do not display reset on start
-        if confirm(self.options['reset_confirm']):
-            self.set_editor_content(self.question_original[self.current_question])
-
     def change_history(self, event):
         """Put an old version in the editor"""
         if not self.in_past_history:
@@ -939,30 +943,37 @@ class CCCCC: # pylint: disable=too-many-public-methods
         choosen = event.target.selectedOptions[0].getAttribute('timestamp')
         if choosen:
             choosen = int(choosen)
-            for (timestamp, source) in ALL_SAVES[self.current_question]:
-                if timestamp == choosen:
-                    self.set_editor_content(source)
-                    if timestamp == ALL_SAVES[self.current_question][-1][0]:
-                        self.in_past_history = 0 # Back to the present
-                    else:
-                        self.in_past_history = timestamp
-                    break
+            if choosen == 1:
+                self.set_editor_content(self.question_original[self.current_question])
+                self.in_past_history = 1
+            else:
+                for (timestamp, source) in ALL_SAVES[self.current_question]:
+                    if timestamp == choosen:
+                        self.set_editor_content(source)
+                        if timestamp == ALL_SAVES[self.current_question][-1][0]:
+                            self.in_past_history = 0 # Back to the present
+                        else:
+                            self.in_past_history = timestamp
+                            self.editor.focus()
+                            self.update_save_history()
+                        break
 
     def update_save_history(self):
         """The list of saved versions"""
-        select = self.save_history.firstChild
-        if select == document.activeElement:
+        if self.save_history == document.activeElement:
             return
         content = []
         now = millisecs() / 1000
         for (timestamp, _source) in (ALL_SAVES[self.current_question] or [])[::-1]:
-            delta = int(now - timestamp)
+            delta = int( (now - timestamp) / 10 ) * 10
             content.append('<option timestamp="' + timestamp + '"')
             if self.in_past_history == timestamp:
                 content.append(' selected')
             content.append('>')
-            if delta < 60:
+            if delta < 10:
                 content.append("Sauvé à l'instant")
+            elif delta < 60:
+                content.append('Sauvé il y a ' + delta + 's')
             elif delta < 60*60:
                 content.append('Sauvé il y a ' + delta//60 + 'm' + two_digit(delta%60))
             elif delta < 10*60*60:
@@ -974,10 +985,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             content.append('</option>')
         if len(content) == 0:
             content.append('<option>JAMAIS SAUVEGARDÉ</option>')
-            select.style.color = "#F00"
+            self.save_history.style.color = "#F00"
         else:
-            select.style.color = "#000"
-        select.innerHTML = ''.join(content)
+            self.save_history.style.color = "#000"
+        content.append('<option timestamp="1">Version initiale</option>')
+        if self.in_past_history == 1:
+            content[-1] = content[-1].replace('<option', '<option selected')
+        self.save_history.innerHTML = ''.join(content)
 
     def need_save(self):
         return (not self.last_answer[self.current_question]
