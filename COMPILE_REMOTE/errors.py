@@ -132,7 +132,7 @@ int main()
     cout << "Bonjour\\n";
 }
 """,
-    """0a
+    """0
 using namespace std;
 #include iostream
 

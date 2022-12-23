@@ -107,6 +107,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.load()
         self.update()
         self.configs[course] = self
+        with open(self.dirname + '.json', 'r', encoding="ascii") as file:
+            self.questions = json.loads(file.read())
 
     def load(self):
         """Load course configuration file"""
@@ -322,6 +324,18 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     def is_proctor(self, login):
         """Is proctor or grader or admin or creator"""
         return login in self.proctors or self.is_grader(login)
+
+    def get_language(self):
+        """Return the file extension and the comment for the compiler"""
+        if self.compiler == 'SQL':
+            return 'sql', '-- '
+        if self.compiler == 'PYTHON':
+            return 'py', '# '
+        if self.compiler in ('REMOTE', 'CPP'):
+            return 'cpp', '//'
+        if self.compiler == 'JS':
+            return 'js', '//'
+        return self.compiler, '// '
 
 def get_course(txt):
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""

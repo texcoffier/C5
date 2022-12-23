@@ -9,15 +9,18 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 		FILES="compatibility.py compile.py question.py $$COMPILER.py $*.py" ; \
 		SESSION=$$(echo ; echo 'if not Compile.worker: Session([' ; \
 		grep '^class.*(Question)' $*.py | sed -r 's/.*class *(.*)\(Question\).*/\1(),/' ;\
-		echo '])') \
+		echo '])') ; \
+		Q=1 ; \
 		;; \
 	*) \
-		FILES="compatibility.py $*.py" \
+		FILES="compatibility.py $*.py" ;\
+		Q=0 \
 		;; \
 	esac ; \
 	cat $$FILES > $*.py.xxx ; \
 	echo "$$SESSION" >> $*.py.xxx ; \
 	$(PYTOJS) $*.py.xxx >$*.js && \
+	([ $$Q = 1 ] && (cat question_before.py $*.py question_after.py | python3 >$*.json) || true) && \
 	rm $*.py.xxx
 
 default:all

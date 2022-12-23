@@ -15,6 +15,7 @@ import ast
 import re
 import traceback
 import html
+import io
 import urllib.request
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
@@ -655,6 +656,43 @@ async def adm_get(request):
             content = file.read()
     return response(content, content_type='text/plain')
 
+async def my_zip(request):
+    """Get ZIP"""
+    session = await utilities.Session.get(request)
+    course = request.match_info['course']
+    if course != 'C5.zip':
+        configs = [utilities.CourseConfig.get(utilities.get_course(course))]
+    else:
+        configs = utilities.CourseConfig.configs.values()
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, mode="w", compression=zipfile.ZIP_DEFLATED) as zipper:
+        for config in configs:
+            if config.checkpoint:
+                continue
+            answers, _blurs = get_answers(config.dirname, session.login)
+            extension, _comment = config.get_language()
+            for question, sources in answers.items():
+                if sources:
+                    source = sources[-1]
+                    mtime = time.localtime(source[2])
+                    mtime = (mtime.tm_year, mtime.tm_mon, mtime.tm_mday,
+                            mtime.tm_hour, mtime.tm_min, mtime.tm_sec)
+                    question = int(question)
+                    if question >= len(config.questions):
+                        continue # The answered question no more exists
+                    title = config.questions[question]["title"].replace(' ', '_').replace('/', '_')
+                    zipper.writestr(
+                        f'C5/{config.course}/{question+1:02d}-{title}.{extension}',
+                        source[0])
+                    zipper.infolist()[-1].date_time = mtime
+
+    stream = web.StreamResponse()
+    stream.content_type = 'application/zip'
+    await stream.prepare(request)
+    await stream.write(data.getvalue())
+
+    return stream
+
 def get_answers(course, user, compiled=False):
     """Get question answers.
        The types are:
@@ -754,21 +792,7 @@ async def adm_answers(request):
     course = utilities.get_course(course[:-4])
     config = utilities.CourseConfig(course)
     fildes, filename = tempfile.mkstemp()
-    if config.compiler == 'SQL':
-        comment = '-- '
-        extension = 'sql'
-    elif config.compiler == 'PYTHON':
-        comment = '# '
-        extension = 'py'
-    elif config.compiler in ('REMOTE', 'CPP'):
-        comment = '//'
-        extension = 'cpp'
-    elif config.compiler == 'JS':
-        comment = '//'
-        extension = 'js'
-    else:
-        comment = '// '
-        extension = config.compiler
+    extension, comment = config.get_language()
     try:
         zipper = zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w")
         for user in sorted(os.listdir(course)):
@@ -1212,7 +1236,10 @@ async def home(request):
     # Student
     utilities.CourseConfig.load_all_configs()
     now = time.time()
-    content = [session.header()]
+    content = [session.header(),
+        f'<p><a target="_blank" href="/zip/C5.zip?ticket={session.ticket}">',
+        '💾 ZIP</a> contenant vos fichiers sauvegardés dans C5.'
+        ]
     for course_name, course in sorted(utilities.CourseConfig.configs.items()):
         if now > course.stop_tt_timestamp:
             continue # No more running
@@ -1402,6 +1429,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
                 web.get('/update/{course}', update_browser),
                 web.get('/grade/{course}/{login}', grade),
+                web.get('/zip/{course}', my_zip),
                 web.post('/upload_course/{compiler}/{course}', upload_course),
                 web.post('/log', log),
                 web.post('/record_grade/{course}', record_grade),

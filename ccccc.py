@@ -1282,8 +1282,13 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                         span.style.float = 'left'
                     self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
-            content = ('<div class="questions"><a href="/' + window.location.search + '">🏠</a>'
-                + '<div class="tips">Accueil C5</div></div><br>')
+            content = ('<div class="questions">'
+                + '<a href="/' + window.location.search + '">🏠</a>'
+                + '<div class="tips">Accueil C5</div></div><br>'
+                + '<div class="questions">'
+                + '<a target="_blank" href="/zip/' + COURSE + window.location.search + '">'
+                + self.options['icon_local'] + '</a>'
+                + '<div class="tips">ZIP de vos réponses</div></div><br>')
             if GRADING and ',' in WHERE[2]:
                 content += '<div class="version">' + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ') + '</div>'
             content += value
