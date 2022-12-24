@@ -72,6 +72,10 @@ class Process: # pylint: disable=too-many-instance-attributes
                 os.unlink(self.exec_file)
             except FileNotFoundError:
                 pass
+            try:
+                os.unlink(self.source_file)
+            except FileNotFoundError:
+                pass
         if self.process:
             for task in self.tasks:
                 task.cancel()
