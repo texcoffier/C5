@@ -140,7 +140,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             if b'\001\002RACKETFini !\001' in line:
                 self.log(("EXIT", 0))
                 await self.websocket.send(json.dumps(['return', f"\n"]))
-                return # For Racket (no cleanup)
+                continue # For Racket (no cleanup)
         if self.process:
             return_value = await self.process.wait()
             self.log(("EXIT", return_value))
@@ -165,17 +165,6 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.compiler = compiler
         if compiler == 'racket':
             await self.websocket.send(json.dumps(['compiler', "Bravo, il n'y a aucune erreur"]))
-            if not self.process:
-                self.log("LAUNCH-RACKET")
-                self.process = await asyncio.create_subprocess_exec(
-                    compiler, "compile_racket.rkt",
-                stdout=asyncio.subprocess.PIPE,
-                stdin=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                preexec_fn=set_racket_limits,
-                close_fds=True,
-                )
-            self.process.stdin.write(self.source_file.encode('utf-8') + b'\n')
             return
         stderr = ''
         if compiler not in ('gcc', 'g++'):
@@ -227,10 +216,19 @@ class Process: # pylint: disable=too-many-instance-attributes
     async def run(self):
         """Launch process"""
         if self.compiler == 'racket':
-            self.log("READ RACKET")
+            self.log("RUN RACKET")
             if not self.process:
-                bug
-            self.tasks = [asyncio.ensure_future(self.runner())]
+                self.log("LAUNCH-RACKET")
+                self.process = await asyncio.create_subprocess_exec(
+                    self.compiler, "compile_racket.rkt",
+                stdout=asyncio.subprocess.PIPE,
+                stdin=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                preexec_fn=set_racket_limits,
+                close_fds=True,
+                )
+                self.tasks = [asyncio.ensure_future(self.runner())]
+            self.process.stdin.write(self.source_file.encode('utf-8') + b'\n')
             return
         if not os.path.exists(self.exec_file):
             self.log("RUN nothing")
