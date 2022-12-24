@@ -299,6 +299,12 @@ LABEL, .timer {
     padding-right: 10px;
     right: 0.5em;
 }
+
+.executor LABEL {
+    position: relative;
+}
+
+
 .timer {
     top: 0.15em;
     bottom: 0.15em;

@@ -62,6 +62,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         'compiler_title': 'Compilation',
         'compiler_title_toggle': 'Automatique (F9)',
         'compiler_title_button': 'Maintenant ! (F9)',
+        'executor_title_button': 'GO! (F9)',
         'executor_title': 'Exécution',
         'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
         'icon_save': '📩',
@@ -272,7 +273,15 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         return "<h2>" + self.options['tester_title'] + "</h2>"
     def executor_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return ("<h2>" + self.options['executor_title'] + ' <span style="float:right; background: #CCF; margin-right: 0.3em;">'
+        if (self.options['positions']['compiler'][0] >= 100
+                or self.options['positions']['compiler'][2] >= 100):
+            more = (' <label style="font-size: 80%" onclick="ccccc.compilation_run()">'
+                    + self.options['executor_title_button'] + '</label>')
+        else:
+            more = ''
+        return ("<h2>" + self.options['executor_title']
+            + more
+            + ' <span style="float:right; background: #CCF; margin-right: 0.3em;">'
             + self.config['INFOS']['sn'].upper()
             + ' '
             + self.config['INFOS']['fn'].lower()
