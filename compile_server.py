@@ -30,8 +30,8 @@ def set_compiler_limits():
     resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
 
 def set_racket_limits():
-    """Do not allow big processes"""
-    resource.setrlimit(resource.RLIMIT_CPU, (5, 5))
+    """These limits should never be reached because enforced by racket sandbox itself"""
+    resource.setrlimit(resource.RLIMIT_CPU, (3600, 3600))
     resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
 
 class Process: # pylint: disable=too-many-instance-attributes
