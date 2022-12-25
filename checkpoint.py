@@ -259,7 +259,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Hide columns without my students"""
         self.update_sizes(0.05)
         for student in self.students:
-            if student.active and student.with_me():
+            if student.column and student.with_me():
                 (col_start, line_start, room_width, room_height, _center_x, _center_y
                 ) = self.get_room(student.column, student.line)
                 for i in range(2*col_start, 2*(col_start + room_width)):
