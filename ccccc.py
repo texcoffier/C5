@@ -311,6 +311,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.tag_button.className = 'tag_button'
         self.editor_title.firstChild.appendChild(self.tag_button)
 
+        if GRADING:
+            self.save_history.style.display = 'none'
+            self.tag_button.style.display = 'none'
+
         if self.options['display_local_save']:
             self.local_button = document.createElement('TT')
             self.local_button.innerHTML = ' ' + self.options['icon_local']
