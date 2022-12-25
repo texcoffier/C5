@@ -28,7 +28,8 @@ DIV.editor_title H2 {
     margin-bottom: 0px;
 }
 DIV.editor_title SELECT {
-    font-size: 90%
+    font-size: 70%;
+    max-width: 16em;
 }
 
 
@@ -399,7 +400,7 @@ H2:hover .timer SPAN {
     margin-top:-3px;
 }
 
-LABEL, .index DIV, .save_button, .local_button { cursor: pointer }
+LABEL, .index DIV, .save_button, .local_button, .tag_button { cursor: pointer }
 
 .index > .version {
     background: #0F0;

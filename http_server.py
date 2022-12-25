@@ -131,12 +131,12 @@ async def editor(session, is_admin, course, login, grading=0, author=0):
             # The last save
             for key, value in answers.items():
                 good = 0
-                for source, answer, timestamp in value:
+                for source, answer, timestamp, tag in value:
                     if answer == 0:
                         value[-1][1] = good
-                        all_saves[key].append([timestamp, source])
+                        all_saves[key].append([timestamp, source, tag])
                     elif answer == 1:
-                        all_saves[key].append([timestamp, source])
+                        all_saves[key].append([timestamp, source, tag])
                         good = 1 # Correct answer even if changed after
                 answers[key] = value[-1] # Only the last answer
         if course:
@@ -673,7 +673,7 @@ async def my_zip(request):
             extension, _comment = config.get_language()
             for question, sources in answers.items():
                 if sources:
-                    source = sources[-1]
+                    source = sources[2]
                     mtime = time.localtime(source[2])
                     mtime = (mtime.tm_year, mtime.tm_mon, mtime.tm_mday,
                             mtime.tm_hour, mtime.tm_min, mtime.tm_sec)
@@ -716,13 +716,22 @@ def get_answers(course, user, compiled=False):
                         if isinstance(cell, list):
                             what = cell[0]
                             if what == 'answer':
-                                answers[cell[1]].append([cell[2], 1, seconds])
+                                answers[cell[1]].append([cell[2], 1, seconds, ''])
                             elif what == 'save':
-                                answers[cell[1]].append([cell[2], 0, seconds])
+                                answers[cell[1]].append([cell[2], 0, seconds, ''])
                             elif what == 'snapshot':
-                                answers[cell[1]].append([cell[2], 3, seconds])
+                                answers[cell[1]].append([cell[2], 3, seconds, ''])
                             elif what == 'question':
                                 question = cell[1]
+                            elif what == 'tag':
+                                timestamp = cell[2]
+                                tag = cell[3]
+                                if timestamp:
+                                    for saved in answers[cell[1]]:
+                                        if saved[2] == timestamp:
+                                            saved[3] = tag
+                                else:
+                                    answers[cell[1]][-1][3] = tag
                         elif isinstance(cell, str):
                             if cell == 'Blur':
                                 blurs[question] += 1
@@ -737,7 +746,7 @@ def get_answers(course, user, compiled=False):
                 for line in file:
                     if "('COMPILE'," in line:
                         line = ast.literal_eval(line)
-                        answers[line[2][1][1]].append([line[2][1][6], 2, line[0]])
+                        answers[line[2][1][1]].append([line[2][1][6], 2, line[0], ''])
         except (IndexError, FileNotFoundError):
             pass
         for value in answers.values():
@@ -767,7 +776,7 @@ def question_source(config, comment, where, user, question, answers, blurs):
         'sauvegarde de dernière seconde (aucune sauvegarde ni compilation)')):
         if not infos:
             continue
-        source, _what, timestamp = infos
+        source, _what, timestamp, tag = infos
         if timestamp < current:
             continue
         if last_source == source:
@@ -776,7 +785,7 @@ def question_source(config, comment, where, user, question, answers, blurs):
         current = timestamp
         content.append(f"""
 {comment} ------------------------------------------------------------------
-{comment} {time.ctime(timestamp)} : {what}
+{comment} {time.ctime(timestamp)} {tag} : {what}
 {comment} ------------------------------------------------------------------
 
 {source}

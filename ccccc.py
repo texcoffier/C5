@@ -29,6 +29,7 @@ try:
     record = record
     parse_grading = parse_grading
     alert = alert
+    prompt = prompt
     nice_date = nice_date
     two_digit = two_digit
     COURSE = COURSE
@@ -303,6 +304,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.save_history = document.createElement('SELECT')
         self.editor_title.firstChild.appendChild(self.save_history)
 
+        self.tag_button = document.createElement('TT')
+        self.tag_button.innerHTML = self.options['icon_tag']
+        self.tag_button.style.fontFamily = 'emoji'
+        self.tag_button.onclick = bind(self.record_tag, self)
+        self.tag_button.className = 'tag_button'
+        self.editor_title.firstChild.appendChild(self.tag_button)
+
         if self.options['display_local_save']:
             self.local_button = document.createElement('TT')
             self.local_button.innerHTML = ' ' + self.options['icon_local']
@@ -323,6 +331,27 @@ class CCCCC: # pylint: disable=too-many-public-methods
         <small>Mettez le curseur sur <span>⏱</span> pour voir le temps restant</small>
         """
         self.top.appendChild(self.fullscreen)
+
+    def record_tag(self):
+        """Replace tag on current saved version"""
+        timestamp = self.in_past_history
+        if (timestamp == 0
+                and ALL_SAVES[self.current_question]
+                and len(ALL_SAVES[self.current_question])):
+            timestamp = ALL_SAVES[self.current_question][-1][0]
+        if timestamp <= 10:
+            self.popup_message("Rien à nommer, il faut d'abord sauvegarder.")
+            return
+        self.do_not_register_this_blur = True
+        tag = prompt("Nom de la sauvegarde :")
+        if not tag or tag == 'null':
+            return
+        self.record(['tag', self.current_question, timestamp, tag], True)
+        for item in ALL_SAVES[self.current_question]:
+            if item[0] == timestamp:
+                item[2] = tag
+                break
+        self.update_save_history()
 
     def save_local(self):
         """Save the source on a local file"""
@@ -947,7 +976,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.set_editor_content(self.question_original[self.current_question])
                 self.in_past_history = 1
             else:
-                for (timestamp, source) in ALL_SAVES[self.current_question]:
+                for (timestamp, source, _tag) in ALL_SAVES[self.current_question]:
                     if timestamp == choosen:
                         self.set_editor_content(source)
                         if timestamp == ALL_SAVES[self.current_question][-1][0]:
@@ -964,7 +993,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         content = []
         now = millisecs() / 1000
-        for (timestamp, _source) in (ALL_SAVES[self.current_question] or [])[::-1]:
+        for (timestamp, _source, tag) in (ALL_SAVES[self.current_question] or [])[::-1]:
             delta = int( (now - timestamp) / 10 ) * 10
             content.append('<option timestamp="' + timestamp + '"')
             if self.in_past_history == timestamp:
@@ -982,6 +1011,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 date = Date()
                 date.setTime(1000 * timestamp)
                 content.append(nice_date(timestamp))
+            if tag != '':
+                content[-1] = tag # + ' ' + content[-1]
             content.append('</option>')
         if len(content) == 0:
             content.append('<option>JAMAIS SAUVEGARDÉ</option>')
@@ -1013,7 +1044,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.last_save = millisecs() / 1000
             if not ALL_SAVES[self.current_question]:
                 ALL_SAVES[self.current_question] = []
-            ALL_SAVES[self.current_question].append([int(self.last_save), self.source])
+            ALL_SAVES[self.current_question].append([int(self.last_save), self.source, ''])
             self.in_past_history = 0
             self.update_save_history()
             return True
@@ -1416,7 +1447,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         """Prevent page closing"""
         if self.options['close'] == '' or GRADING:
             return None
-        self.record("Close", send_now=True)
+        # self.record("Close", send_now=True) # The form cannot be submited
         event.preventDefault()
         event.returnValue = self.options['close']
         return event.returnValue
