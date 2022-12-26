@@ -496,6 +496,7 @@ def default_answer(self):
     </p>
     <ul>
         <li> Dates de début et fin de session.</li>
+        <li> État de la session.</li>
         <li> Des bascules permettant de configurer l'éditeur de source.</li>
         <li> Les étudiants qui ont automatiquement un tiers-temps.</li>
         <li> Le barème de notation de la session en texte libre.
@@ -514,6 +515,8 @@ def default_answer(self):
     </p>
     <ul>
         <li> Upload new source : permet de remplacer le fichier Python définissant la question.</li>
+        <li> Upload new media : une fois déposé cela affiche ce qu'il faut mettre dans l'énoncé
+            pour inclure l'image.</li>
         <li> Edit source with C5 : permet d'éditer intéractivement le fichier précédent,
             en faisant Ctrl+S cela le mettra en production.
         </li>
@@ -523,6 +526,7 @@ def default_answer(self):
             d'exporter le travaildes étudiants.
         </li>
         <li> Load full ZIP : charge l'ensemble des fichiers de la session y compris les logs.</li>
+        <li> Rename session : renomme une session. <b>Personne ne doit être en train de travailler dessus.</b></li>
         <li> Delete <b>ALL</b> : détruit complètement la session et les logs.</li>
     </ul>
     <p>
@@ -1064,10 +1068,6 @@ server {
         <li> Choix du thème de coloriage syntaxique par l'étudiant.</li>
         <li> Icone pour passer en plein écran.</li>
         <li>
-            Dépôt de fichiers média (images par exemple)
-            pour simplifier l'inclusion dans les sujets.
-        </li>
-        <li>
             Option pour désactiver la toute première compilation quand
             la compilation automatique est désactivée.
             C'est complexe à faire.
@@ -1083,6 +1083,9 @@ server {
         </li>
         <li>
             ZIP des étudiants d'une salle.
+        </li>
+        <li>
+            Session terminée mais accessible en mode consultation.
         </li>
     </ul>
 </body>

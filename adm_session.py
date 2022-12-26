@@ -132,7 +132,21 @@ def upload(element):
     event = eval("new MouseEvent('click', {'view': window, 'bubbles': true, 'cancelable': true})")
     file.dispatchEvent(event)
 
-def upload_course(element):
+def upload_media(element):
+    """Send a media file"""
+    x = document.getElementById('script')
+    if x:
+        x.parentNode.removeChild(x)
+    x = document.createElement('IFRAME')
+    x.id = 'script'
+    x.name = 'script'
+    element.append(x)
+
+    file = document.getElementById('media')
+    event = eval("new MouseEvent('click', {'view': window, 'bubbles': true, 'cancelable': true})")
+    file.dispatchEvent(event)
+
+def do_submit(element):
     """Upload a course replacement"""
     element.parentNode.submit()
 
@@ -208,6 +222,7 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     </div>
     <div class="state">
     <a target="_blank" onclick="javascript:upload(this)">Upload a new source</a>
+    <a target="_blank" onclick="javascript:upload_media(this)">Upload a new media</a>
     <a target="_blank" href="/adm/editor/""" + COURSE + '?ticket=' + TICKET + """"
     >Edit source with C5</a>
     <a target="_blank" href="=""" + COURSE + '?ticket=' + TICKET + """">Try the exercises</a>
@@ -234,7 +249,11 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     </div>
     <form method="POST" enctype="multipart/form-data" style="display:none" target="script"
           action="/upload_course/""" + COURSE.replace('=', '/') + "?ticket=" + TICKET + """">
-          <input id="file" type="file" name="course" onchange="upload_course(this)">
+          <input id="file" type="file" name="course" onchange="do_submit(this)">
+    </form>
+    <form method="POST" enctype="multipart/form-data" style="display:none" target="script"
+          action="/upload_media/""" + COURSE.replace('=', '/') + "?ticket=" + TICKET + """">
+          <input id="media" type="file" name="course" onchange="do_submit(this)">
     </form>
     """
     add(div)

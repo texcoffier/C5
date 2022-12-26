@@ -17,6 +17,7 @@ import traceback
 import html
 import io
 import pathlib
+import glob
 import urllib.request
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
@@ -78,6 +79,12 @@ class File:
             self.charset = None
         elif filename.endswith('.css'):
             self.mime = 'text/css'
+        elif filename.endswith('.png'):
+            self.mime = 'image/png'
+            self.charset = None
+        elif filename.endswith('.jpg'):
+            self.mime = 'image/jpg'
+            self.charset = None
         else:
             print('Unknow mimetype', filename)
             self.mime = 'text/plain'
@@ -663,6 +670,7 @@ async def adm_get(request):
             course = filename[:-4]
             process = await asyncio.create_subprocess_exec(
                 'zip', '-r', '-', course, course + '.py', course + '.cf',
+                *tuple(glob.glob(course + '-*')),
                 stdout=asyncio.subprocess.PIPE,
                 )
             data = 'Go!'
@@ -981,6 +989,40 @@ async def upload_course(request):
         error = await update_file(request, session, compiler, replace)
     if '!' not in error and not replace:
         raise web.HTTPFound(f'https://{utilities.C5_URL}/checkpoint/*?ticket={session.ticket}')
+    if '!' in error:
+        style = 'background:#FAA;'
+    else:
+        style = ''
+    return response('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
+        + '<div style="height:100%;' + style + '">'
+        + error + '</div>')
+
+async def store_media(request, course):
+    post = await request.post()
+    filehandle = post['course']
+    if not hasattr(filehandle, 'filename'):
+        return "You must select a file!"
+    media_name = getattr(filehandle, 'filename', None)
+    if not media_name:
+        return "You must select a file!"
+    if media_name is None:
+        return "You forgot to select a course file!"
+    with open(f'{course.dirname}-{media_name}' , "wb") as file:
+        file.write(filehandle.file.read())
+    return f"""<tt style="font-size:100%">'&lt;img src="/media/{course.course}/{media_name}' + location.search + '"&gt;'</tt>"""
+
+async def upload_media(request):
+    """Add a new media"""
+    session = await utilities.Session.get(request)
+    error = None
+    compiler = request.match_info['compiler']
+    course_name = request.match_info['course']
+    course = utilities.CourseConfig.get(f'COMPILE_{compiler.upper()}/{course_name}')
+    if session.is_admin(course):
+        error = await store_media(request, course)
+    else:
+        error = "Not allowed to add media!"
+
     if '!' in error:
         style = 'background:#FAA;'
     else:
@@ -1502,6 +1544,14 @@ async def config_disable(request):
     utilities.CONFIG.set_value('disabled', disabled)
     return response('window.location.reload()', content_type='application/javascript')
 
+async def get_media(request):
+    """Get a media file"""
+    session = await utilities.Session.get(request)
+    course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
+    if not session.is_grader(course) and not course.status(session.login).startswith('running'):
+        return response('Not allowed', content_type='text/plain')
+    return File.get(f'{course.dirname}-{request.match_info["value"]}').response()
+
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
@@ -1533,7 +1583,9 @@ APP.add_routes([web.get('/', home),
                 web.get('/grade/{course}/{login}', grade),
                 web.get('/zip/{course}', my_zip),
                 web.get('/git/{course}', my_git),
+                web.get('/media/{course}/{value}', get_media),
                 web.post('/upload_course/{compiler}/{course}', upload_course),
+                web.post('/upload_media/{compiler}/{course}', upload_media),
                 web.post('/log', log),
                 web.post('/record_grade/{course}', record_grade),
                 web.post('/record_comment/{course}', record_comment),

@@ -75,7 +75,9 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
 
             __BRYTHON__.mylocals = {'__print__': __print__, '__input__': __input__,
                                     '__worker__': self, '__millisecs__': millisecs,
-                                    '__html__': html, '__Question__': Question}
+                                    '__html__': html, '__Question__': Question,
+                                    'location': location, # For media # pylint: disable=undefined-variable
+                                    }
             eval(self.executable.replace(
                 'var $locals___main__ = {}',
                 'var $locals___main__ = __BRYTHON__.mylocals ;'))
