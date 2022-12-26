@@ -1285,7 +1285,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 if value.startswith('\002EVAL'):
                     #print(value[5:])
                     eval(value[5:])
-                if value.startswith('\002RACKET'):
+                elif value.startswith('\002RACKET'):
                     self.racket(value[7:])
                 elif value.startswith('\002WAIT'):
                     #print(value)
