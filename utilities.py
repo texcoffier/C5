@@ -328,14 +328,14 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     def get_language(self):
         """Return the file extension and the comment for the compiler"""
         if self.compiler == 'SQL':
-            return 'sql', '-- '
+            return 'sql', '-- ', ''
         if self.compiler == 'PYTHON':
-            return 'py', '# '
+            return 'py', '# ', ''
         if self.compiler in ('REMOTE', 'CPP'):
-            return 'cpp', '//'
+            return 'cpp', '//', 'CPPFLAGS=-Wall'
         if self.compiler == 'JS':
-            return 'js', '//'
-        return self.compiler, '// '
+            return 'js', '//', ''
+        return self.compiler, '// ', ''
 
     def get_question_name(self, question):
         """Get a question title usable as filename"""
@@ -351,6 +351,23 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     def get_question_path(self, question):
         """Get a question title usable as filename"""
         return f'C5/{self.course}/{self.get_question_filename(question)}'
+
+    def get_makefile(self):
+        """Get the text content of the Makefile"""
+        options = self.get_language()[2]
+        if not options:
+            return ''
+        content = [
+            options + '\n\n',
+            'all:', '\n\n' # Item updated in the loop
+            ]
+        for question in range(len(self.questions)):
+            exec_name = self.get_question_name(question)
+            source_name = self.get_question_filename(question)
+            content[1] += ' \\\n\t' + exec_name
+            content.append(f"{exec_name}:{source_name}\n")
+            content.append(f"{question+1:02}:{exec_name}\n\t./{exec_name}\n\n")
+        return ''.join(content)
 
 def get_course(txt):
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""

@@ -34,6 +34,13 @@ COMPILERS = [i[8:-3].upper()
              and i != 'compile_server.py'
              ]
 
+MAKEFILE_README = """
+Le répertoire contient un fichier 'Makefile' définissant le projet.
+Lancer les commandes :
+    make # Pour compiler toutes les questions
+    make 01 # Pour compiler (si c'est nécessaire) et exécuter la question 1
+"""
+
 def response(content, content_type="text/html", charset='utf-8', cache=False):
     headers = {
             "Cross-Origin-Opener-Policy": "same-origin",
@@ -670,6 +677,9 @@ async def my_zip(request):
         for config in configs:
             if config.checkpoint:
                 continue
+            makefile = config.get_makefile()
+            if makefile:
+                zipper.writestr(f'C5/{config.course}/Makefile', makefile)
             answers, _blurs = get_answers(config.dirname, session.login)
             for question, sources in answers.items():
                 if sources:
@@ -723,6 +733,11 @@ async def my_git(request):
         if not git_dir:
             git_dir = str(filename.parent)
             await run('git', 'init', '-b', 'master')
+            makefile = course.get_makefile()
+            if makefile:
+                pathlib.Path(f'{root}/C5/{course.course}/Makefile').write_text(
+                    makefile, encoding='utf8')
+                await run('git', 'add', 'Makefile')
         await run('git', 'add', course.get_question_filename(question))
         await run(
             'git', 'commit',
@@ -736,7 +751,7 @@ async def my_git(request):
         zipper.writestr('C5/README',
             f'''Dans un shell, mettez-vous dans la session C5 qui vous intéresse :
     cd '{str(filename.parent).replace(root + '/C5/', '')}'
-
+{MAKEFILE_README}
 Pour voir l'historique de vos modifications, voici les commandes :
     git log        # Les dates des changements et les TAG que vous avez mis.
     git log --stat # idem + nombre de lignes ajoutées et enlevées.
@@ -867,7 +882,7 @@ async def adm_answers(request):
     course = utilities.get_course(course[:-4])
     config = utilities.CourseConfig(course)
     fildes, filename = tempfile.mkstemp()
-    extension, comment = config.get_language()
+    extension, comment = config.get_language()[:2]
     try:
         zipper = zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w")
         for user in sorted(os.listdir(course)):
