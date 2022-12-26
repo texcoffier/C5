@@ -67,6 +67,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
         'icon_save': '📩',
         'icon_local': '💾',
+        'icon_git': '<b style="font-size:50%">GIT</b>',
         'icon_tag': '<tt>TAG</tt>',
         'icon_stop': '<span class="icon_stop">Terminer<br>Examen</span>',
         'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",

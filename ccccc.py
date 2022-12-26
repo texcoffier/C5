@@ -1337,7 +1337,10 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 + '<div class="questions">'
                 + '<a target="_blank" href="/zip/' + COURSE + window.location.search + '">'
                 + self.options['icon_local'] + '</a>'
-                + '<div class="tips">ZIP de vos réponses</div></div><br>')
+                + '<div class="questions">'
+                + '<a target="_blank" href="/git/' + COURSE + window.location.search + '">'
+                + self.options['icon_git'] + '</a>'
+                + '<div class="tips">GIT de vos réponses</div></div><br>')
             if GRADING and ',' in WHERE[2]:
                 content += '<div class="version">' + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ') + '</div>'
             content += value

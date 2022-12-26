@@ -337,6 +337,21 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             return 'js', '//'
         return self.compiler, '// '
 
+    def get_question_name(self, question):
+        """Get a question title usable as filename"""
+        if question >= len(self.questions):
+            return 'deleted' # The answered question no more exists
+        title = self.questions[question]["title"].replace(' ', '_').replace('/', '_').replace("'", "´")
+        return f'{question+1:02d}-{title}'
+
+    def get_question_filename(self, question):
+        """Get a question title usable as filename"""
+        return f'{self.get_question_name(question)}.{self.get_language()[0]}'
+
+    def get_question_path(self, question):
+        """Get a question title usable as filename"""
+        return f'C5/{self.course}/{self.get_question_filename(question)}'
+
 def get_course(txt):
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""
     compilator, course = txt.split('=')

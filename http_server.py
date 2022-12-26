@@ -16,6 +16,7 @@ import re
 import traceback
 import html
 import io
+import pathlib
 import urllib.request
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
@@ -670,20 +671,15 @@ async def my_zip(request):
             if config.checkpoint:
                 continue
             answers, _blurs = get_answers(config.dirname, session.login)
-            extension, _comment = config.get_language()
             for question, sources in answers.items():
                 if sources:
-                    source = sources[2]
+                    source = sources[-1]
                     mtime = time.localtime(source[2])
                     mtime = (mtime.tm_year, mtime.tm_mon, mtime.tm_mday,
                             mtime.tm_hour, mtime.tm_min, mtime.tm_sec)
                     question = int(question)
-                    if question >= len(config.questions):
-                        continue # The answered question no more exists
-                    title = config.questions[question]["title"].replace(' ', '_').replace('/', '_')
-                    zipper.writestr(
-                        f'C5/{config.course}/{question+1:02d}-{title}.{extension}',
-                        source[0])
+                    title = config.get_question_path(question)
+                    zipper.writestr(title, source[0])
                     zipper.infolist()[-1].date_time = mtime
 
     stream = web.StreamResponse()
@@ -691,6 +687,76 @@ async def my_zip(request):
     await stream.prepare(request)
     await stream.write(data.getvalue())
 
+    return stream
+
+async def my_git(request):
+    """Create GIT repository"""
+    login = (await utilities.Session.get(request)).login
+    course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
+
+    answers, _blurs = get_answers(course.dirname, login)
+    root = login
+    os.mkdir(root)
+    git_dir = None
+
+    async def run(program, *args, **kargs):
+        if 'cwd' not in kargs:
+            kargs['cwd'] = git_dir
+        process = await asyncio.create_subprocess_exec(program, *args, **kargs)
+        await process.wait()
+
+    git_dir = False
+    infos = await utilities.LDAP.infos(login)
+    author = infos['fn'].title() + ' ' + infos['sn'].upper()  + '<' + infos.get('mail', 'x@y.z') + '>'
+    for (source, _type, timestamp, tag), question in sorted(
+            ((source, question) # The saved sources
+            for question, sources in answers.items()
+            for source in sources
+            if source[1] <= 1
+            ),
+            key = lambda x: x[0][2]):
+        question = int(question)
+        title = course.get_question_path(question)
+        filename = pathlib.Path(root + '/' + title)
+        filename.parent.mkdir(parents=True, exist_ok=True)
+        filename.write_text(source, encoding='utf8')
+        if not git_dir:
+            git_dir = str(filename.parent)
+            await run('git', 'init', '-b', 'master')
+        await run('git', 'add', course.get_question_filename(question))
+        await run(
+            'git', 'commit',
+            '-m', f'{course.get_question_name(question)}: {tag}',
+            '--date', str(timestamp), '--author', author)
+    await run('git', 'gc')
+
+    data = io.BytesIO()
+
+    with zipfile.ZipFile(data, mode="w", compression=zipfile.ZIP_DEFLATED) as zipper:
+        zipper.writestr('C5/README',
+            f'''Dans un shell, mettez-vous dans la session C5 qui vous intéresse :
+    cd '{str(filename.parent).replace(root + '/C5/', '')}'
+
+Pour voir l'historique de vos modifications, voici les commandes :
+    git log        # Les dates des changements et les TAG que vous avez mis.
+    git log --stat # idem + nombre de lignes ajoutées et enlevées.
+    git log -p     # Affiche les changements entre une version et la suivante.
+    git log -p '{course.get_question_filename(question)}' # Seulement pour le fichier indiqué.
+
+Toutes les commandes précédentes affichent un numéro de commit en hexadécimal.
+    git show UnNuméroDeCommit     # affiche les modifications faites à cette date.
+    git checkout UnNuméroDeCommit # modifie les fichiers pour revenir à cette date.
+    # Affiche le contenu du fichier pour le commit indiqué :
+    git show UnNuméroDeCommit:'{course.get_question_filename(question)}'
+
+''')
+        for filename in pathlib.Path(root + '/C5').rglob('**/*'):
+            zipper.write(filename, arcname=str(filename).replace(root + '/', ''))
+    await run('rm', '-rf', root, cwd='.')
+    stream = web.StreamResponse()
+    stream.content_type = 'application/zip'
+    await stream.prepare(request)
+    await stream.write(data.getvalue())
     return stream
 
 def get_answers(course, user, compiled=False):
@@ -701,7 +767,7 @@ def get_answers(course, user, compiled=False):
          * 2 : compilation (if compiled is True)
          * 3 : snapshot (5 seconds before examination end)
     Returns 'answers' and 'blurs'
-    answers is a dict from question to a list of [source, type, timestamp]
+    answers is a dict from question to a list of [source, type, timestamp, tag]
     """
     answers = collections.defaultdict(list)
     blurs = collections.defaultdict(int)
@@ -1439,6 +1505,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/update/{course}', update_browser),
                 web.get('/grade/{course}/{login}', grade),
                 web.get('/zip/{course}', my_zip),
+                web.get('/git/{course}', my_git),
                 web.post('/upload_course/{compiler}/{course}', upload_course),
                 web.post('/log', log),
                 web.post('/record_grade/{course}', record_grade),
