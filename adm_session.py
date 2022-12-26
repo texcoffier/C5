@@ -181,7 +181,15 @@ def init():
     <textarea id="proctors"></textarea>
     </div>
     <div class="configs">
-    <input id="start">→<input id="stop"> <div id="invalid_date">START&gt;END</div><br>
+    <input id="start">→<input id="stop"> <div id="invalid_date">START&gt;END</div>
+    State: <select id="state">
+    <option>Draft</option>
+    <option>Ready</option>
+    <option>Grade</option>
+    <option>Done</option>
+    <option>Archive</option>
+    </select>
+    <br>
     <label><input type="checkbox" id="copy_paste"> Allows copy/pastes from external source.</label>
     <label><input type="checkbox" id="checkpoint"> Requires students to be placed on the map.</label>
     <label><input type="checkbox" id="save_unlock"> Unlock the next question on save.</label>

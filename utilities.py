@@ -143,6 +143,24 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        # Inactive & Room=='' : wait access to examination
                        # Inactive & Room!='' : examination done
                        'active_teacher_room': {},
+                       # The session state:
+                       # ┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
+                       # ┃ State  ┃    Visible by      ┃    Usable by       ┃
+                       # ┡━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
+                       # ┃Draft   ┃creator admin       │creator admin       │
+                       # ┣━━━━━━━━╉────────────────────┼────────────────────┤
+                       # ┃Ready   ┃                    │                    │
+                       # ┃  before┃all                 │creator admin grader│
+                       # ┃  while ┃all                 │all if no checkpoint│
+                       # ┃  after ┃all except students │creator admin grader│
+                       # ┣━━━━━━━━╉────────────────────┼────────────────────┤
+                       # ┃Grade   ┃creator admin grader│creator admin grader│
+                       # ┣━━━━━━━━╉────────────────────┼────────────────────┤
+                       # ┃Done    ┃creator admin grader│creator admin grader│
+                       # ┣━━━━━━━━╉────────────────────┼────────────────────┤
+                       # ┃Archive ┃creator admin       │creator admin       │
+                       # ┗━━━━━━━━┹────────────────────┴────────────────────┘
+                       'state': 'Ready',
                       }
         self.time = time.time()
         try:
@@ -190,6 +208,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.theme = self.config['theme']
         self.active_teacher_room = self.config['active_teacher_room']
         self.messages = self.config['messages']
+        self.state = self.config['state']
         self.update_disabled()
 
     def update_disabled(self):
@@ -266,14 +285,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             self.update()
         if self.disabled:
             return 'disabled'
+        if self.state == 'Draft' and not self.is_admin(login):
+            return 'draft'
+        if self.state != 'Ready' and not self.is_grader(login):
+            return 'done'
         now = int(time.time())
         if not login: # For adm home
             if now < self.start_timestamp:
                 return 'pending'
             if now < self.stop_timestamp:
                 return 'running'
-            if login in self.tt_list and now < self.stop_tt_timestamp:
-                return 'running_tt'
             return 'done'
         active_teacher_room = self.update_checkpoint(login, client_ip, now)
         if now < self.start_timestamp:

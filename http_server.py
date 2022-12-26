@@ -205,6 +205,8 @@ def handle(base=''):
                     return session.message('unknown')
                 session.allow_ip_change = course.allow_ip_change # XXX dangerous
                 status = course.status(login, session.client_ip)
+                if status == 'draft':
+                    return session.message('draft')
                 is_admin = session.is_grader(course)
                 if not is_admin:
                     if status == 'done':
@@ -218,6 +220,8 @@ def handle(base=''):
                 course = utilities.CourseConfig.get(utilities.get_course(filename))
                 filename = course.filename.replace('.cf', '.js')
                 status = course.status(login, session.client_ip)
+                if status == 'draft':
+                    return session.message('draft')
                 if not session.is_grader(course) and not status.startswith('running'):
                     return session.message('done')
         return File.get(filename).response()
@@ -464,6 +468,12 @@ async def adm_config_course(config, action, value): # pylint: disable=too-many-b
             feedback = f"«{course}» Highlight theme updated to «{value}»"
         else:
             feedback = f"«{course}» Highlight theme «{value}» does not exists!"
+    elif action == 'state':
+        if value in ('Draft', 'Ready', 'Grade', 'Done', 'Archive'):
+            config.set_parameter('state', value)
+            feedback = f"«{course}» state updated to «{value}»"
+        else:
+            feedback = f"«{course}» state «{value}» does not exists!"
     elif action == 'copy_paste':
         config.set_parameter('copy_paste', value)
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
@@ -947,6 +957,7 @@ async def update_file(request, session, compiler, replace):
     config = utilities.CourseConfig.get(dst_filename[:-3])
     config.set_parameter('creator', session.login)
     config.set_parameter('stop', '2000-01-01 00:00:01')
+    config.set_parameter('state', 'Draft')
     return f"Course «{src_filename}» added into «{dst_filename}» file"
 
 
@@ -1134,29 +1145,33 @@ async def checkpoint_list(request):
         if session.is_proctor(course) or course.status('').startswith('running')
         ]
     done = set()
-    # add_header("Sessions I created")
-    # checkpoint_table(session, courses,
-    #     lambda course: course.creator == session.login,
-    #     content, done)
-    # add_header("Sessions I am allowed to modify")
-    # checkpoint_table(session, courses,
-    #     lambda course: session.is_course_admin(course),
-    #     content, done)
-    # add_header("Sessions of examination running or not yet started")
-    # checkpoint_table(session, courses,
-    #     lambda course: now < course.stop_tt_timestamp and course.checkpoint,
-    #     content, done)
+    add_header("Drafts")
+    checkpoint_table(session, courses,
+        lambda course: course.state == 'Draft' and session.is_admin(course),
+        content, done)
     add_header("Sessions not yet started")
     checkpoint_table(session, courses,
-        lambda course: now < course.start_timestamp,
+        lambda course: course.state == 'Ready' and now < course.start_timestamp,
         content, done)
     add_header("Sessions running")
     checkpoint_table(session, courses,
-        lambda course: course.start_timestamp <= now <= course.stop_tt_timestamp,
+        lambda course: course.state == 'Ready' and course.start_timestamp <= now <= course.stop_tt_timestamp,
+        content, done)
+    add_header("Sessions finished (to move in «grade» or «done» tables)")
+    checkpoint_table(session, courses,
+        lambda course: course.state == 'Ready' and now > course.stop_tt_timestamp,
+        content, done)
+    add_header("Sessions to grade")
+    checkpoint_table(session, courses,
+        lambda course: course.state == 'Grade' and session.is_grader(course),
         content, done)
     add_header("Sessions done")
     checkpoint_table(session, courses,
-        lambda course: now > course.stop_tt_timestamp,
+        lambda course: course.state == 'Done' and session.is_grader(course),
+        content, done)
+    add_header("Sessions archived")
+    checkpoint_table(session, courses,
+        lambda course: course.state == 'Archive' and session.is_admin(course),
         content, done)
     hide_header()
     content.append('</table>')
@@ -1331,18 +1346,15 @@ async def home(request):
         '💾 ZIP</a> contenant vos fichiers sauvegardés dans C5.'
         ]
     for course_name, course in sorted(utilities.CourseConfig.configs.items()):
-        if now > course.stop_tt_timestamp:
-            continue # No more running
-        if now < course.start_timestamp and not course.highlight:
-            continue # Not started nor highlighted
-        if course.disabled:
+        if course.status(session.login) not in ('pending', 'running'):
             continue
         if course.highlight:
             style = ' style="background: #8F8"'
         else:
             style = ''
+        name = course_name.replace('COMPILE_','').replace('/','=')
         content.append(
-            f'<li> <a href="/={course.course}?ticket={session.ticket}"{style}>{course_name}</a>')
+            f'<li> <a href="/={course.course}?ticket={session.ticket}"{style}>{name}</a>')
 
     return response(''.join(content))
 
