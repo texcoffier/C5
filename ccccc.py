@@ -1298,6 +1298,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                         key += '\n' + self.mouse_pressed
                         key += '\n' + self.mouse_position[0]
                         key += '\n' + self.mouse_position[1]
+                        key += '\n' + ''.join([' '+i.width+' '+i.height for i in G.images if i])
                         self.send_input(key)
                     if value[5] == 'K':
                         def onkeypress(event):
@@ -1621,6 +1622,7 @@ class Grapic:
     canvas = bcolor = ctx = height = width = None
     bcolor = '#000'
     plots = []
+    images = []
     def __init__(self, cccc):
         self.ccccc = cccc
 
@@ -1638,6 +1640,9 @@ class Grapic:
         self.canvas.style.background = '#FFF'
         self.ccccc.executor.appendChild(self.canvas)
         self.ctx = self.canvas.getContext('2d')
+        self.plots = []
+        self.images = []
+        self.ctxs = []
 
     def quit(self):
         """Remove canvas"""
@@ -1771,6 +1776,51 @@ class Grapic:
             self.plots = []
         self.plots.append(Plot(self.ctx, self.height, self.bcolor))
 
+    def new_image(self, url, h):
+        """Image from web"""
+        if h:
+            canvas = eval('new OffscreenCanvas(' + url + ',' + h + ')')  # pylint: disable=eval-used
+            self.images.append(canvas)
+            self.ctxs.append(canvas.getContext('2d'))
+            return
+        def onload():
+            canvas = eval('new OffscreenCanvas(' + img.width + ',' + img.height + ')')  # pylint: disable=eval-used
+            self.images[img_index] = canvas
+            self.ctxs[img_index] = canvas.getContext('2d')
+            self.ctxs[img_index].drawImage(img, 0, 0)
+        img_index = len(self.images)
+        self.images.append(None)
+        img = eval('new Image') # pylint: disable=eval-used
+        img.src = '/media/' + COURSE + '/' + url + window.location.search
+        img.onload = onload
+
+    def image_draw(self, image_id, x, y, w, h, angle, flip):
+        """Put image on canvas"""
+        if not self.images[image_id]:
+            return
+        width, height = self.images[image_id].width, self.images[image_id].height
+        y = self.height - y
+        if w < 0:
+            w = width
+        if h < 0:
+            h = height
+        self.ctx.save()
+        self.ctx.translate(x + w/2, y - h/2)
+        if flip & 1:
+            self.ctx.scale(-1, 1)
+            angle *= -1
+        if flip & 2:
+            self.ctx.scale(1, -1)
+            angle *= -1
+        self.ctx.rotate(angle)
+        self.ctx.drawImage(self.images[image_id], -w/2, -h/2, w, h)
+        self.ctx.restore()
+    def image_set(self, image_id, x, y, r, g, b, a):
+        """Put pixel in the image"""
+        if not self.ctxs[image_id]:
+            return
+        self.ctxs[image_id].fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")"
+        self.ctxs[image_id].fillRect(x, y, 1, 1)
 
 def grade(event):
     """Set the grade"""

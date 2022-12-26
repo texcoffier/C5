@@ -523,6 +523,75 @@ int main(int, char**)
     return 0;
 }'''
 
+class Q9(Question): # pylint: disable=undefined-variable
+    """Tuto 9 : Image"""
+    def default_answer(self):
+        return '''
+#include <Grapic.h>
+using namespace grapic;
+
+const int DIMW = 300;
+
+int main() {
+    int x, y, i ;
+
+    winInit("Titre inutilisé dans C5.", DIMW, DIMW);
+    backgroundColor(100, 80, 200);
+    fontSize(40);
+
+    Image image("chien.png");
+    // Change les pixels en haut à gauche de l'image
+    for(x=0; x < 50; x++)
+        for(y=0; y < 50; y++)
+            image_set(image, x, y, 5*x, 5* y, 255, 255-x-y);
+
+    i = 0;
+    do
+    {
+        winClear();
+        mousePosGlobal(x, y);
+        // Haut gauche
+        image_draw(image,
+                   0, DIMW-image_height(image)/4,
+                   image_width(image)/4, image_height(image)/4,
+                   0,
+                   SDL_FLIP_NONE);
+        // Haut droit
+        image_draw(image,
+                   DIMW-image_width(image)/4,
+                   DIMW-image_height(image)/4,
+                   image_width(image)/4, image_height(image)/4,
+                   0,
+                   SDL_FLIP_HORIZONTAL);
+        // Bas gauche
+        image_draw(image,
+                   0,
+                   0,
+                   image_width(image)/4, image_height(image)/4,
+                   0,
+                   SDL_FLIP_VERTICAL);
+        // Bas droit
+        image_draw(image,
+                   DIMW-image_width(image)/4,
+                   0,
+                   image_width(image)/4, image_height(image)/4,
+                   0,
+                   SDL_FLIP_VERTICAL | SDL_FLIP_HORIZONTAL);
+        // A la position de la souris
+        image_draw(image,
+                   x - image_width(image)/4,
+                   y - image_height(image)/4,
+                   image_width(image)/2, image_height(image)/2,
+                   i/10., 0);
+
+        winDisplay();
+        i++;
+    }
+    while(1);
+    return 0;
+}
+'''
+
 class Q10(Question): # pylint: disable=undefined-variable
     """Tuto 10 : Démos"""
     def default_answer(self):

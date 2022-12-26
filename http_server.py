@@ -82,6 +82,9 @@ class File:
         elif filename.endswith('.png'):
             self.mime = 'image/png'
             self.charset = None
+        elif filename.endswith('.gif'):
+            self.mime = 'image/gif'
+            self.charset = None
         elif filename.endswith('.jpg'):
             self.mime = 'image/jpg'
             self.charset = None

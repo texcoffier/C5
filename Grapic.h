@@ -139,6 +139,7 @@ void print(int x, int y, int value) {
 char current_key[99];
 int current_mouse = 0 ;
 int current_x = 0, current_y = 0;
+int images[999][2];
 
 int winDisplay() {
     int len;
@@ -152,6 +153,11 @@ int winDisplay() {
     fscanf(stdin, "%d%*c", &current_x);
     fscanf(stdin, "%d%*c", &current_y);
     current_y = canvas_height - current_y;
+    len = 0;
+    while(getc(stdin) == ' ') {
+        fscanf(stdin, "%d%d", &images[len][0], &images[len][1]);
+        len++ ;
+    }
     return 0;
 }
 
@@ -182,6 +188,9 @@ void pressSpace() {
 #define SDL_BUTTON_LEFT 0
 #define SDL_BUTTON_MIDDLE 2
 #define SDL_BUTTON_RIGHT 3
+#define SDL_FLIP_NONE 0
+#define SDL_FLIP_HORIZONTAL 1
+#define SDL_FLIP_VERTICAL 2
 
 int isKeyPressed(int key) {
     return current_key[0] == key;
@@ -282,7 +291,7 @@ int menu_select(Menu &menu) {
 void setKeyRepeatMode(int x) {
 }
 
-int  nr_plots = 0;
+int nr_plots = 0;
 class Plot {
 public:
     int id;
@@ -312,6 +321,55 @@ void plot_draw(Plot &p, int xmin, int ymin, int xmax, int ymax)
 
 {
     plot_draw(p, xmin, ymin, xmax, ymax, false);
+}
+
+int nr_images = 0;
+class Image {
+public:
+    int id;
+    Image() {
+        this->id = -1;
+    }
+    Image(const char *url) {
+        this->id = nr_images++;
+        CW("G.new_image('%s')", url);
+        winClear();
+        winDisplay();
+    }
+    Image(int w, int h) {
+        this->id = nr_images++;
+        CW("G.new_image(%d,%d)", w, h);
+    }
+};
+
+Image image(int w, int h) {
+    return Image(w, h);
+}
+
+void image_printInfo(Image &im) {
+    cout << "id=" << im.id << endl;
+}
+
+void image_draw(Image &im, int x, int y, int w=-1, int h=-1) {
+     CW("G.image_draw(%d,%d,%d,%d,%d)", im.id, x, y, w, h);
+}
+
+void image_draw(Image &im, int x, int y, int w, int h, float angle, float flip=SDL_FLIP_NONE) {
+    CW("G.image_draw(%d,%d,%d,%d,%d,%g,%g)", im.id, x, y, w, h, angle, flip);
+}
+
+
+void image_set(Image &im, int x, int y,
+        unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+     CW("G.image_set(%d,%d,%d,%d,%d,%d,%d)", im.id, x, y, r, g, b, a);
+}
+
+int image_width(Image &im) {
+    return images[im.id][0];
+}
+
+int image_height(Image &im) {
+    return images[im.id][1];
 }
 
 }
