@@ -65,8 +65,9 @@ class Process: # pylint: disable=too-many-instance-attributes
         """Check if the course is running for the user"""
         return self.course.running(self.login, None)
 
-    def cleanup(self, erase_executable=False):
+    def cleanup(self, erase_executable=False, kill=False):
         """Close connection"""
+        self.log('CLEANUP')
         if erase_executable:
             try:
                 os.unlink(self.exec_file)
@@ -76,11 +77,12 @@ class Process: # pylint: disable=too-many-instance-attributes
                 os.unlink(self.source_file)
             except FileNotFoundError:
                 pass
+        for task in self.tasks:
+            task.cancel()
+        self.tasks = []
+        self.waiting = False
         if self.process:
-            for task in self.tasks:
-                task.cancel()
-            self.tasks = []
-            if self.compiler != 'racket' or erase_executable:
+            if self.compiler != 'racket' or erase_executable or kill:
                 # Racket process must not be killed each time
                 try:
                     self.process.kill()
@@ -91,7 +93,8 @@ class Process: # pylint: disable=too-many-instance-attributes
     def send_input(self, data):
         """Send the data to the running process standard input"""
         self.log(("INPUT", data))
-        self.process.stdin.write(data.encode('utf-8') + b'\n')
+        if self.process and self.process.stdin:
+            self.process.stdin.write(data.encode('utf-8') + b'\n')
         self.input_done.set()
 
     async def timeout(self):
@@ -99,10 +102,11 @@ class Process: # pylint: disable=too-many-instance-attributes
         # pylint: disable=cell-var-from-loop
         self.input_done = asyncio.Event()
         process_info = psutil.Process(self.process.pid)
-        period = 0.2 # 0.1 does not works
+        period = 0.05
+        state = (-1, 0, -1)
+        nr_bad = 0
         while True:
             times = process_info.cpu_times()
-            before = times.user + times.system + times.children_user + times.children_system
             await asyncio.sleep(period)
             if self.waiting:
                 if self.waiting == "done":
@@ -111,11 +115,20 @@ class Process: # pylint: disable=too-many-instance-attributes
             if not self.process:
                 return
             times = process_info.cpu_times()
-            after = times.user + times.system + times.children_user + times.children_system
-            if process_info.is_running() and after - before < 0.005:
-                await self.websocket.send(json.dumps(['input', '']))
-                await self.input_done.wait()
-                self.input_done.clear()
+            new_state = (times.user + times.system + times.children_user + times.children_system,
+                         process_info.io_counters().write_count,
+                         process_info.num_ctx_switches())
+            if process_info.is_running() and new_state == state:
+                nr_bad += 1
+                if nr_bad == 1: # Increase to 2 if unexpected INPUT are displayed
+                    self.log("ASK")
+                    await self.websocket.send(json.dumps(['input', '']))
+                    await self.input_done.wait()
+                    self.input_done.clear()
+                    nr_bad = 0
+            else:
+                nr_bad = 0
+            state = new_state
 
     async def runner(self):
         """Pass the process output to the socket"""
@@ -140,7 +153,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             if size > 10000000: # Maximum allowed output
                 self.process.kill()
                 break
-            self.log(("RUN", line[:1000]))
+            self.log(("RUN", line[:100]))
             if b'\001\002RACKETFini !\001' in line:
                 self.log(("EXIT", 0))
                 await self.websocket.send(json.dumps(['return', f"\n"]))
@@ -161,12 +174,12 @@ class Process: # pylint: disable=too-many-instance-attributes
     async def compile(self, data):
         """Compile"""
         _course, _question, compiler, compile_options, ld_options, allowed, source = data
+        self.compiler = compiler
         self.log(("COMPILE", data))
         if compiler != 'racket':
             self.cleanup(erase_executable=True)
         with open(self.source_file, "w", encoding="utf-8") as file:
             file.write(source)
-        self.compiler = compiler
         if compiler == 'racket':
             await self.websocket.send(json.dumps(['compiler', "Bravo, il n'y a aucune erreur"]))
             return
@@ -219,6 +232,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         await self.websocket.send(json.dumps(['indented', indented.decode('utf-8')]))
     async def run(self):
         """Launch process"""
+        self.cleanup()
         if self.compiler == 'racket':
             self.log("RUN RACKET")
             if not self.process:
@@ -297,10 +311,10 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
             elif action == 'indent':
                 await process.indent(data)
             elif action == 'kill':
-                process.cleanup()
+                process.cleanup(kill=True)
             elif action == 'input':
                 if data == '\000KILL':
-                    process.process.kill()
+                    process.cleanup(kill=True)
                 else:
                     process.send_input(data)
             elif action == 'run':
@@ -308,7 +322,6 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
             else:
                 process.log(("BUG", action, data))
                 await websocket.send(json.dumps(['compiler', 'bug']))
-            process.log("DONE")
     except: # pylint: disable=bare-except
         process.log(("EXCEPTION", traceback.format_exc()))
     finally:
