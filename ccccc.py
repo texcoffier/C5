@@ -1643,6 +1643,7 @@ class Grapic:
         self.plots = []
         self.images = []
         self.ctxs = []
+        self.canvas.onmouseenter = bind(self.canvas.focus, self.canvas)
 
     def quit(self):
         """Remove canvas"""
