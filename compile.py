@@ -275,7 +275,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         return "<h2>" + self.options['tester_title'] + "</h2>"
     def executor_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        if (self.options['positions']['compiler'][0] >= 100
+        if self.options['positions'] and (
+                self.options['positions']['compiler'][0] >= 100
                 or self.options['positions']['compiler'][2] >= 100):
             more = (' <label style="font-size: 80%" onclick="ccccc.compilation_run()">'
                     + self.options['executor_title_button'] + '</label>')
