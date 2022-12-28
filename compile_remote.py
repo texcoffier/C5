@@ -107,6 +107,8 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
             self.socket = None
             self.connecting = False
             self.post('state', "stopped")
+            self.previous_source = ''
+            self.post('state', "recompile")
             def reconnect():
                 print('reconnect')
                 self.connect()

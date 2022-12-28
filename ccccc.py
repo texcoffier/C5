@@ -1375,6 +1375,8 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             window.location = window.location
         elif what == 'allow_edit':
             self.allow_edit = int(value)
+        elif what == 'recompile':
+            self.compilation_run()
 
     def goto_question(self, index):
         """Indicate the new question to the worker"""

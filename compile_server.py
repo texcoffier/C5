@@ -232,6 +232,10 @@ class Process: # pylint: disable=too-many-instance-attributes
         await self.websocket.send(json.dumps(['indented', indented.decode('utf-8')]))
     async def run(self):
         """Launch process"""
+        if not hasattr(self, 'compiler'):
+            self.log("UNCOMPILED")
+            await self.websocket.send(json.dumps(['return', "Non compilé"]))
+            return
         self.cleanup()
         if self.compiler == 'racket':
             self.log("RUN RACKET")
