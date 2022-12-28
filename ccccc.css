@@ -323,11 +323,11 @@ LABEL *, .timer * { vertical-align: middle }
 }
 .timer SPAN { display: inline-block; font-size: 50%; }
 
-H2:hover .timer SPAN {
+H2:hover .timer SPAN DIV {
     visibility: visible;
 }
 
-.timer SPAN {
+.timer SPAN DIV {
     visibility: hidden;
 }
 

@@ -446,7 +446,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     delta = days + opts['time_d'] + hours + opts['time_h']
                 else:
                     delta = days + opts['time_days']
-                timer.innerHTML = message + '<br>' + delta
+                timer.innerHTML = message + '<br><div>' + delta + '</div>'
 
     def compilation_toggle(self, element):
         """Toggle the automatic compilation flag"""
