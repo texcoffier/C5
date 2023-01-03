@@ -333,7 +333,10 @@ async def record_grade(request):
                         grading[line[2]] = float(line[3])
                     else:
                         grading.pop(line[2], None)
-            course.active_teacher_room[login][8] = [sum(grading.values()), len(grading)]
+            new_value = [sum(grading.values()), len(grading)]
+            if course.active_teacher_room[login][8] != new_value:
+                course.record() # XXX should be postponed a little...
+            course.active_teacher_room[login][8] = new_value
     else:
         grades = ''
     return response(f"<!DOCTYPE html>\n<script>window.parent.ccccc.update_grading({json.dumps(grades)})</script>")
