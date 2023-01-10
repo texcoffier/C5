@@ -77,8 +77,10 @@ class Process: # pylint: disable=too-many-instance-attributes
                 os.unlink(self.source_file)
             except FileNotFoundError:
                 pass
-        for task in self.tasks:
-            task.cancel()
+        if self.compiler != 'racket' or erase_executable or kill:
+            for task in self.tasks:
+                self.log("CANCEL")
+                task.cancel()
         self.tasks = []
         self.waiting = False
         if self.process:
