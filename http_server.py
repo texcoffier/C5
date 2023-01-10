@@ -1059,10 +1059,10 @@ def checkpoint_line(session, course, content):
     with_me = []
     done = []
     for student, active_teacher_room in course.active_teacher_room.items():
+        if active_teacher_room[1] == session.login:
+            with_me.append(student)
         if active_teacher_room[0]:
             working.append(student)
-            if active_teacher_room[1] == session.login:
-                with_me.append(student)
         else:
             if active_teacher_room[2]:
                 done.append(student)

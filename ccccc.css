@@ -437,7 +437,7 @@ SELECT {
 .grading SPAN {
     font-family: sans-serif;
     position: absolute;
-    right: 0px;
+    right: 0.2em; /* Some space for firefox scrollbar */
     color: #00F;
 }
 
