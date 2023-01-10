@@ -1260,6 +1260,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 self.save()
             self.current_question = value
             self.record(['question', self.current_question])
+            self.in_past_history = 0
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
             self.add_highlight_errors(value[0], value[1], what)

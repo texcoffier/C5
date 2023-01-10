@@ -30,6 +30,8 @@ DIV.editor_title H2 {
 DIV.editor_title SELECT {
     font-size: 70%;
     max-width: 16em;
+    margin-left: 1em;
+    margin-right: 1em;
 }
 
 
