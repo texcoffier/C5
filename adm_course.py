@@ -116,9 +116,11 @@ def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-stat
     for student in STUDENTS:
         students.append(student)
     students.sort()
+    ungraded = []
     sums = {}
     for what in WHAT:
         sums[what] = ''
+        sums[what + '\001done']  = ''
     text = ["""<!DOCTYPE html>
 <style>
 TABLE { border-spacing: 0px; border-collapse: collapse }
@@ -156,7 +158,11 @@ TABLE TR:hover TD { background: #EEE }
                 grader = grading[question][1].split('\n')[1]
                 if grader not in graders:
                     graders.append(grader)
-        cache[login]['grades'] = grade
+        if len(grading) == 0 and student.status == 'done':
+            ungraded.append(login)
+            cache[login]['grades'] = ''
+        else:
+            cache[login]['grades'] = grade
         graders.sort()
         cache[login]['graders'] = ' '.join(graders)
         for i, seconds in enumerate(cache[login]['time_sum']):
@@ -200,6 +206,8 @@ TABLE TR:hover TD { background: #EEE }
             text.append('<td>')
             text.append(stats[what])
             sums[what] += login + '\t' + stats[what] + '\n'
+            if student.status == 'done':
+                sums[what + '\001done'] += login + '\t' + stats[what] + '\n'
 
         text.append('<td>')
         for i, seconds in enumerate(stats['time_sum']):
@@ -228,6 +236,8 @@ TABLE TR:hover TD { background: #EEE }
 ''')
     for what in WHAT:
         text.append('<td><textarea>' + sums[what] + '</textarea>')
+        text.append('<p>Only «done» :<br>')
+        text.append('<textarea>' + sums[what + '\001done'] + '</textarea>')
     text.append('<td><table style="font-size: 90%">')
     text.append('<tr><th>Question<th>Students<th>Min<th>Average<th>Median<th>Max</tr>')
     for i, times in enumerate(question_times):
@@ -240,6 +250,14 @@ TABLE TR:hover TD { background: #EEE }
                     + '</tr>')
     text.append('</table></tr>')
     text.append('</table>')
+    if ungraded:
+        text.append('<p>Ungraded students: ')
+        text.append(' | '.join(ungraded))
+        text.append('<p>Ungraded students: ')
+        text.append(' | '.join([s.replace('p', '1') for s in ungraded]))
+    else:
+        text.append('All students have been graded.')
+
     document.body.innerHTML = text.join('') # pylint: disable=no-member
 
 display()
