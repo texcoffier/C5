@@ -433,6 +433,9 @@ SELECT {
 .grading BUTTON.grade_selected {
     background: #0F0;
 }
+.grading BUTTON.grade_undefined {
+    background: #FF0;
+}
 .grading BUTTON:hover {
     border: 1px solid #040;
 }

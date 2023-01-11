@@ -1095,7 +1095,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         nr_grades = 0
         for button in buttons.getElementsByTagName('BUTTON'):
             g = button.getAttribute('g')
-            if g in grading and button.innerText == grading[g][0]:
+            if g not in grading or grading[g][0] == '':
+                button.className = 'grade_unselected grade_undefined'
+            elif button.innerText == grading[g][0]:
                 button.title = grading[g][1]
                 button.className = 'grade_selected'
                 grading_sum += Number(grading[g][0])
