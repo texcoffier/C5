@@ -117,6 +117,7 @@ def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-stat
         students.append(student)
     students.sort()
     ungraded = []
+    nr_grades = {}
     sums = {}
     for what in WHAT:
         sums[what] = ''
@@ -158,6 +159,7 @@ TABLE TR:hover TD { background: #EEE }
                 grader = grading[question][1].split('\n')[1]
                 if grader not in graders:
                     graders.append(grader)
+        nr_grades[login] = len(grading)
         if len(grading) == 0 and student.status == 'done':
             ungraded.append(login)
             cache[login]['grades'] = ''
@@ -250,13 +252,52 @@ TABLE TR:hover TD { background: #EEE }
                     + '</tr>')
     text.append('</table></tr>')
     text.append('</table>')
+
+    def link(login, replace=False):
+        """Grading link"""
+        if replace:
+            txt = login.replace('p', '1')
+        else:
+            txt = login
+        return ('<a href="/grade/'+COURSE+'/'+login+'?ticket='+TICKET
+                + '" target="_blank">' + txt + '</a>')
+
+    def links(logins, replace=False):
+        """List a links"""
+        return ' | '.join([link(login, replace) for login in logins])
+
     if ungraded:
         text.append('<p>Ungraded students: ')
-        text.append(' | '.join(ungraded))
+        text.append(links(ungraded))
         text.append('<p>Ungraded students: ')
-        text.append(' | '.join([s.replace('p', '1') for s in ungraded]))
+        text.append(links(ungraded, True))
     else:
         text.append('All students have been graded.')
+
+    partially_graded = []
+    nr_grades_max = max(*[nr_grades[login] for login in nr_grades])
+    for login in nr_grades:
+        nrg = nr_grades[login]
+        if nrg and nrg < nr_grades_max:
+            partially_graded.append(login)
+    if partially_graded:
+        text.append('<p>One or more grade is missing: ')
+        text.append(links(partially_graded))
+        text.append('<p>One or more grade is missing: ')
+        text.append(links(partially_graded, True))
+
+    partially_graded = []
+    nr_grades_max = max(*[nr_grades[login] for login in nr_grades])
+    for login in nr_grades:
+        nrg = nr_grades[login]
+        if nrg and nrg < nr_grades_max - 1:
+            partially_graded.append(login)
+    if partially_graded:
+        text.append('<p>Two or more grade is missing: ')
+        text.append(links(partially_graded))
+        text.append('<p>Two or more grade is missing: ')
+        text.append(links(partially_graded, True))
+
 
     document.body.innerHTML = text.join('') # pylint: disable=no-member
 

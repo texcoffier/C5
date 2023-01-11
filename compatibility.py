@@ -12,6 +12,7 @@ document = document # pylint: disable=undefined-variable
 TICKET = TICKET # pylint: disable=undefined-variable
 update_page = update_page # pylint: disable=undefined-variable
 JSON = JSON # pylint: disable=undefined-variable
+Math = Math # pylint: disable=undefined-variable
 
 def str(txt): # pylint: disable=redefined-builtin
     """Python like"""
@@ -91,3 +92,7 @@ def nice_date(seconds):
             + ' ' + two_digit(js_date.getHours())
             + ':' + two_digit(js_date.getMinutes())
            )
+
+def max(*items): # pylint: disable=redefined-builtin)
+    """Emulate Python max"""
+    return Math.max.apply(None, items)
