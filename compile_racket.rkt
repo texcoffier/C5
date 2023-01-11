@@ -4,7 +4,7 @@
 
 (define (compile-and-run filename)
     (
-        (parameterize ([sandbox-eval-limits '(0.2 1)]) ; seconds and megabytes
+        (parameterize ([sandbox-eval-limits '(1 4)]) ; seconds and megabytes
             (make-evaluator
                 'racket
                 '(define (error-handler exn) exn)

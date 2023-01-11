@@ -141,6 +141,9 @@ class Process: # pylint: disable=too-many-instance-attributes
             keep = b''
             if not line:
                 break
+            if line == b'\001':
+                keep = line
+                continue
             if b"\002WAIT" in line:
                 self.waiting = True
             if b'\001' in line and not line.endswith(b'\001'):
