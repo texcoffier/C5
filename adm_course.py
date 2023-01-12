@@ -266,25 +266,45 @@ TABLE TR:hover TD { background: #EEE }
         """List a links"""
         return ' | '.join([link(login, replace) for login in logins])
 
-    if ungraded:
-        text.append('<p>Ungraded students: ')
-        text.append(links(ungraded))
-        text.append('<p>Ungraded students: ')
-        text.append(links(ungraded, True))
-    else:
-        text.append('All students have been graded.')
+    text.append('''
+    <style>
+    TABLE.problems { table-layout: fixed; max-width: 100% }
+    .problems TR TH:first-child { width: 10em }
+    .problems TR TD:nth-child(2), .problems TD:nth-child(3) {
+            width: 40vw;
+            white-space: normal;
+            padding: 0.5em;
+            }
+    </style>
+    <table class="problems">
+    ''')
 
+    if ungraded:
+        text.append('<tr><th>Ungraded students<td>')
+        text.append(links(ungraded))
+        text.append('<td>')
+        text.append(links(ungraded, True))
+        text.append('</tr>')
+
+    by_teacher = {}
     partially_graded = []
     nr_grades_max = max(*[nr_grades[login] for login in nr_grades])
     for login in nr_grades:
         nrg = nr_grades[login]
         if nrg and nrg < nr_grades_max:
             partially_graded.append(login)
+            for grader in cache[login]['graders'].split(' '):
+                if not by_teacher[grader]:
+                    by_teacher[grader] = [login]
+                else:
+                    by_teacher[grader].append(login)
+
     if partially_graded:
-        text.append('<p>One or more grade is missing: ')
+        text.append('<tr><th>One or more grade is missing<td>')
         text.append(links(partially_graded))
-        text.append('<p>One or more grade is missing: ')
+        text.append('<td>')
         text.append(links(partially_graded, True))
+        text.append('</tr>')
 
     partially_graded = []
     nr_grades_max = max(*[nr_grades[login] for login in nr_grades])
@@ -293,11 +313,21 @@ TABLE TR:hover TD { background: #EEE }
         if nrg and nrg < nr_grades_max - 1:
             partially_graded.append(login)
     if partially_graded:
-        text.append('<p>Two or more grade is missing: ')
+        text.append('<tr><th>Two or more grade is missing<td>')
         text.append(links(partially_graded))
-        text.append('<p>Two or more grade is missing: ')
+        text.append('<td>')
         text.append(links(partially_graded, True))
+        text.append('</tr>')
+    for teacher in by_teacher:
+        text.append('<tr><td>')
+        text.append(teacher)
+        text.append('<td>')
+        text.append(links(by_teacher[teacher]))
+        text.append('<td>')
+        text.append(links(by_teacher[teacher], True))
+        text.append('</tr>')
 
+    text.append('</table>')
 
     document.body.innerHTML = text.join('') # pylint: disable=no-member
 
