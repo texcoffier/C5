@@ -746,58 +746,42 @@ class CCCCC: # pylint: disable=too-many-public-methods
         lines = self.source[:position].split('\n')
         return len(lines), len(lines[-1])
 
-    def highlight_bloc(self):
-        """Highlight first inner parenthesis containing the cursor"""
-        start = self.cursor_position - 1
-        counters = {'{': 0, '(': 0, '[': 0}
-        while start >= 0:
-            if self.source[start] in '{[(':
-                if counters[self.source[start]] == 0:
-                    break
-                counters[self.source[start]] -= 1
-            elif self.source[start] in '}])':
-                counters[{'}': '{', ')': '(', ']': '['}[self.source[start]]] += 1
-            start -= 1
-        if start == -1:
-            return
-        stop = start + 1
-        opening = self.source[start]
-        closing = {'{': '}', '(': ')', '[': ']'}[opening]
-        nr = 1
-        while nr and stop and stop < len(self.source):
-            char = self.source[stop]
-            if char == opening:
-                nr += 1
-            elif char == closing:
-                nr -= 1
-            stop += 1
-        if nr == 0:
-            line_open, column_open = self.get_line_column(start + 1)
-            self.highlight_errors[line_open + ':' + column_open] = 'cursor'
-            line_close, column_close = self.get_line_column(stop)
-            self.highlight_errors[line_close + ':' + column_close] = 'cursor'
-
-    def highlight_unbalanced(self, close='', start=0):
+    def highlight_unbalanced(self):
         """Highlight unbalanced parenthesis. Returns the next character to check"""
-        origin = start
-        while start < len(self.source):
-            if self.source[start] in ')}]':
-                if self.source[start] == close:
-                    return start + 1
-                line_bad, column_bad = self.get_line_column(start + 1)
-                self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
-                if close:
-                    return start
-            elif self.source[start] in '([{':
-                start = self.highlight_unbalanced(
-                    close={'{': '}', '(': ')', '[': ']'}[self.source[start]],
-                    start=start+1)
-                continue
-            start += 1
-        if close:
-            line_bad, column_bad = self.get_line_column(origin)
+        highlight_start = 0
+        highlight_stack = [] # stack of [cursor position, '({[']
+        in_string = False
+        for start, char in enumerate(self.source):
+            if start == self.cursor_position:
+                if len(highlight_stack):
+                    highlight_start = highlight_stack[-1][0]
+                    line_open, column_open = self.get_line_column(highlight_start+1)
+                    self.highlight_errors[line_open + ':' + column_open] = 'cursor'
+                else:
+                    highlight_start = -1
+            if in_string:
+                if char == in_string:
+                    in_string = False
+            elif char in ')}]':
+                if len(highlight_stack) == 0:
+                    line_bad, column_bad = self.get_line_column(start + 1)
+                    self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
+                else:
+                    start_pos, start_char = highlight_stack.pop()
+                    if char == {'{': '}', '(': ')', '[': ']'}[start_char]:
+                        if start_pos == highlight_start:
+                            line_open, column_open = self.get_line_column(start+1)
+                            self.highlight_errors[line_open + ':' + column_open] = 'cursor'
+                    else:
+                        line_bad, column_bad = self.get_line_column(start + 1)
+                        self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
+            elif char in '([{':
+                highlight_stack.append([start, char])
+            elif char == '"'  or  char == "'" and self.options['language'] != 'lisp':
+                in_string = char
+        for start_pos, _start_char in highlight_stack:
+            line_bad, column_bad = self.get_line_column(start_pos + 1)
             self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
-        return start
 
     def update_cursor_position_now(self):
         """Get the cursor position
@@ -834,7 +818,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             pos[0] -= 1
         self.cursor_position = pos[0]
         self.highlight_unbalanced()
-        self.highlight_bloc()
 
     def update_cursor_position(self):
         """Queue cursor update position"""
