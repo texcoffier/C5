@@ -300,7 +300,7 @@ TABLE TR:hover TD { background: #EEE }
                     by_teacher[grader].append(login)
 
     if partially_graded:
-        text.append('<tr><th>One or more grade is missing<td>')
+        text.append('<tr><th>One or more grades are missing<td>')
         text.append(links(partially_graded))
         text.append('<td>')
         text.append(links(partially_graded, True))
@@ -313,7 +313,7 @@ TABLE TR:hover TD { background: #EEE }
         if nrg and nrg < nr_grades_max - 1:
             partially_graded.append(login)
     if partially_graded:
-        text.append('<tr><th>Two or more grade is missing<td>')
+        text.append('<tr><th>Two or more grades are missing<td>')
         text.append(links(partially_graded))
         text.append('<td>')
         text.append(links(partially_graded, True))

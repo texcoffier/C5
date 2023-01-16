@@ -172,4 +172,22 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def run_indent(self, source):
         """Indent the source"""
+        if self.options.language == 'lisp':
+            indent = ''
+            lines = []
+            in_string = False
+            for line in source.split('\n'):
+                lines.append(indent + line.strip())
+                for char in line:
+                    if in_string:
+                        if char == '"':
+                            in_string = False
+                    elif char == '(':
+                        indent += '  '
+                    elif char == ')':
+                        indent = indent[:-2]
+                    elif char == '"':
+                        in_string = True
+            self.post('editor', '\n'.join(lines))
+            return
         self.socket.send(JSON.stringify(['indent', source]))
