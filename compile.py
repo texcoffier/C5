@@ -183,6 +183,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def start_question(self):
         """Start a new question"""
         # print("START QUESTION", self.current_question, '/', self.current_question_max)
+        self.post('current_question', self.current_question)
         self.post('allow_edit', '0')
         self.set_default_options()
         if self.quest:
@@ -190,7 +191,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         if self.current_question > self.current_question_max:
             self.current_question_max = self.current_question
         self.quest = self.questions[self.current_question]
-        self.post('current_question', self.current_question)
         if hasattr(self.quest, 'last_answer'):
             self.source = self.quest.last_answer
         else:
