@@ -751,6 +751,22 @@ class CCCCC: # pylint: disable=too-many-public-methods
         highlight_start = 0
         highlight_stack = [] # stack of [cursor position, '({[']
         in_string = False
+        in_comment = False
+        if self.options['language'] in ('python', 'shell'):
+            start_comment = '#'
+            start_string = '"\''
+        elif self.options['language'] in ('cpp', 'javascript'):
+            start_comment = '//'
+            start_string = '"\''
+        elif self.options['language'] == 'lisp':
+            start_comment = ';'
+            start_string = '"'
+        elif self.options['language'] == 'SQL':
+            start_comment = '--'
+            start_string = "'"
+        else:
+            start_comment = '\001'
+            start_string = '"'
         for start, char in enumerate(self.source):
             if start == self.cursor_position:
                 if len(highlight_stack):
@@ -762,6 +778,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if in_string:
                 if char == in_string:
                     in_string = False
+            elif in_comment:
+                if char == '\n':
+                    in_comment = False
+            elif char == start_comment[0]:
+                if start_comment[1]:
+                    if self.source[start+1] == start_comment[1]:
+                        in_comment = True
+                else:
+                    in_comment = True
             elif char in ')}]':
                 if len(highlight_stack) == 0:
                     line_bad, column_bad = self.get_line_column(start + 1)
@@ -777,7 +802,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
             elif char in '([{':
                 highlight_stack.append([start, char])
-            elif char == '"'  or  char == "'" and self.options['language'] != 'lisp':
+            elif char in start_string:
                 in_string = char
         for start_pos, _start_char in highlight_stack:
             line_bad, column_bad = self.get_line_column(start_pos + 1)
