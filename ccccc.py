@@ -1365,6 +1365,8 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         elif what == 'default':
             self.question_original[value[0]] = value[1]
         elif what in ('tester', 'compiler', 'question', 'time'):
+            if not value:
+                return
             self.clear_if_needed(what)
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
