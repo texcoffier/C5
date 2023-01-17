@@ -581,7 +581,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             marker = document.createElement('DIV')
             marker.className = 'wrapped'
             marker.style.left = rect.left - self.overlay.offsetLeft + 'px'
-            marker.style.top = rect.top + line_height + self.editor.scrollTop + 'px'
+            marker.style.top = rect.top + line_height + self.editor.scrollTop - self.overlay.offsetTop + 'px'
             marker.style.width = rect.width + 'px'
             marker.style.height = rect.height - line_height + 'px'
             self.overlay.appendChild(marker)
