@@ -177,7 +177,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if building not in BUILDINGS: # It is a teacher login
             building = 'empty'
         self.lines = BUILDINGS[building].split('\n')
-        self.x_max = max([len(line) for line in self.lines]) + 1
+        self.x_max = max(*[len(line) for line in self.lines]) + 1
         self.LEFT = self.menu.offsetWidth # LEFT
         self.TOP = 0 # self.menu.offsetHeight
         self.left = self.LEFT
@@ -645,8 +645,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.top += HELP_LINES * self.scale
         ctx = canvas.getContext("2d")
         self.left_column, self.top_line = self.get_column_row(0, self.TOP+1)
-        self.left_column = Math.max(self.left_column, 0) - 1
-        self.top_line = Math.max(self.top_line, 0) - 2
+        self.left_column = max(self.left_column, 0) - 1
+        self.top_line = max(self.top_line, 0) - 2
         self.right_column, self.bottom_line = self.get_column_row(self.width, self.height)
         if self.right_column == -1:
             self.right_column = self.x_max
