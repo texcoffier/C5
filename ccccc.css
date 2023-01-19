@@ -403,6 +403,17 @@ H2:hover .timer SPAN DIV {
     margin-top:-3px;
 }
 
+.truncate_sn, .truncate_fn {
+    display: inline-block;
+    max-width: 5.6em;
+    height: 1em;
+    overflow: hidden;
+    vertical-align: top;
+}
+SPAN:hover .truncate_sn, SPAN:hover .truncate_fn {
+    height: auto;
+}
+
 LABEL, .index DIV, .save_button, .local_button, .tag_button { cursor: pointer }
 
 .index > .version {

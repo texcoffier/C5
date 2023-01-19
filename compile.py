@@ -285,9 +285,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         return ("<h2>" + self.options['executor_title']
             + more
             + ' <span style="float:right; background: #CCF; margin-right: 0.3em;">'
-            + self.config['INFOS']['sn'].upper()
+            + '<tt class="truncate_sn">' + self.config['INFOS']['sn'].upper() + '</tt>'
             + ' '
-            + self.config['INFOS']['fn'].lower()
+            + '<tt class="truncate_fn">' + self.config['INFOS']['fn'].lower() + '</tt>'
             + "</span></h2>")
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
