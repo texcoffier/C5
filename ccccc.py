@@ -99,6 +99,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question = editor = overlay = tester = compiler = executor = time = None
     index = popup_element = save_button = local_button = line_numbers = None
     stop_button = fullscreen = comments = save_history = editor_title = None
+    tag_button = None
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -300,9 +301,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.save_button.style.fontFamily = 'emoji'
         self.save_button.onclick = bind(self.save_unlock, self)
         self.save_button.className = 'save_button'
+        self.save_button.setAttribute('state', 'ok')
         self.editor_title.firstChild.appendChild(self.save_button)
 
         self.save_history = document.createElement('SELECT')
+        self.save_history.className = 'save_history'
         self.editor_title.firstChild.appendChild(self.save_history)
 
         self.tag_button = document.createElement('TT')
@@ -396,10 +399,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.seconds != seconds:
             if self.seconds % 5 == 0:
                 self.update_save_history()
-            if self.need_save():
-                self.save_button.style.opacity = 1
-            else:
-                self.save_button.style.opacity = 0.2
+            self.save_button.setAttribute('enabled', self.need_save())
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
@@ -614,9 +614,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.stop_timestamp = stop_timestamp
         for item in self.last_record_to_send:
             if item[0] == 'save':
-                self.save_button.style.transition = 'transform 1s, opacity 1s'
-                self.save_button.style.transform = 'scale(1)'
-                self.save_button.style.opacity = 1
+                self.save_button.setAttribute('state', 'ok')
 
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
@@ -1036,9 +1034,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         self.update_source()
         if self.need_save():
-            self.save_button.style.transition = ''
-            self.save_button.style.transform = 'scale(8)'
-            self.save_button.style.opacity = 0.1
+            self.save_button.setAttribute('state', 'wait')
             self.record(['save', self.current_question, self.source], send_now=True)
             self.worker.postMessage(['source', self.current_question, self.source])
             self.last_answer[self.current_question] = self.source

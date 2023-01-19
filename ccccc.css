@@ -30,8 +30,6 @@ DIV.editor_title H2 {
 DIV.editor_title SELECT {
     font-size: 70%;
     max-width: 16em;
-    margin-left: 1em;
-    margin-right: 1em;
 }
 
 
@@ -415,6 +413,14 @@ SPAN:hover .truncate_sn, SPAN:hover .truncate_fn {
 }
 
 LABEL, .index DIV, .save_button, .local_button, .tag_button { cursor: pointer }
+
+
+.save_button, .save_history, .tag_button { float: right; margin-right: 20px }
+
+.save_button[enabled="false"][state="wait"] { background: #F00 }
+.save_button[enabled="false"][state="ok"]   { background: #0F0 }
+.save_button[enabled="true"][state="wait"]  { background: #F00 }
+.save_button[enabled="true"][state="ok"]    { }
 
 .index > .version {
     background: #0F0;
