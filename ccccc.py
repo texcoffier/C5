@@ -1024,8 +1024,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.save_history.innerHTML = ''.join(content)
 
     def need_save(self):
-        return (not self.last_answer[self.current_question]
-                or self.last_answer[self.current_question].strip() != self.source.strip())
+        """Does the source file has changed?"""
+        return (self.last_answer[self.current_question] or '').strip() != self.source.strip()
 
     def save(self):
         """Save the editor content"""
