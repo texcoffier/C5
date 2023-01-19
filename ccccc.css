@@ -310,9 +310,29 @@ LABEL, .timer {
 
 
 .timer {
+    float: right;
     top: 0.15em;
     bottom: 0.15em;
 }
+
+.stop_button {
+    position: absolute;
+    right: 10em;
+    font-family: emoji;
+    display:inline-block;
+    line-height: 1em;
+    cursor:pointer;
+    border: 1px solid #800;
+    font-family:sans-serif;
+    font-weight:bold;
+    font-size:60%;
+    color:#F00;
+    background:#FFF;
+    border-radius:0.5em;
+    padding:0.1em;
+    margin-top:-3px;
+}
+
 LABEL SPAN {
     font-size: 80%;
 }
@@ -381,26 +401,6 @@ H2:hover .timer SPAN DIV {
     border-radius: 0.5em;
     border: 1px solid #0F0;
     padding: 0.2em;
-}
-
-.stop_button {
-    float: right;
-    margin-right: 0.5em;
-}
-
-.icon_stop {
-    display:inline-block;
-    line-height: 1em;
-    cursor:pointer;
-    border: 1px solid #800;
-    font-family:sans-serif;
-    font-weight:bold;
-    font-size:60%;
-    color:#F00;
-    background:#FFF;
-    border-radius:0.5em;
-    padding:0.1em;
-    margin-top:-3px;
 }
 
 .truncate_sn, .truncate_fn {

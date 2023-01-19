@@ -205,7 +205,7 @@ def init():
     </select>
     <br>
     <label><input type="checkbox" id="copy_paste"> Allows copy/pastes from external source.</label>
-    <label><input type="checkbox" id="checkpoint"> Requires students to be placed on the map.</label>
+    <label><input type="checkbox" id="checkpoint"> Requires students to be placed on the map (examination mode).</label>
     <label><input type="checkbox" id="save_unlock"> Unlock the next question on save.</label>
     <label><input type="checkbox" id="sequential"> Question must be answered from first to last.</label>
     <label><input type="checkbox" id="coloring"> Syntaxic coloring of source code with <select id="theme">

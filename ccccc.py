@@ -181,6 +181,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'WHERE': WHERE,
             'SEQUENTIAL': SEQUENTIAL and not GRADING,
             'INFOS': INFOS,
+            'CHECKPOINT': CHECKPOINT,
             }])
         try:
             self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
@@ -320,14 +321,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.local_button.innerHTML = ' ' + self.options['icon_local']
             self.local_button.onclick = bind(self.save_local, self)
             self.editor_title.firstChild.appendChild(self.local_button)
-
-        if CHECKPOINT:
-            self.stop_button = document.createElement('TT')
-            self.stop_button.innerHTML = self.options['icon_stop']
-            self.stop_button.style.fontFamily = 'emoji'
-            self.stop_button.onclick = bind(self.stop, self)
-            self.stop_button.className = 'stop_button'
-            self.editor_title.firstChild.appendChild(self.stop_button)
 
         self.fullscreen = document.createElement('DIV')
         self.fullscreen.className = 'fullscreen'
@@ -624,10 +617,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.save_button.style.transition = 'transform 1s, opacity 1s'
                 self.save_button.style.transform = 'scale(1)'
                 self.save_button.style.opacity = 1
-                if self.do_stop:
-                    record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
-                    self.options['close'] = ''
-                    document.body.innerHTML = self.options['stop_done']
 
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
@@ -1072,10 +1061,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def stop(self):
         """The student stop its session"""
-        if self.need_save() and confirm(self.options['stop_confirm']):
-            self.do_stop = True
-            if not self.save():
-                record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
+        self.save()
+        if confirm(self.options['stop_confirm']): # Let some time to execute the save
+            record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
+            document.body.innerHTML = self.options['stop_done']
 
     def update_comments(self, comments):
         """Fill comments"""

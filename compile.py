@@ -69,7 +69,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         'icon_local': '💾',
         'icon_git': '<b style="font-size:50%">GIT</b>',
         'icon_tag': '<tt>TAG</tt>',
-        'icon_stop': '<span class="icon_stop">Terminer<br>Examen</span>',
+        'icon_stop': 'Terminer<br>Examen',
         'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
         'stop_done': "<h1>C'est fini.</h1>",
         'time_running': 'Fini dans',
@@ -266,6 +266,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         title = '<h2>' + self.options['question_title']
+        if self.config['CHECKPOINT']:
+            title += (' <tt class="stop_button" onclick="ccccc.stop()">'
+                + self.options['icon_stop'] + '</tt>')
         if not self.config['GRADING']:
             title += ' <div class="timer"><span id="timer"></span>⏱</div>'
         title += '</h2>'
