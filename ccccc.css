@@ -447,7 +447,7 @@ SELECT {
 }
 
 .grading #grading_sum {
-    color: #080;
+    color: #000;
     background: #FFFD;
 }
 

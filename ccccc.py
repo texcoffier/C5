@@ -1117,10 +1117,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         element.onclick = bind(self.send_mail, self)
         if self.nr_grades == nr_grades:
             element.style.background = "#0F0"
-            element.style.color = "#000"
         else:
-            element.style.background = "#FFF"
-            element.style.color = "#0F0"
+            element.style.background = "#FF0"
 
     def get_comment(self, line_number):
         """Get the actual line comment"""
