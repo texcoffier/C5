@@ -1342,15 +1342,19 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                     self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
             content = ('<div class="questions">'
-                + '<a href="/' + window.location.search + '">🏠</a>'
-                + '<div class="tips">Accueil C5</div></div><br>'
-                + '<div class="questions">'
-                + '<a target="_blank" href="/zip/' + COURSE + window.location.search + '">'
-                + self.options['icon_local'] + '</a>'
-                + '<div class="questions">'
-                + '<a target="_blank" href="/git/' + COURSE + window.location.search + '">'
-                + self.options['icon_git'] + '</a>'
-                + '<div class="tips">GIT de vos réponses</div></div><br>')
+                + '<div class="tips">'
+                + "<div>Aller à l'accueil C5 listant toutes les sessions.</div>"
+                + '<div> </div>'
+                + '<div>Sauvegarder un ZIP de toutes les questions sur la machine locale</div>'
+                + "<div>Sauvegarder sur la machine locale avec l'historique dans GIT</div>"
+                + '</div>'
+                + '<div><a href="/' + window.location.search + '">🏠</a></div>'
+                + '<div> </div>'
+                + '<div><a target="_blank" href="/zip/' + COURSE + window.location.search + '">'
+                + self.options['icon_local'] + '</a></div>'
+                + '<div><a target="_blank" href="/git/' + COURSE + window.location.search + '">'
+                + self.options['icon_git'] + '</a></div>'
+                + '</div><div> </div>')
             if GRADING and ',' in WHERE[2]:
                 content += '<div class="version">' + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ') + '</div>'
             content += value

@@ -285,6 +285,7 @@ H2 {
     visibility: hidden;
     padding-top: 0px;
     margin-top: -1px;
+    z-index: 100;
 }
 
 .questions:hover>.tips {
