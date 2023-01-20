@@ -303,6 +303,12 @@ LABEL, .timer {
 }
 
 .executor LABEL {
+    padding-left: 0px;
+    padding-right: 0px;
+    margin-left: 0.5em;
+}
+
+.executor LABEL {
     position: relative;
 }
 
@@ -403,7 +409,7 @@ H2:hover .timer SPAN DIV {
 
 .truncate_sn, .truncate_fn {
     display: inline-block;
-    max-width: 5.6em;
+    max-width: 6em;
     height: 1em;
     overflow: hidden;
     vertical-align: top;
