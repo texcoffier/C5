@@ -116,7 +116,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     record_to_send = []
     record_last_time = 0
     record_start = 0
-    last_record_to_send = []
+    records_in_transit = []
     popup_done = False
     compile_now = False
     last_compile = {}
@@ -583,15 +583,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def record_now(self):
         """Record on the server"""
         if len(self.record_to_send) == 0:
-            return
+            if len(self.records_in_transit) == 0:
+                return # Nothing to send
+        else:
+            self.records_in_transit.append(self.record_to_send)
+            self.record_to_send = []
+        self.record_last_time = 0
         do_post_data(
             {
                 'course': self.course,
-                'line': encodeURIComponent(JSON.stringify(self.record_to_send) + '\n'),
+                'line': encodeURIComponent(JSON.stringify(self.records_in_transit[0]) + '\n'),
             }, 'log?ticket=' + TICKET)
-        self.last_record_to_send = self.record_to_send
-        self.record_to_send = []
-        self.record_last_time = 0
 
     def record(self, data, send_now=False):
         """Append event to record to 'record_to_send'"""
@@ -609,12 +611,29 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if send_now or time - self.record_start > 60:
             self.record_now()
 
-    def record_done(self, stop_timestamp):
+    def record_done(self, recorded_timestamp, stop_timestamp):
         """The server saved the recorded value"""
         self.stop_timestamp = stop_timestamp
-        for item in self.last_record_to_send:
-            if item[0] == 'save':
-                self.save_button.setAttribute('state', 'ok')
+        if recorded_timestamp == self.records_in_transit[0][0]:
+            # Th expected recording has been done (in case of multiple retry)
+            timestamp = 0
+            for item in self.records_in_transit[0]:
+                if not isNaN(item):
+                    timestamp += Number(item)
+                    continue
+                if item[0] == 'save':
+                    current_question = item[1]
+                    source = item[2]
+                    self.last_save = timestamp
+                    if not ALL_SAVES[current_question]:
+                        ALL_SAVES[current_question] = []
+                    ALL_SAVES[current_question].append([timestamp, source, ''])
+                    self.in_past_history = 0
+                    self.update_save_history()
+                    self.save_button.setAttribute('state', 'ok')
+            self.records_in_transit = self.records_in_transit[1:]
+        if len(self.records_in_transit):
+            self.record_now()
 
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
@@ -1038,12 +1057,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record(['save', self.current_question, self.source], send_now=True)
             self.worker.postMessage(['source', self.current_question, self.source])
             self.last_answer[self.current_question] = self.source
-            self.last_save = millisecs() / 1000
-            if not ALL_SAVES[self.current_question]:
-                ALL_SAVES[self.current_question] = []
-            ALL_SAVES[self.current_question].append([int(self.last_save), self.source, ''])
-            self.in_past_history = 0
-            self.update_save_history()
             return True
         return False
 
