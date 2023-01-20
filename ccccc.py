@@ -583,7 +583,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def record_now(self):
         """Record on the server"""
         if len(self.record_to_send) == 0:
-            return # Nothing to send
+            return
         do_post_data(
             {
                 'course': self.course,
@@ -614,15 +614,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.stop_timestamp = stop_timestamp
         for item in self.last_record_to_send:
             if item[0] == 'save':
-                current_question = item[1]
-                source = item[2]
-
-                self.last_save = millisecs() / 1000
-                if not ALL_SAVES[current_question]:
-                    ALL_SAVES[current_question] = []
-                ALL_SAVES[current_question].append([int(self.last_save), source, ''])
-                self.in_past_history = 0
-                self.update_save_history()
                 self.save_button.setAttribute('state', 'ok')
 
     def add_highlight_errors(self, line_nr, char_nr, what):
@@ -1047,6 +1038,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record(['save', self.current_question, self.source], send_now=True)
             self.worker.postMessage(['source', self.current_question, self.source])
             self.last_answer[self.current_question] = self.source
+            self.last_save = millisecs() / 1000
+            if not ALL_SAVES[self.current_question]:
+                ALL_SAVES[self.current_question] = []
+            ALL_SAVES[self.current_question].append([int(self.last_save), self.source, ''])
+            self.in_past_history = 0
+            self.update_save_history()
             return True
         return False
 
