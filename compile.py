@@ -62,7 +62,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         'compiler_title': 'Compilation',
         'compiler_title_toggle': 'Automatique (F9)',
         'compiler_title_button': 'Maintenant ! (F9)',
-        'executor_title_button': 'GO! (F9)',
+        'executor_title_button': 'GO!(F9)',
         'executor_title': 'Exécution',
         'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
         'icon_save': '📩',
@@ -287,7 +287,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             more = ''
         return ("<h2>" + self.options['executor_title']
             + more
-            + ' <span style="float:right; background: #CCF; margin-right: 0.3em;">'
+            + '<span style="float:right; background: #CCF; margin-right: 0.3em;">'
             + '<tt class="truncate_sn">' + self.config['INFOS']['sn'].upper() + '</tt>'
             + ' '
             + '<tt class="truncate_fn">' + self.config['INFOS']['fn'].lower() + '</tt>'
