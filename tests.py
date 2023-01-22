@@ -404,7 +404,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.questions > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
         finally:
             time.sleep(0.5) # Wait save button animation end
-            self.check('OPTION[timestamp="1").click() # Returns to the original text
+            self.check('OPTION[timestamp="1"]').click() # Returns to the original text
             self.check_alert(accept=True)
             self.check('.save_button').click()
 

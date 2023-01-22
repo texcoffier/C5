@@ -310,59 +310,76 @@ def default_answer(self):
     self.sujet = self.version() # 'a' ou 'b'
     return ""</pre>
         <li>
-            <pre>self.set_options(
-    {
-        # pour la coloration syntaxique avec highlightjs.org
-        # Option prédéfinie par le compilateur, pas besoin de la modifier.
-        'language': 'javascript',
-        # Messages affiché par le navigateur web
-        'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
-        # Mettre une chaîne vide pour désactiver la confirmation (pendant le débugage)
-        'close': "Voulez-vous vraiment quitter cette page ?",
-        'question_title': 'Question',
-        'tester_title': 'Les buts que vous devez atteindre',
-        'compiler_title': 'Compilation',
-        'compiler_title_toggle': 'Désactivée (F9)',
-        'compiler_title_button': 'Maintenant ! (F9)',
-        'executor_title': 'Exécution',
-        'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
-        'icon_save': '📩',
-        'icon_stop': 'EXIT',
-        'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
-        'stop_done': "&lt;h1&gt;C'est fini.&lt;/h1&gt;",
-        'time_running': 'Fini dans',
-        'time_done': "Fini depuis",
-        'time_seconds': " secondes",
-        'time_days': " jours",
-        'time_d': " j ",
-        'time_m': " m ",
-        'time_h': " h ",
-        'allow_copy_paste': False, # Valeur par défaut : définie dans l'interface d'administration.
-        "display_local_save": False, # Icon in editor-bloc title
-        'automatic_compilation': True, # Recompile dès que c'est possible
-        'forget_input': False, # Ne mémorise pas les champs INPUT
-        'positions' : {
-            # [X, Largeur, Y, Hauteur, Couleur] en pourcentage écran
-            # Mettre le X ou Y à 100 pour faire disparaître la zone de l'affichage
-            'question': [1, 29, 0, 30, '#EFE'],
-            'tester': [1, 29, 30, 70, '#EFE'],
-            'editor': [30, 40, 0, 100, '#FFF'],
-            'compiler': [70, 30, 0, 30, '#EEF'],
-            'executor': [70, 30, 30, 70, '#EEF'],
-            'time': [80, 20, 98, 2, '#0000'],
-            'index': [0, 1, 0, 100, '#0000'],
-            # Diminuer de 1 la largeur de 'question' et 'tester'
-            # et remplacer par [29, 1, 0, 100, '#EEE']
-            # pour placer les numéros de ligne à la gauche de l'éditeur.
-            'line_numbers': [100, 1, 0, 100, '#EEE'],
-            },
-        # For compile_remote. The values must be allowed by the server.
-        'compiler': 'g++', # or 'gcc'
-        'compile_options': ['-Wall'], # you can add '-pedantic'
-        'ld_options': [],
-        'allowed': [], # system call allowed. You can add 'brk'
-
-    })</pre>
+            <pre START_OPTIONS DO_NOT_EDIT_HERE>
+options = { # These options are synchronized between GUI and compiler/session
+    #
+    # Frame screen position
+    #
+    'positions' : { # X%, Width%, Y%, Heigth%, background color
+        'question':    [ 1, 29, 0, 30,'#EFEF'], # LeftTop    : The question
+        'tester':      [ 1, 29,30, 70,'#EFEF'], # LeftBottom : Goal checker
+        'editor':      [30, 40, 0,100,'#FFFF'], # Middle     : Source editor
+        'compiler':    [70, 30, 0, 30,'#EEFF'], # RightTop   : Compiler messages
+        'executor':    [70, 30,30, 70,'#EEFF'], # RightBottom: Execution messages
+        'time':        [80, 20,98,  2,'#0000'], # BottomRight: debugger for admin
+        'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
+        'line_numbers':[100, 1, 0,100,'#EEEF'], # Outside the screen by defaut
+        'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
+    },
+    #
+    # Titles, label and messages
+    #
+    'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
+    'close': "Voulez-vous vraiment quitter cette page ?",
+    'question_title': 'Question',
+    'tester_title': 'Les buts que vous devez atteindre',
+    'compiler_title': 'Compilation',
+    'compiler_title_toggle': 'Automatique (F9)',
+    'compiler_title_button': 'Maintenant ! (F9)',
+    'executor_title_button': 'GO!(F9)',
+    'executor_title': 'Exécution',
+    'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
+    'icon_save': '📩',
+    'icon_local': '💾', # Used by session and question local save.
+    'icon_git': '&lt;b style="font-size:50%"&gt;GIT&lt;/b&gt;',
+    'icon_tag': '&lt;tt&gt;TAG&lt;/tt&gt;',
+    'icon_stop': 'Terminer&lt;br&gt;Examen', # Only displayed if CHECKPOINT
+    'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
+    'stop_done': "&lt;h1&gt;C'est fini.&lt;/h1&gt;",
+    'time_running': 'Fini dans',
+    'time_done': "Fini depuis",
+    'time_seconds': " secondes",
+    'time_days': " jours",
+    'time_d': " j ",
+    'time_m': " m ",
+    'time_h': " h ",
+    #
+    # Default compiler and session options
+    #
+    'language': 'javascript',                   # A language recognized by hightlightjs
+    'allow_copy_paste': CP or GRADING,          # True if copy/paste allowed
+    'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
+    'coloring': COLORING,                       # True if source highlighting is done
+    'automatic_compilation': True,              # True if compilation is automatic
+    'display_local_save': 0,                    # True if question 'icon_local' displayed
+    'display_local_git': 1,                     # True if question 'icon_git' displayed
+    #
+    # Unmodifiable session parameters
+    #
+    'COURSE': COURSE,                           # Course short name
+    'TICKET': TICKET,                           # Session ticket: ?ticket=TICKET
+    'LOGIN': LOGIN,                             # Login of the connected user
+    'SOCK': SOCK,                               # Websocked for remote compilation
+    'ANSWERS': ANSWERS,                         # All the questions/answers recorded
+    'WHERE': WHERE,                             # See 'active_teacher_room' declaration
+    'INFOS': INFOS,                             # Student identity
+    'CHECKPOINT': CHECKPOINT,                   # True if checkpoint
+    'GRADING': GRADING,                         # True if in grading mode
+    'SEQUENTIAL': SEQUENTIAL and not GRADING,   # True if questions are sequential
+    'ADMIN': ADMIN,                             # True if administrator
+    'STOP': STOP,                               # True if the session is stopped
+}
+</pre>
             <p>
                 Il faut mettre seulement les options qui changent.
                 Les options restent les mêmes tant qu'elles ne sont pas modifiées.
@@ -1103,6 +1120,9 @@ server {
         </li>
         <li>
             Associer par apprentissage les adresses IP au places sur le plan.
+        </li>
+        <li>
+            Détruire une sauvegarde.
         </li>
     </ul>
 </body>

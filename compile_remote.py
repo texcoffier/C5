@@ -24,7 +24,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
             'language': 'cpp',
             'extension': 'cpp',
             })
-        if self.config.GRADING:
+        if self.options.GRADING:
             return
         self.popup("""
         <p>
@@ -43,8 +43,8 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
         if self.connecting or self.stoped:
             return
         # pylint: disable=eval-used
-        course = self.config.COURSE
-        url = self.config.SOCK + "/" + self.config.TICKET + "/" + course  # pylint: disable=unused-variable
+        course = self.options.COURSE
+        url = self.options.SOCK + "/" + self.options.TICKET + "/" + course  # pylint: disable=unused-variable
         socket = eval('new WebSocket(url)')
 
         def event_message(event): # pylint: disable=too-many-branches
@@ -141,7 +141,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
                 return eval("function _() {}") # pylint: disable=eval-used
             self.socket.send(JSON.stringify( # pylint: disable=undefined-variable
                 ['compile', [
-                    self.config.COURSE,
+                    self.options.COURSE,
                     self.current_question,
                     self.options['compiler'],
                     self.options['compile_options'],

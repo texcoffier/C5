@@ -21,7 +21,7 @@ def onmessage(event):
         elif event.data[0] == 'indent':
             Compile.worker.run_indent(event.data[1])
         elif event.data[0] == 'config':
-            init_needed = len(Compile.worker.config) == 0
+            init_needed = len(Compile.worker.options) == 0
             Compile.worker.set_config(event.data[1])
             if init_needed:
                 Compile.worker.start_question()
@@ -52,34 +52,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     stop_after_compile = True
     previous_source = None
     shared_buffer = []
-    config = {}
     current_question_max = 0
     run_tester_after_exec = True
-    options = {
-        'automatic_compilation': True,
-        'question_title': 'Question',
-        'tester_title': 'Les buts que vous devez atteindre',
-        'compiler_title': 'Compilation',
-        'compiler_title_toggle': 'Automatique (F9)',
-        'compiler_title_button': 'Maintenant ! (F9)',
-        'executor_title_button': 'GO!(F9)',
-        'executor_title': 'Exécution',
-        'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
-        'icon_save': '📩',
-        'icon_local': '💾',
-        'icon_git': '<b style="font-size:50%">GIT</b>',
-        'icon_tag': '<tt>TAG</tt>',
-        'icon_stop': 'Terminer<br>Examen',
-        'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
-        'stop_done': "<h1>C'est fini.</h1>",
-        'time_running': 'Fini dans',
-        'time_done': "Fini depuis",
-        'time_seconds': " secondes",
-        'time_days': " jours",
-        'time_d': " j ",
-        'time_m': " m ",
-        'time_h': " h ",
-        }
+    options = {} # Default options for the compiler can be defined here
 
     def __init__(self, questions):
         print("Worker: start")
@@ -113,14 +88,16 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def set_config(self, config):
         """Record config, update old question answer, jump to the last question"""
-        self.config = config
+        for key in config:
+            if key not in self.options:
+                self.options[key] = config[key]
         self.set_options(self.options)
         self.send_options()
-        for question in config['ANSWERS']:
+        for question in self.options['ANSWERS']:
             question = Number(question)
-            if self.questions[question] and config['ANSWERS'][question]:
-                self.questions[question].last_answer = config['ANSWERS'][question][0]
-                if question >= self.current_question and config['ANSWERS'][question][1]:
+            if self.questions[question] and self.options['ANSWERS'][question]:
+                self.questions[question].last_answer = self.options['ANSWERS'][question][0]
+                if question >= self.current_question and self.options['ANSWERS'][question][1]:
                     if self.questions[question + 1]:
                         # Only if not after the last question
                         self.current_question_max = question + 1
@@ -216,17 +193,17 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 and not self.question_yet_solved(current_question)
            ):
             self.post("good", self.source)
-            self.config.ANSWERS[current_question] = [self.source, 1]
+            self.options.ANSWERS[current_question] = [self.source, 1]
             self.start_question()
         else:
             self.current_question = current_question # Keep same question
 
     def question_yet_solved(self, question):
         """Return True if the current question has been correctly answered"""
-        # print(question, self.config.ANSWERS)
-        if not self.config.ANSWERS[question]:
+        # print(question, self.options.ANSWERS)
+        if not self.options.ANSWERS[question]:
             return False
-        return self.config.ANSWERS[question][1]
+        return self.options.ANSWERS[question][1]
 
     def read_input(self, hide=False):
         """Ask the webpage some input text, wait the answer."""
@@ -266,10 +243,10 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         title = '<h2>' + self.options['question_title']
-        if self.config['CHECKPOINT']:
+        if self.options['CHECKPOINT']:
             title += (' <tt class="stop_button" onclick="ccccc.stop()">'
                 + self.options['icon_stop'] + '</tt>')
-        if not self.config['GRADING']:
+        if not self.options['GRADING']:
             title += ' <div class="timer"><span id="timer"></span>⏱</div>'
         title += '</h2>'
         return title
@@ -288,9 +265,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         return ("<h2>" + self.options['executor_title']
             + more
             + '<span style="float:right; background: #CCF; margin-right: 0.3em;">'
-            + '<tt class="truncate_sn">' + self.config['INFOS']['sn'].upper() + '</tt>'
+            + '<tt class="truncate_sn">' + self.options['INFOS']['sn'].upper() + '</tt>'
             + ' '
-            + '<tt class="truncate_fn">' + self.config['INFOS']['fn'].lower() + '</tt>'
+            + '<tt class="truncate_fn">' + self.options['INFOS']['fn'].lower() + '</tt>'
             + "</span></h2>")
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
@@ -327,8 +304,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 html_class.append('good')
             else:
                 if (i <= self.current_question_max
-                        or not self.config.SEQUENTIAL
-                        or self.config.ANSWERS[i]):
+                        or not self.options.SEQUENTIAL
+                        or self.options.ANSWERS[i]):
                     html_class.append('possible')
                 else:
                     link = ''

@@ -136,25 +136,72 @@ class CCCCC: # pylint: disable=too-many-public-methods
     do_update_cursor_position = True
     mouse_pressed = -1
     mouse_position = [0, 0]
-    options = {
-        'language': 'javascript',
+    options = { # These options are synchronized between GUI and compiler/session
+        #
+        # Frame screen position
+        #
+        'positions' : { # X%, Width%, Y%, Heigth%, background color
+            'question':    [ 1, 29, 0, 30,'#EFEF'], # LeftTop    : The question
+            'tester':      [ 1, 29,30, 70,'#EFEF'], # LeftBottom : Goal checker
+            'editor':      [30, 40, 0,100,'#FFFF'], # Middle     : Source editor
+            'compiler':    [70, 30, 0, 30,'#EEFF'], # RightTop   : Compiler messages
+            'executor':    [70, 30,30, 70,'#EEFF'], # RightBottom: Execution messages
+            'time':        [80, 20,98,  2,'#0000'], # BottomRight: debugger for admin
+            'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
+            'line_numbers':[100, 1, 0,100,'#EEEF'], # Outside the screen by defaut
+            'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
+        },
+        #
+        # Titles, label and messages
+        #
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
         'close': "Voulez-vous vraiment quitter cette page ?",
-        'allow_copy_paste': CP or GRADING,
-        'save_unlock': SAVE_UNLOCK,
-        'coloring': COLORING,
-        'display_local_save': 0,
-        'positions' : {
-            'question': [1, 29, 0, 30, '#EFE'],
-            'tester': [1, 29, 30, 70, '#EFE'],
-            'editor': [30, 40, 0, 100, '#FFF'],
-            'compiler': [70, 30, 0, 30, '#EEF'],
-            'executor': [70, 30, 30, 70, '#EEF'],
-            'time': [80, 20, 98, 2, '#0000'],
-            'index': [0, 1, 0, 100, '#0000'],
-            'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
-            'editor_title': [30, 40, 0, 1, '#FFF'], # Overrided by current editor
-            }
+        'question_title': 'Question',
+        'tester_title': 'Les buts que vous devez atteindre',
+        'compiler_title': 'Compilation',
+        'compiler_title_toggle': 'Automatique (F9)',
+        'compiler_title_button': 'Maintenant ! (F9)',
+        'executor_title_button': 'GO!(F9)',
+        'executor_title': 'Exécution',
+        'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
+        'icon_save': '📩',
+        'icon_local': '💾', # Used by session and question local save.
+        'icon_git': '<b style="font-size:50%">GIT</b>',
+        'icon_tag': '<tt>TAG</tt>',
+        'icon_stop': 'Terminer<br>Examen', # Only displayed if CHECKPOINT
+        'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
+        'stop_done': "<h1>C'est fini.</h1>",
+        'time_running': 'Fini dans',
+        'time_done': "Fini depuis",
+        'time_seconds': " secondes",
+        'time_days': " jours",
+        'time_d': " j ",
+        'time_m': " m ",
+        'time_h': " h ",
+        #
+        # Default compiler and session options
+        #
+        'language': 'javascript',                   # A language recognized by hightlightjs
+        'allow_copy_paste': CP or GRADING,          # True if copy/paste allowed
+        'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
+        'coloring': COLORING,                       # True if source highlighting is done
+        'display_local_save': 0,                    # True if question 'icon_local' displayed
+        'automatic_compilation': True,              # True if compilation is automatic
+        #
+        # Unmodifiable session parameters
+        #
+        'COURSE': COURSE,                           # Course short name
+        'TICKET': TICKET,                           # Session ticket: ?ticket=TICKET
+        'LOGIN': LOGIN,                             # Login of the connected user
+        'SOCK': SOCK,                               # Websocked for remote compilation
+        'ANSWERS': ANSWERS,                         # All the questions/answers recorded
+        'WHERE': WHERE,                             # See 'active_teacher_room' declaration
+        'INFOS': INFOS,                             # Student identity
+        'CHECKPOINT': CHECKPOINT,                   # True if checkpoint
+        'GRADING': GRADING,                         # True if in grading mode
+        'SEQUENTIAL': SEQUENTIAL and not GRADING,   # True if questions are sequential
+        'ADMIN': ADMIN,                             # True if administrator
+        'STOP': STOP,                               # True if the session is stopped
     }
     stop_timestamp = 0
     last_save = 0
@@ -170,20 +217,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
         self.worker.onerror = bind(self.onerror, self)
-        self.worker.postMessage(['config', {
-            'TICKET': TICKET,
-            'GRADING': GRADING,
-            'LOGIN': LOGIN,
-            'SOCK': SOCK,
-            'ADMIN': ADMIN,
-            'STOP': STOP,
-            'ANSWERS': ANSWERS,
-            'COURSE': COURSE,
-            'WHERE': WHERE,
-            'SEQUENTIAL': SEQUENTIAL and not GRADING,
-            'INFOS': INFOS,
-            'CHECKPOINT': CHECKPOINT,
-            }])
+        self.worker.postMessage(['config', self.options])
         try:
             self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
         except: # pylint: disable=bare-except
