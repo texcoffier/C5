@@ -246,7 +246,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         if self.options['CHECKPOINT']:
             title += (' <tt class="stop_button" onclick="ccccc.stop()">'
                 + self.options['icon_stop'] + '</tt>')
-        if not self.options['GRADING']:
+        if not self.options['GRADING'] and self.options['display_timer']:
             title += ' <div class="timer"><span id="timer"></span>⏱</div>'
         title += '</h2>'
         return title
@@ -257,7 +257,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Used by the subclass"""
         if self.options['positions'] and (
                 self.options['positions']['compiler'][0] >= 100
-                or self.options['positions']['compiler'][2] >= 100):
+                or self.options['positions']['compiler'][2] >= 100
+                ) and self.options['display_compile_run']:
             more = (' <label style="font-size: 80%" onclick="ccccc.compilation_run()">'
                     + self.options['executor_title_button'] + '</label>')
         else:
@@ -277,8 +278,11 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                     + ' class="checked">'
                     + self.options['compiler_title_toggle'] + '</label>')
         else:
-            more = ('<label style="font-size: 80%" onclick="ccccc.compilation_run()">'
-                    + self.options['compiler_title_button'] + '</label>')
+            if self.options['display_compile_run']:
+                more = ('<label style="font-size: 80%" onclick="ccccc.compilation_run()">'
+                        + self.options['compiler_title_button'] + '</label>')
+            else:
+                more = ''
         return ('<h2>' + self.options['compiler_title'] + ' '
                 + more + '</h2>')
     def time_initial_content(self):

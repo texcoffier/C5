@@ -339,6 +339,7 @@ options = { # These options are synchronized between GUI and compiler/session
     'executor_title_button': 'GO!(F9)',
     'executor_title': 'Exécution',
     'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
+    'icon_home': '🏠',
     'icon_save': '📩',
     'icon_local': '💾', # Used by session and question local save.
     'icon_git': '&lt;b style="font-size:50%"&gt;GIT&lt;/b&gt;',
@@ -360,9 +361,15 @@ options = { # These options are synchronized between GUI and compiler/session
     'allow_copy_paste': CP or GRADING,          # True if copy/paste allowed
     'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
     'coloring': COLORING,                       # True if source highlighting is done
-    'automatic_compilation': True,              # True if compilation is automatic
     'display_local_save': 0,                    # True if question 'icon_local' displayed
+    'display_home': 1,                          # True if display 'icon_home'
     'display_local_git': 1,                     # True if question 'icon_git' displayed
+    'display_local_zip': 1,                     # True if question 'icon_local' displayed
+    'display_timer': 1,                         # True if the timer is displayed
+    'display_compile_run': 1,                   # True if display the F9 button
+    'display_tag': 1,                           # True if display 'icon_tag'
+    'display_history': 1,                       # True if display version history
+    'automatic_compilation': True,              # True if compilation is automatic
     #
     # Unmodifiable session parameters
     #

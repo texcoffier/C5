@@ -164,6 +164,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'executor_title_button': 'GO!(F9)',
         'executor_title': 'Exécution',
         'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
+        'icon_home': '🏠',
         'icon_save': '📩',
         'icon_local': '💾', # Used by session and question local save.
         'icon_git': '<b style="font-size:50%">GIT</b>',
@@ -186,6 +187,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
         'coloring': COLORING,                       # True if source highlighting is done
         'display_local_save': 0,                    # True if question 'icon_local' displayed
+        'display_home': 1,                          # True if display 'icon_home'
+        'display_local_git': 1,                     # True if question 'icon_git' displayed
+        'display_local_zip': 1,                     # True if question 'icon_local' displayed
+        'display_timer': 1,                         # True if the timer is displayed
+        'display_compile_run': 1,                   # True if display the F9 button
+        'display_tag': 1,                           # True if display 'icon_tag'
+        'display_history': 1,                       # True if display version history
         'automatic_compilation': True,              # True if compilation is automatic
         #
         # Unmodifiable session parameters
@@ -339,15 +347,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor_title.firstChild.appendChild(self.save_button)
 
         self.save_history = document.createElement('SELECT')
-        self.save_history.className = 'save_history'
-        self.editor_title.firstChild.appendChild(self.save_history)
+        if self.options['display_history']:
+            self.save_history.className = 'save_history'
+            self.editor_title.firstChild.appendChild(self.save_history)
 
         self.tag_button = document.createElement('TT')
-        self.tag_button.innerHTML = self.options['icon_tag']
-        self.tag_button.style.fontFamily = 'emoji'
-        self.tag_button.onclick = bind(self.record_tag, self)
-        self.tag_button.className = 'tag_button'
-        self.editor_title.firstChild.appendChild(self.tag_button)
+        if self.options['display_tag']:
+            self.tag_button.innerHTML = self.options['icon_tag']
+            self.tag_button.style.fontFamily = 'emoji'
+            self.tag_button.onclick = bind(self.record_tag, self)
+            self.tag_button.className = 'tag_button'
+            self.editor_title.firstChild.appendChild(self.tag_button)
 
         if GRADING:
             self.save_history.style.display = 'none'
@@ -1373,24 +1383,38 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                         span.style.float = 'left'
                     self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
-            content = ('<div class="questions">'
-                + '<div class="tips">'
-                + "<div>Aller à l'accueil C5 listant toutes les sessions.</div>"
-                + '<div> </div>'
-                + '<div>Sauvegarder un ZIP de toutes les questions sur la machine locale</div>'
-                + "<div>Sauvegarder sur la machine locale avec l'historique dans GIT</div>"
-                + '</div>'
-                + '<div><a href="/' + window.location.search + '">🏠</a></div>'
-                + '<div> </div>'
-                + '<div><a target="_blank" href="/zip/' + COURSE + window.location.search + '">'
-                + self.options['icon_local'] + '</a></div>'
-                + '<div><a target="_blank" href="/git/' + COURSE + window.location.search + '">'
-                + self.options['icon_git'] + '</a></div>'
-                + '</div><div> </div>')
+            links = []
+            tips = []
+            if self.options['display_home']:
+                tips.append("Aller à l'accueil C5 listant toutes les sessions.")
+                links.append('<a href="/' + window.location.search + '">'
+                    + self.options['icon_home'] + '</a>')
+                tips.append(' ')
+                links.append(' ')
+            if self.options['display_local_zip']:
+                tips.append("Sauvegarder un ZIP de toutes les questions sur la machine locale")
+                links.append('<a target="_blank" href="/zip/' + COURSE + window.location.search
+                    + '">' + self.options['icon_local'] + '</a>')
+            if self.options['display_local_git']:
+                tips.append("Sauvegarder sur la machine locale avec l'historique dans GIT")
+                links.append('<a target="_blank" href="/git/' + COURSE + window.location.search
+                     + '">' + self.options['icon_git'] + '</a>')
+            tips.append(' ')
+            links.append(' ')
+            content = ['<div class="questions"><div class="tips">']
+            for item in tips:
+                content.append('<div>' + item + '</div>')
+            content.append('</div>') # End tips
+            for item in links:
+                content.append('<div>' + item + '</div>')
+            content.append('</div>') # End links
             if GRADING and ',' in WHERE[2]:
-                content += '<div class="version">' + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ') + '</div>'
-            content += value
-            self[what].innerHTML = content # pylint: disable=unsubscriptable-object
+                content.append(
+                    '<div class="version">'
+                    + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ')
+                    + '</div>')
+            content.append(value)
+            self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question
             self.compile_now = True
