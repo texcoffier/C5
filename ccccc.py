@@ -296,10 +296,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             e.style.right = (100 - left - width) + '%'
             if key in ('editor', 'overlay'):
                 e.style.top = 'calc(' + top + '% + var(--header_height))'
-                e.style.bottom = 'calc(' + (100 - top - height) + '% - var(--header_height))' 
             else:
                 e.style.top = top + '%'
-                e.style.bottom = (100 - top - height) + '%'
+            e.style.bottom = (100 - top - height) + '%'
             if key == 'editor_title':
                 e.style.bottom = 'calc(100% - var(--header_height))'
             e.style.background = background
