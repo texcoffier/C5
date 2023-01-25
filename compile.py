@@ -263,7 +263,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                     + self.options['executor_title_button'] + '</label>')
         else:
             more = ''
-        return ("<h2>" + self.options['executor_title']
+        # Keep <!-- --> explanation is in ccccc.py
+        # about : The first space is replaced by an unsecable space
+        return ("<h2><!-- -->" + self.options['executor_title']
             + more
             + '<span style="float:right; background: #CCF; margin-right: 0.3em;">'
             + '<tt class="truncate_sn">' + self.options['INFOS']['sn'].upper() + '</tt>'
