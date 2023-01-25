@@ -1547,6 +1547,9 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         self.top.onkeypress = bind(self.onkeypress, self)
         window.onbeforeunload = bind(self.onbeforeunload, self)
         window.onblur = bind(self.onblur, self)
+        def do_coloring():
+            self.do_coloring = True
+        window.onresize = do_coloring
         document.getElementsByTagName('BODY')[0].appendChild(self.top)
         self.create_gui()
         setInterval(bind(self.scheduler, self), 200)
