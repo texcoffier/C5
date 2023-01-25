@@ -1542,9 +1542,9 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         self.top.oncut = bind(self.oncut, self)
         self.top.onpaste = bind(self.onpaste, self)
         self.top.ondrop = bind(self.onpaste, self)
-        self.top.onkeydown = bind(self.onkeydown, self)
-        self.top.onkeyup = bind(self.onkeyup, self)
-        self.top.onkeypress = bind(self.onkeypress, self)
+        window.onkeydown = bind(self.onkeydown, self)
+        window.onkeyup = bind(self.onkeyup, self)
+        window.onkeypress = bind(self.onkeypress, self)
         window.onbeforeunload = bind(self.onbeforeunload, self)
         window.onblur = bind(self.onblur, self)
         def do_coloring():
