@@ -1087,7 +1087,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def need_save(self):
         """Does the source file has changed?"""
-        return (self.last_answer[self.current_question] or '').strip() != self.source.strip()
+        return (self.last_answer[self.current_question]
+            or self.question_original[self.current_question]).strip() != self.source.strip()
 
     def save(self):
         """Save the editor content"""
