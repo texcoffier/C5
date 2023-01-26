@@ -18,6 +18,7 @@ def onmessage(event):
             Compile.worker.shared_buffer = event.data[1]
         elif event.data[0] == 'source':
             Compile.worker.questions[event.data[1]].last_answer = event.data[2]
+            Compile.worker.source = event.data[2]
         elif event.data[0] == 'indent':
             Compile.worker.run_indent(event.data[1])
         elif event.data[0] == 'config':

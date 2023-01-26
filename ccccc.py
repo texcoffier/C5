@@ -215,6 +215,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     last_save = 0
     in_past_history = 0
     allow_edit = 0
+    source_in_past = None
 
     def __init__(self):
         print("GUI: start")
@@ -308,7 +309,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_button.style.display = 'none'
             if self.stop_button:
                 self.stop_button.style.display = 'none'
-        self.update_save_history()
     def create_gui(self):
         """The text editor container"""
         self.options['positions']['overlay'] = self.options['positions']['editor']
@@ -440,9 +440,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.last_compile[self.current_question] = self.source
         seconds = int(millisecs() / 1000)
         if self.seconds != seconds:
-            if self.seconds % 5 == 0:
+            old_need_save = self.save_button.getAttribute('enabled') == 'true'
+            need_save = self.need_save()
+            if self.seconds % 5 == 0 or old_need_save != need_save:
                 self.update_save_history()
-            self.save_button.setAttribute('enabled', self.need_save())
+            if old_need_save != need_save:
+                self.save_button.setAttribute('enabled', need_save)
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
@@ -671,7 +674,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     if not ALL_SAVES[current_question]:
                         ALL_SAVES[current_question] = []
                     ALL_SAVES[current_question].append([timestamp, source, ''])
-                    self.in_past_history = 0
                     self.update_save_history()
                     self.save_button.setAttribute('state', 'ok')
             self.records_in_transit = self.records_in_transit[1:]
@@ -1028,31 +1030,46 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def change_history(self, event):
         """Put an old version in the editor"""
-        if not self.in_past_history:
-            self.save()
+        if self.in_past_history:
+            saved = False
+        else:
+            saved = self.save()
+
         choosen = event.target.selectedOptions[0].getAttribute('timestamp')
-        if choosen:
-            choosen = int(choosen)
-            if choosen == 1:
-                self.set_editor_content(self.question_original[self.current_question])
-                self.in_past_history = 1
-            else:
-                for (timestamp, source, _tag) in ALL_SAVES[self.current_question]:
-                    if timestamp == choosen:
-                        self.set_editor_content(source)
-                        if timestamp == ALL_SAVES[self.current_question][-1][0]:
-                            self.in_past_history = 0 # Back to the present
-                        else:
-                            self.in_past_history = timestamp
-                            self.editor.focus()
-                            self.update_save_history()
-                        break
+        if not choosen:
+            return
+        choosen = int(choosen)
+        if choosen == 1:
+            source = self.question_original[self.current_question]
+            self.in_past_history = 1
+        else:
+            for (timestamp, source, _tag) in ALL_SAVES[self.current_question]:
+                if timestamp == choosen:
+                    if not saved and timestamp == ALL_SAVES[self.current_question][-1][0]:
+                        self.in_past_history = 0 # Back to the present
+                    else:
+                        self.in_past_history = timestamp
+                    break
+        self.source_in_past = source
+        self.set_editor_content(source)
+        self.editor.focus()
+        self.update_save_history()
 
     def update_save_history(self):
         """The list of saved versions"""
         if self.save_history == document.activeElement:
             return
         content = []
+        if self.need_save():
+            content.append('<option>Non sauvegardé</option>')
+            self.save_history.style.color = "#F00"
+            self.in_past_history = 0
+            self.tag_button.style.opacity = 0.3
+            self.tag_button.style.pointerEvents = 'none'
+        else:
+            self.tag_button.style.opacity = 1
+            self.tag_button.style.pointerEvents = 'all'
+            self.save_history.style.color = "#000"
         now = millisecs() / 1000
         for (timestamp, _source, tag) in (ALL_SAVES[self.current_question] or [])[::-1]:
             delta = int( (now - timestamp) / 10 ) * 10
@@ -1075,11 +1092,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if tag != '':
                 content[-1] = tag # + ' ' + content[-1]
             content.append('</option>')
-        if len(content) == 0:
-            content.append('<option>JAMAIS SAUVEGARDÉ</option>')
-            self.save_history.style.color = "#F00"
-        else:
-            self.save_history.style.color = "#000"
         content.append('<option timestamp="1">Version initiale</option>')
         if self.in_past_history == 1:
             content[-1] = content[-1].replace('<option', '<option selected')
@@ -1087,6 +1099,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def need_save(self):
         """Does the source file has changed?"""
+        if self.in_past_history and self.source_in_past.strip() == self.source.strip():
+            # Do not save again source from the past if they are unmodified
+            return False
         return (self.last_answer[self.current_question]
             or self.question_original[self.current_question]).strip() != self.source.strip()
 
@@ -1099,7 +1114,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.need_save():
             self.save_button.setAttribute('state', 'wait')
             self.record(['save', self.current_question, self.source], send_now=True)
-            self.worker.postMessage(['source', self.current_question, self.source])
             self.last_answer[self.current_question] = self.source
             return True
         return False
@@ -1453,6 +1467,12 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         """Indicate the new question to the worker"""
         if self.allow_edit:
             self.unlock_worker()
+            if self.in_past_history:
+                # No changes were done in past, come back to present
+                self.worker.postMessage(['source', self.current_question,
+                    ALL_SAVES[self.current_question][-1][1]])
+            else:
+                self.worker.postMessage(['source', self.current_question, self.source])
             self.worker.postMessage(['goto', index])
         else:
             self.record(['allow_edit', 'goto_question'])
@@ -1523,6 +1543,8 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
         self.highlight_errors = {}
         self.do_coloring = True
+        self.source = message
+        self.update_save_history()
 
     def onbeforeunload(self, event):
         """Prevent page closing"""
@@ -1921,7 +1943,6 @@ def version_change(select):
     ccccc.version = select.selectedIndex
     ccccc.save_cursor()
     ccccc.set_editor_content(source)
-    ccccc.update_source()
     ccccc.compile_now = True
 
 ccccc = CCCCC()
