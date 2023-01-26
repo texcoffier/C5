@@ -667,7 +667,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if item.toFixed:
                     timestamp += Number(item)
                     continue
-                if item[0] == 'save':
+                if item[0] in ('save', 'answer'):
                     current_question = item[1]
                     source = item[2]
                     self.last_save = timestamp
@@ -1105,7 +1105,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         return (self.last_answer[self.current_question]
             or self.question_original[self.current_question]).strip() != self.source.strip()
 
-    def save(self):
+    def save(self, what='save'):
         """Save the editor content"""
         if not self.allow_edit:
             self.record(['allow_edit', 'save'])
@@ -1113,7 +1113,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.update_source()
         if self.need_save():
             self.save_button.setAttribute('state', 'wait')
-            self.record(['save', self.current_question, self.source], send_now=True)
+            self.record([what, self.current_question, self.source], send_now=True)
             self.last_answer[self.current_question] = self.source
             return True
         return False
@@ -1337,9 +1337,8 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 self.state = "started"
         elif what == 'good':
             if self.current_question not in self.question_done:
-                self.record(['answer', self.current_question, value.strip()], True)
+                self.save('answer')
                 self.question_done[self.current_question] = True
-                self.last_answer[self.current_question] = value.strip()
                 messages = self.options['good']
                 self.popup_message(messages[millisecs() % len(messages)])
         elif what == 'executor':
