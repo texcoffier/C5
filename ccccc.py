@@ -661,7 +661,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # Th expected recording has been done (in case of multiple retry)
             timestamp = 0
             for item in self.records_in_transit[0]:
-                if not isNaN(item):
+                if item.toFixed:
                     timestamp += Number(item)
                     continue
                 if item[0] == 'save':
