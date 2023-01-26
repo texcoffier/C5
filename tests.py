@@ -83,6 +83,10 @@ def log(text):
     with open("tests.log", "a") as file:
         file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {text}\n")
 
+def question(i):
+    """Question selector"""
+    return f'.index .questions:last-child > DIV:nth-child({i})'
+
 class Tests: # pylint: disable=too-many-public-methods
     """Test for one browser"""
     ticket = None
@@ -359,13 +363,13 @@ class Tests: # pylint: disable=too-many-public-methods
         time.sleep(0.1) # For Firefox
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
-        self.check('.editor', {'innerHTML': Contains('§§')})
+        self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
         self.control('s')
         self.load_page('=JS=introduction')
-        self.check('.editor', {'innerHTML': Contains('§§')})
-        self.move_cursor('.editor')
-        self.check('.editor').send_keys(Keys.DELETE)
-        self.check('.editor').send_keys(Keys.DELETE)
+        self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
+        self.move_cursor('.editor', 30, 200)
+        for _ in range(6):
+            self.check('.editor').send_keys(Keys.BACKSPACE)
         self.check('.save_button').click()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': ~Contains('§')})
@@ -380,32 +384,32 @@ class Tests: # pylint: disable=too-many-public-methods
         """Test question index"""
         self.load_page('=JS=introduction')
         # Try to click on the next question
-        self.check('.questions > DIV:nth-child(4)').click()
+        self.check(question(4)).click()
         self.check('.editor', {'innerText': Contains('court') & ~Contains('long')})
 
-        self.check('.questions > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('current possible')})
-        self.check('.questions > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('')})
-        self.check('.questions > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
+        self.check(question(3), {'innerText': Contains('1'), 'className': Equal('current possible')})
+        self.check(question(4), {'innerText': Contains('2'), 'className': Equal('')})
+        self.check(question(5), {'innerText': Contains('3'), 'className': Equal('')})
         self.select_all()
 
         try:
             self.check('.editor').send_keys("print('Je suis un texte super long')")
             self.check_alert(contains=' !')
-            self.check('.questions > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('good')})
-            self.check('.questions > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('current possible')})
-            self.check('.questions > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
+            self.check(question(3), {'innerText': Contains('1'), 'className': Equal('good')})
+            self.check(question(4), {'innerText': Contains('2'), 'className': Equal('current possible')})
+            self.check(question(5), {'innerText': Contains('3'), 'className': Equal('')})
             self.check('.question', {'innerText': Contains('la_chose_a_afficher')})
 
             # Returns to the first question
-            self.check('.questions > DIV:nth-child(3)').click()
+            self.check(question(3)).click()
             self.check('.editor', {'innerText': Contains('long')})
-            self.check('.questions > DIV:nth-child(3)', {'innerText': Contains('1'), 'className': Equal('current good')})
-            self.check('.questions > DIV:nth-child(4)', {'innerText': Contains('2'), 'className': Equal('possible')})
-            self.check('.questions > DIV:nth-child(5)', {'innerText': Contains('3'), 'className': Equal('')})
+            self.check(question(3), {'innerText': Contains('1'), 'className': Equal('current good')})
+            self.check(question(4), {'innerText': Contains('2'), 'className': Equal('possible')})
+            self.check(question(5), {'innerText': Contains('3'), 'className': Equal('')})
         finally:
             time.sleep(0.5) # Wait save button animation end
             self.check('OPTION[timestamp="1"]').click() # Returns to the original text
-            self.check_alert(accept=True)
+            self.check('.editor').send_keys(' ')
             self.check('.save_button').click()
 
     # def test_admin_home(self):
@@ -485,30 +489,37 @@ class Tests: # pylint: disable=too-many-public-methods
     def test_editor(self):
         """Test editor line insert"""
         self.load_page('=JS=introduction')
-        self.check('.index STYLE + DIV').click() # Returns to the first question
-
-        self.move_cursor('.editor').send_keys(Keys.ENTER)
+        self.check(question(3)).click() # Returns to the first question
+        #for line in sys.stdin:
+        #    try:
+        #        self.check(question(int(line.strip()))).click()
+        #    except:
+        #        pass
+        editor = self.move_cursor('.editor')
+        for _ in range(10):
+            editor.send_keys(Keys.ARROW_UP)
+        editor.send_keys(Keys.ENTER)
         self.check('.overlay', {'innerHTML': Contains('\n\n<span class="hljs-comment">// Lisez')})
         self.control('z')
         self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez')})
-        self.check('.editor').send_keys(Keys.ARROW_DOWN)
-        self.check('.editor').send_keys(Keys.ENTER)
+        editor.send_keys(Keys.ARROW_DOWN)
+        editor.send_keys(Keys.ENTER)
         self.check('.overlay', {'innerHTML': Contains('\n\n<span class="hljs-comment">// Lisez')})
         self.control('z')
-        self.check('.editor').send_keys(Keys.ARROW_RIGHT)
-        self.check('.editor').send_keys(Keys.ENTER)
+        editor.send_keys(Keys.ARROW_RIGHT)
+        editor.send_keys(Keys.ENTER)
         self.check('.overlay', {'innerHTML': Contains('\n/\n/ <span class="hljs-title class_">Lisez')})
         self.control('z')
-        self.check('.editor').send_keys(Keys.END)
-        self.check('.editor').send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauche.</span>\n\n')})
+        editor.send_keys(Keys.END)
+        editor.send_keys(Keys.ENTER)
+        self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauch e.</span>\n\n')})
         self.control('z')
         self.control(Keys.END)
-        self.check('.editor').send_keys('/')
-        self.check('.editor').send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains(');\n/')})
-        self.check('.editor').send_keys('/')
-        self.check('.overlay', {'innerHTML': Contains(');\n/\n/')})
+        editor.send_keys('/')
+        editor.send_keys(Keys.ENTER)
+        self.check('.overlay', {'innerHTML': Contains(');\n\n/')})
+        editor.send_keys('/')
+        self.check('.overlay', {'innerHTML': Contains(');\n\n/\n/')})
     def test_before(self):
         """Goto exam before opening"""
         self.goto('=JS=example')
