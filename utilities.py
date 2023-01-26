@@ -126,7 +126,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                        'save_unlock': '0',
                        'sequential': '1',
                        'theme': 'a11y-light',
-                       'highlight': '0',
+                       'highlight': '#FFF',
                        'notation': '',
                        'messages': [],
                        # For each student login :
@@ -179,6 +179,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                 active_teacher_room.append(0)
             if len(active_teacher_room) == 8:
                 active_teacher_room.append('')
+        if self.config['highlight'] == '0':
+            self.config['highlight'] = '#FFF'
+        elif self.config['highlight'] == '1':
+            self.config['highlight'] = '#0F0'
 
     def update(self):
         """Compute some values"""
@@ -202,7 +206,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         self.proctors = set(re.split('[ \n\r\t]+', self.config['proctors']))
         self.checkpoint = int(self.config['checkpoint'])
         self.sequential = int(self.config['sequential'])
-        self.highlight = int(self.config['highlight'])
+        self.highlight = self.config['highlight']
         self.allow_ip_change = int(self.config['allow_ip_change'])
         self.notation = self.config['notation']
         self.theme = self.config['theme']

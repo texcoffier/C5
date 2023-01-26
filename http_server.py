@@ -515,11 +515,9 @@ async def adm_config_course(config, action, value): # pylint: disable=too-many-b
         config.set_parameter('notation', value)
         feedback = f"«{course}» Notation set to {value[:100]}"
     elif action == 'highlight':
+        assert re.match('#[0-9A-Z]{3}', value)
         config.set_parameter('highlight', value)
-        if value == '0':
-            feedback = f"«{course}» The session is no more highlighted in the student list"
-        else:
-            feedback = f"«{course}» The session (even in the future) is displayed in green to the student session list."
+        feedback = f"«{course}» The session color is now {value}"
     elif action == 'delete':
         if not os.path.exists('Trash'):
             os.mkdir('Trash')
@@ -1076,7 +1074,6 @@ def checkpoint_line(session, course, content):
         ('checkpoint', '🚦', 'Checkpoint required'),
         ('sequential', 'S', 'Sequential question access'),
         ('save_unlock', '🔓', 'Save unlock next question'),
-        ('highlight', 'H', 'Highlight session in the list'),
         ('allow_ip_change', 'IP', 'Allow IP change'),
     ):
         value = course.config.get(attr, 0)
@@ -1085,8 +1082,6 @@ def checkpoint_line(session, course, content):
         if value:
             if attr == 'coloring':
                 tip += ' «' + course.theme + '»'
-            if attr == 'highlight':
-                letter = '<b style="background:#0F0">' + letter + '</b>'
             bools += '<span>' + letter + '<var>' + tip + '</var></span>'
 
 
@@ -1102,7 +1097,7 @@ def checkpoint_line(session, course, content):
     <td>{len(with_me) or ''}
     <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
     <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
-    <td>{bools}
+    <td style="background:{course.config['highlight']}">{bools}
     <td> {
         f'<a target="_blank" href="/adm/session/{course.course}?ticket={session.ticket}">Edit</a>'
         if session.is_admin(course) else ''
@@ -1388,21 +1383,24 @@ async def home(request):
         return await checkpoint_list(request)
     # Student
     utilities.CourseConfig.load_all_configs()
-    now = time.time()
     content = [session.header(),
+        '''<style>
+        BODY { font-family: sans-serif }
+        SPAN { opacity: 0.3 }
+        A:hover SPAN { opacity: 1 }
+        A { text-decoration: none }
+        A:hover { text-decoration: underline }
+        </style>''',
         f'<p><a target="_blank" href="/zip/C5.zip?ticket={session.ticket}">',
-        '💾 ZIP</a> contenant vos fichiers sauvegardés dans C5.'
+        '💾 ZIP</a> contenant vos derniers fichiers sauvegardés dans C5.'
         ]
     for course_name, course in sorted(utilities.CourseConfig.configs.items()):
         if course.status(session.login) not in ('pending', 'running'):
             continue
-        if course.highlight:
-            style = ' style="background: #8F8"'
-        else:
-            style = ''
-        name = course_name.replace('COMPILE_','').replace('/','=')
+        name = '<span>' + course_name.replace('COMPILE_','').replace('/','</span> ')
         content.append(
-            f'<li> <a href="/={course.course}?ticket={session.ticket}"{style}>{name}</a>')
+            f'''<li> <a href="/={course.course}?ticket={session.ticket}"
+                        style="background:{course.highlight}">{name}</a>''')
 
     return response(''.join(content))
 

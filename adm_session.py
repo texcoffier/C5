@@ -33,9 +33,12 @@ def update_course_config(config, feedback):
     """
     first_time = update_course_config.div.style.display == 'none'
     for attr in config:
+        value = config[attr]
+        if attr == 'highlight':
+            attr = value # One element ID per radio button
+            value = '1'
         element = document.getElementById(attr)
         if element:
-            value = config[attr]
             if first_time:
                 element.original_value = value
             elif element.tagName != 'DIV':
@@ -50,7 +53,7 @@ def update_course_config(config, feedback):
             if element.tagName == 'TEXTAREA':
                 element.value = value
             elif element.tagName == 'INPUT':
-                if element.type == 'checkbox':
+                if element.type in ('checkbox', 'radio'):
                     element.checked = value != '0'
                 else:
                     element.value = value
@@ -153,17 +156,24 @@ def do_submit(element):
 def onchange(event):
     """Send the change to the server"""
     target = event.target
-    if not target.original_value and target.original_value != '':
-        return
-    attr = target.id
-    if target.parentNode.tagName == 'LABEL' and target.tagName != 'SELECT':
-        if target.checked:
-            value = '1'
-        else:
-            value = '0'
+    if target.type == 'radio':
+        if not target.checked:
+            return
+        value = target.id
+        attr = target.name
         target = target.parentNode
+    elif not target.original_value and target.original_value != '':
+        return
     else:
-        value = target.value
+        attr = target.id
+        if target.parentNode.tagName == 'LABEL' and target.tagName != 'SELECT':
+            if target.checked:
+                value = '1'
+            else:
+                value = '0'
+            target = target.parentNode
+        else:
+            value = target.value
     target.className = 'wait_answer'
     script = document.createElement('SCRIPT')
     script.src = ('/adm/session/' + COURSE + '/' + attr
@@ -180,6 +190,13 @@ def init():
     for theme in THEMES.split(' '):
         themes.append('<option>' + theme + '</option>')
     themes = ''.join(themes)
+    colors = []
+    for color in ['#FFF', '#CCC',
+                  '#AFA', '#0F0', '#CCF', '#88F', '#FBB', '#F66',
+                  '#FF8', '#EE0', '#8FF', '#0EE', '#FAF', '#F5F']:
+        colors.append('<span style="background:' + color + '">'
+            + ' <input type="radio" name="highlight" id="' + color + '"> </span>')
+    colors = ''.join(colors)
     div.onchange = onchange
     div.innerHTML = "<h1>" + html(COURSE.replace('=', '   ')) + """</h1>
     <title>""" + html(COURSE.replace(RegExp('.*=', ''), ' ')) + """</title>
@@ -210,8 +227,8 @@ def init():
     <label><input type="checkbox" id="sequential"> Question must be answered from first to last.</label>
     <label><input type="checkbox" id="coloring"> Syntaxic coloring of source code with <select id="theme">
     """ + themes + """</select></label>
-    <label><input type="checkbox" id="highlight"> The session is greenly higlighted in sessions lists.</label>
     <label><input type="checkbox" id="allow_ip_change"> Allow IP change (bad Internet connection)</label>
+    Color in the session list: """ + colors + """
     <p class="title"><b>Logins</b> of students with ⅓ more time to answer</p>
     <textarea id="tt"></textarea>
     <p class="title">Grading ladder</p>
