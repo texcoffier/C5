@@ -295,32 +295,26 @@ H2 {
     visibility: visible;
 }
 
-LABEL, .timer {
-    position: absolute;
+.timer, .compiler LABEL {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    margin-right: 0.5em;
+    float: right;
+}
+
+.timer, LABEL {
+    display: inline-block;
+    font-size: 60%;
+    vertical-align: top;
     background: #DDF;
     border: 1px solid #00F;
     font-weight: normal;
-    border-radius: 20px;
-    padding-left: 10px;
-    padding-right: 10px;
-    right: 0.5em;
-}
-
-.executor LABEL {
-    padding-left: 0px;
-    padding-right: 0px;
+    border-radius: 1em;
     margin-left: 0.5em;
 }
 
-.executor LABEL {
-    position: relative;
-}
-
-
-.timer {
-    float: right;
-    top: 0.15em;
-    bottom: 0.15em;
+LABEL:hover, .save_button:hover {
+    filter: brightness(0.9);
 }
 
 .stop_button {
@@ -351,8 +345,10 @@ LABEL *, .timer * { vertical-align: middle }
     display: inline-block;
     background: #DFD;
     border: 1px solid #0F0;
+    height: 2.5em;
+    margin-top: -0.3em
 }
-.timer SPAN { display: inline-block; font-size: 50%; }
+.timer SPAN { display: inline-block; }
 
 H2:hover .timer SPAN DIV {
     visibility: visible;
@@ -422,10 +418,10 @@ SPAN:hover .truncate_sn, SPAN:hover .truncate_fn {
     height: auto;
 }
 
-LABEL, .index DIV, .save_button, .local_button, .tag_button { cursor: pointer }
+LABEL, .index DIV, .save_button, .local_button, .tag_button, .indent_button { cursor: pointer }
 
 
-.save_button, .save_history, .tag_button { float: right; margin-right: 20px }
+.save_button, .save_history, .tag_button { float: right; margin-right: 0.5em }
 
 .save_button[enabled="false"][state="wait"] { background: #F00 }
 .save_button[enabled="false"][state="ok"]   { background: #0F0 }
@@ -443,7 +439,6 @@ LABEL, .index DIV, .save_button, .local_button, .tag_button { cursor: pointer }
 SELECT {
     font-size: 100%;
     padding: 0px;
-    margin-top: -3px;
 }
 
 .grading PRE {

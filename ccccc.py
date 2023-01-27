@@ -99,7 +99,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question = editor = overlay = tester = compiler = executor = time = None
     index = popup_element = save_button = local_button = line_numbers = None
     stop_button = fullscreen = comments = save_history = editor_title = None
-    tag_button = None
+    tag_button = indent_button = None
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
@@ -157,6 +157,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
         'close': "Voulez-vous vraiment quitter cette page ?",
         'question_title': 'Question',
+        'editor_title': 'Code source',
+        'editor_indent': 'Indent(F8)',
         'tester_title': 'Les buts que vous devez atteindre',
         'compiler_title': 'Compilation',
         'compiler_title_toggle': 'Automatique (F9)',
@@ -168,7 +170,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'icon_save': '📩',
         'icon_local': '💾', # Used by session and question local save.
         'icon_git': '<b style="font-size:50%">GIT</b>',
-        'icon_tag': '<tt>TAG</tt>',
+        'icon_tag': 'TAG',
         'icon_stop': 'Terminer<br>Examen', # Only displayed if CHECKPOINT
         'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
         'stop_done': "<h1>C'est fini.</h1>",
@@ -194,6 +196,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'display_compile_run': 1,                   # True if display the F9 button
         'display_tag': 1,                           # True if display 'icon_tag'
         'display_history': 1,                       # True if display version history
+        'display_indent': 1,                        # True if display the F8 button
         'automatic_compilation': True,              # True if compilation is automatic
         #
         # Unmodifiable session parameters
@@ -336,7 +339,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.onkeyup = bind(self.update_cursor_position, self)
         self.editor.focus()
 
-        self.editor_title.innerHTML = "<h2>Code source </h2>"
+        self.editor_title.innerHTML = '<h2>' + self.options['editor_title'] + '</h2>'
+        self.indent_button = document.createElement('LABEL')
+        self.indent_button.innerHTML = self.options['editor_indent']
+        self.indent_button.onclick = bind(self.do_indent, self)
+        self.indent_button.className = 'indent_button'
+        if self.options['display_indent']:
+            self.editor_title.firstChild.appendChild(self.indent_button)
 
         self.save_button = document.createElement('TT')
         self.save_button.innerHTML = self.options['icon_save']
@@ -351,7 +360,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_history.className = 'save_history'
             self.editor_title.firstChild.appendChild(self.save_history)
 
-        self.tag_button = document.createElement('TT')
+        self.tag_button = document.createElement('LABEL')
         if self.options['display_tag']:
             self.tag_button.innerHTML = self.options['icon_tag']
             self.tag_button.style.fontFamily = 'emoji'
@@ -917,6 +926,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.cursor_position,
             self.source[:self.cursor_position]
             ]
+    def do_indent(self):
+        """Formate the source code"""
+        self.unlock_worker()
+        self.save_cursor()
+        self.worker.postMessage(['indent', self.source.strip()])
+
     def onkeydown(self, event):
         """Key down"""
         if not self.allow_edit:
@@ -949,9 +964,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.options['automatic_compilation'] = True
             event.preventDefault(True)
         elif event.key == 'F8':
-            self.unlock_worker()
-            self.save_cursor()
-            self.worker.postMessage(['indent', self.source.strip()])
+            self.do_indent()
         elif event.key == 'Enter' and event.target is self.editor:
             # Fix Firefox misbehavior
             self.oldScrollTop = self.editor.scrollTop
