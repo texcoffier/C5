@@ -1,24 +1,11 @@
 """
 Generate the home page for a course.
 """
-try:
-    # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-    STUDENTS = STUDENTS
-    COURSE = COURSE
-    TICKET = TICKET
-    document = document
-    window = window
-    isNaN = isNaN
-    Math = Math
-    parse_grading = parse_grading
-    Number = Number
-except ValueError:
-    pass
 
 MAX_WIDTH = 400
 SNAIL = 4
 
-def analyse(http_server, debug): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Extract statistiques from log"""
     answered = []
     key_stroke = 0
@@ -44,7 +31,7 @@ def analyse(http_server, debug): # pylint: disable=too-many-locals,too-many-bran
         line = eval(line) # pylint: disable=eval-used
         current_time = line[0]
         for cell in line[1:]:
-            if type(cell) == "Number":
+            if is_int(cell):
                 current_time += cell
                 continue
             if cell.toLowerCase:
@@ -149,7 +136,7 @@ TABLE TR:hover TD { background: #EEE }
     for login in students:
         print(login)
         student = STUDENTS[login]
-        cache[login] = analyse(student.http_server, login == 'p2202699')
+        cache[login] = analyse(student.http_server)
         grading = parse_grading(student['grades'])
         grade = 0
         graders = []
@@ -223,7 +210,8 @@ TABLE TR:hover TD { background: #EEE }
                         + 'px" class="sec' + i % len(COLORS) + '">' + more + '</span>')
         text.append('<td>')
         for filename in student.files:
-            text.append(' <a target="_blank" href="/adm/get/COMPILE_' + COURSE.replace('=', '/') + '/')
+            text.append(' <a target="_blank" href="/adm/get/COMPILE_'
+                + COURSE.replace('=', '/') + '/')
             text.append(login)
             text.append('/')
             text.append(filename)
@@ -288,9 +276,8 @@ TABLE TR:hover TD { background: #EEE }
 
     by_teacher = {}
     partially_graded = []
-    nr_grades_max = max(*[nr_grades[login] for login in nr_grades])
-    for login in nr_grades:
-        nrg = nr_grades[login]
+    nr_grades_max = max(*nr_grades.values())
+    for login, nrg in nr_grades.items():
         if nrg and nrg < nr_grades_max:
             partially_graded.append(login)
             for grader in cache[login]['graders'].split(' '):
@@ -307,9 +294,8 @@ TABLE TR:hover TD { background: #EEE }
         text.append('</tr>')
 
     partially_graded = []
-    nr_grades_max = max(*[nr_grades[login] for login in nr_grades])
-    for login in nr_grades:
-        nrg = nr_grades[login]
+    nr_grades_max = max(*nr_grades.values())
+    for login, nrg in nr_grades.items():
         if nrg and nrg < nr_grades_max - 1:
             partially_graded.append(login)
     if partially_graded:
@@ -318,13 +304,13 @@ TABLE TR:hover TD { background: #EEE }
         text.append('<td>')
         text.append(links(partially_graded, True))
         text.append('</tr>')
-    for teacher in by_teacher:
+    for teacher, students in by_teacher.items():
         text.append('<tr><td>')
         text.append(teacher)
         text.append('<td>')
-        text.append(links(by_teacher[teacher]))
+        text.append(links(students))
         text.append('<td>')
-        text.append(links(by_teacher[teacher], True))
+        text.append(links(students, True))
         text.append('</tr>')
 
     text.append('</table>')

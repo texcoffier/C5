@@ -3,16 +3,6 @@
 """
 To be Python compatible
 """
-Object = Object # pylint: disable=undefined-variable
-Array = Array # pylint: disable=undefined-variable
-String = String # pylint: disable=undefined-variable
-Date = Date # pylint: disable=undefined-variable
-alert = alert # pylint: disable=undefined-variable
-document = document # pylint: disable=undefined-variable
-TICKET = TICKET # pylint: disable=undefined-variable
-update_page = update_page # pylint: disable=undefined-variable
-JSON = JSON # pylint: disable=undefined-variable
-Math = Math # pylint: disable=undefined-variable
 
 def str(txt): # pylint: disable=redefined-builtin
     """Python like"""
@@ -22,6 +12,18 @@ def bind(fct, _obj):
     return fct
 Object.defineProperty(Array.prototype, 'append',
                       {'enumerable': False, 'value': Array.prototype.push})
+def dict_values():
+    """Dicts values"""
+    THIS = eval('this') # pylint: disable=eval-used
+    return [THIS[i] for i in THIS] # pylint: disable=undefined-variable
+Object.defineProperty(Object.prototype, 'values',
+                      {'enumerable': False, 'value': dict_values})
+def dict_items():
+    """Dict items"""
+    THIS = eval('this') # pylint: disable=eval-used
+    return [[i, THIS[i]] for i in THIS] # pylint: disable=undefined-variable
+Object.defineProperty(Object.prototype, 'items',
+                      {'enumerable': False, 'value': dict_items})
 Object.defineProperty(String.prototype, 'lower',
                       {'enumerable': False, 'value': String.prototype.toLowerCase})
 Object.defineProperty(String.prototype, 'upper',
@@ -44,10 +46,9 @@ Object.defineProperty(String.prototype, 'join',
 
 def html(txt):
     """Escape < > &"""
-    # pylint: disable=undefined-variable
-    return txt.replace(RegExp('&', 'g'), '&amp;'
-                      ).replace(RegExp('<', 'g'), '&lt;'
-                               ).replace(RegExp('>', 'g'), '&gt;')
+    return str(txt).replace(RegExp('&', 'g'), '&amp;'
+                           ).replace(RegExp('<', 'g'), '&lt;'
+                                    ).replace(RegExp('>', 'g'), '&gt;')
 
 def record_error():
     """onerror event handler"""
@@ -96,3 +97,11 @@ def nice_date(seconds):
 def max(*items): # pylint: disable=redefined-builtin)
     """Emulate Python max"""
     return Math.max.apply(None, items)
+
+def list(items): # pylint: disable=redefined-builtin)
+    """Emulate Python list"""
+    return [i for i in items] # pylint: disable=unnecessary-comprehension
+
+def is_int(obj):
+    """True is it is a number"""
+    return obj.toFixed

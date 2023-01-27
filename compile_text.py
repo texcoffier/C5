@@ -2,7 +2,7 @@
 Do nothing compiler
 """
 
-class Session(Compile): # pylint: disable=undefined-variable,invalid-name
+class Session(Compile): # pylint: disable=too-few-public-methods
     """Do nothing compiler and evaluator"""
     def init(self):
         """Initialisations"""

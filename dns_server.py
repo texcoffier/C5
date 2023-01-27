@@ -12,7 +12,7 @@ import traceback
 import socket
 
 sys.stderr.close()
-sys.stderr = open('dns_server.log', 'a')
+sys.stderr = open('dns_server.log', 'a', encoding="utf-8") # pylint: disable=consider-using-with
 print(f"\nStart at {time.ctime()}", file=sys.stderr)
 
 while True:

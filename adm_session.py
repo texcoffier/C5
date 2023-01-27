@@ -1,18 +1,8 @@
+"""
+Page to configure a session
+"""
 
-if False: # pylint: disable=using-constant-test
-    # pylint: disable=undefined-variable,invalid-name,self-assigning-variable
-    COURSE = COURSE
-    TICKET = TICKET
-    html = html
-    RegExp = RegExp
-    Date = Date
-    document = document
-    setTimeout = setTimeout
-    encodeURIComponent = encodeURIComponent
-
-
-THEMES = "a11y-dark a11y-light agate an-old-hope androidstudio arduino-light arta ascetic atom-one-dark-reasonable atom-one-dark atom-one-light brown-paper codepen-embed color-brewer dark default devibeans docco far felipec foundation github-dark-dimmed github-dark github gml googlecode gradient-dark gradient-light grayscale hybrid idea intellij-light ir-black isbl-editor-dark isbl-editor-light kimbie-dark kimbie-light lightfair lioshi magula mono-blue monokai-sublime monokai night-owl nnfx-dark nnfx-light nord obsidian panda-syntax-dark panda-syntax-light paraiso-dark paraiso-light pojoaque purebasic qtcreator-dark qtcreator-light rainbow routeros school-book shades-of-purple srcery stackoverflow-dark stackoverflow-light sunburst tokyo-night-dark tokyo-night-light tomorrow-night-blue tomorrow-night-bright vs vs2015 xcode xt256"
-
+THEMES = "a11y-dark a11y-light agate an-old-hope androidstudio arduino-light arta ascetic atom-one-dark-reasonable atom-one-dark atom-one-light brown-paper codepen-embed color-brewer dark default devibeans docco far felipec foundation github-dark-dimmed github-dark github gml googlecode gradient-dark gradient-light grayscale hybrid idea intellij-light ir-black isbl-editor-dark isbl-editor-light kimbie-dark kimbie-light lightfair lioshi magula mono-blue monokai-sublime monokai night-owl nnfx-dark nnfx-light nord obsidian panda-syntax-dark panda-syntax-light paraiso-dark paraiso-light pojoaque purebasic qtcreator-dark qtcreator-light rainbow routeros school-book shades-of-purple srcery stackoverflow-dark stackoverflow-light sunburst tokyo-night-dark tokyo-night-light tomorrow-night-blue tomorrow-night-bright vs vs2015 xcode xt256" # pylint: disable=line-too-long
 
 def add(element):
     """Add an element to the document BODY"""
@@ -25,14 +15,15 @@ def load_config():
     add(script)
 
 def do_grade(login):
+    """Open the window to grade the student"""
     window.open('/grade/' + COURSE + '/' + login + '?ticket=' + TICKET)
 
-def update_course_config(config, feedback):
+def update_course_config(config, feedback): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Update the HTML with the configuration.
     This function is called by server answer.
     """
     first_time = update_course_config.div.style.display == 'none'
-    for attr in config:
+    for attr in config: # pylint: disable=too-many-nested-blocks
         value = config[attr]
         if attr == 'highlight':
             attr = value # One element ID per radio button
@@ -71,7 +62,8 @@ def update_course_config(config, feedback):
             elif attr == 'active_teacher_room':
                 content = []
                 for login in value:
-                    (active, teacher, room, timestamp, nr_blurs, nr_questions, hostname, time_bonus, grade) = value[login]
+                    active, teacher, room, timestamp, nr_blurs, nr_questions, \
+                        hostname, time_bonus, grade = value[login]
                     date = Date()
                     date.setTime(1000 * timestamp)
                     more = ''
@@ -110,7 +102,11 @@ def update_course_config(config, feedback):
                 element.innerHTML = ''.join(content)
             else:
                 element.innerHTML = value
-    document.getElementById('invalid_date').style.display = config.start > config.stop and 'block' or 'none'
+    if config.start > config.stop:
+        display = 'block'
+    else:
+        display = 'none'
+    document.getElementById('invalid_date').style.display = display
 
     update_course_config.div.style.display = 'block'
     if feedback:
@@ -123,30 +119,30 @@ def update_course_config(config, feedback):
 
 def upload(element):
     """Send the source file"""
-    x = document.getElementById('script')
-    if x:
-        x.parentNode.removeChild(x)
-    x = document.createElement('IFRAME')
-    x.id = 'script'
-    x.name = 'script'
-    element.append(x)
+    script = document.getElementById('script')
+    if script:
+        script.parentNode.removeChild(script)
+    script = document.createElement('IFRAME')
+    script.id = 'script'
+    script.name = 'script'
+    element.append(script)
 
     file = document.getElementById('file')
-    event = eval("new MouseEvent('click', {'view': window, 'bubbles': true, 'cancelable': true})")
+    event = eval("new MouseEvent('click', {'view': window, 'bubbles': true, 'cancelable': true})") # pylint: disable=eval-used
     file.dispatchEvent(event)
 
 def upload_media(element):
     """Send a media file"""
-    x = document.getElementById('script')
-    if x:
-        x.parentNode.removeChild(x)
-    x = document.createElement('IFRAME')
-    x.id = 'script'
-    x.name = 'script'
-    element.append(x)
+    script = document.getElementById('script')
+    if script:
+        script.parentNode.removeChild(script)
+    script = document.createElement('IFRAME')
+    script.id = 'script'
+    script.name = 'script'
+    element.append(script)
 
     file = document.getElementById('media')
-    event = eval("new MouseEvent('click', {'view': window, 'bubbles': true, 'cancelable': true})")
+    event = eval("new MouseEvent('click', {'view': window, 'bubbles': true, 'cancelable': true})") # pylint: disable=eval-used
     file.dispatchEvent(event)
 
 def do_submit(element):
@@ -176,8 +172,8 @@ def onchange(event):
             value = target.value
     target.className = 'wait_answer'
     script = document.createElement('SCRIPT')
-    script.src = ('/adm/session/' + COURSE + '/' + attr
-        + '/' + encodeURIComponent(value) + '?ticket=' + TICKET)
+    script.src = ('/adm/session/' + COURSE + '/' + attr + '/'
+        + encodeURIComponent(value) + '?ticket=' + TICKET)
     add(script)
     event.stopPropagation()
 
@@ -198,7 +194,7 @@ def init():
             + ' <input type="radio" name="highlight" id="' + color + '"> </span>')
     colors = ''.join(colors)
     div.onchange = onchange
-    div.innerHTML = "<h1>" + html(COURSE.replace('=', '   ')) + """</h1>
+    div.innerHTML = ("<h1>" + html(COURSE.replace('=', '   ')) + """</h1>
     <title>""" + html(COURSE.replace(RegExp('.*=', ''), ' ')) + """</title>
     <link rel="stylesheet" href="/adm_session.css?ticket=""" + TICKET + """">
     <div class="boxed rights">
@@ -244,9 +240,12 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     >Edit source with C5</a>
     <a target="_blank" href="=""" + COURSE + '?ticket=' + TICKET + """">Try the exercises</a>
     <br>
-    <a target="_blank" href="/checkpoint/""" + COURSE + '?ticket=' + TICKET + """">Place students</a>
-    <a target="_blank" href="/adm/course/""" + COURSE + '?ticket=' + TICKET + """">See students results</a>
-    <a target="_blank" href="/adm/get/COMPILE_""" + COURSE.replace('=', '/') + '.zip?ticket=' + TICKET + """">Load full ZIP</a>
+    <a target="_blank" href="/checkpoint/""" + COURSE + '?ticket=' + TICKET
+    + """">Place students</a>
+    <a target="_blank" href="/adm/course/""" + COURSE + '?ticket=' + TICKET
+    + """">See students results</a>
+    <a target="_blank" href="/adm/get/COMPILE_""" + COURSE.replace('=', '/')
+    + '.zip?ticket=' + TICKET + """">Load full ZIP</a>
     <br>
     <a href="javascript:name=prompt('New name?');
             if (name && name != 'null')
@@ -255,7 +254,8 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
                 undefined;
             ">
      Rename session</a>
-    <a href="javascript:if(confirm('Really delete?'))window.location='/adm/session/""" + COURSE + '/delete/?ticket=' + TICKET + """'">
+    <a href="javascript:if(confirm('Really delete?'))window.location='/adm/session/"""
+    + COURSE + '/delete/?ticket=' + TICKET + """'">
      Delete <b>ALL</b></a>
     <p class="title">Feedback</p>
     <div id="feedback"></div>
@@ -272,7 +272,7 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
           action="/upload_media/""" + COURSE.replace('=', '/') + "?ticket=" + TICKET + """">
           <input id="media" type="file" name="course" onchange="do_submit(this)">
     </form>
-    """
+    """)
     add(div)
     setTimeout(load_config, 10) # Wait CSS loading
 

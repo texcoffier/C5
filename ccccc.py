@@ -1,4 +1,4 @@
-# pylint: disable=invalid-name,too-many-arguments,too-many-instance-attributes,self-assigning-variable,len-as-condition
+# pylint: disable=invalid-name,too-many-arguments,too-many-instance-attributes,len-as-condition
 
 """
 To simplify the class contains the code for the GUI and the worker.
@@ -9,50 +9,7 @@ CCCCC          class manages the GUI
 Compile        worker base class to manage the question list, compilation, execution
 Question       base class for question definition
 """
-
 try:
-    # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-    document = document
-    setInterval = setInterval
-    setTimeout = setTimeout
-    Number = Number
-    RegExp = RegExp
-    bind = bind
-    hljs = hljs
-    window = window
-    screen = screen
-    confirm = confirm
-    millisecs = millisecs
-    html = html
-    Date = Date
-    Math = Math
-    record = record
-    parse_grading = parse_grading
-    alert = alert
-    prompt = prompt
-    nice_date = nice_date
-    two_digit = two_digit
-    COURSE = COURSE
-    GRADING = GRADING
-    STUDENT = STUDENT
-    NOTATION = NOTATION
-    JSON = JSON
-    LOGIN = LOGIN
-    ANSWERS = ANSWERS
-    TICKET = TICKET
-    ADMIN = ADMIN
-    SOCK = SOCK
-    STOP = STOP
-    CHECKPOINT = CHECKPOINT
-    VERSIONS = VERSIONS
-    CP = CP
-    SAVE_UNLOCK = SAVE_UNLOCK
-    SEQUENTIAL = SEQUENTIAL
-    WHERE = WHERE
-    INFOS = INFOS
-    COLORING = COLORING
-    ALL_SAVES = ALL_SAVES
-    encodeURIComponent = encodeURIComponent
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
         """Needed for rapydscript"""
@@ -102,6 +59,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     tag_button = indent_button = None
     top = None # Top page HTML element
     source = None # The source code to compile
+    source_with_newlines = None
     old_source = None
     oldScrollTop = None
     highlight_errors = {}
@@ -220,6 +178,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
     allow_edit = 0
     source_in_past = None
     records_last_retry = 0 # Wait before resending the form
+    version = 0 # version being graded
+    nr_grades = None
+    grading = None
+    current_key = None
 
     def __init__(self):
         print("GUI: start")
@@ -313,7 +275,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_button.style.display = 'none'
             if self.stop_button:
                 self.stop_button.style.display = 'none'
-    def create_gui(self):
+    def create_gui(self): # pylint: disable=too-many-statements
         """The text editor container"""
         self.options['positions']['overlay'] = self.options['positions']['editor']
         if GRADING:
@@ -408,14 +370,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def save_local(self):
         """Save the source on a local file"""
-        bb = eval('new Blob([' + JSON.stringify(self.source) + '], {"type": "text/plain"})')
+        bb = eval('new Blob([' + JSON.stringify(self.source) + '], {"type": "text/plain"})') # pylint: disable=eval-used
         a = document.createElement('a')
         a.download = (self.course.split('=')[1] + '_' + (self.current_question + 1)
             + '.' + (self.options['extension'] or 'txt'))
         a.href = window.URL.createObjectURL(bb)
         a.click()
 
-    def scheduler(self): # pylint: disable=too-many-branches
+    def scheduler(self): # pylint: disable=too-many-branches,too-many-statements
         """Send a new job if free and update the screen"""
         if not self.allow_edit:
             return
@@ -532,8 +494,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay.style.visibility = 'visible'
     def clear_highlight_errors(self, update_cursor=True):
         """Make space fo the new errors"""
-        for key in self.highlight_errors:
-            if self.highlight_errors[key] and not self.highlight_errors[key].startswith('cursor'):
+        for key, what in self.highlight_errors.items():
+            if what and not what.startswith('cursor'):
                 self.highlight_errors[key] = None
         while (self.overlay.lastChild
                and self.overlay.lastChild.className
@@ -542,6 +504,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if update_cursor:
             self.update_cursor_position()
     def update_source(self):
+        """Extract the textContent of the DIV with the good \n"""
         def clear_text(state):
             if state.node.tagName == 'DIV':
                 if len(state.text) and state.text[-1] != '\n':
@@ -581,15 +544,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
             state['text'].pop()
         self.source = ''.join(state['text'])
 
-    def coloring(self): # pylint: disable=too-many-statements
+    def coloring(self): # pylint: disable=too-many-statements,too-many-branches
         """Coloring of the text editor with an overlay."""
         self.update_source()
         self.overlay.innerHTML = html(self.source_with_newlines)
         self.overlay.className = 'overlay language-' + self.options['language']
-        if self.options.coloring:
+        if self.options['coloring']:
             hljs.highlightElement(self.overlay)
-        for line_char in self.highlight_errors:
-            what = self.highlight_errors[line_char]
+        for line_char, what in self.highlight_errors.items():
             line_nr, char_nr = line_char.split(':')
             self.add_highlight_errors(line_nr, char_nr, what)
 
@@ -619,7 +581,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     comment.style.top = top + 'px'
                     self.comments.appendChild(comment)
                 comment.textContent = (comments[i] or '').strip()
-                comment.className = comments[i] and 'filled' or 'empty'
+                if comments[i]:
+                    comment.className = 'filled'
+                else:
+                    comment.className = 'empty'
                 if comments[i]:
                     lines = comments[i].strip().split('\n')
                     comment.rows = len(lines)
@@ -637,7 +602,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             marker = document.createElement('DIV')
             marker.className = 'wrapped'
             marker.style.left = rect.left - self.overlay.offsetLeft + 'px'
-            marker.style.top = rect.top + line_height + self.editor.scrollTop - self.overlay.offsetTop + 'px'
+            marker.style.top = (rect.top + line_height + self.editor.scrollTop
+                - self.overlay.offsetTop + 'px')
             marker.style.width = rect.width + 'px'
             marker.style.height = rect.height - line_height + 'px'
             self.overlay.appendChild(marker)
@@ -752,7 +718,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.close_popup(event):
             return
         self.record('MouseDown')
-    def onmouseup(self, event):
+    def onmouseup(self, _event):
         """Mouse up"""
         self.mouse_pressed = -1
     def onmousemove(self, event):
@@ -817,7 +783,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         lines = self.source[:position].split('\n')
         return len(lines), len(lines[-1])
 
-    def highlight_unbalanced(self):
+    def highlight_unbalanced(self): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         """Highlight unbalanced parenthesis. Returns the next character to check"""
         highlight_start = 0
         highlight_stack = [] # stack of [cursor position, '({[']
@@ -884,8 +850,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         pos = [current_position, do_div_br_collapse]
         """
         # Remove old cursor position
-        for key in self.highlight_errors:
-            if self.highlight_errors[key] and self.highlight_errors[key].startswith('cursor'):
+        for key, error in self.highlight_errors.items():
+            if error and error.startswith('cursor'):
                 self.highlight_errors[key] = None
         self.do_coloring = True
         cursor = document.getSelection().getRangeAt(0).cloneRange()
@@ -932,7 +898,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.save_cursor()
         self.worker.postMessage(['indent', self.source.strip()])
 
-    def onkeydown(self, event):
+    def onkeydown(self, event): # pylint: disable=too-many-branches
         """Key down"""
         if not self.allow_edit:
             self.record(['allow_edit', 'onkeydown'])
@@ -1133,7 +1099,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Save the editor content"""
         if not self.allow_edit:
             self.record(['allow_edit', 'save'])
-            return
+            return False
         self.update_source()
         if self.need_save():
             self.save_button.setAttribute('state', 'wait')
@@ -1251,7 +1217,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         content.append("</pre>")
         return content
 
-    def send_mail(self, right=True):
+    def send_mail(self):
         """Prepare mail for student"""
         if confirm('''OK pour mettre les commentaires à droite des lignes.
 
@@ -1372,7 +1338,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                     continue
                 if value.startswith('\002EVAL'):
                     #print(value[5:])
-                    eval(value[5:])
+                    eval(value[5:]) # pylint: disable=eval-used
                 elif value.startswith('\002RACKET'):
                     self.racket(value[7:])
                 elif value.startswith('\002WAIT'):
@@ -1500,7 +1466,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         else:
             self.record(['allow_edit', 'goto_question'])
 
-    def set_editor_content(self, message):
+    def set_editor_content(self, message): # pylint: disable=too-many-branches,too-many-statements
         """Set the editor content (question change or reset)"""
         self.overlay_hide()
         self.editor.innerText = message
@@ -1645,6 +1611,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         self.popup_element = div
 
     def racket(self, text):
+        """Parse messages from the Racket remote compiler"""
         text = text.split('\n')
         if ':::' in text[0]:
             position = int(text[0].split(':::')[1].split(' ')[0])
@@ -1670,6 +1637,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
 
 
 class Plot:
+    """Grapic state and utilities"""
     def __init__(self, ctx, height, bcolor):
         self.max = 10000
         self.curves = []
@@ -1706,7 +1674,7 @@ class Plot:
                     ymax = y
         return xmin, xmax, ymin, ymax
 
-    def draw(self, x1, y1, x2, y2, clear):
+    def draw(self, x1, y1, x2, y2, clear): # pylint: disable=too-many-locals
         """Display the curves"""
         if clear:
             save_color = self.ctx.fillStyle
@@ -1738,9 +1706,9 @@ class Plot:
         self.ctx.fillText(ymin, x1 - 30, self.height - y1)
         self.ctx.fillText(ymax, x1 - 30, self.height - y2)
 
-class Grapic:
+class Grapic: # pylint: disable=too-many-public-methods
     """For the Grapic library emulator"""
-    canvas = bcolor = ctx = height = width = None
+    canvas = bcolor = ctx = ctxs = height = width = None
     bcolor = '#000'
     plots = []
     images = []

@@ -1,8 +1,7 @@
 """
 Run the compilation and execution on a remote server
 """
-
-class Session(Compile): # pylint: disable=undefined-variable,invalid-name
+class Session(Compile): # pylint: disable=too-many-instance-attributes
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None
@@ -12,6 +11,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     run_tester_after_exec = False
     nr_errors = nr_warnings = 0
     stoped = False
+    previous_source = ''
 
     def init(self):
         """Your own compiler init"""

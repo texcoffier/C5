@@ -31,7 +31,7 @@ STATS = []
 
 async def one_student():
     """Emulate one student work"""
-    async with websockets.connect(URL, extra_headers=HEADERS) as websocket:
+    async with websockets.connect(URL, extra_headers=HEADERS) as websocket: # pylint: disable=no-member
         while True:
             await asyncio.sleep(1 + random.random())
             start = time.time()

@@ -13,9 +13,9 @@ document = {
 }
 window = self # pylint: disable=undefined-variable
 
-importScripts('node_modules/@jcubic/lips/src/lips.js') # pylint: disable=undefined-variable
+importScripts('node_modules/@jcubic/lips/src/lips.js')
 
-class Session(Compile): # pylint: disable=undefined-variable,invalid-name
+class Session(Compile):
     """LISP compiler and evaluator"""
     execution_result = ''
     execution_returns = None
@@ -75,7 +75,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
         self.execution_result = ''
         window.lips.exec(source, self.environment).catch(onerror).then(done, done) # pylint: disable=no-member
 
-    def run_indent(self, source):
+    def run_indent(self, _source):
         """LISP formatter"""
-        code = eval("new window.lips.Formatter(source)")
+        code = eval("new window.lips.Formatter(source)") # pylint: disable=eval-used
         self.post('editor', code.format())

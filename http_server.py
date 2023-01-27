@@ -43,6 +43,7 @@ Lancer les commandes :
 """
 
 def response(content, content_type="text/html", charset='utf-8', cache=False):
+    """Standard response"""
     headers = {
             "Cross-Origin-Opener-Policy": "same-origin",
             "Cross-Origin-Embedder-Policy": "require-corp",
@@ -125,7 +126,7 @@ def filter_last_answer(answers):
         last[source_answer_time[1]] = source_answer_time
     return last
 
-async def editor(session, is_admin, course, login, grading=0, author=0):
+async def editor(session, is_admin, course, login, grading=0, author=0): # pylint: disable=too-many-arguments,too-many-locals
     """Return the editor page.
        'saved' : see 'get_answer' comment.
     """
@@ -197,12 +198,12 @@ async def editor(session, is_admin, course, login, grading=0, author=0):
 
 def handle(base=''):
     """Send the file content"""
-    async def real_handle(request): # pylint: disable=too-many-branches
+    async def real_handle(request): # pylint: disable=too-many-branches,too-many-return-statements
         if base:
             session = None # Not authenticated
         else:
             session = await utilities.Session.get(request)
-            login = await session.get_login(str(request.url).split('?')[0])
+            login = await session.get_login(str(request.url).split('?', 1)[0])
         filename = request.match_info['filename']
         course = None
         if base:
@@ -320,10 +321,11 @@ async def record_grade(request):
         return response("Hacker?")
     grade_file = f'{course.dirname}/{login}/grades.log'
     if 'grade' in post:
-        with open(grade_file, "a") as file:
-            file.write(json.dumps([int(time.time()), session.login, post['grade'], post['value']]) + '\n')
+        with open(grade_file, "a", encoding='utf-8') as file:
+            file.write(json.dumps([int(time.time()), session.login,
+                                   post['grade'], post['value']]) + '\n')
     if os.path.exists(grade_file):
-        with open(grade_file, "r") as file:
+        with open(grade_file, "r", encoding='utf-8') as file:
             grades = file.read()
             grading = {}
             for line in grades.split('\n'):
@@ -339,7 +341,8 @@ async def record_grade(request):
             course.active_teacher_room[login][8] = new_value
     else:
         grades = ''
-    return response(f"<!DOCTYPE html>\n<script>window.parent.ccccc.update_grading({json.dumps(grades)})</script>")
+    return response(f"""<!DOCTYPE html>
+    <script>window.parent.ccccc.update_grading({json.dumps(grades)})</script>""")
 
 async def record_comment(request):
     """Log a comment"""
@@ -353,15 +356,17 @@ async def record_comment(request):
         return response("Hacker?")
     comment_file = f'{course.dirname}/{login}/comments.log'
     if 'comment' in post:
-        with open(comment_file, "a") as file:
+        with open(comment_file, "a", encoding='utf-8') as file:
             file.write(json.dumps([int(time.time()), session.login, int(post['question']),
-                                   int(post['version']), int(post['line']), post['comment']]) + '\n')
+                                   int(post['version']), int(post['line']),
+                                   post['comment']]) + '\n')
     if os.path.exists(comment_file):
-        with open(comment_file, "r") as file:
+        with open(comment_file, "r", encoding='utf-8') as file:
             comments = file.read()
     else:
         comments = ''
-    return response(f"<!DOCTYPE html>\n<script>window.parent.ccccc.update_comments({json.dumps(comments)})</script>")
+    return response(f"""<!DOCTYPE html>
+    <script>window.parent.ccccc.update_comments({json.dumps(comments)})</script>""")
 
 async def load_student_infos():
     """Load all student info in order to answer quickly"""
@@ -423,10 +428,10 @@ async def adm_course(request):
                 files.append(filename)
         try:
             student['status'] = course.status(user)
-            with open(f'{course.dirname}/{user}/http_server.log') as file:
+            with open(f'{course.dirname}/{user}/http_server.log', encoding='utf-8') as file:
                 student['http_server'] = file.read()
 
-            with open(f'{course.dirname}/{user}/grades.log') as file:
+            with open(f'{course.dirname}/{user}/grades.log', encoding='utf-8') as file:
                 student['grades'] = file.read()
         except IOError:
             pass
@@ -498,7 +503,8 @@ async def adm_config_course(config, action, value): # pylint: disable=too-many-b
         feedback = f"«{course}» Syntax coloring: «{value != '0'}»"
     elif action == 'save_unlock':
         config.set_parameter('save_unlock', value)
-        feedback = f"«{course}» Unlock next question on save «{'not' if value == '0' else ''} allowed»"
+        yes_no = 'not' if value == '0' else ''
+        feedback = f"«{course}» Unlock next question on save «{yes_no} allowed»"
     elif action == 'checkpoint':
         config.set_parameter('checkpoint', value)
         if value == '0':
@@ -582,7 +588,7 @@ def text_to_dict(text):
             dictionary[key] = value
     return dictionary
 
-async def adm_c5(request): # pylint: disable=too-many-branches
+async def adm_c5(request): # pylint: disable=too-many-branches,too-many-statements
     """Remove a C5 master"""
     _session = await get_root_login(request)
     action = request.match_info['action']
@@ -682,11 +688,11 @@ async def adm_get(request):
                 data = await process.stdout.read(64 * 1024)
                 await stream.write(data)
             return stream
-        with open(filename, 'r') as file:
+        with open(filename, 'r', encoding='utf-8') as file:
             content = file.read()
     return response(content, content_type='text/plain')
 
-async def my_zip(request):
+async def my_zip(request): # pylint: disable=too-many-locals
     """Get ZIP"""
     session = await utilities.Session.get(request)
     course = request.match_info['course']
@@ -721,7 +727,7 @@ async def my_zip(request):
 
     return stream
 
-async def my_git(request):
+async def my_git(request): # pylint: disable=too-many-locals
     """Create GIT repository"""
     login = (await utilities.Session.get(request)).login
     course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
@@ -739,7 +745,8 @@ async def my_git(request):
 
     git_dir = False
     infos = await utilities.LDAP.infos(login)
-    author = infos['fn'].title() + ' ' + infos['sn'].upper()  + '<' + infos.get('mail', 'x@y.z') + '>'
+    author = f"{infos['fn'].title()} {infos['sn'].upper()} <{infos.get('mail', 'x@y.z')}>"
+    question = None
     for (source, _type, timestamp, tag), question in sorted(
             ((source, question) # The saved sources
             for question, sources in answers.items()
@@ -796,7 +803,7 @@ Toutes les commandes précédentes affichent un numéro de commit en hexadécima
     await stream.write(data.getvalue())
     return stream
 
-def get_answers(course, user, compiled=False):
+def get_answers(course, user, compiled=False): # pylint: disable=too-many-branches
     """Get question answers.
        The types are:
          * 0 : saved source
@@ -809,43 +816,44 @@ def get_answers(course, user, compiled=False):
     answers = collections.defaultdict(list)
     blurs = collections.defaultdict(int)
     try:
-        with open(f'{course}/{user}/http_server.log') as file:
+        with open(f'{course}/{user}/http_server.log', encoding='utf-8') as file:
             question = 0
-            for line in file:
+            for line in file: # pylint: disable=too-many-nested-blocks
                 line = line.strip()
-                if line:
-                    seconds = 0
-                    for cell in json.loads(line):
-                        if isinstance(cell, list):
-                            what = cell[0]
-                            if what == 'answer':
-                                answers[cell[1]].append([cell[2], 1, seconds, ''])
-                            elif what == 'save':
-                                answers[cell[1]].append([cell[2], 0, seconds, ''])
-                            elif what == 'snapshot':
-                                answers[cell[1]].append([cell[2], 3, seconds, ''])
-                            elif what == 'question':
-                                question = cell[1]
-                            elif what == 'tag':
-                                timestamp = cell[2]
-                                tag = cell[3]
-                                if timestamp:
-                                    for saved in answers[cell[1]]:
-                                        if saved[2] == timestamp:
-                                            saved[3] = tag
-                                else:
-                                    answers[cell[1]][-1][3] = tag
-                        elif isinstance(cell, str):
-                            if cell == 'Blur':
-                                blurs[question] += 1
-                        else:
-                            seconds += cell
+                if not line:
+                    continue
+                seconds = 0
+                for cell in json.loads(line):
+                    if isinstance(cell, list):
+                        what = cell[0]
+                        if what == 'answer':
+                            answers[cell[1]].append([cell[2], 1, seconds, ''])
+                        elif what == 'save':
+                            answers[cell[1]].append([cell[2], 0, seconds, ''])
+                        elif what == 'snapshot':
+                            answers[cell[1]].append([cell[2], 3, seconds, ''])
+                        elif what == 'question':
+                            question = cell[1]
+                        elif what == 'tag':
+                            timestamp = cell[2]
+                            tag = cell[3]
+                            if timestamp:
+                                for saved in answers[cell[1]]:
+                                    if saved[2] == timestamp:
+                                        saved[3] = tag
+                            else:
+                                answers[cell[1]][-1][3] = tag
+                    elif isinstance(cell, str):
+                        if cell == 'Blur':
+                            blurs[question] += 1
+                    else:
+                        seconds += cell
     except IOError:
         return {}, {}
 
     if compiled:
         try:
-            with open(f'{course}/{user}/compile_server.log') as file:
+            with open(f'{course}/{user}/compile_server.log', encoding='utf-8') as file:
                 for line in file:
                     if "('COMPILE'," in line:
                         line = ast.literal_eval(line)
@@ -856,7 +864,7 @@ def get_answers(course, user, compiled=False):
             value.sort(key=lambda x: x[2]) # Sort by timestamp
     return answers, blurs
 
-def question_source(config, comment, where, user, question, answers, blurs):
+def question_source(config, comment, where, user, question, answers, blurs): # pylint: disable=too-many-arguments,too-many-locals
     """Nice source content"""
     content = [
         f"""
@@ -896,7 +904,7 @@ def question_source(config, comment, where, user, question, answers, blurs):
 
     return ''.join(content)
 
-async def adm_answers(request):
+async def adm_answers(request): # pylint: disable=too-many-locals
     """Get students answers"""
     _session = await get_admin_login(request)
     course = request.match_info['course']
@@ -906,22 +914,22 @@ async def adm_answers(request):
     fildes, filename = tempfile.mkstemp()
     extension, comment = config.get_language()[:2]
     try:
-        zipper = zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w")
-        for user in sorted(os.listdir(course)):
-            await asyncio.sleep(0)
-            answers, blurs = get_answers(course, user, compiled=True)
-            infos = config.active_teacher_room.get(user)
-            building, pos_x, pos_y, version = ((infos[2] or '?') + ',?,?,?').split(',')[:4]
-            version = version.upper()
-            where = f'Surveillant: {infos[1]}, {building} {pos_x}×{pos_y}, Version: {version}'
-            if answers:
-                zipper.writestr(
-                    f'{course}/{user}#answers.{extension}',
-                    ''.join(
-                        question_source(config, comment, where, user, question, answers[question], blurs)
-                        for question in answers
-                    ))
-        zipper.close()
+        with zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w") as zipper:
+            for user in sorted(os.listdir(course)):
+                await asyncio.sleep(0)
+                answers, blurs = get_answers(course, user, compiled=True)
+                infos = config.active_teacher_room.get(user)
+                building, pos_x, pos_y, version = ((infos[2] or '?') + ',?,?,?').split(',')[:4]
+                version = version.upper()
+                where = f'Surveillant: {infos[1]}, {building} {pos_x}×{pos_y}, Version: {version}'
+                if answers:
+                    zipper.writestr(
+                        f'{course}/{user}#answers.{extension}',
+                        ''.join(
+                            question_source(config, comment, where, user,
+                                            question, answers[question], blurs)
+                            for question in answers
+                        ))
         with open(filename, 'rb') as file:
             data = file.read()
     finally:
@@ -930,7 +938,7 @@ async def adm_answers(request):
 
     return response(data, content_type='application/zip')
 
-async def update_file(request, session, compiler, replace):
+async def update_file(request, session, compiler, replace): # pylint: disable=too-many-return-statements
     """Update questionnary on disc if allowed"""
     post = await request.post()
     filehandle = post['course']
@@ -1002,6 +1010,7 @@ async def upload_course(request):
         + error + '</div>')
 
 async def store_media(request, course):
+    """Store a file to allow its use in questionnaries"""
     post = await request.post()
     filehandle = post['course']
     if not hasattr(filehandle, 'filename'):
@@ -1013,7 +1022,8 @@ async def store_media(request, course):
         return "You forgot to select a course file!"
     with open(f'{course.dirname}-{media_name}' , "wb") as file:
         file.write(filehandle.file.read())
-    return f"""<tt style="font-size:100%">'&lt;img src="/media/{course.course}/{media_name}' + location.search + '"&gt;'</tt>"""
+    return f"""<tt style="font-size:100%">'&lt;img src="/media/{course.course}/{media_name}'
+        + location.search + '"&gt;'</tt>"""
 
 async def upload_media(request):
     """Add a new media"""
@@ -1128,7 +1138,8 @@ def checkpoint_table(session, courses, test, content, done):
 async def checkpoint_list(request):
     """Liste all checkpoints"""
     session = await utilities.Session.get(request)
-    titles = '''<tr><th>Session<th>Comp<br>iler<th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
+    titles = '''<tr><th>Session<th>Comp<br>iler
+        <th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
         <th>Start date<th>Stop date<th>Options<th>Edit<th>Try<th>Waiting<br>Room
         <th>Creator<th>Admins<th>Graders<th>Proctors</tr>'''
     content = [
@@ -1164,7 +1175,8 @@ async def checkpoint_list(request):
         A { text-decoration: none }
         FORM { display: inline-block }
         FORM INPUT { display: none }
-        FORM SPAN { border: 1px outset #888; border-radius: 0.5em; background: #EEE; padding: 0.2em }
+        FORM SPAN { border: 1px outset #888; border-radius: 0.5em;
+                    background: #EEE; padding: 0.2em }
         FORM SPAN:hover { border: 1px inset #888; background: #DDD }
         SPAN VAR { display: none; background: #FFE;  border: 1px solid #880; position: absolute; }
         SPAN:hover VAR { display: block }
@@ -1198,7 +1210,8 @@ async def checkpoint_list(request):
         content, done)
     add_header("Sessions running")
     checkpoint_table(session, courses,
-        lambda course: course.state == 'Ready' and course.start_timestamp <= now <= course.stop_tt_timestamp,
+        lambda course: course.state == 'Ready'
+                       and course.start_timestamp <= now <= course.stop_tt_timestamp,
         content, done)
     add_header("Sessions finished (to move in «grade» or «done» tables)")
     checkpoint_table(session, courses,
@@ -1270,7 +1283,8 @@ async def checkpoint_list(request):
         <input id="disable" onkeyup="update(this)" value="''')
         content.append(utilities.CONFIG.config['disabled'].get(session.login, ''))
         content.append('"><button onclick="disable()">Disable</button>')
-        content.append('''<p>Edit all the session with a name (without the compiler) starting with this regular expression:
+        content.append('''<p>Edit all the session with a name (without the compiler)
+        starting with this regular expression:
         <input id="edit" onkeyup="update(this)"><button onclick="edit()">Edit</button>''')
         content.append("<p>Download a Python file to add a new session for the compiler: ")
         for compiler in COMPILERS:
@@ -1370,7 +1384,8 @@ async def checkpoint_bonus(request):
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     old[7] = int(bonus)
-    utilities.student_log(course.dirname, student, f'[{seconds},["time bonus",{bonus},"{session.login}"]]\n')
+    utilities.student_log(course.dirname, student,
+                          f'[{seconds},["time bonus",{bonus},"{session.login}"]]\n')
     course.record()
     return await update_browser_data(course)
 
@@ -1409,7 +1424,7 @@ async def checkpoint_buildings(request):
     _ = await utilities.Session.get(request)
     buildings = {}
     for filename in os.listdir('BUILDINGS'):
-        with open('BUILDINGS/' + filename) as file:
+        with open('BUILDINGS/' + filename, encoding='utf-8') as file:
             buildings[filename] = file.read()
     return response(
         f'BUILDINGS = {json.dumps(buildings)};',
@@ -1444,7 +1459,7 @@ async def checkpoint_spy(request):
     student = request.match_info['student']
     answers = []
     try:
-        with open(f'{course.dirname}/{student}/compile_server.log') as file:
+        with open(f'{course.dirname}/{student}/compile_server.log', encoding='utf-8') as file:
             for line in file:
                 if "('COMPILE'," in line:
                     line = ast.literal_eval(line)
@@ -1454,7 +1469,7 @@ async def checkpoint_spy(request):
         pass
 
     try:
-        with open(f'{course.dirname}/{student}/http_server.log') as file:
+        with open(f'{course.dirname}/{student}/http_server.log', encoding='utf-8') as file:
             for line in file:
                 if '["answer",' in line or '["save",' in line:
                     seconds = 0
@@ -1484,6 +1499,7 @@ async def checkpoint_message(request):
         content_type='application/javascript')
 
 async def get_course_config(request):
+    """Returns the session and the courses configuration"""
     course = request.match_info['course']
     if course.startswith('^'):
         session = await utilities.Session.get(request)
@@ -1493,7 +1509,8 @@ async def get_course_config(request):
                 matches.append(config)
         if not matches:
             raise session.message('no_matching_session', exception=True)
-        class FakeConfig:
+        class FakeConfig: # pylint: disable=too-few-public-methods
+            """Config for a set of sessions defined by regular expression"""
             def __init__(self, **kargs):
                 self.__dict__.update(kargs)
         first = min(matches, key=lambda x: x.course)
@@ -1510,7 +1527,7 @@ async def get_course_config(request):
 
 async def course_config(request):
     """The last answer from the student"""
-    session, config = await get_course_config(request)
+    _session, config = await get_course_config(request)
     return response(
         f'update_course_config({json.dumps(config.config)})',
         content_type='application/javascript')
@@ -1596,18 +1613,20 @@ APP.add_routes([web.get('/', home),
                 ])
 APP.on_startup.append(startup)
 logging.basicConfig(level=logging.DEBUG)
+TIME = time
 
 class AccessLogger(AbstractAccessLogger): # pylint: disable=too-few-public-methods
     """Logger for aiohttp"""
-    def log(self, request, response, run_time): # pylint: disable=arguments-differ
+    def log(self, request, response, time): # pylint: disable=redefined-outer-name
         path = request.path.replace('\n', '\\n')
-        session = utilities.Session.session_cache.get(request.query_string.replace('ticket=', ''), None)
+        session = utilities.Session.session_cache.get(
+            request.query_string.replace('ticket=', ''), None)
         if session:
             login = session.login
         else:
             login = ''
-        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
-              f"{run_time:5.3f} {request.method[0]} "
+        print(f"{TIME.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
+              f"{time:5.3f} {request.method[0]} "
               f"{request.query_string.replace('ticket=ST-', '').split('-')[0]} "
               f"{login} "
               f"{path}",

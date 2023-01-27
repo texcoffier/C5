@@ -23,7 +23,7 @@ def retry(test, required=True, nbr=30):
             error = test()
             if not error:
                 return
-        except selenium.common.exceptions.StaleElementReferenceException:
+        except (selenium.common.exceptions.StaleElementReferenceException, TypeError):
             # Test failure because the page just update
             pass
         time.sleep(0.05)
@@ -80,7 +80,7 @@ class And(Or):
 
 def log(text):
     """Add one line par full test in the log file"""
-    with open("tests.log", "a") as file:
+    with open("tests.log", "a", encoding='utf-8') as file:
         file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {text}\n")
 
 def question(i):
@@ -131,10 +131,10 @@ class Tests: # pylint: disable=too-many-public-methods
     @staticmethod
     def update_config(action):
         """Update the configuration by running action."""
-        with open('c5.cf', 'r') as file:
+        with open('c5.cf', 'r', encoding='utf-8') as file:
             config = json.loads(file.read())
         action(config)
-        with open('c5.cf', 'w') as file:
+        with open('c5.cf', 'w', encoding='utf-8') as file:
             file.write(json.dumps(config))
     def make_me_admin(self):
         """Make admin the current login"""
@@ -209,7 +209,7 @@ class Tests: # pylint: disable=too-many-public-methods
             except selenium.common.exceptions.WebDriverException:
                 return "Server connection is impossible"
         retry(check)
-    def check(self, path, checks={}, expected=1): # pylint: disable=dangerous-default-value
+    def check(self, path, checks={}, expected=1, nbr=30): # pylint: disable=dangerous-default-value
         """Check"""
         print('\tCHECK', path, checks, expected, end=' ')
         def get_errors():
@@ -226,7 +226,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 get_errors.element = element
             return None
         get_errors.element = None
-        retry(get_errors)
+        retry(get_errors, nbr=nbr)
         print()
         return get_errors.element
     def check_alert(self, contains='', accept=True, required=True, nbr=20):
@@ -323,7 +323,7 @@ class Tests: # pylint: disable=too-many-public-methods
 
         # Fill second input
         time.sleep(0.6)
-        self.check('.executor INPUT:nth-child(5)').send_keys('*')
+        retry(lambda: self.check('.executor INPUT:nth-child(5)').send_keys('*'), nbr=2)
         self.check('.executor INPUT:nth-child(5)').send_keys(Keys.ENTER)
         self.check('.executor INPUT:nth-child(5)', {'value': Equal('*')})
         self.check('.executor', {'innerHTML': Contains('·············***************············')})
@@ -365,6 +365,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§')})
         self.check('.save_button').click()
+        self.wait_save()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§')})
         time.sleep(0.1) # For Firefox
@@ -416,7 +417,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check(question(5), {'innerText': Contains('3'), 'className': Equal('')})
         finally:
             self.wait_save()
-            self.check('OPTION[timestamp="1"]').click() # Returns to the original text
+            retry(lambda: self.check('OPTION[timestamp="1"]').click(), nbr=2) # Returns to the original text
             self.check('.editor').send_keys(' ')
             self.check('.save_button').click()
 
@@ -464,6 +465,7 @@ class Tests: # pylint: disable=too-many-public-methods
     def test_master_change(self):
         """Test add and remove master"""
         with self.root_rights():
+            time.sleep(0.1)
             self.goto('adm/root')
             self.check('.add_master').send_keys('john.doe')
             self.check('.add_master').send_keys(Keys.ENTER)
@@ -475,9 +477,9 @@ class Tests: # pylint: disable=too-many-public-methods
         to_delete = "TICKETS/TO_DELETE"
         to_keep = "TICKETS/TO_KEEP"
         ttl = 123456
-        with open(to_delete, "w") as file:
+        with open(to_delete, "w", encoding='utf-8') as file:
             file.write(f"('1.1.1.1', 'Browser', 'john.doe', {time.time() - ttl - 60})")
-        with open(to_keep, "w") as file:
+        with open(to_keep, "w", encoding='utf-8') as file:
             file.write(f"('1.1.1.1', 'Browser', 'john.doe', {time.time() - ttl + 60})")
 
         with self.root_rights():
@@ -534,7 +536,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('BODY', {'innerHTML': Contains(utilities.CONFIG.config['messages']['pending'])
                           & Contains('SN') & Contains('Fn')})
 
-    def test_history(self):
+    def test_history(self): # pylint: disable=too-many-statements
         """Test history managing and TAGs"""
         self.load_page('=TEXT=demo')
         self.check('.save_history', {'length': Equal('1')})
@@ -555,8 +557,7 @@ class Tests: # pylint: disable=too-many-public-methods
 
         # Change the answer and then change the question without saving
         editor.send_keys(' every')
-        time.sleep(2) # wait scheduler
-        self.check('.save_history', {'innerHTML': Contains('>Non')})
+        self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=200)
         self.check(question(4)).click() # Returns to the second question
         self.wait_save()
         self.check('.save_history', {'length': Equal('1')}) # Only initial version
@@ -568,25 +569,22 @@ class Tests: # pylint: disable=too-many-public-methods
         prompt = Alert(self.driver)
         prompt.send_keys('B')
         prompt.accept()
-        time.sleep(0.4)
-        self.check('.save_history', {'length': Equal('3')})
+        self.check('.save_history', {'length': Equal('3')}, nbr=200)
         self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('>B<') and Contains('<option timestamp="1">Vers')})
 
         # Goto in the past (A) and change question: no saving done
-        self.check('.save_history OPTION:nth-child(2)').click()
+        retry(lambda: self.check('.save_history OPTION:nth-child(2)').click(), nbr=2)
         self.check(question(4)).click() # Returns to the second question
         self.check('.editor', {'textContent': Contains('Bravo')})
         self.check(question(3)).click() # Returns to the first question
-        time.sleep(0.4)
-        self.check('.save_history', {'length': Equal('3')})
+        self.check('.save_history', {'length': Equal('3')}, nbr=200)
         self.check('.save_history', {'value': Equal('B')})
 
         # Goto in the past (A) modify and change question: saving done
         self.check('.save_history OPTION:nth-child(2)').click()
         editor.click()
         editor.send_keys(' thing')
-        time.sleep(2) # wait scheduler
-        self.check('.save_history', {'innerHTML': Contains('>Non')})
+        self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=200)
         self.check(question(4)).click() # Returns to the second question
         self.check(question(3)).click() # Returns to the first question
         self.check('.save_history', {'length': Equal('4')})
@@ -597,18 +595,16 @@ class Tests: # pylint: disable=too-many-public-methods
         prompt = Alert(self.driver)
         prompt.send_keys('C')
         prompt.accept()
+        time.sleep(0.1)
         self.check('.save_history', {'length': Equal('4')})
         self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('>B<')
             and Contains('>C<') and Contains('<option timestamp="1">Vers')})
 
         # Navigate in history and change question
-        self.check('.save_history OPTION:nth-child(4)').click()
-        time.sleep(0.4)
-        self.check('.save_history OPTION:nth-child(3)').click()
-        time.sleep(0.4)
-        self.check('.save_history OPTION:nth-child(2)').click()
-        time.sleep(0.4)
-        self.check('.save_history OPTION:nth-child(1)').click()
+        retry(lambda: self.check('.save_history OPTION:nth-child(4)').click(), nbr=2)
+        retry(lambda: self.check('.save_history OPTION:nth-child(3)').click(), nbr=2)
+        retry(lambda: self.check('.save_history OPTION:nth-child(2)').click(), nbr=2)
+        retry(lambda: self.check('.save_history OPTION:nth-child(1)').click(), nbr=2)
         self.check('.save_history', {'value': Equal("C")})
         self.check(question(4)).click() # Returns to the second question
         self.check(question(3)).click() # Returns to the first question
@@ -629,7 +625,7 @@ if 'hidden' in sys.argv:
 else:
     X11 = ['Xnest', PORT, '-noreset', '-geometry', '1024x768']
 try:
-    XNEST = subprocess.Popen(
+    XNEST = subprocess.Popen( # pylint: disable=consider-using-with
         X11, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     print(X11)
     os.environ['DISPLAY'] = PORT

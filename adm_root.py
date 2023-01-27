@@ -1,21 +1,4 @@
 """Home page for the C5 administrator"""
-
-try:
-    # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-    TICKET = TICKET
-    MORE = MORE
-    LOGIN = LOGIN
-    CONFIG = CONFIG
-    history = history
-    RegExp = RegExp
-    encodeURIComponent = encodeURIComponent
-    document = document
-    setTimeout = setTimeout
-    html = html
-except ValueError:
-    pass
-
-
 def update_url():
     """Hide the last action from URL"""
     url = location.toString() # pylint: disable=undefined-variable

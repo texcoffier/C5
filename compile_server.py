@@ -55,10 +55,11 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.log_file = f"{self.dir}/compile_server.log"
         self.exec_file = f"{self.dir}/{self.conid}"
         self.source_file = f"{self.dir}/{self.conid}.cpp"
+        self.compiler = None
 
     def log(self, more):
         """Log action to COURSE/login/compile_server.log"""
-        with open(self.log_file, "a") as file:
+        with open(self.log_file, "a", encoding="utf-8") as file:
             file.write(repr((int(time.time()), self.conid, more)) + '\n')
 
     def course_running(self):
@@ -161,7 +162,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log(("RUN", line[:100]))
             if b'\001\002RACKETFini !\001' in line:
                 self.log(("EXIT", 0))
-                await self.websocket.send(json.dumps(['return', f"\n"]))
+                await self.websocket.send(json.dumps(['return', "\n"]))
                 continue # For Racket (no cleanup)
         if self.process:
             return_value = await self.process.wait()
@@ -169,7 +170,8 @@ class Process: # pylint: disable=too-many-instance-attributes
             if return_value < 0:
                 more = f'\n⚠️{signal.strsignal(-return_value)}'
                 if return_value == -9:
-                    more += "\nVotre programme utilise plus d'une seconde,\navez-vous fait une boucle infinie ?"
+                    more += "\nVotre programme utilise plus d'une seconde,\n" \
+                            "avez-vous fait une boucle infinie ?"
                 self.process = None
             else:
                 more = ''
@@ -211,7 +213,8 @@ class Process: # pylint: disable=too-many-instance-attributes
                                      "lseek", "futex", "exit_group", "exit",
                                      "clock_gettime", "openat", "mmap","munmap", "close"] + allowed)
             self.process = await asyncio.create_subprocess_exec(
-                compiler, *compile_options, '-I', '.', self.source_file, *ld_options, '-o', self.exec_file,
+                compiler, *compile_options, '-I', '.',
+                self.source_file, *ld_options, '-o', self.exec_file,
                 stderr=asyncio.subprocess.PIPE,
                 preexec_fn=set_compiler_limits,
                 close_fds=True,
@@ -261,7 +264,9 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
-        print(f"LD_PRELOAD=sandbox/libsandbox.so SECCOMP_SYSCALL_ALLOW={self.allowed} {self.course.dirname}/{self.login}/{self.conid}", flush=True)
+        print(f"LD_PRELOAD=sandbox/libsandbox.so "
+              f"SECCOMP_SYSCALL_ALLOW={self.allowed} "
+              f"{self.course.dirname}/{self.login}/{self.conid}", flush=True)
         self.process = await asyncio.create_subprocess_exec(
             f"{self.course.dirname}/{self.login}/{self.conid}",
             stdout=asyncio.subprocess.PIPE,
@@ -341,7 +346,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
 async def main():
     """Answer compilation requests"""
     await utilities.DNS.start()
-    async with websockets.serve(echo, utilities.C5_IP, utilities.C5_SOCK, ssl=CERT):
+    async with websockets.serve(echo, utilities.C5_IP, utilities.C5_SOCK, ssl=CERT): # pylint: disable=no-member
         print(f"compile_server running {utilities.C5_IP}:{utilities.C5_SOCK}", flush=True)
         await asyncio.Future()  # run forever
 

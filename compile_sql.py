@@ -2,14 +2,6 @@
 SQL compiler and interpreter
 """
 
-try:
-    # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-    isNaN = isNaN
-    html = html
-    JSON = JSON
-except ValueError:
-    pass
-
 importScripts('node_modules/alasql/dist/alasql.js') # pylint: disable=undefined-variable
 
 class Session(Compile): # pylint: disable=undefined-variable,invalid-name

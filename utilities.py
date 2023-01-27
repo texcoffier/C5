@@ -59,7 +59,7 @@ class Process: # pylint: disable=invalid-name
             stdin=asyncio.subprocess.PIPE,
             )
         asyncio.ensure_future(self.reader())
-        atexit.register(lambda: self.process.kill())
+        atexit.register(self.process.kill)
 
     async def reader(self):
         """Parse infos from process"""
@@ -88,10 +88,10 @@ def student_log(course_name, login, data):
         if not os.path.exists(course_name):
             os.mkdir(course_name)
         os.mkdir(f'{course_name}/{login}')
-    with open(f'{course_name}/{login}/http_server.log', "a") as file:
+    with open(f'{course_name}/{login}/http_server.log', "a", encoding='utf-8') as file:
         file.write(data)
 
-class CourseConfig: # pylint: disable=too-many-instance-attributes
+class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """A course session"""
     configs = {}
     def __init__(self, course):
@@ -164,7 +164,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
                       }
         self.time = time.time()
         try:
-            with open(self.filename, 'r') as file:
+            with open(self.filename, 'r', encoding='utf-8') as file:
                 self.config.update(eval(file.read())) # pylint: disable=eval-used
         except (IOError, FileNotFoundError):
             if os.path.exists(self.filename.replace('.cf', '.js')):
@@ -234,7 +234,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
 
     def record(self):
         """Record option on disk"""
-        with open(self.filename, 'w') as file:
+        with open(self.filename, 'w', encoding='utf-8') as file:
             file.write(repr(self.config))
         self.time = time.time()
     def set_parameter(self, parameter, value):
@@ -251,7 +251,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
     def update_checkpoint(self, login, client_ip, now):
         """Update active_teacher_room"""
         if not login:
-            return
+            return None
         active_teacher_room = self.active_teacher_room.get(login, None)
         # Simulate an IP change every 30 seconds
         # if client_ip:
@@ -282,7 +282,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
             student_log(self.dirname, login, json.dumps(to_log) + '\n')
         return active_teacher_room
 
-    def status(self, login, client_ip=None): # pylint: disable: too-many-return-statements
+    def status(self, login, client_ip=None): # pylint: disable=too-many-return-statements
         """Status of the course"""
         if os.path.getmtime(self.filename) > self.time:
             self.load()
@@ -366,7 +366,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes
         """Get a question title usable as filename"""
         if question >= len(self.questions):
             return 'deleted' # The answered question no more exists
-        title = self.questions[question]["title"].replace(' ', '_').replace('/', '_').replace("'", "´")
+        title = self.questions[question]["title"
+            ].replace(' ', '_').replace('/', '_').replace("'", "´")
         return f'{question+1:02d}-{title}'
 
     def get_question_filename(self, question):
@@ -399,7 +400,7 @@ def get_course(txt):
     compilator, course = txt.split('=')
     return f'COMPILE_{compilator}/{course}'
 
-class Config:
+class Config: # pylint: disable=too-many-instance-attributes
     """C5 configuration"""
     authors = []
     masters = []
@@ -421,7 +422,9 @@ class Config:
             'disabled': {},
             'messages': {
                 'unknown': "Cette session n'existe pas",
-                'checkpoint': "Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen.<br>Rechargez cette page quand l'intervenant vous le dira.",
+                'checkpoint':
+                    "Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen.<br>"
+                    "Rechargez cette page quand l'intervenant vous le dira.",
                 'done': "La session d'exercice ou d'examen est terminée",
                 'not_root': "Vous n'êtes pas root C5",
                 'not_grader': "Vous n'êtes pas un correcteur de la session",
@@ -436,7 +439,7 @@ class Config:
     def load(self):
         """Load configuration from file"""
         if os.path.exists('c5.cf'):
-            with open('c5.cf', 'r') as file:
+            with open('c5.cf', 'r', encoding='utf-8') as file:
                 self.config.update(json.loads(file.read()))
         else:
             self.save()
@@ -459,7 +462,7 @@ class Config:
         return json.dumps(self.config)
     def save(self):
         """Save the configuration"""
-        with open('c5.cf', 'w') as file:
+        with open('c5.cf', 'w', encoding='utf-8') as file:
             file.write(self.json())
     def set_value(self, key, value):
         """Update the configuration"""
@@ -529,7 +532,7 @@ class Session:
         return self.login
     def record(self):
         """Record the ticket for the compile server"""
-        with open(f'TICKETS/{self.ticket}', 'w') as file:
+        with open(f'TICKETS/{self.ticket}', 'w', encoding='utf-8') as file:
             file.write(str(self))
     def __str__(self):
         return repr((self.client_ip, self.browser, self.login, self.creation_time, self.infos))
@@ -553,14 +556,14 @@ class Session:
            ) or self.browser != browser or self.too_old():
             url = getattr(request, 'url', None)
             if url:
-                raise web.HTTPFound(str(request.url).split('?')[0])
+                raise web.HTTPFound(str(request.url).split('?', 1)[0])
             return None
         return True
 
     @classmethod
     def load_ticket_file(cls, ticket):
         """Load the ticket from file"""
-        with open(f'TICKETS/{ticket}', 'r') as file:
+        with open(f'TICKETS/{ticket}', 'r', encoding='utf-8') as file:
             session = Session(ticket, *eval(file.read())) # pylint: disable=eval-used
         cls.session_cache[ticket] = session
         return session
@@ -598,7 +601,7 @@ class Session:
             if ticket:
                 cls.session_cache[ticket] = session
         if not session.login:
-            await session.get_login(str(request.url).split('?')[0])
+            await session.get_login(str(request.url).split('?', 1)[0])
         return session
     def is_author(self):
         """The user is C5 session creator"""
@@ -724,7 +727,7 @@ def print_state():
 
 def print_help():
     """Print help and default configuration values"""
-    print(f"""Arguments may be:
+    print("""Arguments may be:
    * os : configure production OS
    * SSL-LE : create SSL Certificate with Let's Encrypt (NGINX does the encrypting)
               or renew it if it exists.

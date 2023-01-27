@@ -2,11 +2,6 @@
 Base class for compiler
 """
 
-millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-Number = Number # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-JSON = JSON # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-RegExp = RegExp # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-
 COURSE_OPTIONS = {}
 
 def onmessage(event):
@@ -107,7 +102,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             self.post('default', [i, quest.default_answer()])
         self.current_question = self.current_question_max
         if self.current_question != 0 or self.questions[self.current_question].last_answer:
-            self.source = self.questions[self.current_question].last_answer or self.questions[self.current_question].default_answer()
+            self.source = (self.questions[self.current_question].last_answer
+                           or self.questions[self.current_question].default_answer())
             self.start_question()
 
     def disable_goto(self):
@@ -155,7 +151,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def run_executor(self): # pylint: disable=no-self-use
         """Do the execution"""
         self.post('run', 'No executor defined')
-    def run_indent(self, source):
+    def run_indent(self, _source):
         """Indent the source"""
         self.post('run', 'No indenter defined')
     def start_question(self):
@@ -194,17 +190,17 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 and not self.question_yet_solved(current_question)
            ):
             self.post("good", self.source)
-            self.options.ANSWERS[current_question] = [self.source, 1]
+            self.options['ANSWERS'][current_question] = [self.source, 1]
             self.start_question()
         else:
             self.current_question = current_question # Keep same question
 
     def question_yet_solved(self, question):
         """Return True if the current question has been correctly answered"""
-        # print(question, self.options.ANSWERS)
-        if not self.options.ANSWERS[question]:
+        # print(question, self.options['ANSWERS'])
+        if not self.options['ANSWERS'][question]:
             return False
-        return self.options.ANSWERS[question][1]
+        return self.options['ANSWERS'][question][1]
 
     def read_input(self, hide=False):
         """Ask the webpage some input text, wait the answer."""
@@ -237,7 +233,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def escape(self, text): # pylint: disable=no-self-use
         """Escape HTML chars"""
-        return str(text).replace(RegExp("&","g"), "&amp;").replace(RegExp("<", "g"), "&lt;").replace(RegExp(">", "g"), "&gt;")
+        return html(text)
 
     ###########################################################################
 
@@ -294,7 +290,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         if self.allow_goto:
             more += 'G'
         return '#' + self.nr_eval + ' ' + (millisecs() - self.start_time) + 'ms' + more
-    def index_initial_content(self): # pylint: disable=no-self-use,invalid-name
+    def index_initial_content(self):
         """Used by the subclass"""
         texts = ['<style></style>']
         tips = []
@@ -311,12 +307,14 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 html_class.append('good')
             else:
                 if (i <= self.current_question_max
-                        or not self.options.SEQUENTIAL
-                        or self.options.ANSWERS[i]):
+                        or not self.options['SEQUENTIAL']
+                        or self.options['ANSWERS'][i]):
                     html_class.append('possible')
                 else:
                     link = ''
             if self.allow_tip:
                 tips.append('<div>' + self.escape(self.questions[i].__doc__) + '</div>')
-            texts.append('<div class="' + ' '.join(html_class) + '" ' + link + '>' + str(i+1) + '</div>')
-        return '<div class="questions"><div class="tips">' + tips.join('') + '</div>' + texts.join('') + '</div>'  # pylint: disable=no-member
+            texts.append('<div class="' + ' '.join(html_class) + '" ' + link + '>'
+                + str(i+1) + '</div>')
+        return ('<div class="questions"><div class="tips">' + ''.join(tips) + '</div>'
+            + ''.join(texts) + '</div>')

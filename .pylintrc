@@ -1,0 +1,19 @@
+[VARIABLES]
+# C5 provided
+additional-builtins=MORE,COURSE,TICKET,LOGIN,STUDENTS,CONFIG,MESSAGES,CHECKPOINT,BUILDINGS,GRADING,STUDENT,NOTATION,ANSWERS,ADMIN,SOCK,STOP,VERSIONS,CP,SAVE_UNLOCK,SEQUENTIAL,WHERE,INFOS,COLORING,ALL_SAVES,
+# compile.py
+	Compile,Question,
+# compatibility.py
+	update_page,html,bind,hljs,record,nice_date,two_digit,parse_grading,millisecs,is_int,
+# Javascript functions
+	confirm,prompt,alert,Math,setInterval,setTimeout,setTimeout,encodeURIComponent,isNaN,importScripts,
+# Javascript classes
+	Math,JSON,RegExp,Date,Number,Object,Array,String,
+# Javascript objects
+	screen,document,window,history,
+# Rapydscript
+	external
+
+[MESSAGES CONTROL]
+disable=C0302
+

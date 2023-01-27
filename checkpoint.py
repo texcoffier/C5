@@ -4,37 +4,6 @@ Display checkpoint page
 """
 # pylint: disable=chained-comparison
 
-try:
-    # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
-    TICKET = TICKET
-    LOGIN = LOGIN
-    COURSE = COURSE
-    STUDENTS = STUDENTS
-    BUILDINGS = BUILDINGS
-    CONFIG = CONFIG
-    MESSAGES = MESSAGES
-    CHECKPOINT = CHECKPOINT
-    document = document
-    window = window
-    confirm = confirm
-    prompt = prompt
-    encodeURIComponent = encodeURIComponent
-    JSON = JSON
-    RegExp = RegExp
-    alert = alert
-    Math = Math
-    bind = bind
-    Date = Date
-    setInterval = setInterval
-    setTimeout = setTimeout
-    hljs = hljs
-    record = record
-    html = html
-    nice_date = nice_date
-    two_digit = two_digit
-except ValueError:
-    pass
-
 RELOAD_INTERVAL = 60 # Number of seconds between update data
 HELP_LINES = 10
 BOLD_TIME = 180 # In seconds for new students in checking room
@@ -48,7 +17,7 @@ ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
 BEFORE_FIRST = 60 # Time scroll bar padding left in seconds
 
-BUILDINGS_SORTED = [_ for _ in BUILDINGS]
+BUILDINGS_SORTED = list(BUILDINGS)
 BUILDINGS_SORTED.sort()
 
 def filters(element):
@@ -74,12 +43,12 @@ def mouse_leave():
 
 mouse_enter()
 
-def distance2(x1, y1, x2, y2):
+def distance2(x_1, y_1, x_2, y_2):
     """Squared distance beween 2 points"""
-    return (x1 - x2) ** 2 + (y1 - y2) ** 2
-def distance(x1, y1, x2, y2):
+    return (x_1 - x_2) ** 2 + (y_1 - y_2) ** 2
+def distance(x_1, y_1, x_2, y_2):
     """Distance beween 2 points"""
-    return distance2(x1, y1, x2, y2) ** 0.5
+    return distance2(x_1, y_1, x_2, y_2) ** 0.5
 
 class Room: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Graphic display off rooms"""
@@ -127,7 +96,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 2 * self.scale * self.lines_height[2*line]]
     def get_column_row(self, pos_x, pos_y):
         """Return character position (float) in the character map"""
-        if pos_y < self.TOP or pos_x < self.LEFT:
+        if pos_y < self.real_top or pos_x < self.real_left:
             return [-1, -1]
         column = -1
         for i, position in enumerate(self.columns_x):
@@ -163,13 +132,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
     def get_room_name(self, column, line):
         """Return the short room name"""
-        for room_name in ROOM.rooms:
-            left, top, width, height = ROOM.rooms[room_name].position
+        for room_name, room in self.rooms.items():
+            left, top, width, height = room.position
             if (column >= left and column <= left + width
                     and line >= top and line <= top + height
                 ):
                 return room_name
-        return
+        return None
 
     def change(self, building):
         """Initialise with a new building"""
@@ -178,10 +147,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             building = 'empty'
         self.lines = BUILDINGS[building].split('\n')
         self.x_max = max(*[len(line) for line in self.lines]) + 1
-        self.LEFT = self.menu.offsetWidth # LEFT
-        self.TOP = 0 # self.menu.offsetHeight
-        self.left = self.LEFT
-        self.top = self.TOP
+        self.real_left = self.menu.offsetWidth
+        self.real_top = 0
+        self.left = self.real_left
+        self.top = self.real_top
         self.drag_x_current = self.drag_x_start = None
         self.drag_y_current = self.drag_y_start = None
         self.moving = False
@@ -238,17 +207,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.lines[line] = chars
     def put_students_in_rooms(self):
         """Create the list of student per room"""
-        for room_name in self.rooms:
-            self.rooms[room_name]['students'] = []
-            self.rooms[room_name]['teachers'] = []
+        for room in self.rooms.values():
+            room['students'] = []
+            room['teachers'] = []
         for student in self.students:
             if student.short_room_name and student.short_room_name in self.rooms:
                 self.rooms[student.short_room_name]['students'].append(student)
                 teachers = self.rooms[student.short_room_name]['teachers']
                 if student.teacher not in teachers:
                     teachers.append(student.teacher)
-        for room_name in self.rooms:
-            room = self.rooms[room_name]
+        for room in self.rooms.values():
             room['teachers'].sort()
             room['teachers'] = ' '.join(room['teachers'])
     def update_sizes(self, size):
@@ -266,8 +234,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     self.columns_width[i] = 0.5
                 for i in range(2*line_start, 2*(line_start + room_height)):
                     self.lines_height[i] = 0.5
-        self.left = self.LEFT
-        self.top = self.TOP
+        self.left = self.real_left
+        self.top = self.real_top
         self.update_visible()
     def update_visible(self):
         """Update lines/columns positions from their heights/widths"""
@@ -432,7 +400,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     messages.append(message)
         ctx.globalAlpha = 1
         return messages
-    def draw_students(self, ctx):
+    def draw_students(self, ctx): # pylint: disable=too-many-branches
         """Draw students names"""
         now = seconds()
         self.students.sort(cmp_student_position)
@@ -485,7 +453,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.fillText(student.surname, x_pos, y_pos + y_size/3)
             if student.grade != '':
                 ctx.fillStyle = "#000"
-                ctx.fillText(student.grade[0] + '(' + student.grade[1] + 'notes)', x_pos, y_pos + 2*y_size/3)
+                ctx.fillText(student.grade[0] + '(' + student.grade[1] + 'notes)',
+                             x_pos, y_pos + 2*y_size/3)
         ctx.globalAlpha = 1
     def draw_map(self, ctx, canvas):
         """Draw the character map"""
@@ -525,9 +494,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.strokeStyle = "#000"
         ctx.fillStyle = "#000"
         ctx.font = self.scale + "px sans-serif,emoji"
-        for char in self.chars:
+        for char, chars in self.chars.items():
             char_size = ctx.measureText(char)
-            for column, line in self.chars[char]:
+            for column, line in chars:
                 if (column < self.left_column or column > self.right_column
                         or line < self.top_line or line > self.bottom_line):
                     continue
@@ -616,8 +585,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.fillStyle = "#000"
         size = self.scale * 0.5
         ctx.font = size + "px sans-serif"
-        for room_name in self.rooms:
-            room = self.rooms[room_name]
+        for room in self.rooms.values():
             if room['teachers']:
                 column, line = room['label']
                 if (self.lines_height[2*line] < 0.5
@@ -638,13 +606,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.update_sizes(0.5)
             self.update_visible()
             self.scale = self.min_scale = min(
-                (self.width - self.LEFT) / self.columns_x[2 * self.x_max - 1],
-                (self.height - self.TOP) / self.lines_y[2 * len(self.lines) - 1 - HELP_LINES])
-            self.top = self.TOP
+                (self.width - self.real_left) / self.columns_x[2 * self.x_max - 1],
+                (self.height - self.real_top) / self.lines_y[2 * len(self.lines) - 1 - HELP_LINES])
+            self.top = self.real_top
             if not document.getElementById('my_rooms').checked:
                 self.top += HELP_LINES * self.scale
         ctx = canvas.getContext("2d")
-        self.left_column, self.top_line = self.get_column_row(0, self.TOP+1)
+        self.left_column, self.top_line = self.get_column_row(0, self.real_top+1)
         self.left_column = max(self.left_column, 0) - 1
         self.top_line = max(self.top_line, 0) - 2
         self.right_column, self.bottom_line = self.get_column_row(self.width, self.height)
@@ -668,7 +636,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if LOGIN == 'thierry.excoffier' and len(self.draw_times) > 10:
             self.draw_times = self.draw_times[1:]
             ctx.font = "16px sans-serif"
-            ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms', self.width - 70, 50)
+            ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms',
+                         self.width - 70, 50)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
         self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
@@ -786,10 +755,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     logins.append(student.login)
                 if confirm("Ouvrir " + len(logins) + ' onglets pour noter '
                     + ' '.join(logins)):
-                    # if confirm("OK pour noter la dernière sauvegarde\nCancel pour noter la dernière compilation"):
-                    #     what = '1'
-                    # else:
-                    #     what = '2'
                     for login in logins:
                         window.open('/grade/' + COURSE + '/' + login
                             + '?ticket=' + TICKET)
@@ -871,8 +836,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def compute_rooms_on_screen(self):
         """Compute the list of rooms on screen"""
         self.rooms_on_screen = {}
-        for room_name in self.rooms:
-            room = self.rooms[room_name]
+        for room_name, room in self.rooms.items():
             left, top, width, height = room['position'][:4]
             right, bottom, _x_size, _y_size = self.xys(left + width, top + height)
             left, top, _x_size, _y_size = self.xys(left, top)
@@ -895,7 +859,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     style = 'background: #FFCA'
                 content.append(student.box(style))
         document.getElementById('waiting').innerHTML = ' '.join(content)
-    def update_messages(self):
+    @staticmethod
+    def update_messages():
         """Update HTML with the messages"""
         content = []
         for i, infos in enumerate(MESSAGES):
@@ -929,7 +894,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         Student.moving_element.style.pointerEvents = 'none'
         pos = self.get_column_row(self.event_x, self.event_y)
         if pos[0] != -1:
-            if Student.moving_student.is_good_room(ROOM.get_room_name(pos[0], pos[1])):
+            if Student.moving_student.is_good_room(self.get_room_name(pos[0], pos[1])):
                 Student.moving_element.style.background = "#0F0"
             else:
                 Student.moving_element.style.background = "#F00"
@@ -976,15 +941,15 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def zoom_student(self, login):
         "Zoom on this student"
         student = STUDENT_DICT[login]
-        if student.building != ROOM.building:
+        if student.building != self.building:
             self.change(student.building)
             update_page()
             document.getElementById('buildings').value = student.building
         self.scale = self.width / 5
         self.left = self.top = 0
         left, top, _dx, _dy = self.xys(student.column, student.line)
-        self.left = self.LEFT - left + (self.width - self.LEFT) / 2
-        self.top = self.TOP - top + (self.height - self.TOP) / 2
+        self.left = self.real_left - left + (self.width - self.real_left) / 2
+        self.top = self.real_top - top + (self.height - self.real_top) / 2
         self.draw()
 
 STUDENT_DICT = {}
@@ -1139,7 +1104,8 @@ def create_page(building_name):
         '<span class="course">',
         COURSE.split('=')[1].replace(RegExp('_', 'g'), ' '),
         '</span>',
-        ' <select style="width:100%" id="buildings" onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
+        ' <select style="width:100%" id="buildings"',
+        '         onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
         ''.join(['<option'
                  + (building == building_name and ' selected' or '')
                  + '>' + building.replace('empty', LOGIN) + '</option>'
@@ -1148,7 +1114,8 @@ def create_page(building_name):
         <label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()" type="checkbox"
                >Seulement mes salles</label>
         <label class="filter">Mettre en évidence les logins :<br>
-        <input onchange="filters(this)" onblur="filters(this)" style="box-sizing: border-box; width:100%"></label>
+        <input onchange="filters(this)" onblur="filters(this)"
+               style="box-sizing: border-box; width:100%"></label>
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
         <div id="messages"></div>
@@ -1217,17 +1184,14 @@ def canonize(txt):
     return txt.lower().replace(RegExp('[ -_]', 'g'), '')
 
 def get_login(student):
-    """Get login from any information"""
-    if not student:
-        return student
-    if student in STUDENT_DICT:
-        return student
-    if 'p' + student[1:] in STUDENT_DICT:
+    """Get login from any information: name, surname, number"""
+    if (not student
+            or student in STUDENT_DICT
+            or 'p' + student[1:] in STUDENT_DICT):
         return student
     possibles = []
     student = canonize(student)
-    for login in STUDENT_DICT:
-        verify = STUDENT_DICT[login]
+    for login, verify in STUDENT_DICT.items():
         if not verify.building:
             continue
         if canonize(verify.firstname) == student or canonize(verify.surname) == student:
@@ -1250,7 +1214,7 @@ def key_event_handler(event):
     if event.key == 'Escape':
         spy_close()
     if event.key == 'f' and event.ctrlKey:
-        spy_close();
+        spy_close()
         student = prompt("Numéro d'étudiant ou nom ou prénom à chercher")
         student = get_login(student)
         if student:
@@ -1260,20 +1224,21 @@ def key_event_handler(event):
         event.preventDefault()
 
 def spy_cursor(source):
+    """Set the cursor position and content in the time scrollbar"""
     if not spy.sources[0]:
         return
-    bar = document.getElementById('time')
-    cursor = bar.lastChild
+    time_bar = document.getElementById('time')
+    cursor = time_bar.lastChild
     first = spy.sources[0][0] - BEFORE_FIRST
     last = spy.sources[-1][0]
     width = last - first
-    pos_x = (source[0] - first) / width * bar.offsetWidth
-    if pos_x < bar.offsetWidth / 2:
+    pos_x = (source[0] - first) / width * time_bar.offsetWidth
+    if pos_x < time_bar.offsetWidth / 2:
         cursor.style.left = pos_x + 'px'
         cursor.style.right = 'auto'
         cursor.className = 'cursor left c' + source[2]
     else:
-        cursor.style.right = bar.offsetWidth - pos_x + 'px'
+        cursor.style.right = time_bar.offsetWidth - pos_x + 'px'
         cursor.style.left = 'auto'
         cursor.className = 'cursor right c' + source[2]
     cursor.innerHTML = (
@@ -1286,12 +1251,12 @@ def spy_it(event=None):
     """Display the selected source"""
     if not spy.sources[0]:
         return
-    bar = document.getElementById('time')
+    time_bar = document.getElementById('time')
     first = spy.sources[0][0] - BEFORE_FIRST
     last = spy.sources[-1][0]
     width = last - first
     if event:
-        time = first + width * (event.clientX - bar.offsetLeft) / bar.offsetWidth
+        time = first + width * (event.clientX - time_bar.offsetLeft) / time_bar.offsetWidth
         source = None # To please pylint
         last_source = None
         for source in spy.sources:
@@ -1389,8 +1354,7 @@ def spy(sources, login, infos):
 def debug():
     """debug"""
     students_per_room = {}
-    for room_name in ROOM.rooms:
-        room = ROOM.rooms[room_name]
+    for room_name, room in ROOM.rooms.items():
         students_per_room[room_name] = [student.login for student in room.students]
     print(JSON.stringify(students_per_room))
 

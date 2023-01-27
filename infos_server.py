@@ -5,6 +5,8 @@ Get informations about users.
 Never die
 """
 
+# pylint: disable=no-member
+
 import os
 import sys
 import json
@@ -19,12 +21,12 @@ C5_LDAP_BASE = os.getenv('C5_LDAP_BASE') # As DC=univ-lyon1,DC=fr
 C5_LDAP_ENCODING = os.getenv('C5_LDAP_ENCODING') or 'utf-8'
 
 sys.stderr.close()
-sys.stderr = open('infos_server.log', 'a')
+sys.stderr = open('infos_server.log', 'a', encoding='utf-8') # pylint: disable=consider-using-with
 print(f"\nStart at {time.ctime()}", file=sys.stderr)
 
 while True:
     try:
-        print(f"Before LDAP bind", file=sys.stderr)
+        print("Before LDAP bind", file=sys.stderr)
         LDAP = ldap.ldapobject.ReconnectLDAPObject(
             C5_LDAP,
             retry_max=10,
@@ -35,7 +37,7 @@ while True:
         LDAP.set_option(ldap.OPT_REFERRALS, 0)
         LDAP.set_option(ldap.OPT_X_KEEPALIVE_IDLE, True)
         LDAP.simple_bind_s(C5_LDAP_LOGIN, C5_LDAP_PASSWORD)
-        print(f"After LDAP bind", file=sys.stderr)
+        print("After LDAP bind", file=sys.stderr)
 
         for line in sys.stdin:
             start = time.time()
