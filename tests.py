@@ -555,7 +555,7 @@ class Tests: # pylint: disable=too-many-public-methods
 
         # Change the answer and then change the question without saving
         editor.send_keys(' every')
-        time.sleep(1) # wait scheduler
+        time.sleep(2) # wait scheduler
         self.check('.save_history', {'innerHTML': Contains('>Non')})
         self.check(question(4)).click() # Returns to the second question
         self.wait_save()

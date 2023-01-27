@@ -216,6 +216,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     in_past_history = 0
     allow_edit = 0
     source_in_past = None
+    records_last_retry = 0 # Wait before resending the form
 
     def __init__(self):
         print("GUI: start")
@@ -409,6 +410,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Send a new job if free and update the screen"""
         if not self.allow_edit:
             return
+        seconds = int(millisecs() / 1000)
+        if (len(self.records_in_transit)
+                and seconds - self.records_in_transit[0][0] > 5
+                and seconds - self.records_last_retry > 5
+           ):
+            self.records_last_retry = seconds
+            self.record_now()
         if (not GRADING
                 and not self.options['allow_copy_paste']
                 and screen.height != max(window.innerHeight, window.outerHeight)
@@ -438,7 +446,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.state = 'started'
             self.worker.postMessage(self.source) # Start compile/execute/test
             self.last_compile[self.current_question] = self.source
-        seconds = int(millisecs() / 1000)
         if self.seconds != seconds:
             old_need_save = self.save_button.getAttribute('enabled') == 'true'
             need_save = self.need_save()
