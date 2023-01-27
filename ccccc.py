@@ -588,6 +588,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         line_height = 1000
         comments = self.all_comments[self.current_question] or {}
         comments = comments[self.version] or {}
+        i = 0
         for i, line in enumerate(self.editor_lines):
             if line.getBoundingClientRect:
                 rect = line.getBoundingClientRect()
@@ -631,6 +632,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             marker.style.width = rect.width + 'px'
             marker.style.height = rect.height - line_height + 'px'
             self.overlay.appendChild(marker)
+        for i in range(i+1, len(self.line_numbers.childNodes)):
+            self.line_numbers.childNodes[i].style.top = '-10em'
         self.overlay_show()
 
     def record_now(self):
