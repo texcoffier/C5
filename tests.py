@@ -118,6 +118,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.test_master_change,
                 self.test_ticket_ttl,
                 self.test_editor,
+                self.test_history,
                 ):
             print('*'*99)
             print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -248,10 +249,16 @@ class Tests: # pylint: disable=too-many-public-methods
         """Load page and clear popup"""
         self.goto(url)
         self.check_alert(required=False, nbr=10)
-        self.check('.question H2').click() # Hide popup
+        try:
+            self.check('.question H2').click() # Hide popup
+        except selenium.common.exceptions.ElementClickInterceptedException:
+            self.check('.question H2').click() # Hide popup
     def move_to_element(self, element):
         """Make the element visible on screen in order to click on it"""
         self.driver.execute_script("arguments[0].scrollIntoView();", element)
+    def wait_save(self):
+        """Wait the source save"""
+        self.check('.save_button[state="ok"]')
 
     def move_cursor(self, path, relative_x=0, relative_y=0):
         """Set the cursor at the position and click"""
@@ -365,6 +372,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
         self.control('s')
+        self.wait_save()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
         self.move_cursor('.editor', 30, 200)
@@ -407,7 +415,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check(question(4), {'innerText': Contains('2'), 'className': Equal('possible')})
             self.check(question(5), {'innerText': Contains('3'), 'className': Equal('')})
         finally:
-            time.sleep(0.5) # Wait save button animation end
+            self.wait_save()
             self.check('OPTION[timestamp="1"]').click() # Returns to the original text
             self.check('.editor').send_keys(' ')
             self.check('.save_button').click()
@@ -525,6 +533,87 @@ class Tests: # pylint: disable=too-many-public-methods
         self.goto('=JS=example')
         self.check('BODY', {'innerHTML': Contains(utilities.CONFIG.config['messages']['pending'])
                           & Contains('SN') & Contains('Fn')})
+
+    def test_history(self):
+        """Test history managing and TAGs"""
+        self.load_page('=TEXT=demo')
+        self.check('.save_history', {'length': Equal('1')})
+        editor = self.move_cursor('.editor')
+        editor.send_keys('univers vie')
+        self.check_alert(accept=True, required=True) # Ok to congratulation
+
+        self.check('.save_history', {'length': Equal('1')})
+        self.check(question(3)).click() # Returns to the first question
+        self.check('.save_history', {'length': Equal('2')}) # Has been saved
+
+        # Tag the good anwser on first question
+        self.check('.tag_button').click()
+        prompt = Alert(self.driver)
+        prompt.send_keys('A')
+        prompt.accept()
+        self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('<option timestamp="1">Vers')})
+
+        # Change the answer and then change the question without saving
+        editor.send_keys(' every')
+        time.sleep(1) # wait scheduler
+        self.check('.save_history', {'innerHTML': Contains('>Non')})
+        self.check(question(4)).click() # Returns to the second question
+        self.wait_save()
+        self.check('.save_history', {'length': Equal('1')}) # Only initial version
+        self.check(question(3)).click() # Returns to the first question
+        self.check('.save_history', {'length': Equal('3')}) # A new save !
+
+        # Tag the new save
+        self.check('.tag_button').click()
+        prompt = Alert(self.driver)
+        prompt.send_keys('B')
+        prompt.accept()
+        time.sleep(0.4)
+        self.check('.save_history', {'length': Equal('3')})
+        self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('>B<') and Contains('<option timestamp="1">Vers')})
+
+        # Goto in the past (A) and change question: no saving done
+        self.check('.save_history OPTION:nth-child(2)').click()
+        self.check(question(4)).click() # Returns to the second question
+        self.check('.editor', {'textContent': Contains('Bravo')})
+        self.check(question(3)).click() # Returns to the first question
+        time.sleep(0.4)
+        self.check('.save_history', {'length': Equal('3')})
+        self.check('.save_history', {'value': Equal('B')})
+
+        # Goto in the past (A) modify and change question: saving done
+        self.check('.save_history OPTION:nth-child(2)').click()
+        editor.click()
+        editor.send_keys(' thing')
+        time.sleep(2) # wait scheduler
+        self.check('.save_history', {'innerHTML': Contains('>Non')})
+        self.check(question(4)).click() # Returns to the second question
+        self.check(question(3)).click() # Returns to the first question
+        self.check('.save_history', {'length': Equal('4')})
+        self.check('.save_history', {'value': Equal("Sauvé à l'instant")})
+
+        # Tag the new save
+        self.check('.tag_button').click()
+        prompt = Alert(self.driver)
+        prompt.send_keys('C')
+        prompt.accept()
+        self.check('.save_history', {'length': Equal('4')})
+        self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('>B<')
+            and Contains('>C<') and Contains('<option timestamp="1">Vers')})
+
+        # Navigate in history and change question
+        self.check('.save_history OPTION:nth-child(4)').click()
+        time.sleep(0.4)
+        self.check('.save_history OPTION:nth-child(3)').click()
+        time.sleep(0.4)
+        self.check('.save_history OPTION:nth-child(2)').click()
+        time.sleep(0.4)
+        self.check('.save_history OPTION:nth-child(1)').click()
+        self.check('.save_history', {'value': Equal("C")})
+        self.check(question(4)).click() # Returns to the second question
+        self.check(question(3)).click() # Returns to the first question
+        self.check('.save_history', {'length': Equal('4')})
+        self.check('.save_history', {'value': Equal("C")})
 
 
 IN_DOCKER = not os.getenv('DISPLAY')
