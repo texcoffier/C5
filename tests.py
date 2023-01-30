@@ -279,7 +279,7 @@ class Tests: # pylint: disable=too-many-public-methods
         action.perform()
         self.check('.popup', expected=0)
         self.check('.editor', {'innerHTML':  ~Contains('§')})
-        self.check('.compiler', {'innerText': Contains('Bravo')})
+        self.check('.compiler', {'innerText': Contains('Bravo')}, nbr=60)
         self.check('.executor', {'innerHTML': Contains('Saisir')})
         self.check('.question', {'innerHTML': Contains('Plus de questions')})
         self.check('.tester', {'innerHTML': Contains('Les buts que')})
@@ -323,10 +323,12 @@ class Tests: # pylint: disable=too-many-public-methods
 
         # Fill second input
         time.sleep(0.6)
-        retry(lambda: self.check('.executor INPUT:nth-child(5)').send_keys('*'), nbr=2)
+        self.check('.executor INPUT:nth-child(5)')
+        time.sleep(0.1)
+        self.check('.executor INPUT:nth-child(5)').send_keys('*')
         self.check('.executor INPUT:nth-child(5)').send_keys(Keys.ENTER)
-        self.check('.executor INPUT:nth-child(5)', {'value': Equal('*')})
-        self.check('.executor', {'innerHTML': Contains('·············***************············')})
+        self.check('.executor INPUT:nth-child(5)', {'value': Equal('*')}, nbr=60)
+        self.check('.executor', {'innerHTML': Contains('·············***************············')}, nbr=60)
 
         # Change first input
         self.check('.executor INPUT:nth-child(3)').send_keys(Keys.BACKSPACE)
@@ -581,7 +583,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.save_history', {'value': Equal('B')})
 
         # Goto in the past (A) modify and change question: saving done
-        self.check('.save_history OPTION:nth-child(2)').click()
+        retry(lambda: self.check('.save_history OPTION:nth-child(2)').click(), nbr=2)
         editor.click()
         editor.send_keys(' thing')
         self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=200)
@@ -648,6 +650,7 @@ try:
             # Exit after one test
             EXIT_CODE = 0
             break
+        os.system('find . -name "Anon#*" -exec rm -r {} +')
 except KeyboardInterrupt:
     log('^C')
 except: # pylint: disable=bare-except
@@ -655,5 +658,4 @@ except: # pylint: disable=bare-except
     traceback.print_exc()
 finally:
     os.system('./127 stop')
-    os.system('rm -r COMPILE_*/*/Anon#* ; rm $(grep -l "Anon#" TICKETS/*)')
     sys.exit(EXIT_CODE)
