@@ -645,7 +645,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def record_done(self, recorded_timestamp, stop_timestamp):
         """The server saved the recorded value"""
         self.stop_timestamp = stop_timestamp
-        if recorded_timestamp == self.records_in_transit[0][0]:
+        if self.records_in_transit[0] and recorded_timestamp == self.records_in_transit[0][0]:
             # Th expected recording has been done (in case of multiple retry)
             timestamp = 0
             for item in self.records_in_transit[0]:
@@ -855,6 +855,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.highlight_errors[key] = None
         self.do_coloring = True
         cursor = document.getSelection().getRangeAt(0).cloneRange()
+        if not self.editor.firstChild:
+            self.cursor_position = 0
+            return
         cursor.setStart(self.editor.firstChild, 0)
         def walk(node, pos):
             for child in node.childNodes:
