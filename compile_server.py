@@ -194,7 +194,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         if compiler not in ('gcc', 'g++'):
             stderr += f'Compilateur non autorisé : «{compiler}»\n'
         for option in compile_options:
-            if option not in ('-Wall', '-pedantic', '-pthread', '-std=c++20'):
+            if option not in ('-Wall', '-pedantic', '-pthread', '-std=c++11', '-std=c++20'):
                 stderr += f'Option de compilation non autorisée : «{option}»\n'
         for option in ld_options:
             if option not in ('-lm',):
