@@ -386,7 +386,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 and seconds - self.records_in_transit[0][0] > 5
                 and seconds - self.records_last_retry > 5
            ):
-            self.records_last_retry = seconds
             self.record_now()
         if (not GRADING
                 and not self.options['allow_copy_paste']
@@ -620,6 +619,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.records_in_transit.append(self.record_to_send)
             self.record_to_send = []
         self.record_last_time = 0
+        self.records_last_retry = int(millisecs() / 1000)
         do_post_data(
             {
                 'course': self.course,
