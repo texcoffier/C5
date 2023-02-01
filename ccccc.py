@@ -315,6 +315,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.save_button.onclick = bind(self.save_unlock, self)
         self.save_button.className = 'save_button'
         self.save_button.setAttribute('state', 'ok')
+        self.save_button.setAttribute('enabled', 'false')
         self.editor_title.firstChild.appendChild(self.save_button)
 
         self.save_history = document.createElement('SELECT')
