@@ -277,7 +277,7 @@ TABLE TR:hover TD { background: #EEE }
     by_teacher = {}
     partially_graded = []
     nr_grades_max = max(*nr_grades.values())
-    for login, nrg in nr_grades.items():
+    for login, nrg in nr_grades.Items():
         if nrg and nrg < nr_grades_max:
             partially_graded.append(login)
             for grader in cache[login]['graders'].split(' '):
@@ -295,7 +295,7 @@ TABLE TR:hover TD { background: #EEE }
 
     partially_graded = []
     nr_grades_max = max(*nr_grades.values())
-    for login, nrg in nr_grades.items():
+    for login, nrg in nr_grades.Items():
         if nrg and nrg < nr_grades_max - 1:
             partially_graded.append(login)
     if partially_graded:
@@ -304,7 +304,7 @@ TABLE TR:hover TD { background: #EEE }
         text.append('<td>')
         text.append(links(partially_graded, True))
         text.append('</tr>')
-    for teacher, students in by_teacher.items():
+    for teacher, students in by_teacher.Items():
         text.append('<tr><td>')
         text.append(teacher)
         text.append('<td>')

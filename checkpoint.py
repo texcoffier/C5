@@ -132,7 +132,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
     def get_room_name(self, column, line):
         """Return the short room name"""
-        for room_name, room in self.rooms.items():
+        for room_name, room in self.rooms.Items():
             left, top, width, height = room.position
             if (column >= left and column <= left + width
                     and line >= top and line <= top + height
@@ -494,7 +494,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.strokeStyle = "#000"
         ctx.fillStyle = "#000"
         ctx.font = self.scale + "px sans-serif,emoji"
-        for char, chars in self.chars.items():
+        for char, chars in self.chars.Items():
             char_size = ctx.measureText(char)
             for column, line in chars:
                 if (column < self.left_column or column > self.right_column
@@ -836,7 +836,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def compute_rooms_on_screen(self):
         """Compute the list of rooms on screen"""
         self.rooms_on_screen = {}
-        for room_name, room in self.rooms.items():
+        for room_name, room in self.rooms.Items():
             left, top, width, height = room['position'][:4]
             right, bottom, _x_size, _y_size = self.xys(left + width, top + height)
             left, top, _x_size, _y_size = self.xys(left, top)
@@ -1191,7 +1191,7 @@ def get_login(student):
         return student
     possibles = []
     student = canonize(student)
-    for login, verify in STUDENT_DICT.items():
+    for login, verify in STUDENT_DICT.Items():
         if not verify.building:
             continue
         if canonize(verify.firstname) == student or canonize(verify.surname) == student:
@@ -1354,7 +1354,7 @@ def spy(sources, login, infos):
 def debug():
     """debug"""
     students_per_room = {}
-    for room_name, room in ROOM.rooms.items():
+    for room_name, room in ROOM.rooms.Items():
         students_per_room[room_name] = [student.login for student in room.students]
     print(JSON.stringify(students_per_room))
 

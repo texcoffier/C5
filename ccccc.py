@@ -494,7 +494,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay.style.visibility = 'visible'
     def clear_highlight_errors(self, update_cursor=True):
         """Make space fo the new errors"""
-        for key, what in self.highlight_errors.items():
+        for key, what in self.highlight_errors.Items():
             if what and not what.startswith('cursor'):
                 self.highlight_errors[key] = None
         while (self.overlay.lastChild
@@ -551,7 +551,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay.className = 'overlay language-' + self.options['language']
         if self.options['coloring']:
             hljs.highlightElement(self.overlay)
-        for line_char, what in self.highlight_errors.items():
+        for line_char, what in self.highlight_errors.Items():
             line_nr, char_nr = line_char.split(':')
             self.add_highlight_errors(line_nr, char_nr, what)
 
@@ -851,7 +851,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         pos = [current_position, do_div_br_collapse]
         """
         # Remove old cursor position
-        for key, error in self.highlight_errors.items():
+        for key, error in self.highlight_errors.Items():
             if error and error.startswith('cursor'):
                 self.highlight_errors[key] = None
         self.do_coloring = True

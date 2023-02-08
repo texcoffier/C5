@@ -22,7 +22,7 @@ def dict_items():
     """Dict items"""
     THIS = eval('this') # pylint: disable=eval-used
     return [[i, THIS[i]] for i in THIS] # pylint: disable=undefined-variable
-Object.defineProperty(Object.prototype, 'items',
+Object.defineProperty(Object.prototype, 'Items',
                       {'enumerable': False, 'value': dict_items})
 Object.defineProperty(String.prototype, 'lower',
                       {'enumerable': False, 'value': String.prototype.toLowerCase})
