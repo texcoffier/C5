@@ -19,6 +19,7 @@ if False: # pylint: disable=using-constant-test
 brython({'debug': 1})
 
 PREAMBLE = '''
+a={}
 def print(*args, sep=' ', end='\\n'):
     __print__(sep.join(str(arg) for arg in args) + end)
 def input():
@@ -43,24 +44,11 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
-        try:
-            # pylint: disable=eval-used
-            compiled = __BRYTHON__.python_to_js(
-                PREAMBLE + source + '\n' + self.quest.append_to_source_code())
-            self.post('compiler', 'Compilation sans erreur.')
-            return compiled
-        except Error as err: # pylint: disable=undefined-variable
-            #for k in err:
-            #    print(k, err[k])
-            self.post(
-                'compiler',
-                '<error>'
-                + self.escape(err.msg) + '\n'
-                + 'Ligne ' + self.escape(err.lineno - OFFSET) + ' :\n'
-                + '<b>' + self.escape(err.text) + '</b>\n'
-                + '</error>')
-            self.post('error', [err.lineno - OFFSET, err.offset])
-            return True
+        # pylint: disable=eval-used
+        compiled = __BRYTHON__.python_to_js(
+            PREAMBLE + source + '\n' + self.quest.append_to_source_code())
+        self.post('compiler', 'Compilation sans erreur.')
+        return compiled
     def run_executor(self):
         """Execute the compiled code"""
         if self.executable is True:
@@ -100,4 +88,4 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def locals(self): # pylint: disable=no-self-use
         """Returns the local variable dict"""
-        return __BRYTHON__.mylocals
+        return __BRYTHON__.mylocals or {}
