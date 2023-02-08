@@ -19,7 +19,6 @@ if False: # pylint: disable=using-constant-test
 brython({'debug': 1})
 
 PREAMBLE = '''
-a={}
 def print(*args, sep=' ', end='\\n'):
     __print__(sep.join(str(arg) for arg in args) + end)
 def input():
@@ -33,7 +32,7 @@ _sys.stderr = __eRRor__()
 
 OFFSET = len(PREAMBLE.split('\n')) - 1
 
-class Session(Compile): # pylint: disable=undefined-variable,invalid-name
+class Session(Compile):
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None
@@ -44,11 +43,25 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
-        # pylint: disable=eval-used
-        compiled = __BRYTHON__.python_to_js(
-            PREAMBLE + source + '\n' + self.quest.append_to_source_code())
-        self.post('compiler', 'Compilation sans erreur.')
-        return compiled
+        try:
+            compiled = __BRYTHON__.python_to_js(
+                PREAMBLE + source + '\n' + self.quest.append_to_source_code())
+            self.post('compiler', 'Compilation sans erreur.')
+            return compiled
+        except Error as err: # pylint: disable=undefined-variable
+            if not err.msg:
+                for k in err:
+                    print(k, err[k])
+                return True
+            self.post(
+                'compiler',
+                '<error>'
+                + self.escape(err.msg) + '\n'
+                + 'Ligne ' + self.escape(err.lineno - OFFSET) + ' :\n'
+                + '<b>' + self.escape(err.text) + '</b>\n'
+                + '</error>')
+            self.post('error', [err.lineno - OFFSET, err.offset])
+            return True
     def run_executor(self):
         """Execute the compiled code"""
         if self.executable is True:
