@@ -790,21 +790,28 @@ class CCCCC: # pylint: disable=too-many-public-methods
         highlight_stack = [] # stack of [cursor position, '({[']
         in_string = False
         in_comment = False
+        in_comment_bloc = False
         if self.options['language'] in ('python', 'shell'):
             start_comment = '#'
             start_string = '"\''
+            start_comment_bloc = '\001'
         elif self.options['language'] in ('cpp', 'javascript'):
             start_comment = '//'
             start_string = '"\''
+            start_comment_bloc = '/*'
+            end_comment_bloc = '*/'
         elif self.options['language'] == 'lisp':
             start_comment = ';'
             start_string = '"'
+            start_comment_bloc = '\001'
         elif self.options['language'] == 'SQL':
             start_comment = '--'
             start_string = "'"
+            start_comment_bloc = '\001'
         else:
             start_comment = '\001'
             start_string = '"'
+            start_comment_bloc = '\001'
         for start, char in enumerate(self.source):
             if start == self.cursor_position:
                 if len(highlight_stack):
@@ -819,12 +826,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
             elif in_comment:
                 if char == '\n':
                     in_comment = False
-            elif char == start_comment[0]:
-                if start_comment[1]:
-                    if self.source[start+1] == start_comment[1]:
-                        in_comment = True
-                else:
-                    in_comment = True
+            elif in_comment_bloc:
+                if end_comment_bloc.startswith(char):
+                    if self.source[start+1] == end_comment_bloc[1]:
+                        in_comment_bloc = False
+            elif char == start_comment[0] and (
+                    not start_comment[1] or self.source[start+1] == start_comment[1]):
+                in_comment = True
+            elif char == start_comment_bloc[0]:
+                if self.source[start+1] == start_comment_bloc[1]:
+                    in_comment_bloc = True
             elif char in ')}]':
                 if len(highlight_stack) == 0:
                     line_bad, column_bad = self.get_line_column(start + 1)
