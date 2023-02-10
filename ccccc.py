@@ -299,6 +299,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.onscroll = bind(self.onscroll, self)
         self.editor.onmouseup = bind(self.update_cursor_position, self)
         self.editor.onkeyup = bind(self.update_cursor_position, self)
+        # self.editor.setAttribute('dropzone', 'copy s:text/plain')
+        # self.editor.dropzone = 'copy s:text/plain'
         self.editor.focus()
 
         self.editor_title.innerHTML = '<h2>' + self.options['editor_title'] + '</h2>'
@@ -751,11 +753,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Insert the pasted text"""
         self.overlay_hide()
         if event.type == 'drop':
-            self.do_coloring = self.do_update_cursor_position = True
+            clean = event.dataTransfer.getData('text/html').replace(
+                RegExp('</?(span|div|br)', 'g'), '')
+            if '<' in clean:
+                alert("La glisser/déposer de balise HTML est impossible.\nFaites un copier/coller.")
+                event.preventDefault(True)
+                return
+            # def xxx():
+            #     document.execCommand('undo', False)
+            #     document.execCommand('insertText', False, text)
+            # setTimeout(xxx, 500)
         else:
             document.execCommand('insertText', False, text)
             event.preventDefault(True)
-            self.do_coloring = self.do_update_cursor_position = True
+        self.do_coloring = self.do_update_cursor_position = True
 
     def onpaste(self, event):
         """Text paste"""
@@ -763,7 +774,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record(['allow_edit', 'onpaste'])
             event.preventDefault(True)
             return
-        text = (event.clipboardData or event.dataTransfer).getData("text")
+        text = (event.clipboardData or event.dataTransfer).getData("text/plain")
         text_clean = cleanup(text)
         if self.options['allow_copy_paste']:
             self.record('Paste')
