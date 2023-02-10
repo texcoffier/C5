@@ -23,6 +23,7 @@ def set_limits():
     """Do not allow big processes"""
     resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
     resource.setrlimit(resource.RLIMIT_DATA, (100*1024*1024, 100*1024*1024))
+    resource.setrlimit(resource.RLIMIT_NPROC, (11, 11))
 
 def set_compiler_limits():
     """Do not allow big processes"""
