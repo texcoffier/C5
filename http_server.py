@@ -250,6 +250,8 @@ async def grade(request):
 async def log(request):
     """Log user actions"""
     session = await utilities.Session.get(request)
+    if not session:
+        return response('<!DOCTYPE html>\n<script>window.parent.ccccc.record_not_done()</script>')
     post = await request.post()
     course = utilities.CourseConfig.get(utilities.get_course(post['course']))
     if not course.running(session.login, session.client_ip):

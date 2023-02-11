@@ -668,6 +668,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if len(self.records_in_transit):
             self.record_now()
 
+    def record_not_done(self):
+        """The server can't save the data"""
+        alert("Votre session a expiré ou bien vous avez changé d'adresse IP.\n"
+              + "La sauvegarde n'a pas pu être faite.\n"
+              + "Copiez votre code source ailleurs et rechargez cette page.")
+        self.records_in_transit = []
+
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
         if not what:

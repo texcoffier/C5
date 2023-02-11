@@ -253,9 +253,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if not login:
             return None
         active_teacher_room = self.active_teacher_room.get(login, None)
-        # Simulate an IP change every 30 seconds
-        # if client_ip:
-        #     client_ip += str(int(time.time() / 30))
         if active_teacher_room is None:
             if not client_ip:
                 # There is an http_server.log but nothing in session.cf
@@ -555,7 +552,7 @@ class Session:
         if (self.client_ip != client_ip and not self.allow_ip_change
            ) or self.browser != browser or self.too_old():
             url = getattr(request, 'url', None)
-            if url:
+            if url and request.method == 'GET':
                 raise web.HTTPFound(str(request.url).split('?', 1)[0])
             return None
         return True
@@ -602,6 +599,10 @@ class Session:
                 cls.session_cache[ticket] = session
         if not session.login:
             await session.get_login(str(request.url).split('?', 1)[0])
+        # Simulate an IP change every 10 session usage
+        # session.nr_usage = getattr(session, 'nr_usage', 0) + 1
+        # if session.nr_usage % 10 == 0:
+        #     session.client_ip += str(int(time.time() / 30))
         return session
     def is_author(self):
         """The user is C5 session creator"""
