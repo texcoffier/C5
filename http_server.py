@@ -251,19 +251,16 @@ async def log(request):
     """Log user actions"""
     session = await utilities.Session.get(request)
     if not session:
-        return response('<!DOCTYPE html>\n<script>window.parent.ccccc.record_not_done()</script>')
+        return response('''window.parent.ccccc.record_not_done(
+                "Votre session a expiré ou bien vous avez changé d'adresse IP.\n"
+              + "La sauvegarde n'a pas pu être faite.\n"
+              + "Copiez votre code source ailleurs et rechargez cette page.")
+                ''')
     post = await request.post()
     course = utilities.CourseConfig.get(utilities.get_course(post['course']))
     if not course.running(session.login, session.client_ip):
-        return response(
-            """<!DOCTYPE html>
-            <script>
-            alert("Ce que vous faites n'est plus enregistré :\n"
-                  + "  * L'examen est terminé\n"
-                  + "  * ou bien votre adresse IP a changé !\n"
-                  + "Contactez l'enseignant."
-                 )
-            </script>""")
+        return response('''window.parent.ccccc.record_not_done(
+            "Ce que vous faites n'est plus enregistré car l'examen est terminé\")''')
     data = urllib.request.unquote(post['line'])
     # Must do sanity check on logged data
     try:
@@ -300,16 +297,10 @@ async def log(request):
             if 'ERROR' in errors:
                 os.rename(session.edit.dirname + '.py~', session.edit.dirname + '.py')
                 os.rename(session.edit.dirname + '.js~', session.edit.dirname + '.js')
-            return response(f'''<!DOCTYPE html>
-            <script>
-            window.parent.ccccc.record_done();
-            alert({json.dumps(errors)})
-            </script>
-            ''')
+            return response(f'window.parent.ccccc.record_done();alert({json.dumps(errors)})')
 
-    return response(f"""<!DOCTYPE html>
-<script>window.parent.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)})</script>
-""")
+    return response(
+        f"window.parent.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)})")
 
 async def record_grade(request):
     """Log a grade"""
@@ -343,15 +334,14 @@ async def record_grade(request):
             course.active_teacher_room[login][8] = new_value
     else:
         grades = ''
-    return response(f"""<!DOCTYPE html>
-    <script>window.parent.ccccc.update_grading({json.dumps(grades)})</script>""")
+    return response(f"window.parent.ccccc.update_grading({json.dumps(grades)})")
 
 async def record_comment(request):
     """Log a comment"""
     session, course = await get_teacher_login_and_course(request)
     is_grader = session.is_course_grader(course)
     if not is_grader:
-        return response("Vous n'êtes pas autorisé à noter.")
+        return response("alert('Vous n'êtes pas autorisé à noter.')")
     post = await request.post()
     login = post['student']
     if not os.path.exists(f'{course.dirname}/{login}'):
@@ -367,8 +357,7 @@ async def record_comment(request):
             comments = file.read()
     else:
         comments = ''
-    return response(f"""<!DOCTYPE html>
-    <script>window.parent.ccccc.update_comments({json.dumps(comments)})</script>""")
+    return response(f"window.parent.ccccc.update_comments({json.dumps(comments)})")
 
 async def load_student_infos():
     """Load all student info in order to answer quickly"""
@@ -389,21 +378,21 @@ async def get_author_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
     if not session.is_author():
-        raise session.message('not_author', exception=True)
+        raise session.message('not_author')
     return session
 
 async def get_admin_login(request):
     """Get the admin login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
     if not session.is_admin():
-        raise session.message('not_admin', exception=True)
+        raise session.message('not_admin')
     return session
 
 async def get_root_login(request):
     """Get the root login or redirect to home page if it isn't one"""
     session = await utilities.Session.get(request)
     if not session.is_root():
-        raise session.message('not_root', exception=True)
+        raise session.message('not_root')
     return session
 
 async def get_teacher_login_and_course(request, allow=None):
@@ -411,14 +400,14 @@ async def get_teacher_login_and_course(request, allow=None):
     session = await utilities.Session.get(request)
     course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
     if session.is_student() and allow != session.login and not session.is_proctor(course):
-        raise session.message('not_teacher', exception=True)
+        raise session.message('not_teacher')
     return session, course
 
 async def adm_course(request):
     """Course details page for administrators"""
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor', exception=True)
+        raise session.message('not_proctor')
     students = {}
     for user in sorted(os.listdir(course.dirname)):
         await asyncio.sleep(0)
@@ -1306,7 +1295,7 @@ async def checkpoint(request):
     """Display the students waiting checkpoint"""
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor', exception=True)
+        raise session.message('not_proctor')
     return response(
         session.header() + f'''
         <script>
@@ -1335,7 +1324,7 @@ async def update_browser(request):
     """Send update values"""
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor', exception=True)
+        raise session.message('not_proctor')
     return await update_browser_data(course)
 
 async def checkpoint_student(request):
@@ -1349,7 +1338,7 @@ async def checkpoint_student(request):
         allow = None
     session, course = await get_teacher_login_and_course(request, allow=allow)
     if allow is None and not session.is_proctor(course):
-        raise session.message('not_proctor', exception=True)
+        raise session.message('not_proctor')
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     if room == 'STOP':
@@ -1382,7 +1371,7 @@ async def checkpoint_bonus(request):
     bonus = request.match_info['bonus']
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor', exception=True)
+        raise session.message('not_proctor')
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     old[7] = int(bonus)
@@ -1457,7 +1446,7 @@ async def checkpoint_spy(request):
     """
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor', exception=True)
+        raise session.message('not_proctor')
     student = request.match_info['student']
     answers = []
     try:
@@ -1493,7 +1482,7 @@ async def checkpoint_message(request):
     """The last answer from the student"""
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor', exception=True)
+        raise session.message('not_proctor')
     course.messages.append([session.login, int(time.time()), request.match_info['message']])
     course.set_parameter('messages', course.messages)
     return response(
@@ -1510,7 +1499,7 @@ async def get_course_config(request):
             if session.is_admin(config) and re.match(course, config.session):
                 matches.append(config)
         if not matches:
-            raise session.message('no_matching_session', exception=True)
+            raise session.message('no_matching_session')
         class FakeConfig: # pylint: disable=too-few-public-methods
             """Config for a set of sessions defined by regular expression"""
             def __init__(self, **kargs):
@@ -1523,7 +1512,7 @@ async def get_course_config(request):
     else:
         session, config = await get_teacher_login_and_course(request)
         if not session.is_admin(config):
-            raise session.message('not_admin', exception=True)
+            raise session.message('not_admin')
     return session, config
 
 
@@ -1555,7 +1544,7 @@ async def config_disable(request):
     """Session questions editor"""
     session = await utilities.Session.get(request)
     if session.is_student():
-        raise session.message('not_teacher', exception=True)
+        raise session.message('not_teacher')
     disabled = utilities.CONFIG.config['disabled']
     value = request.match_info.get('value', '')
     if value:

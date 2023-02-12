@@ -659,14 +659,10 @@ class Session:
         """In case of problem redirect to an error page"""
         raise web.HTTPFound(f'https://{C5_URL}/{where}?ticket={self.ticket}')
 
-    def message(self, key, exception=False):
-        """Error message for the user in a standalone page"""
-        if exception:
-            fct = web.HTTPSuccessful
-        else:
-            fct = web.Response
+    def message(self, key):
+        """Error message for the user in a standalone page or a post request"""
         name = self.infos['sn'].upper() + ' ' + self.infos['fn'].title()
-        return fct(
+        return  web.HTTPOk(
             body=f"""<!DOCTYPE html>
             <html>
             <head>

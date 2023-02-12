@@ -22,30 +22,33 @@ EXPLAIN = {0: "Sauvée", 1: "Validée", 2: "Compilée", 3: "Dernière seconde"}
 
 DEPRECATED = ('save_button', 'local_button', 'stop_button', 'reset_button')
 
-def do_post_data(dictionary, url, target=None):
-    """POST a dictionnary"""
-    form = document.createElement("form")
-    form.setAttribute("method", "post")
-    form.setAttribute("action", url)
-    form.setAttribute("enctype", "multipart/form-data")
-    form.setAttribute("encoding", "multipart/form-data") # For IE
-    if not target:
-        target = document.createElement("IFRAME")
-        target.id = 'do_post_data' + millisecs()
-        target.setAttribute('name', target.id)
-        target.style.position = 'absolute'
-        target.style.left = '-1000px'
-        document.body.appendChild(target)
-    form.setAttribute("target", target.id)
+def get_xhr_data(event):
+    """Evaluate the received javascript"""
+    if event.target.readyState == 4:
+        if event.target.status == 200:
+            if event.target.responseText.startswith('<'):
+                alert(event.target.responseText.split('<h1>')[1].split('</h1>'))
+            else:
+                eval(event.target.responseText) # pylint: disable=eval-used
+        else:
+            alert(event.target.responseText)
+        event.target.abort()
 
-    for key in dictionary:
-        hiddenField = document.createElement("input")
-        hiddenField.setAttribute("type", "hidden")
-        hiddenField.setAttribute("name", key)
-        hiddenField.setAttribute("value", dictionary[key])
-        form.appendChild(hiddenField)
-    document.body.appendChild(form)
-    form.submit()
+def get_xhr_error(event):
+    alert("error")
+    print(event)
+
+def do_post_data(dictionary, url):
+    """POST a dictionnary"""
+    xhr = eval('new XMLHttpRequest()') # pylint: disable=eval-used
+    xhr.addEventListener('readystatechange', get_xhr_data, False)
+    xhr.addEventListener('error', get_xhr_error, False)
+    xhr.responseType = 'text/html'
+    xhr.open("POST", url, True)
+    formData = eval('new FormData()') # pylint: disable=eval-used
+    for key, value in dictionary.Items():
+        formData.append(key, value)
+    xhr.send(formData)
 
 def cleanup(txt):
     """Remove character badly handled by browser with getSelection().toString()"""
@@ -668,11 +671,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if len(self.records_in_transit):
             self.record_now()
 
-    def record_not_done(self):
+    def record_not_done(self, message):
         """The server can't save the data"""
-        alert("Votre session a expiré ou bien vous avez changé d'adresse IP.\n"
-              + "La sauvegarde n'a pas pu être faite.\n"
-              + "Copiez votre code source ailleurs et rechargez cette page.")
+        alert(message)
         self.records_in_transit = []
 
     def add_highlight_errors(self, line_nr, char_nr, what):
