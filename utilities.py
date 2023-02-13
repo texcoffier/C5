@@ -4,6 +4,7 @@ Script to put C5 in production on a remote host
 And some utilities
 """
 
+from typing import Dict, List, Tuple, Any, Optional
 import os
 import sys
 import re
@@ -14,11 +15,12 @@ import time
 import glob
 import atexit
 import urllib.request
+import urllib.parse
 import asyncio
 import aiohttp
 from aiohttp import web
 
-def local_ip():
+def local_ip() -> str:
     """Get the local IP"""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -40,20 +42,19 @@ def get_certificate(server=True):
 
 
 class Process: # pylint: disable=invalid-name
-    """Create a LDAP process and get information from it.
+    """Create a LDAP or DNS process and get information from it.
     It is more simple than using an asyncio LDAP library.
     """
-    cache = {}
-    process = None
+    cache:Dict[Any,Any] = {}
 
     def __init__(self, command):
         self.command = command
 
-    async def start(self):
+    async def start(self) -> None:
         """
         Start a process reading login on stdin and write information on stdout
         """
-        self.process = await asyncio.create_subprocess_shell(
+        self.process = await asyncio.create_subprocess_shell( # pylint: disable=attribute-defined-outside-init
             "exec " + self.command,
             stdout=asyncio.subprocess.PIPE,
             stdin=asyncio.subprocess.PIPE,
@@ -61,28 +62,34 @@ class Process: # pylint: disable=invalid-name
         asyncio.ensure_future(self.reader())
         atexit.register(self.process.kill)
 
-    async def reader(self):
+    async def reader(self) -> None:
         """Parse infos from process"""
+        if not self.process.stdout:
+            raise ValueError('Bug')
         while True:
             infos = await self.process.stdout.readline()
             infos = json.loads(infos)
             self.cache[infos[0]] = infos[1]
 
-    async def infos(self, login):
-        """Get the informations about login"""
-        if login in self.cache:
-            return self.cache[login]
+    async def infos(self, key:str) -> Dict[str, str]:
+        """Get the informations about key"""
+        if not hasattr(self, "process"):
+            await self.start()
+        if not self.process.stdin:
+            raise ValueError('Bug')
+        if key in self.cache:
+            return self.cache[key]
         while not self.process:
             await asyncio.sleep(0.1)
-        self.process.stdin.write(login.encode('utf-8') + b'\n')
-        while login not in self.cache:
+        self.process.stdin.write(key.encode('utf-8') + b'\n')
+        while key not in self.cache:
             await asyncio.sleep(0.1)
-        return self.cache[login]
+        return self.cache[key]
 
 LDAP = Process('./infos_server.py')
 DNS = Process('./dns_server.py')
 
-def student_log(course_name, login, data):
+def student_log(course_name:str, login:str, data:str) -> None:
     """Add a line to the student log"""
     if not os.path.exists(f'{course_name}/{login}'):
         if not os.path.exists(course_name):
@@ -93,7 +100,7 @@ def student_log(course_name, login, data):
 
 class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """A course session"""
-    configs = {}
+    configs:Dict[str,"CourseConfig"] = {}
     def __init__(self, course):
         if not os.path.exists(course + '.py'):
             self.dirname = ''
@@ -184,7 +191,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         elif self.config['highlight'] == '1':
             self.config['highlight'] = '#0F0'
 
-    def update(self):
+    def update(self) -> None:
         """Compute some values"""
         self.start = self.config['start']
         self.start_timestamp = time.mktime(time.strptime(self.start, '%Y-%m-%d %H:%M:%S'))
@@ -215,7 +222,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.state = self.config['state']
         self.update_disabled()
 
-    def update_disabled(self):
+    def update_disabled(self) -> None:
         """Compute disabled state on load or C5 configuration change"""
         self.disabled = False
         for login, regexp in CONFIG.disabled.items():
@@ -223,7 +230,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 if regexp.match(self.session):
                     self.disabled = True
 
-    def number_of_active_students(self, last_seconds=600):
+    def number_of_active_students(self, last_seconds:int=600) -> int:
         """Compute the number of active students the last seconds"""
         nb_active = 0
         now = time.time()
@@ -232,23 +239,26 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 nb_active += 1
         return nb_active
 
-    def record(self):
+    def record(self) -> None:
         """Record option on disk"""
         with open(self.filename, 'w', encoding='utf-8') as file:
             file.write(repr(self.config))
         self.time = time.time()
-    def set_parameter(self, parameter, value):
+    def set_parameter(self, parameter:str, value:Any):
         """Set one of the parameters"""
         self.config[parameter] = value
         self.update()
         self.record()
-    def get_stop(self, login):
+    def get_stop(self, login:str) -> int:
         """Get stop date, taking login into account"""
-        bonus_time = self.active_teacher_room[login][7]
+        if login in self.active_teacher_room:
+            bonus_time = self.active_teacher_room[login][7]
+        else:
+            bonus_time = 0
         if login in self.tt_list:
             return self.stop_tt_timestamp + bonus_time
         return self.stop_timestamp + bonus_time
-    def update_checkpoint(self, login, client_ip, now):
+    def update_checkpoint(self, login:str, client_ip:Optional[str], now:int) -> Optional[Tuple]:
         """Update active_teacher_room"""
         if not login:
             return None
@@ -279,7 +289,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             student_log(self.dirname, login, json.dumps(to_log) + '\n')
         return active_teacher_room
 
-    def status(self, login, client_ip=None): # pylint: disable=too-many-return-statements
+    def status(self, login:str, client_ip:str=None) -> str: # pylint: disable=too-many-return-statements,too-many-statements,too-many-branches
         """Status of the course"""
         if os.path.getmtime(self.filename) > self.time:
             self.load()
@@ -297,57 +307,68 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             if now < self.stop_timestamp:
                 return 'running'
             return 'done'
-        active_teacher_room = self.update_checkpoint(login, client_ip, now)
+        if client_ip:
+            active_teacher_room = self.update_checkpoint(login, client_ip, now)
+            if not active_teacher_room:
+                raise ValueError('Bug')
+            if self.checkpoint and not active_teacher_room[0]:
+                if active_teacher_room[1] == '':
+                    # Always in the checkpoint or examination is done
+                    return 'checkpoint'
+                return 'done'
         if now < self.start_timestamp:
             return 'pending'
-        if self.checkpoint and not active_teacher_room[0]:
-            if active_teacher_room[1] == '':
-                # Always in the checkpoint or examination is done
-                return 'checkpoint'
-            return 'done'
         if now < self.get_stop(login):
             return 'running'
         return 'done'
 
-    def running(self, login, client_ip):
+    def running(self, login:str, client_ip:str=None) -> bool:
         """If the session running for the user"""
         return self.status(login, client_ip).startswith('running') or not CONFIG.is_student(login)
 
-    async def get_students(self):
+    async def get_students(self) -> List[List[Any]]:
         """Get all the students"""
-        # Clearly not efficient
+        if C5_VALIDATE:
+            # Clearly not efficient
+            return [
+                [student, active_teacher_room, await LDAP.infos(student)]
+                for student, active_teacher_room in self.active_teacher_room.items()
+                ]
         return [
-            [student, active_teacher_room, await LDAP.infos(student)]
-            for student, active_teacher_room in self.active_teacher_room.items()
-            ]
+                [student, active_teacher_room, {'fn': 'FN' + student, 'sn': 'SN'+student}]
+                for student, active_teacher_room in self.active_teacher_room.items()
+                ]
 
     @classmethod
-    def get(cls, course):
+    def get(cls, course:str) -> "CourseConfig":
         """Get a config from cache"""
         config = cls.configs.get(course, None)
         if config:
             return config
-        return CourseConfig(course)
+        config = CourseConfig(course)
+        if hasattr(config, 'time'):
+            return config
+        raise ValueError("Session inconnue : " + course)
 
     @classmethod
-    def load_all_configs(cls):
+    def load_all_configs(cls) -> None:
         """Read all configuration from disk"""
         for course in sorted(glob.glob('COMPILE_*/*.py')):
             cls.get(course[:-3])
 
-    def is_admin(self, login):
+    def is_admin(self, login:str) -> bool:
         """Is admin or creator"""
         return login in self.admins or login == self.creator
 
-    def is_grader(self, login):
+    def is_grader(self, login:str) -> bool:
         """Is grader or admin or creator"""
         return login in self.graders or self.is_admin(login)
 
-    def is_proctor(self, login):
+    def is_proctor(self, login:str) -> bool:
         """Is proctor or grader or admin or creator"""
         return login in self.proctors or self.is_grader(login)
 
-    def get_language(self):
+    def get_language(self) -> Tuple[str, str, str]:
         """Return the file extension and the comment for the compiler"""
         if self.compiler == 'SQL':
             return 'sql', '-- ', ''
@@ -359,7 +380,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             return 'js', '//', ''
         return self.compiler, '// ', ''
 
-    def get_question_name(self, question):
+    def get_question_name(self, question:int) -> str:
         """Get a question title usable as filename"""
         if question >= len(self.questions):
             return 'deleted' # The answered question no more exists
@@ -367,15 +388,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             ].replace(' ', '_').replace('/', '_').replace("'", "´")
         return f'{question+1:02d}-{title}'
 
-    def get_question_filename(self, question):
+    def get_question_filename(self, question:int) -> str:
         """Get a question title usable as filename"""
         return f'{self.get_question_name(question)}.{self.get_language()[0]}'
 
-    def get_question_path(self, question):
+    def get_question_path(self, question:int) -> str:
         """Get a question title usable as filename"""
         return f'C5/{self.course}/{self.get_question_filename(question)}'
 
-    def get_makefile(self):
+    def get_makefile(self) -> str:
         """Get the text content of the Makefile"""
         options = self.get_language()[2]
         if not options:
@@ -392,20 +413,19 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             content.append(f"{question+1:02}:{exec_name}\n\t./{exec_name}\n\n")
         return ''.join(content)
 
-def get_course(txt):
+def get_course(txt:str) -> str:
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""
     compilator, course = txt.split('=')
     return f'COMPILE_{compilator}/{course}'
 
 class Config: # pylint: disable=too-many-instance-attributes
     """C5 configuration"""
-    authors = []
-    masters = []
-    roots = []
+    authors:List[str] = []
+    masters:List[str] = []
+    roots:List[str] = []
     ticket_ttl = 86400
-    computers = []
-    student = None
-    disabled = {}
+    computers:List[Tuple[str, int, int, str, int]] = []
+    disabled:Dict[str, re.Pattern] = {} # Login and pattern
     def __init__(self):
         self.config = {
             'roots': self.roots,
@@ -433,7 +453,7 @@ class Config: # pylint: disable=too-many-instance-attributes
                 }
         }
         self.load()
-    def load(self):
+    def load(self) -> None:
         """Load configuration from file"""
         if os.path.exists('c5.cf'):
             with open('c5.cf', 'r', encoding='utf-8') as file:
@@ -441,54 +461,54 @@ class Config: # pylint: disable=too-many-instance-attributes
         else:
             self.save()
         self.update()
-    def update(self):
+    def update(self) -> None:
         """Update configuration attributes"""
         self.authors = self.config['authors']
         self.masters = self.config['masters']
         self.roots = self.config['roots']
         self.ticket_ttl = self.config['ticket_ttl']
         self.computers = self.config['computers']
-        self.student = re.compile(self.config['student'])
+        self.student:re.Pattern = re.compile(self.config['student']) # pylint: disable=attribute-defined-outside-init
         self.disabled = {login: re.compile(regexp)
                          for login, regexp in self.config['disabled'].items()
                         }
         for course in CourseConfig.configs.values():
             course.update_disabled()
-    def json(self):
+    def json(self) -> str:
         """For browser or to save"""
         return json.dumps(self.config)
-    def save(self):
+    def save(self) -> None:
         """Save the configuration"""
         with open('c5.cf', 'w', encoding='utf-8') as file:
             file.write(self.json())
-    def set_value(self, key, value):
+    def set_value(self, key:str, value:Any) -> None:
         """Update the configuration"""
         self.config[key] = value
         self.save()
         self.update()
-    def is_root(self, login):
+    def is_root(self, login:str) -> bool:
         """Returns True if it is an root login"""
         if login in self.roots:
             return True
         if self.roots:
             return False
         return not self.is_student(login)
-    def is_admin(self, login):
+    def is_admin(self, login:str) -> bool:
         """Returns True if it is an admin login"""
         return login in self.masters or login in self.roots
-    def is_author(self, login):
+    def is_author(self, login:str) -> bool:
         """Returns True if it is an author login"""
         return login in self.authors or login in self.masters or login in self.roots
-    def is_student(self, login):
+    def is_student(self, login:str) -> bool:
         """The user is a student"""
-        return self.student.search(login)
+        return bool(self.student.search(login))
 
 CONFIG = Config()
 
 class Session:
     """Session management"""
-    session_cache = {}
-    allow_ip_change = 0 # XXX defined by course, not session
+    session_cache:Dict[str,"Session"] = {}
+    edit:Optional[CourseConfig] = None # XXX Lost on server reboot
     def __init__(self, ticket, client_ip, browser, # pylint: disable=too-many-arguments
                  login=None, creation_time=None, infos=None):
         self.ticket = ticket
@@ -499,41 +519,42 @@ class Session:
         if creation_time is None:
             creation_time = time.time()
         self.creation_time = creation_time
-    async def get_login(self, service):
+    async def get_login(self, service:str) -> str:
         """Return a validated login"""
         if self.login:
             return self.login
         service = service.replace(f'http://{C5_IP}:{C5_HTTP}/', f'https://{C5_URL}/')
         if C5_VALIDATE:
             async with aiohttp.ClientSession() as session:
-                url = C5_VALIDATE % (urllib.request.quote(service),
-                                     urllib.request.quote(self.ticket))
+                url = C5_VALIDATE % (urllib.parse.quote(service),
+                                     urllib.parse.quote(self.ticket))
                 async with session.get(url) as data:
-                    lines = await data.text()
-                    lines = lines.split('\n')
+                    content = await data.text()
+                    lines = content.split('\n')
                     if lines[0] == 'yes':
                         self.login = lines[1].lower()
                         self.infos = await LDAP.infos(self.login)
                         self.record()
             if not self.login:
-                raise web.HTTPFound(C5_REDIRECT + urllib.request.quote(service))
+                raise web.HTTPFound(C5_REDIRECT + urllib.parse.quote(service))
         else:
             if self.ticket and self.ticket.isdigit():
-                self.login = f'Anon#{self.ticket}'
+                self.login = f'Anon_{self.ticket}'
                 self.infos = {'fn': 'fn' + self.ticket, 'sn': 'sn' + self.ticket}
+                LDAP.cache[self.login] = self.infos
                 self.record()
             else:
                 raise web.HTTPFound(
                     service + f'?ticket={int(time.time())}{len(self.session_cache)}')
 
         return self.login
-    def record(self):
+    def record(self) -> None:
         """Record the ticket for the compile server"""
         with open(f'TICKETS/{self.ticket}', 'w', encoding='utf-8') as file:
             file.write(str(self))
     def __str__(self):
         return repr((self.client_ip, self.browser, self.login, self.creation_time, self.infos))
-    def too_old(self):
+    def too_old(self) -> bool:
         """Return True if the ticket is too old"""
         if time.time() - self.creation_time > CONFIG.ticket_ttl:
             try:
@@ -545,20 +566,21 @@ class Session:
                 del self.session_cache[self.ticket]
             return True
         return False
-    def check(self, request, client_ip, browser):
+    def check(self, request:aiohttp.web_request.Request, client_ip:str,
+              browser:str, allow_ip_change:bool=False) -> bool:
         """Returns True if the session is valid.
         Do a redirection if possible (not in compile server)
         """
-        if (self.client_ip != client_ip and not self.allow_ip_change
+        if (self.client_ip != client_ip and not allow_ip_change
            ) or self.browser != browser or self.too_old():
             url = getattr(request, 'url', None)
             if url and request.method == 'GET':
                 raise web.HTTPFound(str(request.url).split('?', 1)[0])
-            return None
+            return False
         return True
 
     @classmethod
-    def load_ticket_file(cls, ticket):
+    def load_ticket_file(cls, ticket:str) -> "Session":
         """Load the ticket from file"""
         with open(f'TICKETS/{ticket}', 'r', encoding='utf-8') as file:
             session = Session(ticket, *eval(file.read())) # pylint: disable=eval-used
@@ -566,10 +588,12 @@ class Session:
         return session
 
     @classmethod
-    async def get(cls, request, ticket=None):
+    async def get(cls, request:aiohttp.web_request.Request, ticket:Optional[str]=None,
+                  allow_ip_change:bool=False) -> Optional["Session"]:
         """Get or create a session.
         Raise an error if hacker.
         """
+        assert request.transport
         if not ticket:
             ticket = request.query.get('ticket', '')
         try:
@@ -587,11 +611,11 @@ class Session:
         browser = headers.get('user-agent', '')
         if ticket in cls.session_cache:
             session = cls.session_cache[ticket]
-            if not session.check(request, client_ip, browser):
+            if not session.check(request, client_ip, browser, allow_ip_change=allow_ip_change):
                 return None
         elif ticket and os.path.exists(f'TICKETS/{ticket}'):
             session = cls.load_ticket_file(ticket)
-            if not session.check(request, client_ip, browser):
+            if not session.check(request, client_ip, browser, allow_ip_change=allow_ip_change):
                 return None
         else:
             session = Session(ticket, client_ip, browser)
@@ -599,42 +623,61 @@ class Session:
                 cls.session_cache[ticket] = session
         if not session.login:
             await session.get_login(str(request.url).split('?', 1)[0])
-        # Simulate an IP change every 10 session usage
-        # session.nr_usage = getattr(session, 'nr_usage', 0) + 1
-        # if session.nr_usage % 10 == 0:
-        #     session.client_ip += str(int(time.time() / 30))
         return session
-    def is_author(self):
+
+    @classmethod
+    async def get_or_fail(cls, request:aiohttp.web_request.Request,
+                          ticket:Optional[str]=None, allow_ip_change:bool=False) -> "Session":
+        """Send a mixed HTML / Javascript error message"""
+        session = await cls.get(request, ticket, allow_ip_change=allow_ip_change)
+        if session:
+            return session
+        message = "Votre session a expiré ou bien vous avez changé d'adresse IP."
+        message_js = json.dumps(message)
+        raise web.HTTPUnauthorized(body=f"""
+    // {message} <!--
+    try {{
+        window.parent.ccccc.record_not_done({message_js}
+            + "\nLa sauvegarde n'a pas pu être faite.\n"
+            + "Copiez votre code source ailleurs et rechargez cette page.");
+        }}
+    catch(err) {{
+        window.innerHTML = {message_js};
+        }}
+    // -->
+    """)
+
+    def is_author(self) -> bool:
         """The user is C5 session creator"""
         return CONFIG.is_author(self.login)
-    def is_admin(self, course=None):
+    def is_admin(self, course:CourseConfig=None) -> bool:
         """The user is C5 admin or course admin"""
         if course and course.is_admin(self.login):
             return True
         return CONFIG.is_admin(self.login)
-    def is_course_admin(self, course):
+    def is_course_admin(self, course:CourseConfig) -> bool:
         """The user is course admin"""
         return course.is_admin(self.login)
-    def is_grader(self, course):
+    def is_grader(self, course:CourseConfig) -> bool:
         """The user is course grader"""
         return course.is_grader(self.login) or CONFIG.is_admin(self.login)
-    def is_course_grader(self, course):
+    def is_course_grader(self, course:CourseConfig) -> bool:
         """The user is course grader"""
         return course.is_grader(self.login)
-    def is_proctor(self, course):
+    def is_proctor(self, course:CourseConfig) -> bool:
         """The user is course proctor"""
         return course.is_proctor(self.login) or CONFIG.is_admin(self.login)
-    def is_course_proctor(self, course):
+    def is_course_proctor(self, course:CourseConfig) -> bool:
         """The user is course proctor"""
         return course.is_proctor(self.login)
-    def is_root(self):
+    def is_root(self) -> bool:
         """The user is C5 root"""
         return CONFIG.is_root(self.login)
-    def is_student(self):
+    def is_student(self) -> bool:
         """The user is a student"""
         return CONFIG.is_student(self.login)
 
-    def header(self, courses=(), more=''):
+    def header(self, courses=(), more='') -> str:
         """Standard header"""
         return f"""<!DOCTYPE html>
             <html>
@@ -655,14 +698,10 @@ class Session:
             </script>
             """
 
-    def redirect(self, where):
-        """In case of problem redirect to an error page"""
-        raise web.HTTPFound(f'https://{C5_URL}/{where}?ticket={self.ticket}')
-
-    def message(self, key):
+    def message(self, key:str) -> aiohttp.web_response.Response:
         """Error message for the user in a standalone page or a post request"""
         name = self.infos['sn'].upper() + ' ' + self.infos['fn'].title()
-        return  web.HTTPOk(
+        return web.HTTPOk(
             body=f"""<!DOCTYPE html>
             <html>
             <head>
@@ -675,6 +714,29 @@ class Session:
             content_type='text/html',
             headers={'Cache-Control': 'no-cache'}
             )
+    def exception(self, key:str) -> web.HTTPUnauthorized:
+        """Error message for the user in a standalone page or a post request"""
+        name = self.infos['sn'].upper() + ' ' + self.infos['fn'].title()
+        return web.HTTPUnauthorized(
+            body=f"""<!DOCTYPE html>
+            <html>
+            <head>
+            <meta charset="utf-8">
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+            <link REL="icon" href="/favicon.ico?ticket={self.ticket}">
+            </head>
+            <h1>{name} : {CONFIG.config['messages'].get(key, key)}</h1>
+            """,
+            content_type='text/html',
+            headers={'Cache-Control': 'no-cache'}
+            )
+def js_message(key:str) -> aiohttp.web_response.Response:
+    """Send a pure javascript error message to display on the page"""
+    message = json.dumps(CONFIG.config['messages'].get(key, key))
+    return web.HTTPOk(
+        body=f"document.body.innerHTML = {message}",
+        content_type='application/javascript',
+        headers={'Cache-Control': 'no-cache'})
 
 C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host (for SSH)
 C5_IP = os.getenv('C5_IP', local_ip())               # For Socket IP binding
@@ -698,7 +760,7 @@ C5_LDAP_PASSWORD = os.getenv('C5_LDAP_PASSWORD')
 C5_LDAP_BASE = os.getenv('C5_LDAP_BASE')
 C5_LDAP_ENCODING = os.getenv('C5_LDAP_ENCODING', 'utf-8')
 
-def print_state():
+def print_state() -> None:
     """Print the current configuration"""
     print(f"""Uses environment shell variables :
 {'C5_HOST=' + str(C5_HOST):<40}     # Production host (for SSH)
@@ -722,7 +784,7 @@ def print_state():
 {'C5_LDAP_ENCODING=' + str(C5_LDAP_ENCODING):<40}     # LDAP character encoding
 """)
 
-def print_help():
+def print_help() -> None:
     """Print help and default configuration values"""
     print("""Arguments may be:
    * os : configure production OS
@@ -907,7 +969,7 @@ With Firefox:
 }
 ACTIONS['restart'] = ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
 
-def main():
+def main() -> None:
     """MAIN"""
     if len(sys.argv) < 2 or sys.argv[1] not in ACTIONS:
         print_help()

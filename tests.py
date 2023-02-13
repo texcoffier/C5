@@ -99,6 +99,10 @@ class Tests: # pylint: disable=too-many-public-methods
             else:
                 course.set_parameter('start', '2000-01-01 00:00:01')
             course.set_parameter('stop', '2100-01-01 00:00:01')
+            course.set_parameter('allow_ip_change', '0')
+            course.set_parameter('admins', '')
+            course.set_parameter('graders', '')
+            course.set_parameter('stop', '2100-01-01 00:00:01')
             course.set_parameter('checkpoint', '0')
             course.record()
 
@@ -113,12 +117,15 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.test_save_button,
                 self.test_copy_paste_allowed,
                 self.test_question_index,
-                # self.test_admin_home,
-                # self.test_date_change,
                 self.test_master_change,
                 self.test_ticket_ttl,
                 self.test_editor,
                 self.test_history,
+                self.test_ip_change_c5,
+                self.test_ip_change_admin,
+                self.test_ip_change_editor,
+                self.test_ip_change_grader,
+                self.test_exam,
                 ):
             print('*'*99)
             print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -138,12 +145,14 @@ class Tests: # pylint: disable=too-many-public-methods
             file.write(json.dumps(config))
     def make_me_admin(self):
         """Make admin the current login"""
-        self.update_config(lambda config: config['masters'].append('Anon#' + self.ticket))
+        print(f'\t{self.ticket} become admin')
+        self.update_config(lambda config: config['masters'].append('Anon_' + self.ticket))
         self.goto('config/reload')
         self.check_alert(required=False, nbr=2)
     def clean_up_admin(self):
         """Remove all anonymous logins from admin list"""
         def clean(config):
+            print(f'\t{self.ticket} clean admin')
             config['masters'] = [
                 login
                 for login in config['masters']
@@ -153,7 +162,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.update_config(clean)
     def make_me_root(self):
         """Make root the current login"""
-        self.update_config(lambda config: config['roots'].append('Anon#' + self.ticket))
+        self.update_config(lambda config: config['roots'].append('Anon_' + self.ticket))
         self.goto('config/reload')
         self.check_alert(required=False, nbr=2)
     def clean_up_root(self):
@@ -189,6 +198,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.control('c')
     def control(self, char):
         """Send a control character"""
+        print(f'\tCTRL+{char}')
         action = selenium.webdriver.ActionChains(self.driver)
         action.key_down(Keys.CONTROL)
         action.key_down(char)
@@ -199,12 +209,35 @@ class Tests: # pylint: disable=too-many-public-methods
         """Load page"""
         print('\tGOTO', url)
         self.driver.get(f"https://127.0.0.1:4201/{url}?ticket={self.ticket}")
+    @contextlib.contextmanager
+    def change_ip(self):
+        """Change the session IP and so break it"""
+        try:
+            print("\tSESSION IP CHANGE")
+            self.driver.execute_script(f"""
+            var t = document.createElement('SCRIPT');
+            t.src = 'https://127.0.0.1:4201/debug/change_session_ip?ticket={self.ticket}';
+            t.onload = function() {{ document.body.className = 'done' }}
+            document.body.appendChild(t);
+            """)
+            self.check('BODY', {'className': Contains('done')})
+            yield
+        finally:
+            print("\tSESSION IP RESTORE")
+            self.wait_start()
     def wait_start(self):
         """Wait the server start"""
         def check():
             try:
                 self.goto('')
                 self.ticket = self.driver.current_url.split('?ticket=')[1]
+                return None
+            except selenium.common.exceptions.UnexpectedAlertPresentException:
+                print('\tDISMISS UNEXPECTED ALERT !!!')
+                try:
+                    Alert(self.driver).dismiss()
+                except selenium.common.exceptions.NoAlertPresentException:
+                    print('\tSelenium bug !!!')
                 return None
             except selenium.common.exceptions.WebDriverException:
                 return "Server connection is impossible"
@@ -221,7 +254,12 @@ class Tests: # pylint: disable=too-many-public-methods
                 element = elements[0]
                 self.move_to_element(element)
                 for attr, check in checks.items():
-                    if not check.run(element.get_attribute(attr)):
+                    if attr.startswith('..'):
+                        obj = element.find_element_by_xpath('..')
+                        attr = attr[2:]
+                    else:
+                        obj = element
+                    if not check.run(obj.get_attribute(attr)):
                         return f'«{path}.{attr}» = «{element.get_attribute(attr)}» {check}'
                 get_errors.element = element
             return None
@@ -422,48 +460,6 @@ class Tests: # pylint: disable=too-many-public-methods
             retry(lambda: self.check('OPTION[timestamp="1"]').click(), nbr=2) # Returns to the original text
             self.check('.editor').send_keys(' ')
             self.check('.save_button').click()
-
-    # def test_admin_home(self):
-    #     """Test the admin page link"""
-    #     self.load_page('=JS=introduction')
-    #     self.check('.index > A').click()
-    #     self.check_alert(required=False, nbr=10)
-    #     self.check('H1', {'innerText': Contains(utilities.CONFIG.config['messages'].get('not_author', 'not_author'))})
-    #     with self.admin_rights():
-    #         self.load_page('=JS=introduction')
-    #         self.check('.index > A').click()
-    #         self.check_alert(required=False, nbr=2)
-    #         self.check('H1', {'innerText': Contains('Administration')})
-    # def test_date_change(self):
-    #     """Test home page course date change"""
-    #     def set_date(path, date, expect):
-    #         self.select_all(path)
-    #         old_date = self.check(path).get_attribute('value')
-    #         self.check(path).send_keys(
-    #             date + ('1' if old_date[-1] == '0' else '0'))
-    #         time.sleep(0.6)
-    #         self.check(path).send_keys(Keys.ENTER)
-    #         self.check('#more', {'innerText': Contains(expect)})
-    #     with self.admin_rights():
-    #         self.goto('adm/home')
-    #         set_date('.JS_introduction INPUT.start_date',
-    #                  "2000-01-01 00:00:0", 'Start date updated')
-    #         set_date('.JS_introduction INPUT.stop_date',
-    #                  "2100-01-01 00:00:0", 'Stop date updated')
-    #         self.check('TR.JS_introduction', {'className': Contains('running')})
-    #         self.check('.JS_introduction BUTTON.stop_date').click()
-    #         self.check('TR.JS_introduction', {'className': Contains('running_tt')})
-    #         self.check('.JS_introduction BUTTON.start_date').click()
-    #         set_date('.JS_introduction INPUT.stop_date',
-    #                  "2100-01-01 00:00:0", 'Stop date updated')
-    #         self.check('TR.JS_introduction', {'className': Contains('running')})
-    #         set_date('.JS_introduction INPUT.stop_date',
-    #                  "2001-01-01 00:00:0", 'Stop date updated')
-    #         self.check('TR.JS_introduction', {'className': Contains('done')})
-    #         self.check('.JS_introduction BUTTON.start_date').click()
-    #         set_date('.JS_introduction INPUT.stop_date',
-    #                  "2100-01-01 00:00:0", 'Stop date updated')
-    #         self.check('TR.JS_introduction', {'className': Contains('running')})
     def test_master_change(self):
         """Test add and remove master"""
         with self.root_rights():
@@ -613,6 +609,196 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.save_history', {'length': Equal('4')})
         self.check('.save_history', {'value': Equal("C")})
 
+    def test_ip_change_c5(self):
+        """Test IP change on C5 admin"""
+        with self.root_rights():
+            self.goto('')
+            try:
+                self.check('.add_author').send_keys('titi')
+            except: # pylint: disable=bare-except
+                time.sleep(10000)
+            self.check('.add_author').send_keys(Keys.ENTER)
+            self.check('#more', {'innerText': Contains('Author add «titi»')})
+            self.check('.del_author_titi').click()
+            self.check('#more', {'innerText': Contains('Author del «titi»')})
+            with self.change_ip():
+                self.check('.add_author').send_keys('titi')
+                self.check('.add_author').send_keys(Keys.ENTER)
+                self.check('BODY', {'innerText': Contains('SN') & Contains('Fn') & ~Contains('titi')})
+
+    def test_ip_change_admin(self):
+        """Test IP change on admin"""
+        with self.admin_rights():
+            self.goto('adm/session/JS=example')
+            self.check('#admins').send_keys('titi')
+            self.check('#creator').click()
+            self.check('#admins', {'className': Contains('changed')})
+            self.check('#admins').click()
+            self.control('a')
+            self.check('#admins').send_keys(Keys.BACKSPACE)
+            self.check('#allow_ip_change', {'..className': Equal(''), 'checked': Equal(None)}).click()
+            self.check('#admins', {'className': Equal('')})
+            self.check('#allow_ip_change', {'..className': Contains('changed'), 'checked': Equal('true')}, nbr=200)
+            self.check('#allow_ip_change').click()
+            self.check('#allow_ip_change', {'..className': Equal('')}, nbr=200)
+            with self.change_ip():
+                self.check('#allow_ip_change').click()
+                time.sleep(0.1)
+                self.check('#allow_ip_change', {'..className': Equal('wait_answer')})
+
+    def test_ip_change_editor(self):
+        """Test IP change in editor"""
+        self.goto('=REMOTE=test')
+        self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('false')})
+        self.move_cursor('.editor')
+        self.check('.editor').send_keys('/**/')
+        self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('true')}).click()
+        self.check('.save_history OPTION:first-child', {'innerText': Contains('instant')})
+        self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('false')})
+        with self.change_ip():
+            self.move_cursor('.editor')
+            self.check('.editor').send_keys('/**/')
+            self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('true')}).click()
+            self.check_alert('session a expiré', accept=True, required=True)
+            self.check('.save_button', {'state': Equal('wait'), 'enabled': Equal('true')})
+            self.move_cursor('.editor')
+            self.goto('')
+            time.sleep(0.1)
+            self.check_alert(accept=True, required=False)
+
+    def test_ip_change_grader(self):
+        """Test IP change in grader editor"""
+        self.goto('=REMOTE=test')
+        self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('false')})
+        self.move_cursor('.editor')
+        self.check('.editor').send_keys('/**/')
+        self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('true')}).click()
+        student = f'Anon_{self.ticket}'
+        self.ticket = None
+        self.goto('')
+        self.check_alert(accept=True, required=False, nbr=60)
+        self.wait_start()
+        self.goto(f'grade/REMOTE=test/{student}')
+        self.check('BODY', {'innerText': Contains('surveillez pas')})
+        with self.admin_rights():
+            self.goto(f'grade/REMOTE=test/{student}')
+            self.check_alert('pas autorisé à noter', accept=True, required=True)
+
+            self.goto('adm/session/REMOTE=test')
+            self.move_cursor('#graders')
+            self.control('a')
+            self.check('#graders').send_keys(f'\nAnon_{self.ticket}')
+            self.move_cursor('#notation')
+            self.control('a')
+            self.check('#notation').send_keys(f'{student}\na {{A:0,1,2}}\nb {{B:0.1,0.2,0.3}}\n')
+            self.check('#graders', {'className': Contains('changed')})
+            self.check('#creator').click()
+            self.check('#notation', {'className': Contains('changed')})
+
+            self.goto(f'grade/REMOTE=test/{student}')
+            self.check('[g="1"]:nth-child(2)',
+                {'className': Contains('grade_unselected') & Contains('grade_undefined')}).click()
+            self.check('[g="1"]:nth-child(2)',
+                {'className': Contains('grade_selected')})
+            self.check('.comments TEXTAREA:first-child', {'className': Equal('empty')}).click()
+            self.check('.comments TEXTAREA:first-child').send_keys(f'=={student}==')
+            self.check('[g="1"]:nth-child(2)').click()
+            self.check('.comments TEXTAREA:first-child', {'className': Equal('filled')}).click()
+
+            with self.change_ip():
+                self.check('[g="1"]:nth-child(2)',
+                    {'className': Contains('grade_unselected') & Contains('grade_undefined')}).click()
+                self.check_alert('session a expiré', accept=True, required=True)
+
+                self.check('.comments TEXTAREA:first-child').click()
+                self.control('a')
+                self.check('.comments TEXTAREA:first-child').send_keys(Keys.BACKSPACE)
+                self.check('.tester H2').click()
+                self.check_alert('session a expiré', accept=True, required=True)
+
+    def test_exam(self): # pylint: disable=too-many-statements
+        """Test an exam"""
+        with self.admin_rights():
+            self.goto('adm/session/REMOTE=test')
+            self.check('#start').click()
+            self.control('a')
+            self.check('#start').send_keys('2000-01-01 00:00:00')
+            self.check('#stop').click()
+            self.control('a')
+            self.check('#stop').send_keys('2000-01-01 01:00:00')
+            self.check('#checkpoint', {'checked': Equal(None)}).click()
+        self.ticket = None
+        self.wait_start()
+        self.check('BODY', {'innerHTML': ~Contains('/=REMOTE=test')})
+        self.goto('=REMOTE=test')
+        self.check('BODY', {'textContent': Contains("Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen")})
+
+        with self.admin_rights():
+            self.goto('adm/session/REMOTE=test')
+            self.check('#start').click()
+            self.control('a')
+            self.check('#start').send_keys('2050-01-01 00:00:00')
+            self.check('#stop').click()
+            self.control('a')
+            self.check('#stop').send_keys('2050-01-01 01:00:00')
+        self.ticket = None
+        self.wait_start()
+        self.check('BODY', {'innerHTML': Contains('/=REMOTE=test')})
+        self.goto('=REMOTE=test')
+        self.check('BODY', {'textContent': Contains("Donnez votre nom à l'enseignant")})
+
+        student = self.ticket
+
+        self.ticket = None
+        self.wait_start()
+        with self.admin_rights():
+            self.goto('checkpoint/REMOTE=test')
+            self.check(f'DIV[login=Anon_{student}]', {'innerHTML': Contains(student)})
+            self.driver.execute_script(
+                f"record('/checkpoint/REMOTE=test/Anon_{student}/Nautibus,42,42,a')")
+            admin = self.ticket
+
+            self.ticket = student
+            self.goto('=REMOTE=test')
+            self.check('BODY', {'textContent': Contains("pas commencé")})
+
+            self.ticket = admin
+            self.goto('adm/session/REMOTE=test')
+            self.check('#start').click()
+            self.control('a')
+            self.check('#start').send_keys('2000-01-01 00:00:00')
+            self.check('#stop').click()
+            self.control('a')
+            duration = 3
+            stop = time.localtime(time.time() + duration)
+            self.check('#stop').send_keys(time.strftime('%Y-%m-%d %H:%M:%S', stop))
+            self.check('#start').click()
+            time.sleep(0.1)
+
+            self.ticket = student
+            self.goto('=REMOTE=test')
+            self.check('.editor').send_keys(' /**/')
+            self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('true')}).click()
+            self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('false')})
+            self.move_cursor('.editor')
+            self.check('.editor').send_keys(' /*2*/')
+            time.sleep(duration)
+            self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('true')}).click()
+            self.check_alert('examen est terminé', accept=True, required=True)
+            self.check('.save_button', {'state': Equal('wait'), 'enabled': Equal('false')})
+
+            self.ticket = admin
+            self.goto('adm/session/REMOTE=test')
+            time.sleep(0.1)
+            self.check_alert(accept=True, required=False)
+            self.check('#checkpoint', {'checked': Equal('true')}).click()
+            self.check('#stop').click()
+            self.control('a')
+            self.check('#stop').send_keys('2100-01-01 01:00:00')
+            self.check('#start').click()
+            time.sleep(0.1)
+
+
 
 IN_DOCKER = not os.getenv('DISPLAY')
 
@@ -650,12 +836,14 @@ try:
             # Exit after one test
             EXIT_CODE = 0
             break
-        os.system('find . -name "Anon#*" -exec rm -r {} +')
+        os.system('find . -name "Anon_*" -exec rm -r {} +')
 except KeyboardInterrupt:
     log('^C')
 except: # pylint: disable=bare-except
     log(traceback.format_exc().strip().replace('\n', '\n\t'))
     traceback.print_exc()
+    time.sleep(10000)
 finally:
     os.system('./127 stop')
+    os.system('./clean.py')
     sys.exit(EXIT_CODE)

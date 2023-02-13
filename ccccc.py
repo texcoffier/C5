@@ -31,10 +31,12 @@ def get_xhr_data(event):
             else:
                 eval(event.target.responseText) # pylint: disable=eval-used
         else:
-            alert(event.target.responseText)
+            eval(event.target.responseText.replace( # pylint: disable=eval-used
+                RegExp('//.*', 'g'), '').replace(RegExp('\n', 'g'), ' '))
         event.target.abort()
 
 def get_xhr_error(event):
+    """Display received error. Never happen ?"""
     alert("error")
     print(event)
 
@@ -352,6 +354,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         <small>Mettez le curseur sur <span>⏱</span> pour voir le temps restant</small>
         """
         self.top.appendChild(self.fullscreen)
+
+        self.overlay.onscroll = bind(self.onscroll_overlay, self)
 
     def record_tag(self):
         """Replace tag on current saved version"""
@@ -1021,6 +1025,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if GRADING:
                 self.comments.scrollTop = self.editor.scrollTop
             self.overlay.scrollTop = self.editor.scrollTop
+    def onscroll_overlay(self, _event=None):
+        """The overlay was scrolled by Ctrl+F, must move source code"""
+        self.editor.scrollTop = self.oldScrollTop = self.overlay.scrollTop
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':

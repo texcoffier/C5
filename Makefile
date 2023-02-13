@@ -76,6 +76,7 @@ node_modules/@jcubic/lips:
 	    "node_modules/@jcubic/lips/src/lips.js"
 ############# Misc ############
 lint:
+	-mypy dns_server.py infos_server.py http_server.py compile_server.py
 	pylint [^x]*.py
 clean:
 	rm xxx*

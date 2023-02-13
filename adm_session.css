@@ -9,6 +9,11 @@ BODY {
     padding: 0px;
     margin: 0px;
     box-sizing: border-box;
+    overflow: hidden;
+}
+
+BODY > DIV {
+    white-space: nowrap;
 }
 
 #feedback {

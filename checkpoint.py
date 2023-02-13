@@ -859,8 +859,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     style = 'background: #FFCA'
                 content.append(student.box(style))
         document.getElementById('waiting').innerHTML = ' '.join(content)
-    @staticmethod
-    def update_messages():
+    def update_messages(self): # pylint: disable=no-self-use
         """Update HTML with the messages"""
         content = []
         for i, infos in enumerate(MESSAGES):

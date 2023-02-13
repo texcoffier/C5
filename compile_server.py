@@ -3,6 +3,7 @@
 Compiling and executing server
 """
 
+from typing import Union, List, Tuple, Optional, Any
 import json
 import asyncio
 import os
@@ -15,36 +16,37 @@ import traceback
 import urllib.request
 import psutil
 import websockets
+from websockets import WebSocketServerProtocol
 import utilities
 
 PROCESSES = []
 
-def set_limits():
+def set_limits() -> None:
     """Do not allow big processes"""
     resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
     resource.setrlimit(resource.RLIMIT_DATA, (100*1024*1024, 100*1024*1024))
     resource.setrlimit(resource.RLIMIT_NPROC, (11, 11))
 
-def set_compiler_limits():
+def set_compiler_limits() -> None:
     """Do not allow big processes"""
     resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
     resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
 
-def set_racket_limits():
+def set_racket_limits() -> None:
     """These limits should never be reached because enforced by racket sandbox itself"""
     resource.setrlimit(resource.RLIMIT_CPU, (3600, 3600))
     resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
 
 class Process: # pylint: disable=too-many-instance-attributes
     """A websocket session"""
-    def __init__(self, websocket, login, course):
+    def __init__(self, websocket:WebSocketServerProtocol, login:str, course:str) -> None:
         self.websocket = websocket
         self.conid = str(id(websocket))
-        self.process = None
-        self.allowed = None
-        self.waiting = False
-        self.tasks = ()
-        self.input_done = None
+        self.process:Optional[asyncio.subprocess.Process] = None
+        self.allowed = ''
+        self.waiting:Union[bool,str] = False
+        self.tasks:List[asyncio.Task] = []
+        self.input_done = asyncio.Event()
         self.login = login
         self.course = utilities.CourseConfig.get(utilities.get_course(course))
         course = self.course.dirname
@@ -58,16 +60,16 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.source_file = f"{self.dir}/{self.conid}.cpp"
         self.compiler = None
 
-    def log(self, more):
+    def log(self, more:Union[str,Tuple]) -> None:
         """Log action to COURSE/login/compile_server.log"""
         with open(self.log_file, "a", encoding="utf-8") as file:
             file.write(repr((int(time.time()), self.conid, more)) + '\n')
 
-    def course_running(self):
+    def course_running(self) -> bool:
         """Check if the course is running for the user"""
-        return self.course.running(self.login, None)
+        return self.course.running(self.login)
 
-    def cleanup(self, erase_executable=False, kill=False):
+    def cleanup(self, erase_executable:bool=False, kill:bool=False) -> None:
         """Close connection"""
         self.log('CLEANUP')
         if erase_executable:
@@ -94,20 +96,23 @@ class Process: # pylint: disable=too-many-instance-attributes
                 except ProcessLookupError:
                     pass
                 self.process = None
-    def send_input(self, data):
+    def send_input(self, data:str) -> None:
         """Send the data to the running process standard input"""
         self.log(("INPUT", data))
         if self.process and self.process.stdin:
             self.process.stdin.write(data.encode('utf-8') + b'\n')
         self.input_done.set()
 
-    async def timeout(self):
+    async def timeout(self) -> None:
         """May ask for input"""
         # pylint: disable=cell-var-from-loop
-        self.input_done = asyncio.Event()
+        if not self.process:
+            self.log("NO_PROCESS_TIMOUT")
+            self.input_done.clear()
+            return
         process_info = psutil.Process(self.process.pid)
         period = 0.05
-        state = (-1, 0, -1)
+        state:Tuple[float,Any,Any] = (-1, 0, -1)
         nr_bad = 0
         while True:
             times = process_info.cpu_times()
@@ -134,8 +139,14 @@ class Process: # pylint: disable=too-many-instance-attributes
                 nr_bad = 0
             state = new_state
 
-    async def runner(self):
+    async def runner(self) -> None: # pylint: disable=too-many-branches
         """Pass the process output to the socket"""
+        if not self.process or not self.process.stdout:
+            self.log("NO_PROCESS_RUNNER")
+            await self.websocket.send(json.dumps(
+                ['return', "\nIl y a un problème..."]))
+            self.cleanup()
+            return
         size = 0
         keep = b''
         while True:
@@ -179,7 +190,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             await self.websocket.send(json.dumps(
                 ['return', f"\nCode de fin d'exécution = {return_value}{more}"]))
             self.cleanup()
-    async def compile(self, data):
+    async def compile(self, data:Tuple) -> None:
         """Compile"""
         _course, _question, compiler, compile_options, ld_options, allowed, source = data
         self.compiler = compiler
@@ -220,26 +231,29 @@ class Process: # pylint: disable=too-many-instance-attributes
                 preexec_fn=set_compiler_limits,
                 close_fds=True,
                 )
-            stderr = await self.process.stderr.read()
-            if not stderr:
-                stderr = "Bravo, il n'y a aucune erreur"
+            assert self.process.stderr
+            stderr_bytes = await self.process.stderr.read()
+            if stderr_bytes:
+                stderr = stderr_bytes.decode('utf-8')
             else:
-                stderr = stderr.decode('utf-8')
+                stderr = "Bravo, il n'y a aucune erreur"
         await self.websocket.send(json.dumps(['compiler', stderr]))
         self.log(("ERRORS", stderr.count(': error:'), stderr.count(': warning:')))
         os.unlink(self.source_file)
-    async def indent(self, data):
+    async def indent(self, data:str) -> None:
         """Indent"""
         process = await asyncio.create_subprocess_exec(
                 'astyle',
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 )
+        assert process.stdin
         process.stdin.write(data.encode('utf-8'))
         process.stdin.close()
+        assert process.stdout
         indented = await process.stdout.read()
         await self.websocket.send(json.dumps(['indented', indented.decode('utf-8')]))
-    async def run(self):
+    async def run(self) -> None:
         """Launch process"""
         if not hasattr(self, 'compiler'):
             self.log("UNCOMPILED")
@@ -251,7 +265,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             if not self.process:
                 self.log("LAUNCH-RACKET")
                 self.process = await asyncio.create_subprocess_exec(
-                    self.compiler, "compile_racket.rkt",
+                    'racket', "compile_racket.rkt",
                 stdout=asyncio.subprocess.PIPE,
                 stdin=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
@@ -259,6 +273,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 close_fds=True,
                 )
                 self.tasks = [asyncio.ensure_future(self.runner())]
+            assert self.process.stdin
             self.process.stdin.write(self.source_file.encode('utf-8') + b'\n')
             return
         if not os.path.exists(self.exec_file):
@@ -284,12 +299,12 @@ class Process: # pylint: disable=too-many-instance-attributes
             asyncio.ensure_future(self.runner())
         ]
 
-async def bad_session(websocket):
+async def bad_session(websocket:WebSocketServerProtocol) -> None:
     """Tail the browser that the session is bad"""
     await websocket.send(json.dumps(['stop', 'Session expired']))
     await asyncio.sleep(10)
 
-async def echo(websocket, path): # pylint: disable=too-many-branches
+async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: disable=too-many-branches
     """Analyse the requests from one websocket connection"""
     print(path, flush=True)
 
@@ -304,7 +319,7 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
         return
 
     login = session.login
-    course = urllib.request.unquote(course)
+    course = urllib.parse.unquote(course)
 
     process = Process(websocket, login, course)
     PROCESSES.append(process)
@@ -344,9 +359,8 @@ async def echo(websocket, path): # pylint: disable=too-many-branches
         process.cleanup(erase_executable=True)
         PROCESSES.remove(process)
 
-async def main():
+async def main() -> None:
     """Answer compilation requests"""
-    await utilities.DNS.start()
     async with websockets.serve(echo, utilities.C5_IP, utilities.C5_SOCK, ssl=CERT): # pylint: disable=no-member
         print(f"compile_server running {utilities.C5_IP}:{utilities.C5_SOCK}", flush=True)
         await asyncio.Future()  # run forever

@@ -3,6 +3,7 @@
 Simple web server with session management
 """
 
+from typing import Dict, List, Tuple, Any, Optional, Union, Callable, Coroutine, Set
 import os
 import time
 import json
@@ -20,13 +21,23 @@ import pathlib
 import glob
 import urllib.request
 from aiohttp import web
+from aiohttp.web_request import Request
+from aiohttp.web_response import Response,StreamResponse
+
 from aiohttp.abc import AbstractAccessLogger
 import utilities
+from utilities import Session, CourseConfig
 
 # To make casauth work we should not use a proxy
-for i in ('http_proxy', 'https_proxy'):
-    if i in os.environ:
-        del os.environ[i]
+for varname in ('http_proxy', 'https_proxy'):
+    if varname in os.environ:
+        del os.environ[varname]
+
+Type = int # 0...3 type of source
+Answer = Tuple[str, Type, int, str]
+AnswerPerType = List[Optional[Answer]] # Only 4 items
+Answers = Dict[int,List[Answer]]
+Blurs = Dict[int,int]
 
 COMPILERS = [i[8:-3].upper()
              for i in os.listdir('.')
@@ -42,7 +53,8 @@ Lancer les commandes :
     make 01 # Pour compiler (si c'est nécessaire) et exécuter la question 1
 """
 
-def response(content, content_type="text/html", charset='utf-8', cache=False):
+def answer(content:Union[str,bytes], content_type:str="text/html",
+           charset:str='utf-8', cache:bool=False) -> Response:
     """Standard response"""
     headers = {
             "Cross-Origin-Opener-Policy": "same-origin",
@@ -61,16 +73,16 @@ def response(content, content_type="text/html", charset='utf-8', cache=False):
 
 class File:
     """Manage file answer"""
-    file_cache = {}
+    file_cache:Dict[str,"File"] = {}
     cache = False
 
-    def __init__(self, filename):
+    def __init__(self, filename:str):
         self.filename = filename
-        self.mtime = 0
-        self.content = ''
+        self.mtime = 0.
+        self.content:Union[str,bytes] = ''
         if '/.' in filename:
             raise ValueError('Hacker')
-        self.charset = 'utf-8'
+        self.charset:Optional[str] = 'utf-8'
         if filename.endswith('.html'):
             self.mime = 'text/html'
         elif filename.endswith('.js'):
@@ -92,7 +104,7 @@ class File:
         else:
             print('Unknow mimetype', filename)
             self.mime = 'text/plain'
-    def get_content(self):
+    def get_content(self) -> Union[str,bytes]:
         """Check file date and returns content"""
         mtime = os.path.getmtime(self.filename)
         if mtime != self.mtime:
@@ -101,63 +113,69 @@ class File:
                 content = file.read()
                 self.cache = len(content) > 200000 # checkpoint.js must no yet be cached
                 if self.charset is not None:
-                    content = content.decode(self.charset)
-                self.content = content
+                    self.content = content.decode(self.charset)
+                else:
+                    self.content = content
         return self.content
-    def response(self, content=''):
+    def answer(self, content:str='') -> Response:
         """Get the response to send"""
-        return response(
+        return answer(
             content or self.get_content(),
             content_type=self.mime,
-            charset=self.charset,
+            charset=self.charset or 'binary',
             cache=self.cache
         )
     @classmethod
-    def get(cls, filename):
+    def get(cls, filename:str) -> "File":
         """Get or create File object"""
         if filename not in cls.file_cache:
+            if not os.path.exists(filename):
+                raise web.HTTPUnauthorized(body="Arrêtez de hacker! " + filename)
             cls.file_cache[filename] = File(filename)
         return cls.file_cache[filename]
 
-def filter_last_answer(answers):
+def filter_last_answer(answers:List[Answer]) -> AnswerPerType:
     """Return the last answer of each status"""
-    last = [None, None, None, None]
+    last:AnswerPerType = [None, None, None, None]
     for source_answer_time in answers:
         last[source_answer_time[1]] = source_answer_time
     return last
 
-async def editor(session, is_admin, course, login, grading=0, author=0): # pylint: disable=too-many-arguments,too-many-locals
+async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: disable=too-many-arguments,too-many-locals
+                 login:str, grading:bool=False, author:int=0) -> Response:
     """Return the editor page.
        'saved' : see 'get_answer' comment.
     """
     versions = {}
-    stop = ''
+    stop = 8000000000
     all_saves = collections.defaultdict(list)
     if author and is_admin:
         with open(course.dirname + '.py', 'r', encoding='utf-8') as file:
             source = file.read()
-        answers = {'0': [source, 0, 0]}
-        course = utilities.CourseConfig.get('COMPILE_PYTHON/editor')
+        last_answers:Dict[int,Optional[Answer]] = {0: (source, 0, 0, '')}
+        course = CourseConfig.get('COMPILE_PYTHON/editor')
     else:
+        last_answers = {}
         answers, _blurs = get_answers(course.dirname, login, compiled = grading)
         if grading:
             # The last save or ok or compiled or snapshot
             for key, value in answers.items():
                 last = filter_last_answer(value)
-                answers[key] = max(last, key=lambda x: x[2] if x else 0) # Last time
+                last_answers[key] = max(last, key=lambda x: x[2] if x else 0) # Last time
                 versions[key] = last
         else:
             # The last save
             for key, value in answers.items():
                 good = 0
-                for source, answer, timestamp, tag in value:
-                    if answer == 0:
-                        value[-1][1] = good
+                for source, answer_question, timestamp, tag in value:
+                    if answer_question == 0:
+                        item = value[-1]
+                        value[-1] = (item[0], good, item[2], item[3])
                         all_saves[key].append([timestamp, source, tag])
-                    elif answer == 1:
+                    elif answer_question == 1:
                         all_saves[key].append([timestamp, source, tag])
                         good = 1 # Correct answer even if changed after
-                answers[key] = value[-1] # Only the last answer
+                last_answers[key] = value[-1] # Only the last answer
         if course:
             stop = course.get_stop(login)
     if grading:
@@ -168,20 +186,19 @@ async def editor(session, is_admin, course, login, grading=0, author=0): # pylin
         notation = 'NOTATION = "";'
         infos = session.infos
         title = course.course.split('=', 1)[1]
-        last = ''
-    return File.get('ccccc.html').response(
+    return answer(
         session.header() + f'''
         <title>{title}</title>
         <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
         <link rel="stylesheet" href="/ccccc.css?ticket={session.ticket}">
         <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         <script>
-            GRADING = {grading};{notation}
+            GRADING = {int(grading)};{notation}
             STUDENT = "{login}";
             COURSE = "{course.course}";
             SOCK = "wss://{utilities.C5_WEBSOCKET}";
             ADMIN = "{int(is_admin)}";
-            STOP = "{stop}";
+            STOP = {stop};
             VERSIONS = {json.dumps(versions)};
             CP = {course.config['copy_paste']};
             SAVE_UNLOCK = {int(course.config['save_unlock'])};
@@ -189,32 +206,31 @@ async def editor(session, is_admin, course, login, grading=0, author=0): # pylin
             COLORING = {int(course.config['coloring'])};
             INFOS = {infos};
             CHECKPOINT = {course.checkpoint};
-            ANSWERS = {json.dumps(answers)};
+            ANSWERS = {json.dumps(last_answers)};
             ALL_SAVES = {json.dumps(all_saves)};
             WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0,'')))};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')
 
 
-def handle(base=''):
+def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
     """Send the file content"""
-    async def real_handle(request): # pylint: disable=too-many-branches,too-many-return-statements
+    async def real_handle(request:Request) -> Response: # pylint: disable=too-many-branches,too-many-return-statements
         if base:
             session = None # Not authenticated
         else:
-            session = await utilities.Session.get(request)
+            session = await Session.get_or_fail(request)
             login = await session.get_login(str(request.url).split('?', 1)[0])
         filename = request.match_info['filename']
         course = None
-        if base:
+        if not session:
             assert '/.' not in filename
             filename = base + '/' + filename
         else:
             if filename.startswith("="):
-                course = utilities.CourseConfig.get(utilities.get_course(filename[1:]))
+                course = CourseConfig.get(utilities.get_course(filename[1:]))
                 if not course.dirname:
                     return session.message('unknown')
-                session.allow_ip_change = course.allow_ip_change # XXX dangerous
                 status = course.status(login, session.client_ip)
                 if status == 'draft':
                     return session.message('draft')
@@ -228,40 +244,34 @@ def handle(base=''):
                         return session.message('checkpoint')
                 return await editor(session, is_admin, course, session.login)
             if '=' in filename:
-                course = utilities.CourseConfig.get(utilities.get_course(filename))
+                course = CourseConfig.get(utilities.get_course(filename))
                 filename = course.filename.replace('.cf', '.js')
                 status = course.status(login, session.client_ip)
                 if status == 'draft':
                     return session.message('draft')
                 if not session.is_grader(course) and not status.startswith('running'):
                     return session.message('done')
-        return File.get(filename).response()
+        return File.get(filename).answer()
     return real_handle
 
 # https://pundit.univ-lyon1.fr:4201/grade/REMOTE=LIFAPI_Seq1TPnotep/p2100091
-async def grade(request):
+async def grade(request:Request) -> Response:
     """Display the grading page"""
     session, course = await get_teacher_login_and_course(request)
     is_grader = session.is_grader(course)
     if not is_grader:
-        return response("Vous n'êtes pas autorisé à noter.")
-    return await editor(session, True, course, request.match_info['login'], grading=1)
+        return answer("Vous n'êtes pas autorisé à noter.")
+    return await editor(session, True, course, request.match_info['login'], grading=True)
 
-async def log(request):
+async def log(request:Request) -> Response:
     """Log user actions"""
-    session = await utilities.Session.get(request)
-    if not session:
-        return response('''window.parent.ccccc.record_not_done(
-                "Votre session a expiré ou bien vous avez changé d'adresse IP.\n"
-              + "La sauvegarde n'a pas pu être faite.\n"
-              + "Copiez votre code source ailleurs et rechargez cette page.")
-                ''')
     post = await request.post()
-    course = utilities.CourseConfig.get(utilities.get_course(post['course']))
+    course = CourseConfig.get(utilities.get_course(str(post['course'])))
+    session = await Session.get_or_fail(request, allow_ip_change=bool(course.allow_ip_change))
     if not course.running(session.login, session.client_ip):
-        return response('''window.parent.ccccc.record_not_done(
+        return answer('''window.parent.ccccc.record_not_done(
             "Ce que vous faites n'est plus enregistré car l'examen est terminé\")''')
-    data = urllib.request.unquote(post['line'])
+    data = urllib.parse.unquote(str(post['line']))
     # Must do sanity check on logged data
     try:
         parsed_data = json.loads(data)
@@ -287,7 +297,9 @@ async def log(request):
                 source = item[2]
         if source:
             if not session.is_admin(session.edit):
-                return response('<script>alert("Vous n\'avez pas le droit !")</script>')
+                return answer('window.parent.ccccc.record_not_done("Vous n\'avez pas le droit !")')
+            if session.edit is None:
+                return answer('window.parent.ccccc.record_not_done("Rechargez la page.")')
             os.rename(session.edit.dirname + '.py', session.edit.dirname + '.py~')
             os.rename(session.edit.dirname + '.js', session.edit.dirname + '.js~')
             with open(session.edit.dirname + '.py', 'w', encoding="utf-8") as file:
@@ -297,21 +309,22 @@ async def log(request):
             if 'ERROR' in errors:
                 os.rename(session.edit.dirname + '.py~', session.edit.dirname + '.py')
                 os.rename(session.edit.dirname + '.js~', session.edit.dirname + '.js')
-            return response(f'window.parent.ccccc.record_done();alert({json.dumps(errors)})')
+            return answer(
+                f'window.parent.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
 
-    return response(
+    return answer(
         f"window.parent.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)})")
 
-async def record_grade(request):
+async def record_grade(request:Request) -> Response:
     """Log a grade"""
     session, course = await get_teacher_login_and_course(request)
     is_grader = session.is_course_grader(course)
     if not is_grader:
-        return response("Vous n'êtes pas autorisé à noter.")
+        return answer("window.parent.ccccc.record_not_done(\"Vous n'êtes pas autorisé à noter.\")")
     post = await request.post()
-    login = post['student']
+    login = str(post['student'])
     if not os.path.exists(f'{course.dirname}/{login}'):
-        return response("Hacker?")
+        return answer("window.parent.ccccc.record_not_done(\"Hacker?\")")
     grade_file = f'{course.dirname}/{login}/grades.log'
     if 'grade' in post:
         with open(grade_file, "a", encoding='utf-8') as file:
@@ -334,84 +347,83 @@ async def record_grade(request):
             course.active_teacher_room[login][8] = new_value
     else:
         grades = ''
-    return response(f"window.parent.ccccc.update_grading({json.dumps(grades)})")
+    return answer(f"window.parent.ccccc.update_grading({json.dumps(grades)})")
 
-async def record_comment(request):
+async def record_comment(request:Request) -> Response:
     """Log a comment"""
     session, course = await get_teacher_login_and_course(request)
     is_grader = session.is_course_grader(course)
     if not is_grader:
-        return response("alert('Vous n'êtes pas autorisé à noter.')")
+        return answer("alert('Vous n'êtes pas autorisé à noter.')")
     post = await request.post()
-    login = post['student']
+    login = str(post['student'])
     if not os.path.exists(f'{course.dirname}/{login}'):
-        return response("Hacker?")
+        return answer("Hacker?")
     comment_file = f'{course.dirname}/{login}/comments.log'
     if 'comment' in post:
         with open(comment_file, "a", encoding='utf-8') as file:
-            file.write(json.dumps([int(time.time()), session.login, int(post['question']),
-                                   int(post['version']), int(post['line']),
+            file.write(json.dumps([int(time.time()), session.login, int(str(post['question'])),
+                                   int(str(post['version'])), int(str(post['line'])),
                                    post['comment']]) + '\n')
     if os.path.exists(comment_file):
         with open(comment_file, "r", encoding='utf-8') as file:
             comments = file.read()
     else:
         comments = ''
-    return response(f"window.parent.ccccc.update_comments({json.dumps(comments)})")
+    return answer(f"window.parent.ccccc.update_comments({json.dumps(comments)})")
 
-async def load_student_infos():
+async def load_student_infos() -> None:
     """Load all student info in order to answer quickly"""
-    utilities.CourseConfig.load_all_configs()
-    for config in utilities.CourseConfig.configs.values():
+    CourseConfig.load_all_configs()
+    for config in CourseConfig.configs.values():
         for login in config.active_teacher_room:
             await utilities.LDAP.infos(login)
 
-async def startup(app):
+async def startup(app:web.Application) -> None:
     """For student names and computer names"""
-    app['ldap'] = asyncio.create_task(utilities.LDAP.start())
-    app['dns'] = asyncio.create_task(utilities.DNS.start())
     if utilities.C5_VALIDATE:
         app['load_student_infos'] = asyncio.create_task(load_student_infos())
     print("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
 
-async def get_author_login(request):
+async def get_author_login(request:Request) -> Session:
     """Get the admin login or redirect to home page if it isn't one"""
-    session = await utilities.Session.get(request)
+    session = await Session.get_or_fail(request)
     if not session.is_author():
-        raise session.message('not_author')
+        raise session.exception('not_author')
     return session
 
-async def get_admin_login(request):
+async def get_admin_login(request:Request) -> Session:
     """Get the admin login or redirect to home page if it isn't one"""
-    session = await utilities.Session.get(request)
+    session = await Session.get_or_fail(request)
     if not session.is_admin():
-        raise session.message('not_admin')
+        raise session.exception('not_admin')
     return session
 
-async def get_root_login(request):
+async def get_root_login(request:Request) -> Session:
     """Get the root login or redirect to home page if it isn't one"""
-    session = await utilities.Session.get(request)
+    session = await Session.get_or_fail(request)
     if not session.is_root():
-        raise session.message('not_root')
+        raise session.exception('not_root')
     return session
 
-async def get_teacher_login_and_course(request, allow=None):
+async def get_teacher_login_and_course(request:Request, allow=None) -> Tuple[Session,CourseConfig]:
     """Get the teacher login or redirect to home page if it isn't one"""
-    session = await utilities.Session.get(request)
-    course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
+    session = await Session.get_or_fail(request)
+    course = CourseConfig.get(utilities.get_course(request.match_info['course']))
     if session.is_student() and allow != session.login and not session.is_proctor(course):
-        raise session.message('not_teacher')
+        raise session.exception('not_teacher')
     return session, course
 
-async def adm_course(request):
+async def adm_course(request:Request) -> Response:
     """Course details page for administrators"""
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor')
+        raise session.exception('not_proctor')
     students = {}
     for user in sorted(os.listdir(course.dirname)):
         await asyncio.sleep(0)
-        files = []
+        files:List[str] = []
+        student:Dict[str,Any] = {'files': files}
         students[user] = student = {'files': files}
         for filename in sorted(os.listdir(f'{course.dirname}/{user}')):
             if '.' in filename:
@@ -427,7 +439,7 @@ async def adm_course(request):
         except IOError:
             pass
 
-    return response(
+    return answer(
         session.header() + f"""
             <script>
             STUDENTS = {json.dumps(students)};
@@ -436,7 +448,7 @@ async def adm_course(request):
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """)
 
-async def adm_config_course(config, action, value): # pylint: disable=too-many-branches,too-many-statements
+async def adm_config_course(config:CourseConfig, action:str, value:str) -> Response: # pylint: disable=too-many-branches,too-many-statements
     """Configure a course"""
     course = config.course
     if value == 'now':
@@ -525,28 +537,28 @@ async def adm_config_course(config, action, value): # pylint: disable=too-many-b
         for extension in ('', '.cf', '.py', '.js'):
             if os.path.exists(config.dirname + extension):
                 os.rename(config.dirname + extension, f'{dirname}/{filename}{extension}')
-        del utilities.CourseConfig.configs[config.dirname]
-        return response(f"«{course}» moved to Trash directory. Now close this page!")
+        del CourseConfig.configs[config.dirname]
+        return answer(f"«{course}» moved to Trash directory. Now close this page!")
     elif action == 'rename':
         value = value.replace('.py', '')
         new_dirname = f'COMPILE_{config.compiler}/{value}'
         if '.' in value or '/' in value or '-' in value:
-            return response(f"«{value}» invalid name because it contains /, ., -!")
+            return answer(f"«{value}» invalid name because it contains /, ., -!")
         for extension in ('', '.cf', '.py', '.js'):
             if os.path.exists(f'{new_dirname}{extension}'):
-                return response(f"«{value}» exists!")
+                return answer(f"«{value}» exists!")
         for extension in ('', '.cf', '.py', '.js'):
             if os.path.exists(config.dirname + extension):
                 os.rename(config.dirname + extension, f'{new_dirname}{extension}')
-        del utilities.CourseConfig.configs[config.dirname] # Delete old
-        utilities.CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
-        return response(f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!")
+        del CourseConfig.configs[config.dirname] # Delete old
+        CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
+        return answer(f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!")
 
-    return response(
+    return answer(
         f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
         content_type='application/javascript')
 
-async def adm_config(request): # pylint: disable=too-many-branches
+async def adm_config(request:Request) -> Response: # pylint: disable=too-many-branches
     """Course details page for administrators"""
     action = request.match_info['action']
     value = request.match_info.get('value', '')
@@ -555,17 +567,17 @@ async def adm_config(request): # pylint: disable=too-many-branches
     course = config.course
     if course.startswith('^'):
         # Configuration of multiple session with regular expression
-        answer = None
-        for conf in tuple(utilities.CourseConfig.configs.values()):
+        the_answer = answer("Aucune session ne correspond")
+        for conf in tuple(CourseConfig.configs.values()):
             if session.is_admin(conf) and re.match(course, conf.session):
                 result = await adm_config_course(conf, action, value)
                 if conf.session == config.session:
-                    answer = result # The same display than first time
-        return answer
+                    the_answer = result # The same display than first time
+        return the_answer
     # Configuration of a single session
     return await adm_config_course(config, action, value)
 
-def text_to_dict(text):
+def text_to_dict(text:str) -> Dict[str,str]:
     """Transform a user text to a dict.
              key1 value1
              key2 value2
@@ -579,7 +591,7 @@ def text_to_dict(text):
             dictionary[key] = value
     return dictionary
 
-async def adm_c5(request): # pylint: disable=too-many-branches,too-many-statements
+async def adm_c5(request:Request) -> Response: # pylint: disable=too-many-branches,too-many-statements
     """Remove a C5 master"""
     _session = await get_root_login(request)
     action = request.match_info['action']
@@ -630,7 +642,7 @@ async def adm_c5(request): # pylint: disable=too-many-branches,too-many-statemen
         # Load in order to remove!
         nr_deleted = 0
         for ticket in os.listdir('TICKETS'):
-            session = utilities.Session.load_ticket_file(ticket)
+            session = Session.load_ticket_file(ticket)
             if session.too_old():
                 nr_deleted += 1
         more = f"{nr_deleted} tickets deleted."
@@ -644,7 +656,7 @@ async def adm_c5(request): # pylint: disable=too-many-branches,too-many-statemen
         more = "You are a hacker!"
     return await adm_root(request, more)
 
-async def adm_root(request, more=''):
+async def adm_root(request:Request, more:str='') -> Response:
     """Home page for roots"""
     if more:
         if more.endswith('!'):
@@ -653,11 +665,11 @@ async def adm_root(request, more=''):
             more = '<div id="more">' + more + '</div>'
 
     session = await get_root_login(request)
-    return response(
+    return answer(
         session.header((), more)
         + f'<script src="/adm_root.js?ticket={session.ticket}"></script>')
 
-async def adm_get(request):
+async def adm_get(request:Request) -> StreamResponse:
     """Get a file or a ZIP"""
     _session = await get_admin_login(request)
     filename = request.match_info['filename']
@@ -674,23 +686,24 @@ async def adm_get(request):
                 *tuple(glob.glob(course + '-*')),
                 stdout=asyncio.subprocess.PIPE,
                 )
-            data = 'Go!'
+            assert process.stdout
+            data = b'FakeData'
             while data:
                 data = await process.stdout.read(64 * 1024)
                 await stream.write(data)
             return stream
         with open(filename, 'r', encoding='utf-8') as file:
             content = file.read()
-    return response(content, content_type='text/plain')
+    return answer(content, content_type='text/plain')
 
-async def my_zip(request): # pylint: disable=too-many-locals
+async def my_zip(request:Request) -> StreamResponse: # pylint: disable=too-many-locals
     """Get ZIP"""
-    session = await utilities.Session.get(request)
+    session = await Session.get_or_fail(request)
     course = request.match_info['course']
     if course != 'C5.zip':
-        configs = [utilities.CourseConfig.get(utilities.get_course(course))]
+        configs = [CourseConfig.get(utilities.get_course(course))]
     else:
-        configs = utilities.CourseConfig.configs.values()
+        configs = list(CourseConfig.configs.values())
     data = io.BytesIO()
     with zipfile.ZipFile(data, mode="w", compression=zipfile.ZIP_DEFLATED) as zipper:
         for config in configs:
@@ -704,12 +717,12 @@ async def my_zip(request): # pylint: disable=too-many-locals
                 if sources:
                     source = sources[-1]
                     mtime = time.localtime(source[2])
-                    mtime = (mtime.tm_year, mtime.tm_mon, mtime.tm_mday,
-                            mtime.tm_hour, mtime.tm_min, mtime.tm_sec)
+                    timetuple = (mtime.tm_year, mtime.tm_mon, mtime.tm_mday,
+                                 mtime.tm_hour, mtime.tm_min, mtime.tm_sec)
                     question = int(question)
                     title = config.get_question_path(question)
                     zipper.writestr(title, source[0])
-                    zipper.infolist()[-1].date_time = mtime
+                    zipper.infolist()[-1].date_time = timetuple
 
     stream = web.StreamResponse()
     stream.content_type = 'application/zip'
@@ -718,13 +731,13 @@ async def my_zip(request): # pylint: disable=too-many-locals
 
     return stream
 
-async def my_git(request): # pylint: disable=too-many-locals
+async def my_git(request:Request) -> StreamResponse: # pylint: disable=too-many-locals
     """Create GIT repository"""
-    login = (await utilities.Session.get(request)).login
-    course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
+    session = await Session.get_or_fail(request)
+    course = CourseConfig.get(utilities.get_course(request.match_info['course']))
 
-    answers, _blurs = get_answers(course.dirname, login)
-    root = login
+    answers, _blurs = get_answers(course.dirname, session.login)
+    root = session.login
     os.mkdir(root)
     git_dir = None
 
@@ -734,8 +747,8 @@ async def my_git(request): # pylint: disable=too-many-locals
         process = await asyncio.create_subprocess_exec(program, *args, **kargs)
         await process.wait()
 
-    git_dir = False
-    infos = await utilities.LDAP.infos(login)
+    git_dir = ''
+    infos = await utilities.LDAP.infos(session.login)
     author = f"{infos['fn'].title()} {infos['sn'].upper()} <{infos.get('mail', 'x@y.z')}>"
     question = None
     for (source, _type, timestamp, tag), question in sorted(
@@ -794,7 +807,7 @@ Toutes les commandes précédentes affichent un numéro de commit en hexadécima
     await stream.write(data.getvalue())
     return stream
 
-def get_answers(course, user, compiled=False): # pylint: disable=too-many-branches
+def get_answers(course:str, user:str, compiled:bool=False) -> Tuple[Answers, Blurs] : # pylint: disable=too-many-branches,too-many-locals
     """Get question answers.
        The types are:
          * 0 : saved source
@@ -804,8 +817,8 @@ def get_answers(course, user, compiled=False): # pylint: disable=too-many-branch
     Returns 'answers' and 'blurs'
     answers is a dict from question to a list of [source, type, timestamp, tag]
     """
-    answers = collections.defaultdict(list)
-    blurs = collections.defaultdict(int)
+    answers:Answers = collections.defaultdict(list)
+    blurs:Dict[int,int] = collections.defaultdict(int)
     try:
         with open(f'{course}/{user}/http_server.log', encoding='utf-8') as file:
             question = 0
@@ -818,22 +831,23 @@ def get_answers(course, user, compiled=False): # pylint: disable=too-many-branch
                     if isinstance(cell, list):
                         what = cell[0]
                         if what == 'answer':
-                            answers[cell[1]].append([cell[2], 1, seconds, ''])
+                            answers[cell[1]].append((cell[2], 1, seconds, ''))
                         elif what == 'save':
-                            answers[cell[1]].append([cell[2], 0, seconds, ''])
+                            answers[cell[1]].append((cell[2], 0, seconds, ''))
                         elif what == 'snapshot':
-                            answers[cell[1]].append([cell[2], 3, seconds, ''])
+                            answers[cell[1]].append((cell[2], 3, seconds, ''))
                         elif what == 'question':
                             question = cell[1]
                         elif what == 'tag':
                             timestamp = cell[2]
                             tag = cell[3]
                             if timestamp:
-                                for saved in answers[cell[1]]:
+                                for i, saved in enumerate(answers[cell[1]]):
                                     if saved[2] == timestamp:
-                                        saved[3] = tag
+                                        answers[cell[1]][i] = (saved[0], saved[1], saved[2], tag)
                             else:
-                                answers[cell[1]][-1][3] = tag
+                                item = answers[cell[1]][-1]
+                                answers[cell[1]][-1] = (item[0], item[1], item[2], tag)
                     elif isinstance(cell, str):
                         if cell == 'Blur':
                             blurs[question] += 1
@@ -848,14 +862,15 @@ def get_answers(course, user, compiled=False): # pylint: disable=too-many-branch
                 for line in file:
                     if "('COMPILE'," in line:
                         line = ast.literal_eval(line)
-                        answers[line[2][1][1]].append([line[2][1][6], 2, line[0], ''])
+                        answers[int(line[2][1][1])].append((line[2][1][6], 2, int(line[0]), ''))
         except (IndexError, FileNotFoundError):
             pass
         for value in answers.values():
             value.sort(key=lambda x: x[2]) # Sort by timestamp
     return answers, blurs
 
-def question_source(config, comment, where, user, question, answers, blurs): # pylint: disable=too-many-arguments,too-many-locals
+def question_source(config:CourseConfig, comment:str, where:str, user:str, # pylint: disable=too-many-arguments,too-many-locals
+                    question:int, answers:List[Answer], blurs:Blurs):
     """Nice source content"""
     content = [
         f"""
@@ -895,13 +910,13 @@ def question_source(config, comment, where, user, question, answers, blurs): # p
 
     return ''.join(content)
 
-async def adm_answers(request): # pylint: disable=too-many-locals
+async def adm_answers(request:Request) -> StreamResponse: # pylint: disable=too-many-locals
     """Get students answers"""
     _session = await get_admin_login(request)
     course = request.match_info['course']
     assert '/.' not in course and course.endswith('.zip')
     course = utilities.get_course(course[:-4])
-    config = utilities.CourseConfig(course)
+    config = CourseConfig(course)
     fildes, filename = tempfile.mkstemp()
     extension, comment = config.get_language()[:2]
     try:
@@ -927,9 +942,9 @@ async def adm_answers(request): # pylint: disable=too-many-locals
         os.unlink(filename)
         del zipper
 
-    return response(data, content_type='application/zip')
+    return answer(data, content_type='application/zip')
 
-async def update_file(request, session, compiler, replace): # pylint: disable=too-many-return-statements
+async def update_file(request:Request, session:Session, compiler:str, replace:str): # pylint: disable=too-many-return-statements
     """Update questionnary on disc if allowed"""
     post = await request.post()
     filehandle = post['course']
@@ -957,6 +972,7 @@ async def update_file(request, session, compiler, replace): # pylint: disable=to
 
     # All seems fine
 
+    assert isinstance(filehandle, web.FileField)
     with open(dst_filename, "wb") as file:
         file.write(filehandle.file.read())
 
@@ -965,23 +981,22 @@ async def update_file(request, session, compiler, replace): # pylint: disable=to
     if replace:
         return f"«{src_filename}» replace «{dst_filename}» file"
 
-    config = utilities.CourseConfig.get(dst_filename[:-3])
+    config = CourseConfig.get(dst_filename[:-3])
     config.set_parameter('creator', session.login)
     config.set_parameter('stop', '2000-01-01 00:00:01')
     config.set_parameter('state', 'Draft')
     return f"Course «{src_filename}» added into «{dst_filename}» file"
 
-
-async def upload_course(request):
+async def upload_course(request:Request) -> Response:
     """Add a new course"""
-    session = await utilities.Session.get(request)
-    error = None
+    session = await Session.get_or_fail(request)
+    error = ''
     compiler = request.match_info['compiler']
     replace = request.match_info['course']
     if replace == '_new_':
-        replace = False
+        replace = ''
     if replace:
-        course = utilities.CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace}')
+        course = CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace}')
         if not session.is_admin(course):
             error = "Session change is not allowed!"
         replace += '.py'
@@ -996,11 +1011,11 @@ async def upload_course(request):
         style = 'background:#FAA;'
     else:
         style = ''
-    return response('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
+    return answer('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
         + '<div style="height:100%;' + style + '">'
         + error + '</div>')
 
-async def store_media(request, course):
+async def store_media(request:Request, course:CourseConfig) -> str:
     """Store a file to allow its use in questionnaries"""
     post = await request.post()
     filehandle = post['course']
@@ -1011,18 +1026,19 @@ async def store_media(request, course):
         return "You must select a file!"
     if media_name is None:
         return "You forgot to select a course file!"
+    assert isinstance(filehandle, web.FileField)
     with open(f'{course.dirname}-{media_name}' , "wb") as file:
         file.write(filehandle.file.read())
     return f"""<tt style="font-size:100%">'&lt;img src="/media/{course.course}/{media_name}'
         + location.search + '"&gt;'</tt>"""
 
-async def upload_media(request):
+async def upload_media(request:Request) -> Response:
     """Add a new media"""
-    session = await utilities.Session.get(request)
-    error = None
+    session = await Session.get_or_fail(request)
+    error = ''
     compiler = request.match_info['compiler']
     course_name = request.match_info['course']
-    course = utilities.CourseConfig.get(f'COMPILE_{compiler.upper()}/{course_name}')
+    course = CourseConfig.get(f'COMPILE_{compiler.upper()}/{course_name}')
     if session.is_admin(course):
         error = await store_media(request, course)
     else:
@@ -1032,26 +1048,26 @@ async def upload_media(request):
         style = 'background:#FAA;'
     else:
         style = ''
-    return response('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
+    return answer('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
         + '<div style="height:100%;' + style + '">'
         + error + '</div>')
 
-async def config_reload(request):
+async def config_reload(request:Request) -> Response:
     """For regression tests"""
-    _session = await utilities.Session.get(request)
+    _session = await Session.get(request)
     utilities.CONFIG.load()
-    return response('done')
+    return answer('done')
 
-def tipped(logins):
+def tipped(logins_spaced:str) -> str:
     """The best way to display truncated text"""
-    logins = re.split('[ \t\n]+', logins.strip())
+    logins = re.split('[ \t\n]+', logins_spaced.strip())
     if not logins:
         return '<td class="names"><div></div>'
     if len(logins) == 1:
         return '<td class="clipped names"><div>' + logins[0] + '</div>'
     return '<td class="tipped names"><div>' + ' '.join(logins) + '</div>'
 
-def checkpoint_line(session, course, content):
+def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> None:
     """A line in the checkpoint table"""
     waiting = []
     working = []
@@ -1118,7 +1134,9 @@ def checkpoint_line(session, course, content):
     {tipped(course.config['proctors'])}
     </tr>''')
 
-def checkpoint_table(session, courses, test, content, done):
+def checkpoint_table(session:Session, courses:List[CourseConfig],
+                     test:Callable[[CourseConfig], bool],
+                     content:List[str], done:Set[CourseConfig]) -> None:
     """A checkpoint table"""
     for course in courses:
         if test(course):
@@ -1126,9 +1144,9 @@ def checkpoint_table(session, courses, test, content, done):
                 checkpoint_line(session, course, content)
                 done.add(course)
 
-async def checkpoint_list(request):
-    """Liste all checkpoints"""
-    session = await utilities.Session.get(request)
+async def checkpoint_list(request:Request) -> Response:
+    """Page with all checkpoints"""
+    session = await Session.get_or_fail(request)
     titles = '''<tr><th>Session<th>Comp<br>iler
         <th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
         <th>Start date<th>Stop date<th>Options<th>Edit<th>Try<th>Waiting<br>Room
@@ -1182,15 +1200,15 @@ async def checkpoint_list(request):
         hide_header()
         content.append(f'<tr><th class="header" colspan="{titles.count("th")}">{label}</tr>')
         content.append(titles)
-    utilities.CourseConfig.load_all_configs()
+    CourseConfig.load_all_configs()
     now = time.time()
     courses = [
         course
-        for course in sorted(utilities.CourseConfig.configs.values(),
+        for course in sorted(CourseConfig.configs.values(),
             key=lambda i: i.course.split('=')[::-1])
         if session.is_proctor(course) or course.status('').startswith('running')
         ]
-    done = set()
+    done:Set[CourseConfig] = set()
     add_header("Drafts")
     checkpoint_table(session, courses,
         lambda course: course.state == 'Draft' and session.is_admin(course),
@@ -1289,14 +1307,14 @@ async def checkpoint_list(request):
             </label>
             </form>''')
 
-    return response(''.join(content))
+    return answer(''.join(content))
 
-async def checkpoint(request):
-    """Display the students waiting checkpoint"""
+async def checkpoint(request:Request) -> Response:
+    """Display the map with students waiting checkpoint"""
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor')
-    return response(
+        raise session.exception('not_proctor')
+    return answer(
         session.header() + f'''
         <script>
         COURSE = {json.dumps(course.course)};
@@ -1310,9 +1328,9 @@ async def checkpoint(request):
         <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         ''')
 
-async def update_browser_data(course):
+async def update_browser_data(course:CourseConfig) -> Response:
     """Send update values"""
-    return response(
+    return answer(
         f'''
         STUDENTS = {json.dumps(await course.get_students())};
         MESSAGES = {json.dumps(course.messages)};
@@ -1320,14 +1338,14 @@ async def update_browser_data(course):
         ''',
         content_type='application/javascript')
 
-async def update_browser(request):
-    """Send update values"""
+async def update_browser(request:Request) -> Response:
+    """Send update values in javascript"""
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor')
+        return utilities.js_message('not_proctor')
     return await update_browser_data(course)
 
-async def checkpoint_student(request):
+async def checkpoint_student(request:Request) -> Response:
     """Display the students waiting checkpoint"""
     student = request.match_info['student']
     room = request.match_info['room']
@@ -1338,7 +1356,7 @@ async def checkpoint_student(request):
         allow = None
     session, course = await get_teacher_login_and_course(request, allow=allow)
     if allow is None and not session.is_proctor(course):
-        raise session.message('not_proctor')
+        return utilities.js_message('not_proctor')
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     if room == 'STOP':
@@ -1362,16 +1380,16 @@ async def checkpoint_student(request):
     utilities.student_log(course.dirname, student, json.dumps(to_log) + '\n')
     course.record()
     if session.is_student() and not session.is_proctor(course):
-        return response('''<script>document.body.innerHTML = "C'est fini."</script>''')
+        return utilities.js_message("C'est fini.")
     return await update_browser_data(course)
 
-async def checkpoint_bonus(request):
+async def checkpoint_bonus(request:Request) -> Response:
     """Set student time bonus"""
     student = request.match_info['student']
     bonus = request.match_info['bonus']
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor')
+        return utilities.js_message("not_proctor")
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     old[7] = int(bonus)
@@ -1380,15 +1398,15 @@ async def checkpoint_bonus(request):
     course.record()
     return await update_browser_data(course)
 
-async def home(request):
+async def home(request:Request) -> Response:
     """Test the user rights to display the good home page"""
-    session = await utilities.Session.get(request)
+    session = await Session.get_or_fail(request)
     if session.is_root():
         return await adm_root(request)
     if not session.is_student():
         return await checkpoint_list(request)
     # Student
-    utilities.CourseConfig.load_all_configs()
+    CourseConfig.load_all_configs()
     content = [session.header(),
         '''<style>
         BODY { font-family: sans-serif }
@@ -1400,7 +1418,7 @@ async def home(request):
         f'<p><a target="_blank" href="/zip/C5.zip?ticket={session.ticket}">',
         '💾 ZIP</a> contenant vos derniers fichiers sauvegardés dans C5.'
         ]
-    for course_name, course in sorted(utilities.CourseConfig.configs.items()):
+    for course_name, course in sorted(CourseConfig.configs.items()):
         if course.status(session.login) not in ('pending', 'running'):
             continue
         name = '<span>' + course_name.replace('COMPILE_','').replace('/','</span> ')
@@ -1408,29 +1426,29 @@ async def home(request):
             f'''<li> <a href="/={course.course}?ticket={session.ticket}"
                         style="background:{course.highlight}">{name}</a>''')
 
-    return response(''.join(content))
+    return answer(''.join(content))
 
-async def checkpoint_buildings(request):
+async def checkpoint_buildings(request:Request) -> Response:
     """Building list"""
-    _ = await utilities.Session.get(request)
+    _session = await Session.get(request)
     buildings = {}
     for filename in os.listdir('BUILDINGS'):
         with open('BUILDINGS/' + filename, encoding='utf-8') as file:
             buildings[filename] = file.read()
-    return response(
+    return answer(
         f'BUILDINGS = {json.dumps(buildings)};',
         content_type='application/javascript')
 
-async def computer(request):
+async def computer(request:Request) -> Response:
     """Set value for computer"""
-    _session = await utilities.Session.get(request)
-    course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
+    _session = await Session.get(request)
+    course = CourseConfig.get(utilities.get_course(request.match_info['course']))
     message = request.match_info.get('message', '')
     building = request.match_info['building']
     column = int(request.match_info['column'])
     line = int(request.match_info['line'])
     if message:
-        utilities.CONFIG.computers.append([building, column, line, message, int(time.time())])
+        utilities.CONFIG.computers.append((building, column, line, message, int(time.time())))
     else:
         utilities.CONFIG.computers = utilities.CONFIG.config['computers'] = [
             bug
@@ -1440,13 +1458,13 @@ async def computer(request):
     utilities.CONFIG.save()
     return await update_browser_data(course)
 
-async def checkpoint_spy(request):
+async def checkpoint_spy(request:Request) -> Response:
     """All the sources of the student as a list of:
            [timestamp, question, compile | save | answer, source]
     """
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor')
+        return utilities.js_message("not_proctor")
     student = request.match_info['student']
     answers = []
     try:
@@ -1454,7 +1472,7 @@ async def checkpoint_spy(request):
             for line in file:
                 if "('COMPILE'," in line:
                     line = ast.literal_eval(line)
-                    answers.append([line[0], line[2][1][1], 'c', line[2][1][6]])
+                    answers.append((int(line[0]), line[2][1][1], 'c', line[2][1][6]))
                     await asyncio.sleep(0)
     except (IndexError, FileNotFoundError):
         pass
@@ -1466,43 +1484,43 @@ async def checkpoint_spy(request):
                     seconds = 0
                     for item in json.loads(line):
                         if isinstance(item, list) and item[0] in ('answer', 'save'):
-                            answers.append([seconds, item[1], item[0][0], item[2]])
+                            answers.append((seconds, item[1], item[0][0], item[2]))
                         elif isinstance(item, int):
                             seconds += item
     except (IndexError, FileNotFoundError):
         pass
 
-    return response(
+    return answer(
         f'''spy({json.dumps(answers)},
                {json.dumps(student)},
                {json.dumps(await utilities.LDAP.infos(student))})''',
         content_type='application/javascript')
 
-async def checkpoint_message(request):
+async def checkpoint_message(request:Request) -> Response:
     """The last answer from the student"""
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
-        raise session.message('not_proctor')
+        return utilities.js_message("not_proctor")
     course.messages.append([session.login, int(time.time()), request.match_info['message']])
     course.set_parameter('messages', course.messages)
-    return response(
+    return answer(
         f'''MESSAGES.push({json.dumps(course.messages[-1])});ROOM.update_messages()''',
         content_type='application/javascript')
 
-async def get_course_config(request):
+async def get_course_config(request:Request) -> Tuple[Session,CourseConfig]:
     """Returns the session and the courses configuration"""
     course = request.match_info['course']
     if course.startswith('^'):
-        session = await utilities.Session.get(request)
+        session = await Session.get_or_fail(request)
         matches = []
-        for config in utilities.CourseConfig.configs.values():
+        for config in CourseConfig.configs.values():
             if session.is_admin(config) and re.match(course, config.session):
                 matches.append(config)
         if not matches:
-            raise session.message('no_matching_session')
-        class FakeConfig: # pylint: disable=too-few-public-methods
+            raise web.HTTPUnauthorized(body='no_matching_session')
+        class FakeConfig(CourseConfig): # pylint: disable=too-few-public-methods
             """Config for a set of sessions defined by regular expression"""
-            def __init__(self, **kargs):
+            def __init__(self, **kargs): # pylint: disable=super-init-not-called
                 self.__dict__.update(kargs)
         first = min(matches, key=lambda x: x.course)
         config = FakeConfig(
@@ -1512,39 +1530,38 @@ async def get_course_config(request):
     else:
         session, config = await get_teacher_login_and_course(request)
         if not session.is_admin(config):
-            raise session.message('not_admin')
+            raise web.HTTPUnauthorized(body='not_admin')
     return session, config
 
-
-async def course_config(request):
+async def course_config(request:Request) -> Response:
     """The last answer from the student"""
     _session, config = await get_course_config(request)
-    return response(
+    return answer(
         f'update_course_config({json.dumps(config.config)})',
         content_type='application/javascript')
 
-async def adm_session(request):
+async def adm_session(request:Request) -> Response:
     """Session configuration for administrators"""
     session, config = await get_course_config(request)
-    return response(
+    return answer(
         session.header()
         + f'<script>COURSE = {json.dumps(config.course)};</script>'
         + f'<script src="/adm_session.js?ticket={session.ticket}"></script>')
 
-async def adm_editor(request):
+async def adm_editor(request:Request) -> Response:
     """Session questions editor"""
     session, course = await get_teacher_login_and_course(request)
     is_admin = session.is_admin(course)
     if not is_admin:
-        return response("Vous n'êtes pas autorisé à modifier les questions.")
+        return answer("Vous n'êtes pas autorisé à modifier les questions.")
     session.edit = course # XXX If server is restarted, this attribute is lost
     return await editor(session, is_admin, course, session.login, author=1)
 
-async def config_disable(request):
+async def config_disable(request:Request) -> Response:
     """Session questions editor"""
-    session = await utilities.Session.get(request)
+    session = await Session.get_or_fail(request)
     if session.is_student():
-        raise session.message('not_teacher')
+        return utilities.js_message('not_teacher')
     disabled = utilities.CONFIG.config['disabled']
     value = request.match_info.get('value', '')
     if value:
@@ -1552,17 +1569,23 @@ async def config_disable(request):
     elif session.login in disabled:
         del disabled[session.login]
     else:
-        return response('', content_type='application/javascript') # No change
+        return answer('', content_type='application/javascript') # No change
     utilities.CONFIG.set_value('disabled', disabled)
-    return response('window.location.reload()', content_type='application/javascript')
+    return answer('window.location.reload()', content_type='application/javascript')
 
-async def get_media(request):
+async def get_media(request:Request) -> Response:
     """Get a media file"""
-    session = await utilities.Session.get(request)
-    course = utilities.CourseConfig.get(utilities.get_course(request.match_info['course']))
+    session = await Session.get_or_fail(request)
+    course = CourseConfig.get(utilities.get_course(request.match_info['course']))
     if not session.is_grader(course) and not course.status(session.login).startswith('running'):
-        return response('Not allowed', content_type='text/plain')
-    return File.get(f'{course.dirname}-{request.match_info["value"]}').response()
+        return answer('Not allowed', content_type='text/plain')
+    return File.get(f'{course.dirname}-{request.match_info["value"]}').answer()
+
+async def change_session_ip(request:Request) -> Response:
+    """Change the current session IP"""
+    session = await Session.get_or_fail(request)
+    session.client_ip += '*'
+    return answer('done')
 
 APP = web.Application()
 APP.add_routes([web.get('/', home),
@@ -1596,6 +1619,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/zip/{course}', my_zip),
                 web.get('/git/{course}', my_git),
                 web.get('/media/{course}/{value}', get_media),
+                web.get('/debug/change_session_ip', change_session_ip),
                 web.post('/upload_course/{compiler}/{course}', upload_course),
                 web.post('/upload_media/{compiler}/{course}', upload_media),
                 web.post('/log', log),
@@ -1610,7 +1634,7 @@ class AccessLogger(AbstractAccessLogger): # pylint: disable=too-few-public-metho
     """Logger for aiohttp"""
     def log(self, request, response, time): # pylint: disable=redefined-outer-name
         path = request.path.replace('\n', '\\n')
-        session = utilities.Session.session_cache.get(
+        session = Session.session_cache.get(
             request.query_string.replace('ticket=', ''), None)
         if session:
             login = session.login
