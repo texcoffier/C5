@@ -1027,7 +1027,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.overlay.scrollTop = self.editor.scrollTop
     def onscroll_overlay(self, _event=None):
         """The overlay was scrolled by Ctrl+F, must move source code"""
-        self.editor.scrollTop = self.oldScrollTop = self.overlay.scrollTop
+        self.editor.scrollTop = self.overlay.scrollTop
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':
