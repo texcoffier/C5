@@ -125,6 +125,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.test_ip_change_editor,
                 self.test_ip_change_grader,
                 self.test_exam,
+                self.test_source_edit,
                 ):
             print('*'*99)
             print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -194,6 +195,10 @@ class Tests: # pylint: disable=too-many-public-methods
     def goto(self, url):
         """Load page"""
         print('\tGOTO', url)
+        # This line is here to not display the confirming Leave Page popup
+        # because Selenium can manage it properly:
+        # It says there is a popup by deny dismissing it (sometime randomly)
+        self.driver.execute_script("GRADING = true")
         self.driver.get(f"https://127.0.0.1:4201/{url}?ticket={self.ticket}")
     @contextlib.contextmanager
     def change_ip(self):
@@ -520,7 +525,6 @@ class Tests: # pylint: disable=too-many-public-methods
         self.goto('=JS=example')
         self.check('BODY', {'innerHTML': Contains(utilities.CONFIG.config['messages']['pending'])
                           & Contains('SN') & Contains('Fn')})
-
     def test_history(self): # pylint: disable=too-many-statements
         """Test history managing and TAGs"""
         self.load_page('=TEXT=demo')
@@ -598,7 +602,6 @@ class Tests: # pylint: disable=too-many-public-methods
         self.goto('')
         time.sleep(0.1)
         self.check_alert(accept=True, required=False)
-
     def test_ip_change_c5(self):
         """Test IP change on C5 admin"""
         with self.root_rights():
@@ -615,7 +618,6 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.check('.add_author').send_keys('titi')
                 self.check('.add_author').send_keys(Keys.ENTER)
                 self.check('BODY', {'innerText': Contains('session a expiré')})
-
     def test_ip_change_admin(self):
         """Test IP change on admin"""
         with self.admin_rights():
@@ -635,7 +637,6 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.check('#allow_ip_change').click()
                 time.sleep(0.1)
                 self.check('#allow_ip_change', {'..className': Equal('wait_answer')})
-
     def test_ip_change_editor(self):
         """Test IP change in editor"""
         self.goto('=REMOTE=test')
@@ -655,7 +656,6 @@ class Tests: # pylint: disable=too-many-public-methods
             self.goto('')
             time.sleep(0.1)
             self.check_alert(accept=True, required=False)
-
     def test_ip_change_grader(self):
         """Test IP change in grader editor"""
         self.goto('=REMOTE=test')
@@ -705,7 +705,6 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.check('.comments TEXTAREA:first-child').send_keys(Keys.BACKSPACE)
                 self.check('.tester H2').click()
                 self.check_alert('session a expiré', accept=True, required=True)
-
     def test_exam(self): # pylint: disable=too-many-statements
         """Test an exam"""
         with self.admin_rights():
@@ -787,8 +786,30 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('#stop').send_keys('2100-01-01 01:00:00')
             self.check('#start').click()
             time.sleep(0.1)
-
-
+    def test_source_edit(self):
+        """Test questionnary editor"""
+        with open('COMPILE_REMOTE/xxx.py', 'w', encoding='utf-8') as file:
+            file.write('''
+class Q1(Question):
+    def question(self):
+        return "TheQuestion"
+    def tester(self):
+        self.display('TheEnd')
+    def default_answer(self):
+        return "TheAnswer"
+''')
+        with self.admin_rights():
+            self.goto('adm/editor/REMOTE=xxx')
+            self.check('.question', {'innerHTML': Contains('TheQuestion') & Contains('>TheAnswer<')})
+            self.move_cursor('.editor')
+            self.check('.editor').send_keys('''class Q2(Question):
+    def question(self):
+        return "AnotherQuestion"
+''')
+            self.check('.question', {'innerHTML': Contains('AnotherQuestion')})
+            self.control('s')
+            self.check_alert('COMPILE_REMOTE/xxx.py → COMPILE_REMOTE/xxx.js', accept=True, required=True)
+            self.control('w')
 
 IN_DOCKER = not os.getenv('DISPLAY')
 
