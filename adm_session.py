@@ -257,6 +257,9 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     <a href="javascript:if(confirm('Really delete?'))window.location='/adm/session/"""
     + COURSE + '/delete/?ticket=' + TICKET + """'">
      Delete <b>ALL</b></a>
+    <a href="javascript:if(confirm('Really delete?'))window.location='/adm/session/"""
+    + COURSE + '/delete_students/?ticket=' + TICKET + """'">
+     Delete <b>Students</b></a>
     <p class="title">Feedback</p>
     <div id="feedback"></div>
     <p class="title">Messages posted</p>

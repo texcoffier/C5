@@ -263,7 +263,7 @@ async def grade(request:Request) -> Response:
         return answer("Vous n'êtes pas autorisé à noter.")
     return await editor(session, True, course, request.match_info['login'], grading=True)
 
-async def log(request:Request) -> Response:
+async def log(request:Request) -> Response: # pylint: disable=too-many-branches
     """Log user actions"""
     post = await request.post()
     course = CourseConfig.get(utilities.get_course(str(post['course'])))
@@ -451,7 +451,7 @@ async def adm_course(request:Request) -> Response:
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """)
 
-async def adm_config_course(config:CourseConfig, action:str, value:str) -> Response: # pylint: disable=too-many-branches,too-many-statements
+async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union[Response,str]: # pylint: disable=too-many-branches,too-many-statements
     """Configure a course"""
     course = config.course
     if value == 'now':
@@ -530,35 +530,45 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Respo
         assert re.match('#[0-9A-Z]{3}', value)
         config.set_parameter('highlight', value)
         feedback = f"«{course}» The session color is now {value}"
-    elif action == 'delete':
+    elif action in ('delete', 'delete_students'):
         if not os.path.exists('Trash'):
             os.mkdir('Trash')
         dirname, filename = config.dirname.split('/')
         dirname = f"Trash/{dirname}"
         if not os.path.exists(dirname):
             os.mkdir(dirname)
-        for extension in ('', '.cf', '.py', '.js'):
+        if action == 'delete':
+            extensions = ['', '.cf', '.py', '.js']
+        else:
+            extensions = ['']
+        timestamp = time.strftime('%Y%m%d%H%M%S')
+        for extension in extensions:
             if os.path.exists(config.dirname + extension):
-                os.rename(config.dirname + extension, f'{dirname}/{filename}{extension}')
-        del CourseConfig.configs[config.dirname]
-        return answer(f"«{course}» moved to Trash directory. Now close this page!")
+                os.rename(config.dirname + extension,
+                          f'{dirname}/{timestamp}-{filename}{extension}')
+        if action == 'delete':
+            del CourseConfig.configs[config.dirname]
+            return f"«{course}» moved to Trash directory. Now close this page!"
+        CourseConfig.configs[config.dirname].config['active_teacher_room'] = {}
+        CourseConfig.configs[config.dirname].update()
+        CourseConfig.configs[config.dirname].record_config()
+        return f"«{course}» students moved to Trash. Now close this page!"
     elif action == 'rename':
         value = value.replace('.py', '')
         new_dirname = f'COMPILE_{config.compiler}/{value}'
         if '.' in value or '/' in value or '-' in value:
-            return answer(f"«{value}» invalid name because it contains /, ., -!")
+            return f"«{value}» invalid name because it contains /, ., -!"
         for extension in ('', '.cf', '.py', '.js'):
             if os.path.exists(f'{new_dirname}{extension}'):
-                return answer(f"«{value}» exists!")
+                return f"«{value}» exists!"
         for extension in ('', '.cf', '.py', '.js'):
             if os.path.exists(config.dirname + extension):
                 os.rename(config.dirname + extension, f'{new_dirname}{extension}')
         del CourseConfig.configs[config.dirname] # Delete old
         CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
-        return answer(f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!")
+        return f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!"
 
-    return answer(
-        f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
+    return answer(f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
         content_type='application/javascript')
 
 async def adm_config(request:Request) -> Response: # pylint: disable=too-many-branches
@@ -570,15 +580,18 @@ async def adm_config(request:Request) -> Response: # pylint: disable=too-many-br
     course = config.course
     if course.startswith('^'):
         # Configuration of multiple session with regular expression
-        the_answer = answer("Aucune session ne correspond")
+        the_answers = []
         for conf in tuple(CourseConfig.configs.values()):
             if session.is_admin(conf) and re.match(course, conf.session):
-                result = await adm_config_course(conf, action, value)
-                if conf.session == config.session:
-                    the_answer = result # The same display than first time
-        return the_answer
-    # Configuration of a single session
-    return await adm_config_course(config, action, value)
+                the_answers.append(await adm_config_course(conf, action, value))
+    else:
+        # Configuration of a single session
+        the_answers = [await adm_config_course(config, action, value)]
+    if the_answers:
+        if isinstance(the_answers[0], str):
+            return answer('<br>'.join(str(i) for i in the_answers))
+        return the_answers[0]
+    return answer("Aucune session ne correspond")
 
 def text_to_dict(text:str) -> Dict[str,str]:
     """Transform a user text to a dict.
