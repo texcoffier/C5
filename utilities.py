@@ -846,7 +846,7 @@ def print_help() -> None:
    * open : launch web browser (second argument may be js|python|cpp|remote)
    * cp : copy local files to production ones
    * diff : compare local files to production ones
-   * getall : copy production course and logs into locals logs
+   * getall : copy production course (but not logs) localy
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py | grep -v grep")
@@ -890,7 +890,7 @@ ACTIONS = {
         rm -rf DIFF
         """,
     'getall': f"""
-        rsync --archive --verbose '{C5_LOGIN}@{C5_HOST}:{C5_DIR}/COMPILE_*' .
+        rsync --archive --exclude '*/*/**' --exclude '*~' --prune-empty-dirs --verbose '{C5_LOGIN}@{C5_HOST}:{C5_DIR}/COMPILE_*' .
         """,
     'nginx': f"""#C5_ROOT
         sudo sh -c '
