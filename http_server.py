@@ -1175,9 +1175,9 @@ async def checkpoint_list(request:Request) -> Response:
         BODY { font-family: sans-serif }
         TABLE { border-spacing: 0px; border: 1px solid #AAA }
         TABLE TD, TABLE TH { border: 1px solid #AAA ; padding: 2px }
-        TABLE TD.course DIV { width: 11em; }
+        TABLE TD.course DIV { width: 13em; }
         TABLE TD.compiler DIV { width: 3em; }
-        TABLE TD.clipped DIV { overflow: hidden }
+        TABLE TD.clipped DIV { overflow: hidden; white-space: nowrap }
         TABLE TR:hover TD.clipped:first-child DIV,
         TABLE TD.clipped:hover DIV
                  { background: #FF0; overflow: visible; position: absolute;
