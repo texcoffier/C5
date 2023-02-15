@@ -1210,6 +1210,7 @@ async def checkpoint_list(request:Request) -> Response:
         SPAN VAR { display: none; background: #FFE;  border: 1px solid #880; position: absolute; }
         SPAN:hover VAR { display: block }
         SPAN:hover { background: #FF0 }
+        BUTTON { font-size: 100% }
         </style>
         <table>''']
     def hide_header():
@@ -1326,6 +1327,12 @@ async def checkpoint_list(request:Request) -> Response:
             <span>{compiler}</span>
             </label>
             </form>''')
+    if session.is_mapper():
+        content.append('<p>Edit building map:<p>')
+        for building in os.listdir('BUILDINGS'):
+            content.append(f'''
+            <button onclick="window.location=\'/adm/building/{building}?ticket={session.ticket}\'"
+            >{building}</button>''')
 
     return answer(''.join(content))
 
@@ -1600,6 +1607,34 @@ async def get_media(request:Request) -> Response:
         return answer('Not allowed', content_type='text/plain')
     return File.get(f'{course.dirname}-{request.match_info["value"]}').answer()
 
+async def adm_building(request:Request) -> Response:
+    """Get building editor"""
+    session = await Session.get_or_fail(request)
+    if not session.is_mapper():
+        return session.message('not_mapper')
+    building = request.match_info['building']
+    with open(f'BUILDINGS/{building}', 'r', encoding="utf-8") as file:
+        content = file.read()
+    width = max(len(line) for line in content.split('\n')) + 1
+    return answer(f'''
+     <form action="/adm/building/{building}?ticket={session.ticket}" method="POST">
+     <input type="submit">
+    <b>Legend</b> <span style="font-family: emoji">|-+:walls d:doors w:window s→💻 c→⑁ p→🖨 r→🚻 l→↕ h→♿ g→📝 a→Ⓐ b→Ⓑ</span><br>
+    <textarea cols={width} spellcheck="false" style="height:calc(100% - 3em)" name="map">{content}</textarea>
+    </form>
+    ''')
+
+async def adm_building_store(request:Request) -> Response:
+    """Store a building map"""
+    session = await Session.get_or_fail(request)
+    if not session.is_mapper():
+        return session.message('not_mapper')
+    building = request.match_info['building']
+    post = await request.post()
+    with open(f'BUILDINGS/{building}', 'w', encoding="utf-8") as file:
+        file.write(str(post['map']).replace('\r', ''))
+    return answer(f'«{building}» map recorded.')
+
 async def change_session_ip(request:Request) -> Response:
     """Change the current session IP"""
     session = await Session.get_or_fail(request)
@@ -1619,6 +1654,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/session/{course}/{action}/', adm_config),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/editor/{course}', adm_editor),
+                web.get('/adm/building/{building}', adm_building),
                 web.get('/config/reload', config_reload),
                 web.get('/config/disable/{value}', config_disable),
                 web.get('/config/disable/', config_disable),
@@ -1644,6 +1680,7 @@ APP.add_routes([web.get('/', home),
                 web.post('/record_grade/{course}', record_grade),
                 web.post('/record_comment/{course}', record_comment),
                 web.post('/adm/c5/{action}', adm_c5),
+                web.post('/adm/building/{building}', adm_building_store),
                 ])
 APP.on_startup.append(startup)
 logging.basicConfig(level=logging.DEBUG)

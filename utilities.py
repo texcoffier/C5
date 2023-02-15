@@ -471,6 +471,7 @@ class Config: # pylint: disable=too-many-instance-attributes
     """C5 configuration"""
     authors:List[str] = []
     masters:List[str] = []
+    mappers:List[str] = []
     roots:List[str] = []
     ticket_ttl = 86400
     computers:List[Tuple[str, int, int, str, int]] = []
@@ -481,6 +482,7 @@ class Config: # pylint: disable=too-many-instance-attributes
             'roots': self.roots,
             'masters': self.masters,
             'authors': self.authors,
+            'mappers': self.mappers,
             'ticket_ttl': self.ticket_ttl,
             'computers': [],
             'ips_per_room': {"Nautibus,TP3": "b710l0301.univ-lyon1.fr b710l0302.univ-lyon1.fr"},
@@ -499,6 +501,7 @@ class Config: # pylint: disable=too-many-instance-attributes
                 'not_admin': "Vous n'êtes pas administrateur C5",
                 'not_author': "Vous n'êtes pas créateur de session",
                 'not_teacher': "Vous ne surveillez pas cet examen",
+                'not_mapper': "Vous n'avez pas le droit de faire les plans",
                 'pending': "La session d'exercice ou d'examen n'a pas commencé",
                 }
         }
@@ -532,6 +535,7 @@ class Config: # pylint: disable=too-many-instance-attributes
         """Update configuration attributes"""
         self.authors = self.config['authors']
         self.masters = self.config['masters']
+        self.mappers = self.config['mappers']
         self.roots = self.config['roots']
         self.ticket_ttl = self.config['ticket_ttl']
         self.computers = self.config['computers']
@@ -584,6 +588,9 @@ class Config: # pylint: disable=too-many-instance-attributes
     def is_author(self, login:str) -> bool:
         """Returns True if it is an author login"""
         return login in self.authors or login in self.masters or login in self.roots
+    def is_mapper(self, login:str) -> bool:
+        """Returns True if it is a mapper login"""
+        return login in self.mappers or login in self.masters or login in self.roots
     def is_student(self, login:str) -> bool:
         """The user is a student"""
         return bool(self.student.search(login))
@@ -735,6 +742,9 @@ class Session:
     def is_author(self) -> bool:
         """The user is C5 session creator"""
         return CONFIG.is_author(self.login)
+    def is_mapper(self) -> bool:
+        """The user is C5 building mapper"""
+        return CONFIG.is_mapper(self.login)
     def is_admin(self, course:CourseConfig=None) -> bool:
         """The user is C5 admin or course admin"""
         if course and course.is_admin(self.login):
@@ -915,7 +925,7 @@ ACTIONS = {
         fi
         """,
     'cp': f"""
-        tar -cf - $(git ls-files | grep -v DOCUMENTATION) |
+        tar -cf - $(git ls-files | grep -v -e DOCUMENTATION -e BUILDINGS) |
         ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -xvf -'
         """,
     'diff': f"""
@@ -930,6 +940,7 @@ ACTIONS = {
         """,
     'getall': f"""
         rsync --archive --exclude '*/*/**' --exclude '*~' --prune-empty-dirs --verbose '{C5_LOGIN}@{C5_HOST}:{C5_DIR}/COMPILE_*' .
+        rsync --archive --verbose '{C5_LOGIN}@{C5_HOST}:{C5_DIR}/BUILDINGS' .
         """,
     'nginx': f"""#C5_ROOT
         sudo sh -c '

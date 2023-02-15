@@ -628,6 +628,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('#admins').click()
             self.control('a')
             self.check('#admins').send_keys(Keys.BACKSPACE)
+            self.check('#creator').click()
             self.check('#allow_ip_change', {'..className': Equal(''), 'checked': Equal(None)}).click()
             self.check('#admins', {'className': Equal('')})
             self.check('#allow_ip_change', {'..className': Contains('changed'), 'checked': Equal('true')}, nbr=200)
@@ -666,7 +667,7 @@ class Tests: # pylint: disable=too-many-public-methods
         student = f'Anon_{self.ticket}'
         self.ticket = None
         self.goto('')
-        self.check_alert(accept=True, required=False, nbr=60)
+        self.check_alert(accept=True, required=False, nbr=10)
         self.wait_start()
         self.goto(f'grade/REMOTE=test/{student}')
         self.check('BODY', {'innerText': Contains('surveillez pas')})

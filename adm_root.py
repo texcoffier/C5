@@ -81,6 +81,13 @@ def display(): # pylint: disable=too-many-statements
         text.append(' ' + author + ', ')
     add_input('/adm/c5/add_author', '', name="add_author")
     text.append('<hr>')
+    text.append('Mappers are allowed to edit building maps: ')
+    for mapper in CONFIG.mappers:
+        add_button('/adm/c5/del_mapper', mapper, '🗑',
+                   name='del_mapper_' + mapper.replace('.', '_')) # For regtests
+        text.append(' ' + mapper + ', ')
+    add_input('/adm/c5/add_mapper', '', name="add_mapper")
+    text.append('<hr>')
     text.append('Session ticket time to live in seconds: ')
     add_input('/adm/c5/ticket_ttl', CONFIG.ticket_ttl, name="ticket_ttl")
     text.append(' ')
