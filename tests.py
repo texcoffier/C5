@@ -136,45 +136,30 @@ class Tests: # pylint: disable=too-many-public-methods
         log(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
 
     @staticmethod
-    def update_config(action):
+    def update_config(key, value):
         """Update the configuration by running action."""
-        with open('c5.cf', 'r', encoding='utf-8') as file:
-            config = json.loads(file.read())
-        action(config)
-        with open('c5.cf', 'w', encoding='utf-8') as file:
-            file.write(json.dumps(config))
+        with open('c5.cf', 'a', encoding='utf-8') as file:
+            file.write(f'{(key, value)}\n')
     def make_me_admin(self):
         """Make admin the current login"""
         print(f'\t{self.ticket} become admin')
-        self.update_config(lambda config: config['masters'].append('Anon_' + self.ticket))
+        self.update_config('masters', utilities.CONFIG.masters + ['Anon_' + self.ticket])
         self.goto('config/reload')
         self.check_alert(required=False, nbr=2)
     def clean_up_admin(self):
         """Remove all anonymous logins from admin list"""
-        def clean(config):
-            print(f'\t{self.ticket} clean admin')
-            config['masters'] = [
-                login
-                for login in config['masters']
-                if '#' not in login and not login.isdigit() and not login == 'john.doe'
-                ]
-            config['ticket_ttl'] = 86400
-        self.update_config(clean)
+        print(f'\t{self.ticket} clean admin')
+        self.update_config('ticket_ttl', 86400)
+        self.update_config('masters', utilities.CONFIG.masters)
     def make_me_root(self):
         """Make root the current login"""
-        self.update_config(lambda config: config['roots'].append('Anon_' + self.ticket))
+        self.update_config('roots', utilities.CONFIG.roots + ['Anon_' + self.ticket])
         self.goto('config/reload')
         self.check_alert(required=False, nbr=2)
     def clean_up_root(self):
         """Remove all anonymous logins from admin list"""
-        def clean(config):
-            config['roots'] = [
-                login
-                for login in config['roots']
-                if '#' not in login and not login.isdigit() and not login == 'john.doe'
-                ]
-            config['ticket_ttl'] = 86400
-        self.update_config(clean)
+        self.update_config('ticket_ttl', 86400)
+        self.update_config('roots', utilities.CONFIG.roots)
     @contextlib.contextmanager
     def admin_rights(self):
         """Take temporarely the admin rights"""

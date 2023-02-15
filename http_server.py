@@ -603,15 +603,18 @@ def text_to_dict(text:str) -> Dict[str,str]:
     for line in text.strip().split('\n'):
         line = line.strip()
         if line:
-            key, value = line.split(' ', 1)
-            dictionary[key] = value
+            try:
+                key, value = line.split(' ', 1)
+                dictionary[key] = value
+            except ValueError:
+                pass
     return dictionary
 
 async def adm_c5(request:Request) -> Response: # pylint: disable=too-many-branches,too-many-statements
     """Remove a C5 master"""
     _session = await get_root_login(request)
     action = request.match_info['action']
-    value = request.match_info['value']
+    value = request.match_info.get('value', '')
     more = "Nothing to do"
     if action.startswith(('add_', 'del_')):
         deladd, what = action.split('_')
@@ -626,19 +629,19 @@ async def adm_c5(request:Request) -> Response: # pylint: disable=too-many-branch
         more = f"{what.title()} {deladd} «{value}»"
     elif action == 'ips_per_room':
         try:
-            utilities.CONFIG.set_value(action, text_to_dict(value))
+            utilities.CONFIG.set_value_dict(action, text_to_dict(value))
             more = f"IPs per room updated to<pre>{value}</pre>"
         except ValueError:
             more = "Invalid syntax!"
     elif action == 'disabled':
         try:
-            utilities.CONFIG.set_value(action, text_to_dict(value))
+            utilities.CONFIG.set_value_dict(action, text_to_dict(value))
             more = f"Disabled updated to<pre>{value}</pre>"
         except ValueError:
             more = "Invalid syntax!"
     elif action == 'messages':
         try:
-            utilities.CONFIG.set_value(action, text_to_dict(value))
+            utilities.CONFIG.set_value_dict(action, text_to_dict(value))
             more = f"Messages updated to<pre>{value}</pre>"
         except ValueError:
             more = "Invalid syntax!"
@@ -1470,7 +1473,7 @@ async def computer(request:Request) -> Response:
             for bug in utilities.CONFIG.computers
             if bug[0] != building or bug[1] != column or bug[2] != line
             ]
-    utilities.CONFIG.save()
+    utilities.CONFIG.set_value('computers', utilities.CONFIG.computers)
     return await update_browser_data(course)
 
 async def checkpoint_spy(request:Request) -> Response:
@@ -1616,6 +1619,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/editor/{course}', adm_editor),
                 web.get('/adm/c5/{action}/{value}', adm_c5),
+                web.get('/adm/c5/{action}/', adm_c5),
                 web.get('/config/reload', config_reload),
                 web.get('/config/disable/{value}', config_disable),
                 web.get('/config/disable/', config_disable),

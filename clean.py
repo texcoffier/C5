@@ -7,20 +7,19 @@ Clear garbage from regression tests
 import os
 import glob
 import shutil
-import json
 
 def cleanup_c5():
     """Cleanup c5.cf"""
     print('Cleanup c5.cf')
-    with open('c5.cf', 'r', encoding='utf-8') as file:
-        config = json.loads(file.read())
-    for key in ('roots', 'masters', 'authors'):
-        config[key] = [login
-                       for login in config[key]
-                       if not login.startswith('Anon_')
-                      ]
-    with open('c5.cf', 'w', encoding='utf-8') as file:
-        file.write(json.dumps(config))
+    with open('c5.cf', 'r+', encoding='utf-8') as file:
+        pos = 0
+        line = 'start'
+        while line:
+            line = file.readline()
+            if 'Anon_' in line:
+                file.truncate(pos)
+                break
+            pos = file.tell()
 
 def remove_tickets():
     """Remove tickets"""

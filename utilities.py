@@ -472,6 +472,7 @@ class Config: # pylint: disable=too-many-instance-attributes
     ticket_ttl = 86400
     computers:List[Tuple[str, int, int, str, int]] = []
     disabled:Dict[str, re.Pattern] = {} # Login and pattern
+    json = ''
     def __init__(self):
         self.config = {
             'roots': self.roots,
@@ -503,7 +504,24 @@ class Config: # pylint: disable=too-many-instance-attributes
         """Load configuration from file"""
         if os.path.exists('c5.cf'):
             with open('c5.cf', 'r', encoding='utf-8') as file:
-                self.config.update(json.loads(file.read()))
+                config = self.config
+                try:
+                    for line in file:
+                        data = eval(line) # pylint: disable=eval-used
+                        if len(data) == 2:
+                            config[data[0]] = data[1]
+                        elif len(data) == 3:
+                            config[data[0]][data[1]] = data[2]
+                        else:
+                            config[data[0]][data[1]][data[2]] = data[3]
+                    self.parse_position = file.tell()
+                except KeyError:
+                    # Rewrite configuration with the new format
+                    self.config.update(data)
+                    self.save()
+                except: # pylint: disable=bare-except
+                    print('c5.cf :', line)
+                    raise
         else:
             self.save()
         self.update()
@@ -517,21 +535,39 @@ class Config: # pylint: disable=too-many-instance-attributes
         self.student:re.Pattern = re.compile(self.config['student']) # pylint: disable=attribute-defined-outside-init
         self.disabled = {login: re.compile(regexp)
                          for login, regexp in self.config['disabled'].items()
+                         if regexp
                         }
         for course in CourseConfig.configs.values():
             course.update_disabled()
-    def json(self) -> str:
-        """For browser or to save"""
-        return json.dumps(self.config)
+        self.json = json.dumps(self.config)
     def save(self) -> None:
         """Save the configuration"""
         with open('c5.cf', 'w', encoding='utf-8') as file:
-            file.write(self.json())
-    def set_value(self, key:str, value:Any) -> None:
+            for key, value in self.config.items():
+                if isinstance(value, dict):
+                    for key2, value2 in value.items():
+                        file.write(f'{(key, key2, value2)}\n')
+                else:
+                    file.write(f'{(key, value)}\n')
+    def set_value(self, key:str, value:Any, index:Any=None) -> None:
         """Update the configuration"""
-        self.config[key] = value
-        self.save()
+        with open('c5.cf', 'a', encoding='utf-8') as file:
+            if index is None:
+                self.config[key] = value
+                file.write(f'{(key,value)} # {time.strftime("%Y%m%d%H%M%S")}\n')
+            else:
+                self.config[key][index] = value
+                file.write(f'{(key,index,value)} # {time.strftime("%Y%m%d%H%M%S")}\n')
         self.update()
+    def set_value_dict(self, key:str, new_dict:Dict) -> None:
+        """Update the configuration"""
+        for old_key, old_value in tuple(self.config[key].items()):
+            if old_key not in new_dict and old_value:
+                self.set_value(key, '', old_key)
+        for new, value in new_dict.items():
+            if value != self.config[key].get(new, None):
+                self.set_value(key, value, new)
+
     def is_root(self, login:str) -> bool:
         """Returns True if it is an root login"""
         if login in self.roots:
@@ -740,7 +776,7 @@ class Session:
             COURSES = {json.dumps(courses)};
             MORE = {json.dumps(more)};
             LOGIN = {json.dumps(self.login)};
-            CONFIG = {CONFIG.json()};
+            CONFIG = {CONFIG.json};
             </script>
             """
 
