@@ -111,6 +111,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.dirname = course
         self.time = 0
         self.disabled = False
+        self.parse_position = 0
         self.load()
         self.update()
         self.configs[course] = self
@@ -169,14 +170,11 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        # ┗━━━━━━━━┹────────────────────┴────────────────────┘
                        'state': 'Ready',
                       }
-        self.time = time.time()
         try:
-            with open(self.filename, 'r', encoding='utf-8') as file:
-                self.config.update(eval(file.read())) # pylint: disable=eval-used
+            self.parse()
         except (IOError, FileNotFoundError):
             if os.path.exists(self.filename.replace('.cf', '.js')):
-                self.record()
-                self.time = time.time()
+                self.record_config()
         except SyntaxError:
             print(f"Invalid configuration file: {self.filename}", flush=True)
             raise
@@ -190,6 +188,43 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             self.config['highlight'] = '#FFF'
         elif self.config['highlight'] == '1':
             self.config['highlight'] = '#0F0'
+
+    def parse(self):
+        """Parse the end of the file"""
+        with open(self.filename, 'r', encoding='utf-8') as file:
+            self.time = time.time()
+            file.seek(self.parse_position)
+            config = self.config
+            try:
+                for line in file:
+                    data = eval(line) # pylint: disable=eval-used
+                    if len(data) == 2:
+                        config[data[0]] = data[1]
+                    elif len(data) == 3:
+                        config[data[0]][data[1]] = data[2]
+                    else:
+                        config[data[0]][data[1]][data[2]] = data[3]
+                self.parse_position = file.tell()
+            except KeyError:
+                # Rewrite configuration with the new format
+                config.update(data)
+                self.record_config()
+            except: # pylint: disable=bare-except
+                print(self.filename)
+                print(line)
+                raise
+
+    def record_config(self):
+        """Record the default start configuration"""
+        with open(self.filename, 'w', encoding='utf-8') as file:
+            for key, value in self.config.items():
+                if isinstance(value, dict):
+                    for key2, value2 in value.items():
+                        file.write(repr((key, key2, value2)) + '\n')
+                else:
+                    file.write(repr((key, value)) + '\n')
+        self.parse_position = os.path.getsize(self.filename)
+        self.time = time.time()
 
     def update(self) -> None:
         """Compute some values"""
@@ -239,16 +274,28 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 nb_active += 1
         return nb_active
 
-    def record(self) -> None:
-        """Record option on disk"""
-        with open(self.filename, 'w', encoding='utf-8') as file:
-            file.write(repr(self.config))
-        self.time = time.time()
-    def set_parameter(self, parameter:str, value:Any):
+    def set_parameter(self, parameter:str, value:Any, key:str=None, index:int=None):
         """Set one of the parameters"""
-        self.config[parameter] = value
+        if key:
+            if index is None:
+                self.config[parameter][key] = value
+            else:
+                self.config[parameter][key][index] = value
+        else:
+            if self.config[parameter] == value:
+                return
+            self.config[parameter] = value
         self.update()
-        self.record()
+        with open(self.filename, 'a', encoding='utf-8') as file:
+            timestamp = f' # {time.strftime("%Y-%m-%d %H:%M:%S")}\n'
+            if key:
+                if index is None:
+                    file.write(f'{(parameter, key, value)}{timestamp}')
+                else:
+                    file.write(f'{(parameter, key, index, value)}\n')
+            else:
+                file.write(f'{(parameter, value)}{timestamp}')
+        self.time = time.time()
     def get_stop(self, login:str) -> int:
         """Get stop date, taking login into account"""
         if login in self.active_teacher_room:
@@ -268,20 +315,19 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 # There is an http_server.log but nothing in session.cf
                 client_ip = 'broken_cf_file'
             # Add to the checkpoint room
-            active_teacher_room = self.active_teacher_room[login] = [
-                0, '', '', now, 0, 0, client_ip, 0, '']
-            self.record()
+            active_teacher_room = [0, '', '', now, 0, 0, client_ip, 0, '']
+            self.set_parameter('active_teacher_room', active_teacher_room, login)
             to_log = [now, ["checkpoint_in", client_ip]]
         elif client_ip and client_ip != active_teacher_room[6]:
             # Student IP changed
             if self.checkpoint and not self.allow_ip_change:
                 # Undo checkpointing
-                active_teacher_room[6] = client_ip # Update
-                active_teacher_room[0] = 0
+                self.set_parameter('active_teacher_room', client_ip, login, 6)
+                self.set_parameter('active_teacher_room', 0, login, 0)
                 to_log = [now, ["checkpoint_ip_change_eject", client_ip]]
             else:
                 # No checkpoint: so allows the room change
-                active_teacher_room[6] = client_ip # Update
+                self.set_parameter('active_teacher_room', client_ip, login, 6)
                 to_log = [now, ["checkpoint_ip_change", client_ip]]
         else:
             to_log = None
@@ -292,7 +338,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
     def status(self, login:str, client_ip:str=None) -> str: # pylint: disable=too-many-return-statements,too-many-statements,too-many-branches
         """Status of the course"""
         if os.path.getmtime(self.filename) > self.time:
-            self.load()
+            self.parse() # Load only the file end
             self.update()
         if self.disabled:
             return 'disabled'

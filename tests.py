@@ -94,17 +94,17 @@ class Tests: # pylint: disable=too-many-public-methods
         self.driver = driver
         for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction', 'COMPILE_JS/example'):
             course = utilities.CourseConfig(course_name)
+            course.set_parameter('proctors', 'REGTESTS\n') # Marker for 'clean.py'
             if course_name == 'COMPILE_JS/example':
                 course.set_parameter('start', '2099-01-01 00:00:01')
             else:
                 course.set_parameter('start', '2000-01-01 00:00:01')
             course.set_parameter('stop', '2100-01-01 00:00:01')
             course.set_parameter('allow_ip_change', '0')
-            course.set_parameter('admins', '')
             course.set_parameter('graders', '')
             course.set_parameter('stop', '2100-01-01 00:00:01')
             course.set_parameter('checkpoint', '0')
-            course.record()
+            course.set_parameter('admins', '')
 
         start = time.time()
         self.wait_start()
@@ -608,6 +608,9 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check(question(3)).click() # Returns to the first question
         self.check('.save_history', {'length': Equal('4')})
         self.check('.save_history', {'value': Equal("C")})
+        self.goto('')
+        time.sleep(0.1)
+        self.check_alert(accept=True, required=False)
 
     def test_ip_change_c5(self):
         """Test IP change on C5 admin"""

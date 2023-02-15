@@ -286,9 +286,13 @@ async def log(request:Request) -> Response:
 
     if session.login in course.active_teacher_room:
         infos = course.active_teacher_room[session.login]
-        infos[3] = int(time.time())
-        infos[4] += data.count('"Blur"') + bad_json
-        infos[5] += data.count('["answer",')
+        course.set_parameter('active_teacher_room',  int(time.time()), session.login, 3)
+        nr_blurs =  data.count('"Blur"') + bad_json
+        if nr_blurs:
+            course.set_parameter('active_teacher_room', infos[4] + nr_blurs, session.login, 4)
+        nr_answers = data.count('["answer",')
+        if nr_answers:
+            course.set_parameter('active_teacher_room', infos[5] + nr_answers, session.login, 5)
 
     if course.course == 'PYTHON=editor':
         source = None
@@ -342,9 +346,8 @@ async def record_grade(request:Request) -> Response:
                     else:
                         grading.pop(line[2], None)
             new_value = [sum(grading.values()), len(grading)]
-            if course.active_teacher_room[login][8] != new_value:
-                course.record() # XXX should be postponed a little...
-            course.active_teacher_room[login][8] = new_value
+            # XXX should be postponed a little...
+            course.set_parameter('active_teacher_room', new_value, login, 8)
     else:
         grades = ''
     return answer(f"window.parent.ccccc.update_grading({json.dumps(grades)})")
@@ -1360,25 +1363,26 @@ async def checkpoint_student(request:Request) -> Response:
     seconds = int(time.time())
     old = course.active_teacher_room[student]
     if room == 'STOP':
-        old[0] = 0
+        course.set_parameter('active_teacher_room', 0, student, 0)
         to_log = [seconds, ["checkpoint_stop", session.login]]
     elif room == 'RESTART':
-        old[0] = 1
-        old[1] = session.login
+        course.set_parameter('active_teacher_room', 1, student, 0)
+        course.set_parameter('active_teacher_room', session.login, student, 1)
         to_log = [seconds, ["checkpoint_restart", session.login]]
     elif room == 'EJECT':
-        old[0] = 0
-        old[1] = old[2] = ''
-        old[3] = seconds # Make it bold for other teachers
+        course.set_parameter('active_teacher_room', 0, student, 0)
+        course.set_parameter('active_teacher_room', '', student, 1)
+        course.set_parameter('active_teacher_room', '', student, 2)
+        course.set_parameter('active_teacher_room', seconds, student, 3)
         to_log = [seconds, ["checkpoint_eject", session.login]]
     else:
         if old[1] == '':
-            old[0] = 1 # A moved STOPed student must not be reactivated
-        old[1] = session.login
-        old[2] = room
+            # A moved STOPed student must not be reactivated
+            course.set_parameter('active_teacher_room', 1, student, 0)
+        course.set_parameter('active_teacher_room', session.login, student, 1)
+        course.set_parameter('active_teacher_room', room, student, 2)
         to_log = [seconds, ["checkpoint_move", session.login, room]]
     utilities.student_log(course.dirname, student, json.dumps(to_log) + '\n')
-    course.record()
     if session.is_student() and not session.is_proctor(course):
         return utilities.js_message("C'est fini.")
     return await update_browser_data(course)
@@ -1391,11 +1395,9 @@ async def checkpoint_bonus(request:Request) -> Response:
     if not session.is_proctor(course):
         return utilities.js_message("not_proctor")
     seconds = int(time.time())
-    old = course.active_teacher_room[student]
-    old[7] = int(bonus)
+    course.set_parameter('active_teacher_room', int(bonus), student, 7)
     utilities.student_log(course.dirname, student,
                           f'[{seconds},["time bonus",{bonus},"{session.login}"]]\n')
-    course.record()
     return await update_browser_data(course)
 
 async def home(request:Request) -> Response:
