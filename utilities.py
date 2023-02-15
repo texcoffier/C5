@@ -115,8 +115,11 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.load()
         self.update()
         self.configs[course] = self
-        with open(self.dirname + '.json', 'r', encoding="ascii") as file:
-            self.questions = json.loads(file.read())
+        try:
+            with open(self.dirname + '.json', 'r', encoding="ascii") as file:
+                self.questions = json.loads(file.read())
+        except FileNotFoundError:
+            self.questions = []
 
     def load(self):
         """Load course configuration file"""
