@@ -614,7 +614,8 @@ async def adm_c5(request:Request) -> Response: # pylint: disable=too-many-branch
     """Remove a C5 master"""
     _session = await get_root_login(request)
     action = request.match_info['action']
-    value = request.match_info.get('value', '')
+    post = await request.post()
+    value = str(post['value'])
     more = "Nothing to do"
     if action.startswith(('add_', 'del_')):
         deladd, what = action.split('_')
@@ -1618,8 +1619,6 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/session/{course}/{action}/', adm_config),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/editor/{course}', adm_editor),
-                web.get('/adm/c5/{action}/{value}', adm_c5),
-                web.get('/adm/c5/{action}/', adm_c5),
                 web.get('/config/reload', config_reload),
                 web.get('/config/disable/{value}', config_disable),
                 web.get('/config/disable/', config_disable),
@@ -1644,6 +1643,7 @@ APP.add_routes([web.get('/', home),
                 web.post('/log', log),
                 web.post('/record_grade/{course}', record_grade),
                 web.post('/record_comment/{course}', record_comment),
+                web.post('/adm/c5/{action}', adm_c5),
                 ])
 APP.on_startup.append(startup)
 logging.basicConfig(level=logging.DEBUG)

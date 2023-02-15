@@ -7,7 +7,6 @@ Regression Test for C5
 import os
 import sys
 import time
-import json
 import subprocess
 import traceback
 import contextlib
@@ -151,6 +150,7 @@ class Tests: # pylint: disable=too-many-public-methods
         print(f'\t{self.ticket} clean admin')
         self.update_config('ticket_ttl', 86400)
         self.update_config('masters', utilities.CONFIG.masters)
+        self.goto('config/reload')
     def make_me_root(self):
         """Make root the current login"""
         self.update_config('roots', utilities.CONFIG.roots + ['Anon_' + self.ticket])
@@ -160,6 +160,7 @@ class Tests: # pylint: disable=too-many-public-methods
         """Remove all anonymous logins from admin list"""
         self.update_config('ticket_ttl', 86400)
         self.update_config('roots', utilities.CONFIG.roots)
+        self.goto('config/reload')
     @contextlib.contextmanager
     def admin_rights(self):
         """Take temporarely the admin rights"""
@@ -453,7 +454,8 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.add_master').send_keys('john.doe')
             self.check('.add_master').send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains('Master add «john.doe»')})
-            self.check("BUTTON.del_master_john_doe").click()
+            self.check('#more').click()
+            retry(lambda: self.check("BUTTON.del_master_john_doe").click(), nbr=10)
             self.check('#more', {'innerText': Contains('Master del «john.doe»')})
     def test_ticket_ttl(self):
         """Test TTL change"""
@@ -612,7 +614,7 @@ class Tests: # pylint: disable=too-many-public-methods
             with self.change_ip():
                 self.check('.add_author').send_keys('titi')
                 self.check('.add_author').send_keys(Keys.ENTER)
-                self.check('BODY', {'innerText': Contains('SN') & Contains('Fn') & ~Contains('titi')})
+                self.check('BODY', {'innerText': Contains('session a expiré')})
 
     def test_ip_change_admin(self):
         """Test IP change on admin"""
