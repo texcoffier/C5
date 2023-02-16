@@ -171,3 +171,11 @@ DIV.state A:hover {
     background: #DDD;
     border-radius: 0.5em;
 }
+
+#script:hover {
+    width: 80em;
+    position: absolute;
+    right: 0px;
+    height: 20em;
+    margin-top: 1.5em;
+}

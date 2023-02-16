@@ -999,16 +999,24 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     with open(dst_filename, "wb") as file:
         file.write(filehandle.file.read())
 
-    process = await asyncio.create_subprocess_exec("make", dst_filename[:-3] + '.js')
+    process = await asyncio.create_subprocess_exec(
+        "make", dst_filename[:-3] + '.js',
+        stderr=asyncio.subprocess.PIPE
+        )
+    outputs = await process.stderr.read()
+    if outputs:
+        errors = f'<pre style="background:#FAA">{outputs.decode("utf-8")}</pre>'
+    else:
+        errors = ''
     await process.wait()
     if replace:
-        return f"«{src_filename}» replace «{dst_filename}» file"
+        return f"{errors}«{src_filename}» replace «{dst_filename}» file"
 
     config = CourseConfig.get(dst_filename[:-3])
     config.set_parameter('creator', session.login)
     config.set_parameter('stop', '2000-01-01 00:00:01')
     config.set_parameter('state', 'Draft')
-    return f"Course «{src_filename}» added into «{dst_filename}» file"
+    return f"{errors}Course «{src_filename}» added into «{dst_filename}» file"
 
 async def upload_course(request:Request) -> Response:
     """Add a new course"""
@@ -1028,7 +1036,7 @@ async def upload_course(request:Request) -> Response:
             error = "Session adding is not allowed!"
     if not error:
         error = await update_file(request, session, compiler, replace)
-    if '!' not in error and not replace:
+    if '!' not in error and '<pre' not in error and not replace:
         raise web.HTTPFound(f'https://{utilities.C5_URL}/checkpoint/*?ticket={session.ticket}')
     if '!' in error:
         style = 'background:#FAA;'
