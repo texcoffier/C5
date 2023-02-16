@@ -757,8 +757,11 @@ async def my_git(request:Request) -> StreamResponse: # pylint: disable=too-many-
     course = CourseConfig.get(utilities.get_course(request.match_info['course']))
 
     answers, _blurs = get_answers(course.dirname, session.login)
-    root = session.login
-    os.mkdir(root)
+    if not os.path.exists('GIT'):
+        os.mkdir('GIT')
+    root = f'GIT/{session.login}'
+    if not os.path.exists(root):
+        os.mkdir(root)
     git_dir = None
 
     async def run(program, *args, **kargs):
@@ -1616,13 +1619,14 @@ async def adm_building(request:Request) -> Response:
     with open(f'BUILDINGS/{building}', 'r', encoding="utf-8") as file:
         content = file.read()
     width = max(len(line) for line in content.split('\n')) + 1
-    return answer(f'''
-     <form action="/adm/building/{building}?ticket={session.ticket}" method="POST">
-     <input type="submit">
-    <b>Legend</b> <span style="font-family: emoji">|-+:walls d:doors w:window s→💻 c→⑁ p→🖨 r→🚻 l→↕ h→♿ g→📝 a→Ⓐ b→Ⓑ</span><br>
-    <textarea cols={width} spellcheck="false" style="height:calc(100% - 3em)" name="map">{content}</textarea>
-    </form>
-    ''')
+    return answer(f'''{session.header()}
+    <title>{building}</title>
+    <form action="/adm/building/{building}?ticket={session.ticket}" method="POST">
+    <input type="submit">
+    <b>Legend</b> <span style="font-family: emoji">
+    |-+:walls d:doors w:window s→💻 c→⑁ p→🖨 r→🚻 l→↕ h→♿ g→📝 a→Ⓐ b→Ⓑ</span><br>
+    <textarea cols={width} spellcheck="false" style="height:calc(100vh - 5em)"
+     name="map">{content}</textarea></form>''')
 
 async def adm_building_store(request:Request) -> Response:
     """Store a building map"""
