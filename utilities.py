@@ -888,6 +888,7 @@ def print_help() -> None:
    * SSL-SS : create a Self Signed certificate (c5 does the encrypting itself)
    * nginx : configure NGINX (needs SSL-LE certificate)
    * c5 : update C5 source (pull)
+   * launcher : create 'launcher' (need to be root)
    * start : servers
    * stop : servers
    * restart : servers
@@ -899,7 +900,7 @@ def print_help() -> None:
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py | grep -v grep")
-    print('pkill -f http_server.py ; pkill -f compile_server.py  ; pkill -f infos_server.py')
+    print('pkill -f http_server.py ; pkill -f compile_server.py  ; pkill -f infos_server.py ; rm *.log') # pylint: disable=line-too-long
     sys.exit(1)
 
 ACTIONS = {
@@ -910,6 +911,13 @@ ACTIONS = {
             apt -y install astyle nginx certbot python3-websockets python3-ldap python3-aiohttp python3-psutil python3-certbot-nginx npm racket
             apt -y upgrade
             # set-timezone Europe/Paris
+            '
+        """,
+    'launcher': f"""#C5_ROOT
+        sudo sh -c '
+            set -e
+            cd ~{C5_LOGIN}/{C5_DIR}
+            make launcher
             '
         """,
     'c5': f"""#C5_LOGIN

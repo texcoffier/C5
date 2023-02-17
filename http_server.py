@@ -1340,7 +1340,7 @@ async def checkpoint_list(request:Request) -> Response:
             </form>''')
     if session.is_mapper():
         content.append('<p>Edit building map:<p>')
-        for building in os.listdir('BUILDINGS'):
+        for building in sorted(os.listdir('BUILDINGS')):
             content.append(f'''
             <button onclick="window.location=\'/adm/building/{building}?ticket={session.ticket}\'"
             >{building}</button>''')

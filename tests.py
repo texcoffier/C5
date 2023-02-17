@@ -22,7 +22,9 @@ def retry(test, required=True, nbr=30):
             error = test()
             if not error:
                 return
-        except (selenium.common.exceptions.StaleElementReferenceException, TypeError):
+        except (selenium.common.exceptions.StaleElementReferenceException,
+                selenium.common.exceptions.NoSuchElementException,
+                TypeError):
             # Test failure because the page just update
             pass
         time.sleep(0.05)
@@ -107,33 +109,39 @@ class Tests: # pylint: disable=too-many-public-methods
 
         start = time.time()
         self.wait_start()
-        for test in (
-                self.test_before,
-                self.test_popup,
-                self.test_f9,
-                self.test_inputs,
-                self.test_auto_compile,
-                self.test_save_button,
-                self.test_copy_paste_allowed,
-                self.test_question_index,
-                self.test_master_change,
-                self.test_ticket_ttl,
-                self.test_editor,
-                self.test_history,
-                self.test_ip_change_c5,
-                self.test_ip_change_admin,
-                self.test_ip_change_editor,
-                self.test_ip_change_grader,
-                self.test_exam,
-                self.test_source_edit,
-                ):
-            print('*'*99)
-            print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
-            print('*'*99)
-            test()
-        self.driver.close()
-        print(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
-        log(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
+        try:
+            for test in (
+                    self.test_before,
+                    self.test_popup,
+                    self.test_f9,
+                    self.test_inputs,
+                    self.test_auto_compile,
+                    self.test_save_button,
+                    self.test_copy_paste_allowed,
+                    self.test_question_index,
+                    self.test_master_change,
+                    self.test_ticket_ttl,
+                    self.test_editor,
+                    self.test_history,
+                    self.test_ip_change_c5,
+                    self.test_ip_change_admin,
+                    self.test_ip_change_editor,
+                    self.test_ip_change_grader,
+                    self.test_exam,
+                    self.test_source_edit,
+                    self.test_many_inputs,
+                    ):
+                print('*'*99)
+                print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
+                print('*'*99)
+                test()
+            self.driver.close()
+            print(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
+            log(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
+        except selenium.common.exceptions.WebDriverException:
+            print(f'DEADDRIVER {driver.name.upper()} ({time.time()-start:.1f} secs) {test}')
+            log(f'DEADDRIVER {driver.name.upper()} ({time.time()-start:.1f} secs) {test}')
+            raise
 
     @staticmethod
     def update_config(key, value):
@@ -240,7 +248,7 @@ class Tests: # pylint: disable=too-many-public-methods
             print('*', end='', flush=True)
             elements = self.driver.find_elements_by_css_selector(path)
             if len(elements) != expected:
-                return f'Expected {expected} elements with the path «{path}»'
+                return f'Expected {expected} elements with the path «{path}» found {len(elements)}'
             if len(elements) == 1:
                 element = elements[0]
                 self.move_to_element(element)
@@ -334,10 +342,16 @@ class Tests: # pylint: disable=too-many-public-methods
         # Modify source code, INPUT is auto filled.
         self.move_cursor('.editor')
         recompile_done = False
-        for _ in range(3):
+        for _ in range(1):
             # Not a normal failure, a bug must be somewhere.
             # Rarely F9 is not working, so retry it
+            self.move_cursor('.editor')
             self.check('.editor').send_keys('\n/**/\n\n')
+            # The F9 keys must be pressed twice with a delay
+            # There is a problem somewhere
+            time.sleep(0.1)
+            self.check('.editor').send_keys(Keys.F9)
+            time.sleep(0.1)
             self.check('.editor').send_keys(Keys.F9)
             try:
                 self.check('.compiler', {'innerText': Contains('Bravo')})
@@ -520,6 +534,37 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.overlay', {'innerHTML': Contains(');\n\n/')})
         editor.send_keys('/')
         self.check('.overlay', {'innerHTML': Contains(');\n\n/\n/')})
+    def test_many_inputs(self):
+        """Test IP change in grader editor"""
+        self.goto('=REMOTE=test')
+        self.check('.editor').send_keys(' ')
+        self.control('a')
+        self.check('.editor').send_keys('''
+using namespace std;
+#include <iostream>
+int main()
+{
+int v, sum = 0 ;
+for(int i = 0 ; i < 10 ; i++ ) { cout << i << endl ; cin >> v ; sum += v ; }
+return sum ;
+}
+''')
+        self.check('.editor').send_keys(Keys.F9)
+        for i in range(10):
+            self.check(f'.executor DIV:nth-child({2*i+2})', {'textContent': Equal(str(i)+'\n')})
+            for _ in range(4):
+                try:
+                    element = self.check(f'.executor INPUT:nth-child({2*i+3})')
+                    element.click()
+                    element.send_keys('1')
+                    element.send_keys(Keys.ENTER)
+                    break
+                except (selenium.common.exceptions.StaleElementReferenceException,
+                        selenium.common.exceptions.ElementNotInteractableException):
+                    pass
+            else:
+                raise ValueError(f"Problem with stale element, i={i}")
+        self.check('.executor', {'textContent': Contains('cution = 10')})
     def test_before(self):
         """Goto exam before opening"""
         self.goto('=JS=example')
@@ -601,7 +646,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.save_history', {'value': Equal("C")})
         self.goto('')
         time.sleep(0.1)
-        self.check_alert(accept=True, required=False)
+        self.check_alert(accept=True, required=False, nbr=10)
     def test_ip_change_c5(self):
         """Test IP change on C5 admin"""
         with self.root_rights():
@@ -617,7 +662,10 @@ class Tests: # pylint: disable=too-many-public-methods
             with self.change_ip():
                 self.check('.add_author').send_keys('titi')
                 self.check('.add_author').send_keys(Keys.ENTER)
-                self.check('BODY', {'innerText': Contains('session a expiré')})
+                try:
+                    self.check('BODY', {'innerText': Contains('session a expiré')})
+                except ValueError: # XXX
+                    time.sleep(10000)
     def test_ip_change_admin(self):
         """Test IP change on admin"""
         with self.admin_rights():
@@ -656,7 +704,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.move_cursor('.editor')
             self.goto('')
             time.sleep(0.1)
-            self.check_alert(accept=True, required=False)
+            self.check_alert(accept=True, required=False, nbr=10)
     def test_ip_change_grader(self):
         """Test IP change in grader editor"""
         self.goto('=REMOTE=test')
@@ -780,7 +828,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.ticket = admin
             self.goto('adm/session/REMOTE=test')
             time.sleep(0.1)
-            self.check_alert(accept=True, required=False)
+            self.check_alert(accept=True, required=False, nbr=10)
             self.check('#checkpoint', {'checked': Equal('true')}).click()
             self.check('#stop').click()
             self.control('a')

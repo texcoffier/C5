@@ -755,7 +755,10 @@ make</pre>
         <li> Vous éditez le script <tt>c5</tt> pour mettre les bonnes valeurs.
             Pour avoir un peu d'aide, lancez simplement : <tt>./c5</tt>
         </li>
-        <li> <tt>./c5 start</tt> pour lancer les serveurs locaux ou distants,
+        <li> <tt>../c5 launcher</tt> génère 'launcher', nécessaire
+            quand <tt>launcher.c</tt> change, lance un <tt>sudo</tt>
+            pour le recréer car le bit SUID est nécessaire.</li>
+        <li> <tt>./c5 start</tt> pour lancer les serveurs locaux ou bien distants,
             les logs sont dans <tt>http_server.log</tt>, <tt>compile_server.log</tt>
             et <tt>infos_server.log</tt> sur la machine qui fait tourner les serveurs.</li>
         <li> <tt>./c5 open JS=introduction</tt> pour ouvrir <tt>COMPILE_JS/introduction.js</tt>
@@ -772,6 +775,7 @@ make</pre>
         <li> <tt>./c5 SSL-LE</tt> génération du certificat pour NGINX.
             Cela ne configure pas NGINX.</li>
         <li> <tt>./c5 c5 ; ./c5 restart</tt> Mise à jour d'une nouvelle version à partir de GitHub</li>
+        <li> <tt>./c5 cp ; ./c5 restart</tt> Mise à jour d'une nouvelle version à partir des sources locaux</li>
     </ul>
 
     <h2>Configuration NGINX</h2>
@@ -1126,6 +1130,10 @@ server {
         </li>
         <li>
             Détruire une sauvegarde.
+        </li>
+        <li>
+            Gestion des versions des sources des questionnaires.
+            Même s'ils sont modifiés par plusieurs personnes.
         </li>
     </ul>
 </body>

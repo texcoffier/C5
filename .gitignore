@@ -17,3 +17,5 @@ local
 COMPILE_*
 package.json
 HIGHLIGHT
+launcher
+killer
