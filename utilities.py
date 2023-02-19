@@ -46,6 +46,7 @@ class Process: # pylint: disable=invalid-name
     It is more simple than using an asyncio LDAP library.
     """
     cache:Dict[Any,Any] = {}
+    started:bool = None
 
     def __init__(self, command):
         self.command = command
@@ -73,8 +74,13 @@ class Process: # pylint: disable=invalid-name
 
     async def infos(self, key:str) -> Dict[str, str]:
         """Get the informations about key"""
-        if not hasattr(self, "process"):
-            await self.start()
+        if not self.started:
+            if self.started is None:
+                self.started = False
+                await self.start()
+            else:
+                while not hasattr(self, "process"):
+                    await asyncio.sleep(0.1)
         if not self.process.stdin:
             raise ValueError('Bug')
         if key in self.cache:
@@ -896,7 +902,7 @@ def print_help() -> None:
    * open : launch web browser (second argument may be js|python|cpp|remote)
    * cp : copy local files to production ones
    * diff : compare local files to production ones
-   * getall : copy production course (but not logs) localy
+   * getall : copy production course (but not logs) locally
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py | grep -v grep")
