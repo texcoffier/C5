@@ -187,6 +187,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     nr_grades = None
     grading = None
     current_key = None
+    disable_overlay_scroll = False
 
     def __init__(self):
         print("GUI: start")
@@ -1026,9 +1027,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if GRADING:
                 self.comments.scrollTop = self.editor.scrollTop
             self.overlay.scrollTop = self.editor.scrollTop
+            self.disable_overlay_scroll = True
     def onscroll_overlay(self, _event=None):
         """The overlay was scrolled by Ctrl+F, must move source code"""
-        self.editor.scrollTop = self.overlay.scrollTop
+        if not self.disable_overlay_scroll:
+            self.editor.scrollTop = self.overlay.scrollTop
+        self.disable_overlay_scroll = False
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':
