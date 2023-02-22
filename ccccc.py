@@ -252,6 +252,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.options['positions']['question'][2] = 75
             self.options['positions']['question'][3] = 25
             self.options['positions']['grading'] = [left, width, 0, 75, '#FFF8']
+            self.options['positions']['tester'][0] = 100 # Hide tester
 
         for key in self.options['positions']:
             if key in DEPRECATED:

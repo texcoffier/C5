@@ -752,7 +752,7 @@ return sum ;
                 self.check('.comments TEXTAREA:first-child').click()
                 self.control('a')
                 self.check('.comments TEXTAREA:first-child').send_keys(Keys.BACKSPACE)
-                self.check('.tester H2').click()
+                self.check('.question H2').click()
                 self.check_alert('session a expiré', accept=True, required=True)
     def test_exam(self): # pylint: disable=too-many-statements
         """Test an exam"""
