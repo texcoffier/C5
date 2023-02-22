@@ -418,6 +418,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         if self.state == 'started':
             return # Compiler is running
+        if self.options['automatic_compilation'] and self.state == 'running':
+            return # Program is running
         if (self.options['automatic_compilation'] and self.source != self.old_source
             or self.compile_now):
             print('compile')
@@ -1370,7 +1372,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 self.input_index = 0
                 self.do_not_clear = {}
             if self.state == "inputdone":
-                self.state = "started"
+                self.state = "running"
         elif what == 'good':
             if self.current_question not in self.question_done:
                 self.save('answer')

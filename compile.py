@@ -138,6 +138,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.execution_result = ''
         self.execution_returns = None
         self.post('executor', self.executor_initial_content())
+        self.post('state', "running")
         self.run_executor()
         self.post('tester', self.tester_initial_content())
         if self.run_tester_after_exec:
