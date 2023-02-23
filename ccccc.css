@@ -363,14 +363,15 @@ H2:hover .timer SPAN DIV {
     color: #FFF;
     visibility: visible;
 }
-.timer .minus60 {
-    font-size: 200%;
+.timer SPAN.minus60 DIV {
+    font-size: 300%;
+    background: #FFF;
 }
-.timer .minus120, .timer .minus60 {
+.timer SPAN.minus120 DIV, .timer SPAN.minus60 DIV {
     color: #F00;
     visibility: visible;
 }
-.timer .minus300 {
+.timer SPAN.minus300 DIV {
     visibility: visible;
 }
 
