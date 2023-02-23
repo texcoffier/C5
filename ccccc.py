@@ -961,6 +961,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_unlock()
             # self.save_local() # No more local save with Ctrl+S
             event.preventDefault(True)
+        elif event.key == 'f' and event.ctrlKey:
+            self.do_not_register_this_blur = True
+            return
         elif event.key == 'F9':
             if self.options['automatic_compilation'] == False: # pylint: disable=singleton-comparison
                 self.compilation_run()
