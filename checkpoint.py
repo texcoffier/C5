@@ -912,7 +912,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 + i + ']=1;ROOM.update_messages()">×</button> '
                 + nice_date(date)
                 + ' ' + login + ' <b>' + html(message) + '</b>')
-        document.getElementById('messages').innerHTML = ' '.join(content)
+        messages = document.getElementById('messages')
+        messages.innerHTML = ' '.join(content)
+        messages.scrollTop = messages.offsetHeight
     def start_move_student(self, event):
         """Move student bloc"""
         self.get_event(event)
@@ -1117,8 +1119,10 @@ def create_page(building_name):
         .send_alert:hover { transform: scale(2, 2) }
         #messages { position: fixed ; right: 0px ; bottom: 0px ;
             max-width: 40vw;
+            max-height: 100vh;
             background: #F88; opacity: 0.8;
             padding-left: 0.5em;
+            overflow: auto;
             }
         #time SPAN { position: absolute; top: 0px; cursor: pointer; pointer-events: none; }
         #time { height: 2.5em ; background: #FFF; border: 1px solid #000;

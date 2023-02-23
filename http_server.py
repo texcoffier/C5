@@ -1566,8 +1566,10 @@ async def checkpoint_message(request:Request) -> Response:
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
         return utilities.js_message("not_proctor")
-    course.messages.append([session.login, int(time.time()), request.match_info['message']])
-    course.set_parameter('messages', course.messages)
+    course.set_parameter(
+        'messages',
+        course.messages + [[session.login, int(time.time()), request.match_info['message']]]
+        )
     return answer(
         f'''MESSAGES.push({json.dumps(course.messages[-1])});ROOM.update_messages()''',
         content_type='application/javascript')
