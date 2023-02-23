@@ -1366,6 +1366,34 @@ async def checkpoint(request:Request) -> Response:
         <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         ''')
 
+async def checkpoint_hosts(request:Request) -> Response:
+    session = await Session.get_or_fail(request)
+    if session.is_student():
+        raise session.exception('not_teacher')
+    buildings = os.listdir('BUILDINGS')
+    ips = collections.defaultdict(lambda: collections.defaultdict(int))
+    for course in utilities.CourseConfig.configs.values():
+        if not course.checkpoint:
+            continue
+        await asyncio.sleep(0)
+        for infos in course.active_teacher_room.values():
+            where = infos[2].split(',')
+            if len(where) < 3:
+                continue
+            if where[0] in buildings:
+                ips[','.join(where[:3])][infos[6].lower()] += 1
+    return answer(
+        session.header() + f'''
+        <script>
+        COURSE = '=IPS';
+        STUDENTS = [];
+        MESSAGES = [];
+        IPS = {json.dumps(ips)};
+        </script>
+        <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
+        <script src="/checkpoint.js?ticket={session.ticket}"></script>
+        ''')
+
 async def update_browser_data(course:CourseConfig) -> Response:
     """Send update values"""
     return answer(
@@ -1677,6 +1705,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/checkpoint/SPY/{course}/{student}', checkpoint_spy),
                 web.get('/checkpoint/MESSAGE/{course}/{message:.*}', checkpoint_message),
                 web.get('/checkpoint/TIME_BONUS/{course}/{student}/{bonus}', checkpoint_bonus),
+                web.get('/checkpoint/HOSTS/*', checkpoint_hosts),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),

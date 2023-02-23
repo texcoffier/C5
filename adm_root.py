@@ -98,6 +98,7 @@ def display(): # pylint: disable=too-many-statements
     for room in CONFIG.ips_per_room:
         content.append(room + ' ' + CONFIG.ips_per_room[room])
     add_textarea('/adm/c5/ips_per_room', '\n'.join(content))
+    text.append('<a href="/checkpoint/HOSTS/*?ticket=' + TICKET + '">Check IP usage per room</a>')
     text.append('<hr>')
     text.append('Sessions disabled by creators:')
     content = []

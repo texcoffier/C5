@@ -22,8 +22,10 @@ while True:
             ip = line.strip()
             print("About:", ip, file=sys.stderr)
             name = socket.getnameinfo((ip, 0), 0)[0]
+            if not name:
+                name = "?"
             print("Name:", name, file=sys.stderr)
-            sys.stdout.write(json.dumps([ip, {'name': name}]) + '\n')
+            sys.stdout.write(json.dumps([ip, {'name': name.lower()}]) + '\n')
             sys.stdout.flush()
             print(f"Done in {time.time() - start:6.3f} seconds\n", file=sys.stderr)
         break # stdin closed

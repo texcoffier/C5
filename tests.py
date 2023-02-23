@@ -141,7 +141,8 @@ class Tests: # pylint: disable=too-many-public-methods
         except selenium.common.exceptions.WebDriverException:
             print(f'DEADDRIVER {driver.name.upper()} ({time.time()-start:.1f} secs) {test}')
             log(f'DEADDRIVER {driver.name.upper()} ({time.time()-start:.1f} secs) {test}')
-            raise
+            if 'Failed to decode response from marionette' not in traceback.format_exc():
+                raise
 
     @staticmethod
     def update_config(key, value):

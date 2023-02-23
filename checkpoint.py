@@ -77,17 +77,18 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     left_column = right_column = top_line = bottom_line = 0
     def __init__(self, building):
         self.menu = document.getElementById('top')
-        self.change(building)
-        window.onblur = mouse_leave
-        window.onfocus = mouse_enter
-        window.onresize = update_page
-        setInterval(reload_page, RELOAD_INTERVAL * 1000)
-        self.draw_times = []
         self.ips = {}
         for room_name in CONFIG.ips_per_room:
             for client_ip in CONFIG.ips_per_room[room_name].split(' '):
                 if client_ip != '':
                     self.ips[client_ip] = room_name
+        self.change(building)
+        window.onblur = mouse_leave
+        window.onfocus = mouse_enter
+        window.onresize = update_page
+        if len(self.all_ips) == 0:
+            setInterval(reload_page, RELOAD_INTERVAL * 1000)
+        self.draw_times = []
     def xys(self, column, line):
         """Change coordinates system"""
         return [self.left + self.scale * self.columns_x[2*column],
@@ -121,7 +122,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         else:
             self.event_x = event.clientX
             self.event_y = event.clientY
-
     def get_coord(self, event):
         """Get column line as integer"""
         self.get_event(event)
@@ -129,7 +129,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         column = Math.round(column)
         line = Math.round(line)
         return [column, line]
-
     def get_room_name(self, column, line):
         """Return the short room name"""
         for room_name, room in self.rooms.Items():
@@ -139,7 +138,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ):
                 return room_name
         return None
-
     def change(self, building):
         """Initialise with a new building"""
         self.building = building
@@ -158,6 +156,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.update_visible()
         self.search_rooms()
         self.prepare_draw()
+        try:
+            self.prepare_ips()
+        except: # pylint: disable=bare-except
+            self.all_ips = {}
     def prepare_draw(self):
         """Compile information to draw quickly the map"""
         self.walls = []
@@ -337,6 +339,31 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 if char not in self.chars:
                     self.chars[char] = []
                 self.chars[char].append([column, line])
+    def prepare_ips(self):
+        """Compute ips per room"""
+        ips = {}
+        for key, value in IPS.Items():
+            building, col, row = key.split(',')
+            if building != self.building:
+                continue
+            room = self.get_room_name(col, row)
+            if not room:
+                continue
+            if room not in ips:
+                ips[room] = {}
+            for hostip, nbr in value.Items():
+                if self.ips[hostip] == self.building + ',' + room:
+                    continue # Good room
+                if hostip not in ips[room]:
+                    ips[room][hostip] = 0
+                ips[room][hostip] += nbr
+        for key, value in ips.Items():
+            lines = []
+            for hostip, nbr in value.Items():
+                lines.append(hostip + ' ' + nbr)
+            lines.sort()
+            ips[key] = lines
+        self.all_ips = ips
     def draw_computer_menu(self, ctx, messages):
         """The computer problems menu"""
         x_pos, y_pos, x_size, y_size = self.xys(self.selected_computer[1] - 0.5,
@@ -593,6 +620,18 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     continue
                 x_pos, y_pos, _x_size, _y_size = self.xys(column, line)
                 ctx.fillText(room['teachers'], x_pos, y_pos)
+    def draw_ips(self, ctx):
+        """Display used IP in room"""
+        ctx.font = self.scale/2 + "px sans-serif"
+        for room, ips in self.all_ips.Items():
+            if room not in self.rooms:
+                continue
+            left, top, _width, _left = self.rooms[room]['position'][:4]
+            for line in ips:
+                top += 0.5
+                x_pos, y_pos, _x_size, _y_size = self.xys(left, top)
+                ctx.fillText(line, x_pos, y_pos)
+
     def draw(self, square_feedback=False):
         """Display on canvas"""
         start = Date().getTime()
@@ -638,6 +677,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.font = "16px sans-serif"
             ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms',
                          self.width - 70, 50)
+        self.draw_ips(ctx)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
         self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
