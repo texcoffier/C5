@@ -148,7 +148,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         # Default compiler and session options
         #
         'language': 'javascript',                   # A language recognized by hightlightjs
-        'allow_copy_paste': CP or GRADING,          # True if copy/paste allowed
+        'allow_copy_paste': CP or GRADING or ADMIN, # True if copy/paste allowed
         'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
         'coloring': COLORING,                       # True if source highlighting is done
         'display_local_save': 0,                    # True if question 'icon_local' displayed

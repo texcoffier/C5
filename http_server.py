@@ -197,7 +197,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             STUDENT = "{login}";
             COURSE = "{course.course}";
             SOCK = "wss://{utilities.C5_WEBSOCKET}";
-            ADMIN = "{int(is_admin)}";
+            ADMIN = {int(is_admin)};
             STOP = {stop};
             VERSIONS = {json.dumps(versions)};
             CP = {course.config['copy_paste']};
