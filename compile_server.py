@@ -276,16 +276,17 @@ class Process: # pylint: disable=too-many-instance-attributes
                 f'adding {last_allowed} to the process seccomp filter (allow)\n'
                 .encode('ascii'))
             self.process = await asyncio.create_subprocess_exec(
-                compiler, *compile_options, '-I', '.',
-                self.source_file, *ld_options, '-o', self.exec_file,
+                compiler, *compile_options, '-I', '../../..',
+                self.conid + '.cpp', *ld_options, '-o', self.conid,
                 stderr=asyncio.subprocess.PIPE,
                 preexec_fn=set_compiler_limits,
                 close_fds=True,
+                cwd=self.dir
                 )
             assert self.process.stderr
             stderr_bytes = await self.process.stderr.read()
             if stderr_bytes:
-                stderr = stderr_bytes.decode('utf-8')
+                stderr = stderr_bytes.decode('utf-8').replace(self.conid, 'c5')
             else:
                 stderr = "Bravo, il n'y a aucune erreur"
         await self.websocket.send(json.dumps(['compiler', stderr]))
