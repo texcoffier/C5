@@ -939,6 +939,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
             pos[0] -= 1
         self.cursor_position = pos[0]
         self.highlight_unbalanced()
+        line, _column = self.get_line_column(self.cursor_position)
+        errors = self.compiler.innerHTML.replace(
+            '</b>', '').replace('<b style="color:#FFF;background:#F00">', '')
+        for error_position, what in self.highlight_errors.Items():
+            if what in ('warning', 'error'):
+                error_line, _error_column = error_position.split(':')
+                if line == int(error_line):
+                    errors = errors.replace(
+                        RegExp('([^\n>]*:' + error_position + '[^\n<]*)'),
+                        '<b style="color:#FFF;background:#F00">$1</b>')
+        if errors != self.compiler.innerHTML:
+            self.compiler.innerHTML = errors
 
     def update_cursor_position(self):
         """Queue cursor update position"""
