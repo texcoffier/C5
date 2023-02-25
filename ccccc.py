@@ -100,9 +100,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
     mouse_pressed = -1
     mouse_position = [0, 0]
     options = { # These options are synchronized between GUI and compiler/session
-        #
+        # ---------------------
         # Frame screen position
-        #
+        # ---------------------
         'positions' : { # X%, Width%, Y%, Heigth%, background color
             'question':    [ 1, 29, 0, 30,'#EFEF'], # LeftTop    : The question
             'tester':      [ 1, 29,30, 70,'#EFEF'], # LeftBottom : Goal checker
@@ -114,9 +114,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'line_numbers':[100, 1, 0,100,'#EEEF'], # Outside the screen by defaut
             'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
         },
-        #
+        # --------------------------
         # Titles, label and messages
-        #
+        # --------------------------
         'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
         'close': "Voulez-vous vraiment quitter cette page ?",
         'question_title': 'Question',
@@ -144,9 +144,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'time_d': " j ",
         'time_m': " m ",
         'time_h': " h ",
-        #
+        # ------------------------------------
         # Default compiler and session options
-        #
+        # ------------------------------------
         'language': 'javascript',                   # A language recognized by hightlightjs
         'allow_copy_paste': CP or GRADING or ADMIN, # True if copy/paste allowed
         'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
@@ -161,9 +161,26 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'display_history': 1,                       # True if display version history
         'display_indent': 1,                        # True if display the F8 button
         'automatic_compilation': True,              # True if compilation is automatic
-        #
+        # ------------------------------------
+        # Options defined by the compiler used
+        # ------------------------------------
+        'compiler': '',        # 'g++' 'gcc' 'racket'
+        'compile_options': [], # '-Wall' '-pedantic' '-pthread' '-std=c++11' '-std=c++20'
+        'ld_options': [],      # '-lm'
+        'language': '',        # Language to use for syntaxic coloring: 'cpp' 'python' ...
+        'extension': '',       # Source code filename extension for ZIP and GIT: 'cpp', 'py'...
+        # System call always allowed for g++/gcc, no need to specify them:
+        #       clock_gettime close exit exit_group fstat futex lseek
+        #       mmap munmap newfstatat openat read write
+        # System calls allowable for g++/gcc:
+        #       access arch_prctl brk clock_nanosleep
+        #       clone clone3 execve getpid getrandom gettid madvise mprotect
+        #       pipe pread64 prlimit64 rseq rt_sigaction rt_sigprocmask
+        #       sched_yield set_robust_list set_tid_address tgkill
+        'allowed': [],
+        # -------------------------------
         # Unmodifiable session parameters
-        #
+        # -------------------------------
         'COURSE': COURSE,                           # Course short name
         'TICKET': TICKET,                           # Session ticket: ?ticket=TICKET
         'LOGIN': LOGIN,                             # Login of the connected user

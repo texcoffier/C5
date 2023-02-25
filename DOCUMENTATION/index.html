@@ -248,6 +248,16 @@
 
     <h2>Ajouter des images dans un questionnaire</h2>
     <p>
+        Une fois sur l'édition de votre session, vous cliquez sur « Upload a new media »
+        cela vous affiche le code HTML à mettre dans la question pour afficher l'image.
+        Les images sont partagées entre les différentes sessions.
+        Par contre une fois terminée la session ayant enregistrée l'image,
+        elle n'est plus accessible par les autres sessions.
+        Les correcteurs ont bien entendu accès aux images même quand la session
+        est terminée.
+    </p>
+    <!--
+    <p>
         C5 n'héberge pas de fichiers media pour le moment,
         il faut donc faire autrement :
     </p>
@@ -265,6 +275,7 @@
             Remplacez par l'adresse de votre serveur C5 et ne mettez PAS le '/' final.
         </li>
     </ul>
+-->
 
     <h2>Attributs de la question</h2>
     <ul>
@@ -278,15 +289,15 @@
 
     <h2>Méthodes et fonctions utilitaires</h2>
     <ul>
-        <li> <tt>millisec()</tt> depuis le 1 janvier 1970</li>
-        <li> <tt>self.display(html)</tt> affiche dans la zone de test</li>
-        <li> <tt>self.worker.escape(text)</tt> échappe les balises HTML</li>
-        <li> <tt>self.next_question()</tt> passage à la question suivante</li>
+        <li> <tt>millisec()</tt> depuis le 1 janvier 1970.</li>
+        <li> <tt>self.display(html)</tt> affiche dans la zone de test.</li>
+        <li> <tt>self.worker.escape(text)</tt> échappe les balises HTML.</li>
+        <li> <tt>self.next_question()</tt> passage à la question suivante.</li>
         <li> <tt>self.message(bool, message)</tt>
             affiche le message vert si <tt>bool</tt> est vrai, sinon rouge.</li>
         <li> <tt>self.check(text, [ [re, message], ...])</tt>
             affiche les messages vert/rouge en fonction de la présence
-            de <tt>re</tt> dans <tt>text</tt>
+            de <tt>re</tt> dans <tt>text</tt>.
         </li>
         <li> <tt>self.teacher()</tt> donne le nom de l'enseignant qui surveille l'étudiant.</li>
         <li> <tt>batiment, coord_x, coord_y = self.placement()</tt>
@@ -312,9 +323,9 @@ def default_answer(self):
         <li>
             <pre START_OPTIONS DO_NOT_EDIT_HERE>
 options = { # These options are synchronized between GUI and compiler/session
-    #
+    # ---------------------
     # Frame screen position
-    #
+    # ---------------------
     'positions' : { # X%, Width%, Y%, Heigth%, background color
         'question':    [ 1, 29, 0, 30,'#EFEF'], # LeftTop    : The question
         'tester':      [ 1, 29,30, 70,'#EFEF'], # LeftBottom : Goal checker
@@ -326,9 +337,9 @@ options = { # These options are synchronized between GUI and compiler/session
         'line_numbers':[100, 1, 0,100,'#EEEF'], # Outside the screen by defaut
         'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
     },
-    #
+    # --------------------------
     # Titles, label and messages
-    #
+    # --------------------------
     'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
     'close': "Voulez-vous vraiment quitter cette page ?",
     'question_title': 'Question',
@@ -356,11 +367,11 @@ options = { # These options are synchronized between GUI and compiler/session
     'time_d': " j ",
     'time_m': " m ",
     'time_h': " h ",
-    #
+    # ------------------------------------
     # Default compiler and session options
-    #
+    # ------------------------------------
     'language': 'javascript',                   # A language recognized by hightlightjs
-    'allow_copy_paste': CP or GRADING,          # True if copy/paste allowed
+    'allow_copy_paste': CP or GRADING or ADMIN, # True if copy/paste allowed
     'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
     'coloring': COLORING,                       # True if source highlighting is done
     'display_local_save': 0,                    # True if question 'icon_local' displayed
@@ -373,9 +384,26 @@ options = { # These options are synchronized between GUI and compiler/session
     'display_history': 1,                       # True if display version history
     'display_indent': 1,                        # True if display the F8 button
     'automatic_compilation': True,              # True if compilation is automatic
-    #
+    # ------------------------------------
+    # Options defined by the compiler used
+    # ------------------------------------
+    'compiler': '',        # 'g++' 'gcc' 'racket'
+    'compile_options': [], # '-Wall' '-pedantic' '-pthread' '-std=c++11' '-std=c++20'
+    'ld_options': [],      # '-lm'
+    'language': '',        # Language to use for syntaxic coloring: 'cpp' 'python' ...
+    'extension': '',       # Source code filename extension for ZIP and GIT: 'cpp', 'py'...
+    # System call always allowed for g++/gcc, no need to specify them:
+    #       clock_gettime close exit exit_group fstat futex lseek
+    #       mmap munmap newfstatat openat read write
+    # System calls allowable for g++/gcc:
+    #       access arch_prctl brk clock_nanosleep
+    #       clone clone3 execve getpid getrandom gettid madvise mprotect
+    #       pipe pread64 prlimit64 rseq rt_sigaction rt_sigprocmask
+    #       sched_yield set_robust_list set_tid_address tgkill
+    'allowed': [],
+    # -------------------------------
     # Unmodifiable session parameters
-    #
+    # -------------------------------
     'COURSE': COURSE,                           # Course short name
     'TICKET': TICKET,                           # Session ticket: ?ticket=TICKET
     'LOGIN': LOGIN,                             # Login of the connected user
@@ -503,11 +531,11 @@ options = { # These options are synchronized between GUI and compiler/session
         dans le répertoire <tt>COMPILE_*/nom_sujet</tt>.
     </p>
 
-    <h2>Editeur de session</h2>
+    <h2>Éditeur de session</h2>
     <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-editor.png">
     <p>
         Il permet de définir les paramètres de la session en cours
-        et de surveillant son déroulement.
+        et de surveiller son déroulement.
     </p>
     <p>
         Colonne de gauche :
@@ -677,12 +705,12 @@ options = { # These options are synchronized between GUI and compiler/session
         <li> Traits verts : les questions réussies (avec le numéro de la question).
     </ul>
     <p>
-        Le code source s'affiche alors au dessous de la barre d'ascenseur
+        Le code source s'affiche alors au dessous de la barre d'ascenseur.
     </p>
     <p>
         Le bouton «Clôturer examen» doit être utilisé quand il quitte
         la salle afin qu'il ne puisse pas continuer l'examen à l'extérieur.
-        L'étudiant a un bouton EXIT sur l'éditeur de source pour terminer l'examen.
+        L'étudiant a un bouton «Terminer Examen» sur l'éditeur de source pour terminer l'examen.
     </p>
     <p>
         Le bouton «Noter l'étudiant» permet de noter le source de l'étudiant :
@@ -823,9 +851,12 @@ server {
             <td>Administre C5 sur la machine locale (même paramètres que utilities.py).
         </tr>
         <tr>
-            <td>BUILDINGS/Nautibus<br>
+            <td>BUILDINGS/Ariane<br>
+                BUILDINGS/Grignard<br>
+                BUILDINGS/Nautibus<br>
                 BUILDINGS/empty
             <td> Les plans des bâtiments.
+                Empty est pour la salle privée dans enseignants.
         </tr>
         <tr class="cours">
             <td>COMPILE_CPP/test.py
@@ -833,20 +864,16 @@ server {
                 des informations concernant la place de l'étudiant dans la salle.
         </tr>
         <tr class="cours">
-            <td>COMPILE_JS/introduction.py
-            <td>Mini cours de JavaScript.
-        </tr>
-        <tr class="cours">
             <td>COMPILE_JS/example.py
             <td>Un exemple minimaliste de cours pour commencer.
         </tr>
         <tr class="cours">
-            <td>COMPILE_LISP/conway.py
-            <td>Un exemple de programme LISP.
+            <td>COMPILE_JS/introduction.py
+            <td>Mini cours de JavaScript.
         </tr>
         <tr class="cours">
-            <td>COMPILE_PYTHON/introduction.py
-            <td>Un mini cours Python.
+            <td>COMPILE_LISP/conway.py
+            <td>Un exemple de programme LISP.
         </tr>
         <tr class="">
             <td>COMPILE_PYTHON/editor.py
@@ -856,12 +883,28 @@ server {
                 dans l'environnement Python.
         </tr>
         <tr class="cours">
-            <td>COMPILE_REMOTE/test.py
-            <td>Exemple d'utilisation de compile_remote.
+            <td>COMPILE_PYTHON/introduction.py
+            <td>Un mini cours Python.
         </tr>
         <tr class="cours">
             <td>COMPILE_REMOTE/errors.py
             <td>Une série d'exercices dans lesquels l'étudiant doit corriger des erreurs de syntaxe.
+        </tr>
+        <tr class="">
+            <td>COMPILE_REMOTE/grapic-chien.png
+            <td>Média utilisé dans les exemples Grapic.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_REMOTE/grapic.py
+            <td>Les exemples Grapic pour faire des applications graphiques.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_REMOTE/racket.py
+            <td>Un exemple utilisant l'interpréteur Racket sur le serveur.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_REMOTE/test.py
+            <td>Exemple d'utilisation de compile_remote.
         </tr>
         <tr class="cours">
             <td>COMPILE_SQL/test.py
@@ -872,6 +915,18 @@ server {
             <td>Exemple d'utilisation de compile_text pour la saisie de texte libre.
         </tr>
         <tr>
+            <td>DOCUMENTATION/c5.svg
+            <td>Lien vers «c5.svg»
+        </tr>
+        <tr class="executable">
+            <td>DOCUMENTATION/create_video
+            <td>Script shell à éditer pour créer des vidéos
+        </tr>
+        <tr>
+            <td>DOCUMENTATION/favicon.ico
+            <td>Lien vers «favicon.svg»
+        </tr>
+        <tr>
             <td>DOCUMENTATION/index.html
             <td>Cette page d'explication.
         </tr>
@@ -880,12 +935,25 @@ server {
                 screen-admin.png<br>
                 screen-checkpoint.png<br>
                 screen-course.png<br>
+                screen-editor.png<br>
                 screen-python.png<br>
                 screen-src.png<br>
                 screen-student.png<br>
                 screen-teacher-list.png<br>
                 screen-time-travel.png
             <td>Copies d'écran pour cette page.
+        </tr>
+        <tr>
+            <td>
+                DOCUMENTATION/<br>
+                tuto_student.webm<br>
+                tuto_teacher.webm
+            <td>
+                Tuto vidéo.
+        </tr>
+        <tr class="">
+            <td>Grapic.h
+            <td>Fourni la bilbiothèque Grapic à C5
         </tr>
         <tr>
             <td>Makefile
@@ -900,7 +968,12 @@ server {
             <td>Page d'accueil du cours avec les statistiques étudiants.
         </tr>
         <tr class="js">
-            <td>adm_session.py
+            <td>adm_root.py
+            <td>Page d'accueil des administrateurs C5.
+        </tr>
+        <tr class="js">
+            <td>adm_session.css<br>
+                adm_session.py
             <td>Éditeur de session.
         </tr>
         <tr>
@@ -914,6 +987,10 @@ server {
         <tr class="js">
             <td>checkpoint.py
             <td>Gestion de la salle d'attente et placement des étudiants sur le plan.
+        </tr>
+        <tr class="executable">
+            <td>clean.py
+            <td>Script effaçant toutes les traces laissées par les tests de régression.
         </tr>
         <tr class="js">
             <td>compatibility.py
@@ -940,9 +1017,21 @@ server {
             <td>compile_python.py
             <td>Interpréteur Python (brython).
         </tr>
+        <tr class="serveur">
+            <td>compile_racket.rkt
+            <td>Programme LISP interprétant dans une sandbox le fichier
+                LISP dont le nom est envoyé sur l'entrée standard.
+                Ce programme est lancé une fois par session car Racket
+                prend du temps pour démarrer.
+        </tr>
         <tr class="compilateur">
             <td>compile_remote.py
             <td>Contacte compile_server.py pour compiler et exécuter.
+        </tr>
+        <tr class="serveur">
+            <td>compile_server.py
+            <td>Serveur de compilation et exécution de C++ avec différents
+                compilateur et options possibles.
         </tr>
         <tr class="compilateur">
             <td>compile_sql.py
@@ -953,27 +1042,38 @@ server {
             <td>Compilateur ne faisant rien pour réponses en texte libre
         </tr>
         <tr class="serveur">
-            <td>compile_server.py
-            <td>Serveur de compilation et exécution de C++ avec différents
-                compilateur et options possibles.
-        </tr>
-        <tr>
-            <td>favicon.ico
-            <td>L'icone des pages web, calculée à partir de <tt>c5.svg</tt>.
-        </tr>
-        <tr class="executable">
             <td>dns_server.py
             <td>Un filtre (stdin/stdout) calculant le nom de la machine à
                 partir de son adresse IP.
+        </tr>
+        <tr>
+            <td>favicon.ico
+            <td>L'icône des pages web, calculée à partir de <tt>c5.svg</tt>.
         </tr>
         <tr class="serveur">
             <td>http_server.py
             <td>Le serveur web C5 pouvant fonctionner seul ou derrière
                 un server web classique.
         </tr>
-        <tr class="executable">
+        <tr class="serveur">
             <td>infos_server.py
             <td>Un filtre (stdin/stdout) calculant le nom et prénom à partir du login.
+        </tr>
+        <tr class="serveur">
+            <td>killer<br>
+                killer.c
+            <td>Démons tuant les hiérarchies de processus prenant
+                plus d'une seconde CPU et se trouvant dans <tt>/sys/fs/cgroup/C5_*</tt>
+        </tr>
+        <tr class="executable">
+            <td>launcher<br>
+                launcher.c
+            <td>Ce programme possède le SUID root ce qui lui permet :
+                <ul>
+                    <li> De créer le contrôle groupe utilisé par <tt>killer.py</tt>.
+                    <li> De lancer le processus avec un UID liée à la session.
+                    <li> De limiter les ressources utilisées par le processus.
+                </ul>
         </tr>
         <tr class="executable">
             <td>load_testing.py
@@ -983,6 +1083,13 @@ server {
         <tr class="js">
             <td>question.py
             <td>La classe permettant de définir les questions.
+        </tr>
+        <tr class="">
+            <td>question_after.py<br>
+                question_before.py
+            <td> Utilitaire permettant de générer le fichier <tt>.json</tt>
+                contenant les titres des questions des différentes sessions.
+                C'est nécessaire pour faire les export ZIP et GIT.
         </tr>
         <tr class="executable">
             <td>tests.py
@@ -1123,10 +1230,7 @@ server {
             donc rend impossible une lecture du pipe sans jamais une erreur.
         </li>
         <li>
-            Autoriser le copier/coller entre 2 questions d'une même session.
-        </li>
-        <li>
-            Associer par apprentissage les adresses IP au places sur le plan.
+            Associer par apprentissage les adresses IP aux places sur le plan.
         </li>
         <li>
             Détruire une sauvegarde.
@@ -1134,6 +1238,17 @@ server {
         <li>
             Gestion des versions des sources des questionnaires.
             Même s'ils sont modifiés par plusieurs personnes.
+        </li>
+        <li>
+            Regrouper editor+overlay+line pour tout scroller en même temps.
+        </li>
+        <li>
+            Mettre en évidence l'erreur C++ quand on met le curseur
+            sur la ligne en erreur dans le code source.
+        </li>
+        <li>
+            Mettre un nom de fichier plus compréhensible pour la compilation
+            coté serveur (à la place du numéro de session).
         </li>
     </ul>
 </body>

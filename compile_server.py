@@ -25,6 +25,17 @@ import utilities
 PROCESSES = []
 FREE_USERS = list(range(3000, 4000)) # Update Makefile if changed here
 
+ALWAYS_ALLOWED = {"fstat", "newfstatat", "write", "read",
+                  "lseek", "futex", "exit_group", "exit",
+                  "clock_gettime", "openat", "mmap","munmap", "close"}
+ALLOWABLE = {'brk', 'access', 'arch_prctl',
+             'clone',
+             'clone3', 'execve', 'getrandom', 'madvise',
+             'mprotect', 'pread64', 'prlimit64',
+             'rseq', 'rt_sigaction', 'rt_sigprocmask', 'sched_yield',
+             'set_robust_list', 'set_tid_address', 'getpid', 'gettid', 'tgkill',
+             'clock_nanosleep', 'pipe'}
+
 resource.setrlimit(resource.RLIMIT_NOFILE, (10000, 10000))
 
 def set_compiler_limits() -> None:
@@ -256,18 +267,10 @@ class Process: # pylint: disable=too-many-instance-attributes
             if option not in ('-lm',):
                 stderr += f"Option d'édition des liens non autorisée : «{option}»\n"
         for option in allowed:
-            if option not in ('brk', 'access', 'arch_prctl', 'clock_nanosleep',
-                    'clone',
-                    'clone3', 'close', 'execve', 'getrandom', 'madvise', 'mmap',
-                    'mprotect', 'munmap', 'newfstatat', 'openat', 'pread64', 'prlimit64',
-                    'rseq', 'rt_sigaction', 'rt_sigprocmask', 'sched_yield',
-                    'set_robust_list', 'set_tid_address', 'getpid', 'gettid', 'tgkill',
-                    'clock_nanosleep'):
+            if option not in ALLOWABLE and option not in ALWAYS_ALLOWED:
                 stderr += f"Appel système non autorisé : «{option}»\n"
         if not stderr:
-            self.allowed = ':'.join(["fstat", "newfstatat", "write", "read",
-                                     "lseek", "futex", "exit_group", "exit",
-                                     "clock_gettime", "openat", "mmap","munmap", "close"] + allowed)
+            self.allowed = ':'.join(list(ALWAYS_ALLOWED) + allowed)
             last_allowed = self.allowed.rsplit(':',1)[-1]
             self.canary = (
                 f'adding {last_allowed} to the process seccomp filter (allow)\n'
