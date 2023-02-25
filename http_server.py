@@ -772,7 +772,8 @@ async def my_git(request:Request) -> StreamResponse: # pylint: disable=too-many-
 
     git_dir = ''
     infos = await utilities.LDAP.infos(session.login)
-    author = f"{infos['fn'].title()} {infos['sn'].upper()} <{infos.get('mail', 'x@y.z')}>"
+    author_name = f"{infos['fn'].title()} {infos['sn'].upper()}"
+    author_email = infos.get('mail', 'x@y.z')
     question = None
     for (source, _type, timestamp, tag), question in sorted(
             ((source, question) # The saved sources
@@ -798,8 +799,15 @@ async def my_git(request:Request) -> StreamResponse: # pylint: disable=too-many-
         await run(
             'git', 'commit',
             '-m', f'{course.get_question_name(question)}: {tag}',
-            '--date', str(timestamp), '--author', author)
-    await run('git', 'gc')
+            '--date', str(timestamp),
+            env={
+                'GIT_AUTHOR_NAME': author_name,
+                'GIT_AUTHOR_EMAIL': author_email,
+                'GIT_COMMITTER_NAME': author_name,
+                'GIT_COMMITTER_EMAIL': author_email,
+             })
+    if git_dir:
+        await run('git', 'gc')
 
     data = io.BytesIO()
 
