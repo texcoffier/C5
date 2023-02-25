@@ -75,6 +75,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     event_x = event_y = 0
     walls = windows = doors = chars = []
     left_column = right_column = top_line = bottom_line = 0
+    highlight_disk = None
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.ips = {}
@@ -504,6 +505,21 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.lineTo(x_end, y_end)
             ctx.stroke()
 
+        if self.highlight_disk:
+            age = seconds() - self.highlight_disk[2]
+            max_age = 10
+            if age > max_age:
+                self.highlight_disk = None
+            else:
+                ctx.fillStyle = "#00FFFF"
+                ctx.globalAlpha = (max_age - age) / max_age
+                ctx.beginPath()
+                pos_x, pos_y, scalex, _scaley = self.xys(
+                    self.highlight_disk[0], self.highlight_disk[1])
+                ctx.arc(pos_x, pos_y, 2*scalex, 0, 2*Math.PI)
+                ctx.fill()
+                ctx.globalAlpha = 1
+
         ctx.lineCap = 'round'
         ctx.lineWidth = 2
         ctx.strokeStyle = "#000"
@@ -631,7 +647,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 top += 0.5
                 x_pos, y_pos, _x_size, _y_size = self.xys(left, top)
                 ctx.fillText(line, x_pos, y_pos)
-
     def draw(self, square_feedback=False):
         """Display on canvas"""
         start = Date().getTime()
@@ -659,7 +674,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.right_column = self.x_max
         if self.bottom_line == -1:
             self.bottom_line = len(self.lines)
-
         self.draw_map(ctx, canvas)
         ctx.font = self.scale/3 + "px sans-serif"
         self.draw_students(ctx)
@@ -758,6 +772,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 # Simple click
                 record('/checkpoint/SPY/' + COURSE + '/' + self.moving.login)
         else:
+            self.highlight_disk = None
             record('/checkpoint/' + COURSE + '/' + self.moving.login + '/EJECT')
     def drag_stop_click_on_computer_menu(self):
         """Select a compulter malfunction"""
@@ -960,6 +975,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 version = student.version or 'a'
         record('/checkpoint/' + COURSE + '/' + student.login + '/'
                + self.building + ',' + column + ',' + line + ',' + version)
+        self.highlight_disk = [column, line, seconds()]
     def stop_move_student(self, event):
         """Drop the student"""
         pos = self.get_coord(event)
