@@ -1120,7 +1120,6 @@ def create_page(building_name):
         #top .course { font-size: 150%; }
         #top SELECT { font-size: 150%; }
         #top .drag_and_drop { display: inline-block }
-        #top .reload { font-family: emoji; font-size: 300%; cursor: pointer; }
         #spy { position: absolute; left: 0% ; top: 0% ; right: 0%; bottom: 0%;
                display: none; background: #FFF; opacity: 0.95; overflow: auto;
                padding: 1em; font-size: 150%; z-index: 3
@@ -1133,9 +1132,10 @@ def create_page(building_name):
             background: #FFF8;
         }
         #source { margin-top: 7em }
-        .send_alert { font-size: 200% ; display: inline-block;
-                      transition: transform 0.5s; cursor: pointer }
-        .send_alert:hover { transform: scale(2, 2) }
+        .icon { font-size: 200% ; display: inline-block; font-family: emoji;
+                transition: transform 0.5s; cursor: pointer;
+                margin-left: 0.5em; }
+        .icon:hover { transform: scale(2, 2) }
         #messages { position: fixed ; right: 0px ; bottom: 0px ;
             max-width: 40vw;
             max-height: 100vh;
@@ -1158,10 +1158,9 @@ def create_page(building_name):
         #time SPAN.cs { color: #00F ; }
         </style>
         <div id="top">
-        <span class="reload" onclick="reload_page()">⟳</span>
-          
-        <span class="send_alert" onclick="send_alert()">🚨</span>
-          
+        <span class="icon" onclick="reload_page()">⟳</span>
+        <span class="icon" onclick="send_alert()">🚨</span>
+        <span class="icon" onclick="search_student()">🔍</span>
         ''']
     if DISPLAY_SESSION_NAME:
         content.append(
@@ -1252,7 +1251,7 @@ def spy_close():
 
 def canonize(txt):
     """Cleanup name"""
-    return txt.lower().replace(RegExp('[ -_]', 'g'), '')
+    return txt.lower().replace(RegExp("[^a-z0-9]", 'g'), '')
 
 def get_login(student):
     """Get login from any information: name, surname, number"""
@@ -1261,18 +1260,30 @@ def get_login(student):
             or 'p' + student[1:] in STUDENT_DICT):
         return student
     possibles = []
+    possibles2 = []
     student = canonize(student)
+    size = len(student)
     for login, verify in STUDENT_DICT.Items():
         if not verify.building:
             continue
-        if canonize(verify.firstname) == student or canonize(verify.surname) == student:
+        if (canonize(verify.firstname) == student
+                or canonize(verify.surname) == student
+                or canonize(login) == student
+           ):
             possibles.append([login, verify.surname, verify.firstname])
+        if (canonize(verify.firstname)[:size] == student
+                or canonize(verify.surname)[:size] == student
+                or canonize(login)[:size] == student
+           ):
+            possibles2.append([login, verify.surname, verify.firstname])
+    if len(possibles) == 0:
+        if len(possibles2) == 0:
+            return None
+        possibles = possibles2
     if len(possibles) == 1:
         return possibles[0][0]
-    if len(possibles) == 0:
-        return None
     choices = '\n'.join([
-        str(i) + ' ' + choice[0] + ' ' + choice[1] + ' ' + choice[2]
+        str(i) + ' → ' + choice[0] + ' ' + choice[1] + ' ' + choice[2]
         for i, choice in enumerate(possibles)])
     i = prompt(choices)
     if i:
@@ -1280,18 +1291,22 @@ def get_login(student):
         return possibles[i][0]
     return None
 
+def search_student():
+    """Zoom on a student"""
+    spy_close()
+    student = prompt("Début de numéro d'étudiant ou nom ou prénom à chercher")
+    student = get_login(student)
+    if student:
+        ROOM.zoom_student(student)
+    else:
+        alert('Introuvable')
+
 def key_event_handler(event):
     """The spy popup receive a keypress"""
     if event.key == 'Escape':
         spy_close()
     if event.key == 'f' and event.ctrlKey:
-        spy_close()
-        student = prompt("Numéro d'étudiant ou nom ou prénom à chercher")
-        student = get_login(student)
-        if student:
-            ROOM.zoom_student(student)
-        else:
-            alert('Introuvable')
+        search_student()
         event.preventDefault()
 
 def spy_cursor(source):
