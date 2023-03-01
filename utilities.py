@@ -178,6 +178,11 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        # ┃Archive ┃creator admin       │creator admin       │
                        # ┗━━━━━━━━┹────────────────────┴────────────────────┘
                        'state': 'Ready',
+                       # Checkpoint configuration
+                       'display_student_filter': '0',
+                       'display_my_rooms': '1',
+                       'display_session_name': '0',
+                       'default_building': sorted(os.listdir('BUILDINGS'))[0],
                       }
         try:
             self.parse()
@@ -906,7 +911,7 @@ def print_help() -> None:
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py | grep -v grep")
-    print('pkill -f http_server.py ; pkill -f compile_server.py  ; pkill -f infos_server.py ; rm *.log') # pylint: disable=line-too-long
+    print('for I in http compile infos dns; do pkill -f "$I"_server.py ; done ; rm *.log')
     sys.exit(1)
 
 ACTIONS = {

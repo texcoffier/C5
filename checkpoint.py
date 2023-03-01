@@ -654,7 +654,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.width = canvas.offsetWidth
         self.height = canvas.offsetHeight
         if self.scale == 0:
-            if document.getElementById('my_rooms').checked:
+            my_rooms = False
+            if document.getElementById('my_rooms') and document.getElementById('my_rooms').checked:
+                my_rooms = True
+            if my_rooms:
                 self.only_my_students()
             else:
                 self.update_sizes(0.5)
@@ -663,7 +666,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 (self.width - self.real_left) / self.columns_x[2 * self.x_max - 1],
                 (self.height - self.real_top) / self.lines_y[2 * len(self.lines) - 1 - HELP_LINES])
             self.top = self.real_top
-            if not document.getElementById('my_rooms').checked:
+            if not my_rooms:
                 self.top += HELP_LINES * self.scale
         ctx = canvas.getContext("2d")
         self.left_column, self.top_line = self.get_column_row(0, self.real_top+1)
@@ -1159,22 +1162,31 @@ def create_page(building_name):
           
         <span class="send_alert" onclick="send_alert()">🚨</span>
           
-        ''',
-        '<span class="course">',
-        COURSE.split('=')[1].replace(RegExp('_', 'g'), ' '),
-        '</span>',
-        ' <select style="width:100%" id="buildings"',
-        '         onchange="ROOM.change(this.value); update_page(); ROOM.draw()">',
+        ''']
+    if DISPLAY_SESSION_NAME:
+        content.append(
+            '<span class="course">'
+            + COURSE.split('=')[1].replace(RegExp('_', 'g'), ' ')
+            + '</span>')
+    content.append(
+        ''' <select style="width:100%" id="buildings"
+                    onchange="ROOM.change(this.value); update_page(); ROOM.draw()">''')
+    content.append(
         ''.join(['<option'
                  + (building == building_name and ' selected' or '')
                  + '>' + building.replace('empty', LOGIN) + '</option>'
-                 for building in BUILDINGS_SORTED]),
-        '''</select>
-        <label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()" type="checkbox"
-               >Seulement mes salles</label>
-        <label class="filter">Mettre en évidence les logins :<br>
-        <input onchange="filters(this)" onblur="filters(this)"
-               style="box-sizing: border-box; width:100%"></label>
+                 for building in BUILDINGS_SORTED])
+        )
+    content.append('</select>')
+    if DISPLAY_MY_ROOMS:
+        content.append(
+            '''<label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()"
+                             type="checkbox">Seulement mes salles</label>''')
+    if DISPLAY_STUDENT_FILTER:
+        content.append('''<label class="filter">Mettre en évidence les logins :<br>
+            <input onchange="filters(this)" onblur="filters(this)"
+                    style="box-sizing: border-box; width:100%"></label>''')
+    content.append('''
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
         <div id="messages"></div>
@@ -1186,7 +1198,7 @@ def create_page(building_name):
             ontouchstart="ROOM.drag_start(event)"
         ></canvas>
         <div id="spy"></div>
-        ''']
+        ''')
     document.body.innerHTML = ''.join(content)
     document.body.onkeydown = key_event_handler
 
@@ -1417,6 +1429,6 @@ def debug():
         students_per_room[room_name] = [student.login for student in room.students]
     print(JSON.stringify(students_per_room))
 
-create_page('Nautibus')
-ROOM = Room('Nautibus')
+create_page(DEFAULT_BUILDING or "Nautibus")
+ROOM = Room(DEFAULT_BUILDING or "Nautibus")
 update_page()

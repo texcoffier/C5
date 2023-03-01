@@ -75,8 +75,13 @@ DIV.rights, DIV.configs, DIV.state {
     vertical-align: top;
 }
 LABEL {
-    display: block;
     width: max-content;
+}
+LABEL:hover {
+    border: 1px solid black;
+}
+LABEL {
+    border: 1px solid #0000;
 }
 TEXTAREA, INPUT, SELECT {
     font-size: 100%;

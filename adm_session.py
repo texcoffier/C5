@@ -193,6 +193,10 @@ def init():
         colors.append('<span style="background:' + color + '">'
             + ' <input type="radio" name="highlight" id="' + color + '"> </span>')
     colors = ''.join(colors)
+    buildings = []
+    for building in BUILDINGS:
+        buildings.append('<option>' + building + '</option>')
+    buildings = ''.join(buildings)
     div.onchange = onchange
     div.innerHTML = ("<h1>" + html(COURSE.replace('=', '   ')) + """</h1>
     <title>""" + html(COURSE.replace(RegExp('.*=', ''), ' ')) + """</title>
@@ -217,14 +221,19 @@ def init():
     <option>Archive</option>
     </select>
     <br>
-    <label><input type="checkbox" id="copy_paste"> Allows copy/pastes from external source.</label>
-    <label><input type="checkbox" id="checkpoint"> Requires students to be placed on the map (examination mode).</label>
-    <label><input type="checkbox" id="save_unlock"> Unlock the next question on save.</label>
-    <label><input type="checkbox" id="sequential"> Question must be answered from first to last.</label>
-    <label><input type="checkbox" id="coloring"> Syntaxic coloring of source code with <select id="theme">
-    """ + themes + """</select></label>
-    <label><input type="checkbox" id="allow_ip_change"> Allow IP change (bad Internet connection)</label>
-    Color in the session list: """ + colors + """
+    <label><input type="checkbox" id="copy_paste"> Allows copy/pastes from external source.</label><br>
+    <label><input type="checkbox" id="checkpoint"> Requires students to be placed on the map (examination mode).</label><br>
+    <label><input type="checkbox" id="save_unlock"> Unlock the next question on save.</label><br>
+    <label><input type="checkbox" id="sequential"> Question must be answered from first to last.</label><br>
+    <label><input type="checkbox" id="coloring"> Syntaxic coloring of source code with:</label> <select id="theme">
+    """ + themes + """</select><br>
+    <label><input type="checkbox" id="allow_ip_change"> Allow IP change (bad Internet connection)</label><br>
+    Color in the session list: """ + colors + """<br>
+    Checkpoint displays:
+    <label><input type="checkbox" id="display_student_filter">Student filter</label>.
+    <label><input type="checkbox" id="display_my_rooms">My rooms</label>.
+    <label><input type="checkbox" id="display_session_name">Session name</label>.
+    <label>Building: <select id="default_building">""" + buildings  + """</select></label>
     <p class="title"><b>Logins</b> of students with ⅓ more time to answer</p>
     <textarea id="tt"></textarea>
     <p class="title">Grading ladder</p>

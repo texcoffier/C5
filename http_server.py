@@ -567,6 +567,25 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         del CourseConfig.configs[config.dirname] # Delete old
         CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
         return f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!"
+    elif action == 'display_student_filter':
+        assert value in "01"
+        config.set_parameter('display_student_filter', value)
+        feedback = f"«{course}» «{'do not' if value == '0' else ''} display student filter."
+    elif action == 'display_session_name':
+        assert value in "01"
+        config.set_parameter('display_session_name', value)
+        feedback = f"«{course}» «{'do not' if value == '0' else ''} display session name."
+    elif action == 'display_my_rooms':
+        assert value in "01"
+        config.set_parameter('display_my_rooms', value)
+        feedback = f"«{course}» «{'do not' if value == '0' else ''} display «My rooms»."
+    elif action == 'default_building':
+        buildings = os.listdir('BUILDINGS')
+        if value in buildings:
+            config.set_parameter('default_building', value)
+            feedback = f"«{course}» default building is «{value}»."
+        else:
+            feedback = f"«{course}» «{value}» not in {buildings}!"
 
     return answer(f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
         content_type='application/javascript')
@@ -1367,6 +1386,10 @@ async def checkpoint(request:Request) -> Response:
         STUDENTS = {json.dumps(await course.get_students())};
         MESSAGES = {json.dumps(course.messages)};
         CHECKPOINT = {json.dumps(course.checkpoint)};
+        DISPLAY_STUDENT_FILTER = {course.config['display_student_filter']};
+        DISPLAY_MY_ROOMS = {course.config['display_my_rooms']};
+        DISPLAY_SESSION_NAME = {course.config['display_session_name']};
+        DEFAULT_BUILDING = {json.dumps(course.config['default_building'])};
         </script>
         <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
         <script src="/checkpoint.js?ticket={session.ticket}"></script>
@@ -1620,8 +1643,12 @@ async def adm_session(request:Request) -> Response:
     session, config = await get_course_config(request)
     return answer(
         session.header()
-        + f'<script>COURSE = {json.dumps(config.course)};</script>'
-        + f'<script src="/adm_session.js?ticket={session.ticket}"></script>')
+        + f'''
+        <script>
+        COURSE = {json.dumps(config.course)};
+        BUILDINGS = {json.dumps(sorted(os.listdir('BUILDINGS')))};
+        </script>
+        <script src="/adm_session.js?ticket={session.ticket}"></script>''')
 
 async def adm_editor(request:Request) -> Response:
     """Session questions editor"""
