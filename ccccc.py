@@ -109,7 +109,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'editor':      [30, 40, 0,100,'#FFFF'], # Middle     : Source editor
             'compiler':    [70, 30, 0, 30,'#EEFF'], # RightTop   : Compiler messages
             'executor':    [70, 30,30, 70,'#EEFF'], # RightBottom: Execution messages
-            'time':        [80, 20,98,  2,'#0000'], # BottomRight: debugger for admin
+            'time':        [80, 20,98,  2,'#0000'], # BottomRight: Debugger for admin
             'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
             'line_numbers':[100, 1, 0,100,'#EEEF'], # Outside the screen by defaut
             'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.

@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+
 <head>
     <meta charset="utf-8">
     <link REL="icon" href="favicon.ico">
@@ -7,7 +9,7 @@
             --body: 50em;
             max-width: var(--body);
             font-family: sans-serif;
-            background: #F8F8F8;
+            background: #FFF;
             line-height: 1.3em;
         }
 
@@ -21,24 +23,33 @@
         }
 
         H1,
-        H2 {
-            clear: both
+        H2,
+        H3 {
+            clear: both;
+            background: #EEE;
+            padding: 0.3em;
+            display: block;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            page-break-after: avoid;
         }
 
         H1 {
-            font-size: 150%;
+            font-size: 165%;
             border: 1px solid #000;
-            padding: 0.2em;
         }
 
         H2 {
-            font-size: 120%;
-            background: #FFF;
-            border-bottom: 1px solid #000;
+            font-size: 150%;
+            border: 1px solid #000;
+            page-break-before: always;
         }
 
         H3 {
-            font-size: 100%;
+            font-size: 120%;
+            border-bottom: 1px solid #000;
+            margin-left: 0px;
         }
 
         TABLE {
@@ -94,16 +105,79 @@
         .executable {
             background: #FEE
         }
+
+        .screenshot {
+            position: absolute;
+            left: calc(var(--body) + 1em);
+        }
+
+        .compilers {
+            width: 100%
+        }
+
+        .compilers TD:nth-child(1) {
+            font-weight: bold;
+        }
+
+        .compilers TD:nth-child(3) {
+            white-space: nowrap;
+        }
+
+        TT.link {
+            background: #EEE;
+            color: #00F;
+            border: 0px;
+        }
+
+        TT.button {
+            background: #FAFAFA;
+            border: 2px outset #DDD;
+            border-radius: 0.5em;
+            padding: 0.1em;
+        }
+
+        TT.key {
+            background: initial;
+            border: 0px;
+        }
+
+        TT.key:before {
+            content: '❰';
+        }
+
+        TT.key:after {
+            content: '❱';
+        }
+
+        UE {
+            page-break-inside: avoid;
+        }
+
+        @media print {
+            BODY {
+                font-size: 80%;
+                max-width: 100%
+            }
+
+            TD,
+            TH {
+                font-size: 80%;
+            }
+
+            .screenshot {
+                position: initial;
+                width: 100%
+            }
+        }
     </style>
 </head>
 
 <body>
-    <h1><img src="c5.svg" style="height:1em"> : C5 is Compiler Course Class in the Cloud</h1>
-    <p>
-        Pourquoi utiliser C5 ?
-    </p>
-    <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-python.svg">
-    <h2>Empêcher toute tricherie lors des examens sur machine.</h2>
+    <h1><img src="c5.svg" style="height:1em;vertical-align:text-top"> : C5 is Compiler Course Class in the Cloud.</h1>
+    <div id="toc"></div>
+    <h2>Pourquoi utiliser C5 ?</h2>
+    <h3>Empêcher toute tricherie lors des examens sur machine.</h3>
+    <img class="screenshot" src="screen-python.svg">
     <ul>
         <li> Tout est fait dans une unique page web facile à surveiller visuellement :
             <ul>
@@ -111,7 +185,6 @@
                 <li> Éditeur de code pour répondre.</li>
                 <li> Résultat de compilation.</li>
                 <li> Résultat de l'exécution.</li>
-                <li> Aide pour les étudiants en difficulté.</li>
             </ul>
         </li>
         <li> Le copier/copier de sources extérieures est impossible.</li>
@@ -127,18 +200,48 @@
             </ul>
         </li>
     </ul>
-    <h2>Avoir un environnement TP immédiatement fonctionnel.</h2>
+    <h3>Avoir un environnement TP immédiatement fonctionnel.</h3>
     <p>
         En effet :
     </p>
     <ul>
         <li> Rien besoin d'installer pour les étudiants.</li>
+        <li> L'étudiant peut accéder à son travail de n'importe où, même sur smartphone.</li>
         <li> Pas besoin d'apprendre à utiliser un logiciel.</li>
         <li> Coloration syntaxique.</li>
+        <li> Mise en évidence des parenthèses.</li>
+        <li> Mise en évidence des erreurs de compilation.</li>
+        <li> Reformatage du code source.</li>
         <li> Recompilation et exécution temps-réel.</li>
-        <li> Indices pour guider l'étudiant vers la solution.</li>
+        <li> Indices contextuels pour guider l'étudiant vers la solution
+            en fonction de son travail.</li>
         <li> Outils pour la surveillance d'examen sur de nombreuses salles.</li>
+        <li> Permet de suivre l'avancement du travail de l'étudiant à distance.</li>
     </ul>
+
+    <h3>Fluidifier le déroulement des examens.</h3>
+
+    <ul>
+        <li> Le fait de placer les étudiants sur les chaises
+            revient à faire l'appel.</li>
+        <li> On voit immédiatement les noms des surveillants associés aux salles.</li>
+        <li> On voit les machines qui sont en panne.</li>
+        <li> On voit dans quelles salles il reste des machines innocupées.</li>
+        <li> Les surveillants peuvent s'échanger des messages d'alerte.</li>
+        <li> Le surveillant peut voir l'historique du travail de l'étudiant,
+            pendant et après la session.
+        </li>
+        <li> On peut retrouver qui surveillait un étudiant.</li>
+        <li> On peut retrouver qui était assis à coté de qui.</li>
+        <li> En fin d'examen, pas besoin de demander aux étudiants de déposer un fichier.</li>
+        <li> Les tiers-temps sont automatiquement pris en compte.</li>
+        <li> On peut donner du temps supplémentaire à un étudiant en cas de problème.</li>
+        <li> Un outil permet de noter et commenter facilement le travail de l'étudiant.</li>
+        <li> On peut lister par correcteur les étudiants qui n'ont pas été corrigés
+            ou bien corrigé de manière incomplète.</li>
+    </ul>
+
+    <!--
     <p>
         Présentation video de 5 minutes 32 (complètement dépassée) :
         <b><a href="tuto_student.webm">la vue étudiant</a></b><br>
@@ -147,35 +250,35 @@
     <p> Présentation video de 4 minutes 14 (complètement dépassée) :
         <b><a href="tuto_teacher.webm">la vue surveillant</a></b><br>
     </p>
+    -->
 
-    <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-src.png">
-    <h2>Comment définir un sujet</h2>
+    <h2>Création d'une session de travail.</h2>
+
+    <h3>Comment définir un sujet.</h3>
+    <img class="screenshot" src="screen-src.png">
     <p>
         L'ensemble de l'environnement est programmé en Python.
     </p>
-    <p>
-        Chaque sujet contient un ensemble de questions s'enchaînant successivement.
-    </p>
     <ul>
-        <li> Le sujet est enregistré dans un des répertoires nommés
-            <tt>COMPILE_{JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}</tt>
-        </li>
-        <li> Il est compilé en tapant : <tt>make prepare</tt></li>
-        <li> Il est utilisable avec l'URL : <tt>https://…/={JS|PYTHON|CPP|REMOTE|SQL|TEXT|LISP}=<b>nom_sujet</b></tt>
-        </li>
+        <li> Vous composez votre sujet dans un fichier <tt>nom_sujet.py</tt>,
+            ce nom sera affiché aux étudiants,
+            il est conseillé de le préfixer par le code du cours.
+        <li>
+            Chaque sujet contient un ensemble de questions s'enchaînant successivement.
     </ul>
+
     <p>
         Pour chaque question il y a une classe
         dont les méthodes définissent la question.
         Voici les méthodes dans l'ordre d'appel lorsque l'étudiant arrive sur la question :
     </p>
     <ul>
-        <li> <tt>default_answer(self)</tt> retourne la valeur initiale de l'éditeur.</li>
-        <li> <tt>question(self)</tt> retourne la question au format HTML.
-            C'est ce qui est affiché en haut à gauche.
-            Cette méthode est appelée chaque fois que l'étudiant arrive sur la question.
+        <li> <tt>default_answer(self)</tt> retourne la valeur initiale de l'éditeur.
             Si la question est aléatoire, on peut conserver dans l'instance
-            de la question l'aléa choisi ou bien en choisir un nouveau à chaque fois.
+            de la question l'aléa choisi pour que les méthodes suivantes
+            puisse l'utiliser pour l'affichage et les tests.
+        </li>
+        <li> <tt>question(self)</tt> retourne la question au format HTML.
         </li>
         <li> <tt>tester(self)</tt> affiche les indices
             et décide quand faire passer à la question suivante.
@@ -206,49 +309,51 @@
     </p>
     <pre>Session([Q0(), Q1(), Q2(), Q3(), QEnd()])</pre>
 
-    <h2>Comment faire un sujet</h2>
+    <h3>Essayer le sujet.</h3>
     <p>
-        On suppose que le serveur a été lancé, les explications sont plus
-        loin sur la page si vous n'avez pas accès à un serveur existant.
+        On suppose que :
     </p>
-    <p>
-        Il faut le créer une première fois pluis boucler sur tester/améliorer.
-    </p>
-
-
-    <h3>Création du sujet et test</h3>
-
     <ul>
-        <li> On suppose que le super utilisateur root vous a indiqué comme «auteur».</li>
-        <li> Vous allez sur la page d'accueil.</li>
-        <li> Vous cliquez sur le bon compilateur et déposez <tt>yyy.py</tt>
-            De préférence préfixez le nom de la session par le code du cours.
+        <li> Vous avez accès à un serveur C5.
+            Les explications sont plus
+            loin sur la page si vous n'avez pas accès à un serveur existant.</li>
+        <li> L'administrateur C5 vous a indiqué comme «auteur».</li>
+    </ul>
+    <p>
+        Pour le mettre en production la première fois et l'essayer :
+    </p>
+    <ul>
+        <li> Vous allez sur la page d'accueil de C5.</li>
+        <li> En bas de la page, vous cliquez sur le bon compilateur
+            et déposez votre fichier contenant le cours.
         </li>
-        <li> Vous cliquez sur le bouton <tt>Try</tt></li>
+        <li> Une ligne représentant votre cours a été ajoutée
+        </li>
+        <li> Vous cliquez sur le bouton <tt class="link">Try</tt>.</li>
         <li> Si votre sujet dépend de la place de l'étudiant, alors
-            vous devez cliquer sur «Place» pour vous
+            vous devez cliquer sur <tt class="link">Place</tt> pour vous
             placer sur la bonne chaise et recharger la page contenant le sujet.
         </li>
     </ul>
 
-    <h3>Modification du sujet</h3>
-
+    <h3>Modifier le sujet et paramétrer la session.</h3>
     <ul>
-        <li> Vous cliquez sur «Edit»</li>
-        <li> Vous pouvez alors régler tous les paramètre de la session.</li>
-        <li> Si vous voulez déposer un nouveau fichier vous cliquez sur «Upload a new source»</li>
-        <li> Si vous voulez modifier directement le code source, cliquez sur «Edit source with C5»
-            et faites Ctrl+S pour mettre en production.
+        <li> Sur la page d'accueil de C5, vous cliquez sur <tt class="link">Edit</tt>.</li>
+        <li> Vous pouvez alors régler tous les paramètres de la session.</li>
+        <li> Si vous voulez déposer une nouvelle version du sujet vous cliquez sur <tt class="button">Upload a new
+                source</tt></li>
+        <li> Si vous voulez modifier directement le code source, cliquez sur <tt class="button">Edit source with C5</tt>
+            et faites <tt class="key">Ctrl+S</tt> pour mettre en production.
         </li>
     </ul>
     <p>
-        Ensuite il ne reste qu'à recharger la page «Try» pour voir la nouvelle version.
+        Ensuite il ne reste qu'à recharger la page <tt class="link">Try</tt> pour voir la nouvelle version.
     </p>
 
 
-    <h2>Ajouter des images dans un questionnaire</h2>
+    <h3>Ajouter des images dans un sujet.</h3>
     <p>
-        Une fois sur l'édition de votre session, vous cliquez sur « Upload a new media »
+        Une fois sur l'édition de votre session, vous cliquez sur <tt class="button">Upload a new media</tt>
         cela vous affiche le code HTML à mettre dans la question pour afficher l'image.
         Les images sont partagées entre les différentes sessions.
         Par contre une fois terminée la session ayant enregistrée l'image,
@@ -256,50 +361,53 @@
         Les correcteurs ont bien entendu accès aux images même quand la session
         est terminée.
     </p>
-    <!--
     <p>
-        C5 n'héberge pas de fichiers media pour le moment,
-        il faut donc faire autrement :
+        On peut aussi héberger l'image sur un autre site web.
+        Le tag IMG doit alors contenir <tt>crossorigin</tt>
+        et l'autre site web doit contenir dans le <tt>.htaccess</tt>
+        du répertoire de l'image :
     </p>
+    <pre>Header set Access-Control-Allow-Origin "https://c5.univ-lyon1.fr"</pre>
+    Remplacez par l'adresse de votre serveur C5 et ne mettez PAS le '/' final.
+
+    <!--
     <ul>
         <li> Graphique SVG : on peut directement mettre le code SVG dans le HTML
             de la question.</li>
         <li> Image PNG, transformez l'image <tt>image.png</tt> en HTML avec cette commande shell :
             <pre>echo "&lt;img src=\"data:image/png;base64,$(openssl enc -base64 -A &lt;<b>image.png</b>)\"&gt;"</pre>
         </li>
-        <li> Héberger l'image sur un autre site web.
-            Le tag IMG doit alors contenir <tt>crossorigin</tt>
-            et l'autre site web doit contenir dans le <tt>.htaccess</tt>
-            du répertoire de l'image :
-            <pre>Header set Access-Control-Allow-Origin "https://c5.univ-lyon1.fr"</pre>
-            Remplacez par l'adresse de votre serveur C5 et ne mettez PAS le '/' final.
-        </li>
     </ul>
 -->
 
-    <h2>Attributs de la question</h2>
+    <h2>Outils pour définir question.</h2>
+
+    <h3>Attributs de la question.</h3>
     <ul>
-        <li> <tt>self.worker.execution_result</tt> résultat de l'exécution
+        <li> <tt>self.worker.execution_result</tt> chaîne de caractères
+            contenant le résultat de l'exécution
             une fois toutes les lectures clavier (scanf, input, cin...) faites.</li>
-        <li> <tt>self.worker.source</tt> la réponse de l'étudiant.</li>
-        <li> <tt>self.all_tests_are_fine</tt> vrai au départ puis mis à jour automatiquement
-            par les fonctions utilitaires.
+        <li> <tt>self.worker.source</tt> chaîne de caractères
+            contenant le code source de l'étudiant.</li>
+        <li> <tt>self.all_tests_are_fine</tt> vrai au début de la fonction
+            <tt>tester</tt>, puis mis à jour automatiquement
+            par les fonctions utilitaires en cas d'échec.
         </li>
     </ul>
 
-    <h2>Méthodes et fonctions utilitaires</h2>
+    <h3>Méthodes et fonctions utilitaires.</h3>
     <ul>
         <li> <tt>millisec()</tt> depuis le 1 janvier 1970.</li>
         <li> <tt>self.display(html)</tt> affiche dans la zone de test.</li>
         <li> <tt>self.worker.escape(text)</tt> échappe les balises HTML.</li>
-        <li> <tt>self.next_question()</tt> passage à la question suivante.</li>
+        <li> <tt>self.next_question()</tt> autorise le passage à la question suivante.</li>
         <li> <tt>self.message(bool, message)</tt>
             affiche le message vert si <tt>bool</tt> est vrai, sinon rouge.</li>
-        <li> <tt>self.check(text, [ [re, message], ...])</tt>
+        <li> <tt>self.check(text, [ [regexp, message], ...])</tt>
             affiche les messages vert/rouge en fonction de la présence
-            de <tt>re</tt> dans <tt>text</tt>.
+            de <tt>regexp</tt> dans <tt>text</tt>.
         </li>
-        <li> <tt>self.teacher()</tt> donne le nom de l'enseignant qui surveille l'étudiant.</li>
+        <li> <tt>self.teacher()</tt> retourne le nom de l'enseignant qui surveille l'étudiant.</li>
         <li> <tt>batiment, coord_x, coord_y = self.placement()</tt>
             Permet de récupérer le bâtiment et les coordonnées sur le plan.
         <li> <tt>sujet = self.version()</tt>
@@ -322,7 +430,7 @@ def default_answer(self):
     return ""</pre>
         <li>
             <pre START_OPTIONS DO_NOT_EDIT_HERE>
-options = { # These options are synchronized between GUI and compiler/session
+self.worker.set_options({ # These options are synchronized between GUI and compiler/session
     # ---------------------
     # Frame screen position
     # ---------------------
@@ -332,7 +440,7 @@ options = { # These options are synchronized between GUI and compiler/session
         'editor':      [30, 40, 0,100,'#FFFF'], # Middle     : Source editor
         'compiler':    [70, 30, 0, 30,'#EEFF'], # RightTop   : Compiler messages
         'executor':    [70, 30,30, 70,'#EEFF'], # RightBottom: Execution messages
-        'time':        [80, 20,98,  2,'#0000'], # BottomRight: debugger for admin
+        'time':        [80, 20,98,  2,'#0000'], # BottomRight: Debugger for admin
         'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
         'line_numbers':[100, 1, 0,100,'#EEEF'], # Outside the screen by defaut
         'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
@@ -370,7 +478,6 @@ options = { # These options are synchronized between GUI and compiler/session
     # ------------------------------------
     # Default compiler and session options
     # ------------------------------------
-    'language': 'javascript',                   # A language recognized by hightlightjs
     'allow_copy_paste': CP or GRADING or ADMIN, # True if copy/paste allowed
     'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
     'coloring': COLORING,                       # True if source highlighting is done
@@ -416,7 +523,7 @@ options = { # These options are synchronized between GUI and compiler/session
     'SEQUENTIAL': SEQUENTIAL and not GRADING,   # True if questions are sequential
     'ADMIN': ADMIN,                             # True if administrator
     'STOP': STOP,                               # True if the session is stopped
-}
+})
 </pre>
             <p>
                 Il faut mettre seulement les options qui changent.
@@ -433,83 +540,255 @@ options = { # These options are synchronized between GUI and compiler/session
 
 
 
-    <h2>Langages supportés</h2>
+    <h3>Langages supportés</h3>
     <p>
         Il est nécessaire d'avoir un compilateur du langage écrit en JavaScript :
     </p>
-    <ul>
-        <li> JavaScript: <tt>COMPILE_JS</tt></li>
-        <li> Python: <tt>COMPILE_PYTHON</tt></li>
-        <li> SQL: <tt>COMPILE_SQL</tt></li>
-        <li> C++: <tt>COMPILE_CCP</tt>)
-            ATTENTION : pas de classe, de structure ni de passage par référence.
-        </li>
-        <li> Lisp: <tt>COMPILE_LISP</tt></li>
-        <li> C++: <tt>COMPILE_REMOTE</tt> envoi des requêtes à
-            <tt>compile_server.py</tt> pour compiler avec <tt>gcc</tt> ou<tt>g++</tt>
-            et exécuter. Supporte <tt>cin</tt> mais pas le graphique.
-            Tous les appels systèmes sont interdits (sauf <tt>fstat</tt>, <tt>write</tt>, <tt>read, </tt><tt>lseek</tt>,
-            <tt>exit_group</tt>),
-            donc pas de problème de sécurité.
-            Temps et espace limité pour la compilation et l'exécution.
-        </li>
-        <li> Texte: <tt>COMPILE_TEXT</tt> ce compilateur ne fait rien.</li>
-    </ul>
+    <table class="compilers">
+        <tr>
+            <th> Langage
+            <th> Compilateur
+            <th> Remarque
+            <th> Exemple de cours
+        </tr>
+        <tr>
+            <td> JavaScript
+            <td> compile_js.py
+            <td> Compilation et exécution nativement<br>
+                dans le navigateur web.
+            <td> <a target="_blank" href="COMPILE_JS/introduction.py">COMPILE_JS/<br>introduction.py</a>
+        </tr>
+        <tr>
+            <td> Python
+            <td> compile_python.py
+            <td> Utilise <a target="_blank" href="https://brython.info/">Brython</a>
+                pour compiler<br>
+                et exécuter dans le navigateur web.
+            <td> <a target="_blank" href="COMPILE_PYTHON/introduction.py">COMPILE_PYTHON/<br>introduction.py</a>
+        </tr>
+        <tr>
+            <td> SQL
+            <td> compile_sql.py
+            <td> Utilise <a target="_blank" href="http://alasql.org/">AlaSQL</a>
+                pour compiler<br>
+                et exécuter dans le navigateur web.
+            <td> <a target="_blank" href="COMPILE_SQL/test.py">COMPILE_SQL/<br>test.py</a>
+        </tr>
+        <tr>
+            <td> C++
+            <td> compile_ccp.py
+            <td> Utilise <a target="_blank" href="https://github.com/felixhao28/JSCPP">JSCPP</a>
+                pour compiler<br>
+                et exécuter dans le navigateur web.<br>
+                ATTENTION : pas de classe, structure<br>
+                ni de passage par référence.
+            <td> <a target="_blank" href="COMPILE_CPP/test.py">COMPILE_CPP/<br>test.py</a>
+        </tr>
+        <tr>
+            <td> C++
+            <td> compile_remote.py
+            <td> Il ne compile pas lui-même<br>
+                mais délègue la compilation avec<br>
+                <tt>gcc</tt> ou <tt>g++</tt> ainsi que<br>
+                l'exécution au serveur web.<br>
+                <ul>
+                    <li>Supporte <tt>cin</tt>.</li>
+                    <li>Possibilité de graphiques<br>
+                        interactifs avec <tt>Grapic.h</tt>.</li>
+                    <li>Seul les appels systèmes<br>
+                        non dangereux sont possibles,<br>
+                        pas de problème de sécurité.</li>
+                    <li>Temps et espace limité<br>
+                        pour la compilation<br>
+                        ainsi que l'exécution.</li>
+                </ul>
+            <td> <a target="_blank" href="COMPILE_REMOTE/test.py">COMPILE_REMOTE/<br>test.py</a>
+        </tr>
+        <tr>
+            <td> Racket
+            <td> compile_remote.py
+            <td> Le serveur distant peut aussi<br>
+                exécuter du LISP dans une<br>
+                <em>sandbox</em> d'un processus Racket.
+            <td> <a target="_blank" href="COMPILE_REMOTE/racket.py">COMPILE_REMOTE/<br>racket.py</a>
+        </tr>
+        <tr>
+            <td> Lisp
+            <td> compile_lisp.py
+            <td> Utilise <a target="_blank" href="https://github.com/jcubic/lips">LIPS</a>
+                pour compiler<br>
+                et exécuter dans le navigateur web.
+            <td> <a target="_blank" href="COMPILE_LISP/conway.py">COMPILE_LISP/<br>conway.py</a>
+        </tr>
+        <tr>
+            <td> Texte
+            <td> compile_text.py
+            <td> Ce compilateur ne fait rien.
+            <td> <a target="_blank" href="COMPILE_TEXT/demo.py">COMPILE_TEXT/<br>demo.py</a>
+        </tr>
+    </table>
     <p>
-        Avec COMPILE_REMOTE et COMPILE_LISP la touche F8 permet de
+        Avec <tt>COMPILE_REMOTE</tt> et <tt>COMPILE_LISP</tt>,
+        la touche <tt class="key">F8</tt> permet de
         reformater le code source, mais cela casse le <i>undo</i>.
     </p>
 
-    <h2>Page d'accueil</h2>
+    <h2>Pages d'accueil</h2>
     <p>
         Les utilisateurs sont :
     </p>
     <ul>
-        <li> Les roots qui définissent la configuration globale de C5
-            ainsi que les administrateurs et créateur de session.</li>
+        <li> Les roots qui définissent la configuration globale de C5.</li>
         <li> Les administrateurs qui peuvent modifier toutes les sessions.</li>
-        <li> Les créateur de session.</li>
-        <li> Les administrateurs de session.</li>
+        <li> Les auteurs qui peuvent créer des sessions et définir les administrateurs.</li>
+        <li> Les administrateurs de session qui définissent aussi correcteurs et surveillants.</li>
+        <li> Les surveillants qui placent les étudiants et gèrent le déroulement.</li>
         <li> Les correcteurs de session qui notent les copies.</li>
-        <li> Les surveillants.</li>
         <li> Les étudiants.</li>
     </ul>
     <p>
-        La page d'accueil va être différente pour ces 5 catégories de personnes.
+        La page d'accueil va être différente pour ces différentes catégories de personnes.
     </p>
 
-    <h3>Root C5</h3>
+    <h3>Étudiant.</h3>
+    <img class="screenshot" src="screen-student.svg">
+    <p>
+        L'étudiant voit la liste de toutes les sessions actives.
+        Il doit cliquer sur la bonne si l'enseignant ne lui a pas donné
+        le lien direct.
+    </p>
+    <p>
+        Si la session n'a pas de salle d'attente on considère qu'elle n'est
+        pas en mode examen et que l'étudiant peut directement commencer à travailler.
+        Il se retrouve sur la page avec l'éditeur de source
+        qui est présenté dans la première copie d'écran tout au début.
+    </p>
+    <p>
+        Si la session possède une salle d'attente, cela affiche :
+    </p>
+    <pre>Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen</pre>
+    <p>
+        Quand l'enseignant a placé l'étudiant sur son plan,
+        cela considère l'étudiant présent et il pourra commencer
+        l'examen en rechargeant la page web quand l'heure sera venue.
+        Si l'étudiant recharge avant l'heure, cela lui affiche :
+    </p>
+    <pre>La session d'exercice ou d'examen n'a pas commencé</pre>
+
+    <h3>Root C5.</h3>
+    <img class="screenshot" src="screen-root.svg">
+    <p>
+        L'utilisateur root est celui qui possède tous les droits
+        de paramétrage sur C5.
+    </p>
     <ul>
-        <li> Modification de la liste des roots.</li>
-        <li> Modification de la liste des administrateurs.</li>
+        <li> Modification de la liste des roots.
+            Si aucun utilisateur n'est root alors
+            n'importe peut accéder à la page pour pouvoir
+            s'indiquer lui-même comme root.
+        </li>
+        <li> Modification de la liste des administrateurs
+            pouvant modifier toutes les sessions
+            (les roots sont automatiquement des administrateurs).</li>
+        <li> Modification de la liste des créateurs de session
+            (les administrateurs sont automatiquement des créateurs de sessions).</li>
+        <li> Modification de la liste des éditeurs de plan de bâtiment
+            (les administrateurs sont automatiquement des éditeurs de plan).</li>
         <li> Durée de vie des tickets de session.</li>
-        <li> Liste des noms des machines par salle, une ligne par salle :
+        <li> Liste des noms des machines par salle, une ligne par salle :<br>
             <tt>Bâtiment,Salle Machine1 Machine2 Machine3...</tt>
+        </li>
+        <li> Liste des sessions désactivées par leurs administrateurs afin
+            de les cacher temporairement aux étudiants.
         </li>
         <li> Expression régulière permettant d'identifier les logins étudiants.</li>
         <li> Traduction des différents messages affichés (totalement incomplet).</li>
+        <li> Une zone permettant de saisir du code Python qui sera
+            évalué sur le serveur afin de trouver et corriger des problèmes
+            sans avoir besoin de le redémarrer.
+        </li>
     </ul>
     <p>
         Cette configuration est dans le fichier <tt>c5.cf</tt>
     </p>
 
-    <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-admin.png">
-    <h3>Administrateur C5, Administrateur session, Correcteur et surveillants</h3>
+    <h3>Administrateur C5, Administrateur session, Correcteur et surveillants.</h3>
+    <img class="screenshot" src="screen-admin.svg">
     <p>
-        Ces personnes voient la liste des sessions les concernant :
+        Ces personnes voient la liste des sessions les concernant
+        classée dans différents blocs :
+    </p>
+    <table>
+        <tr>
+            <th colspan="2"> État </th>
+            <th> Proposée à </th>
+            <th> Utilisable par</th>
+        </tr>
+        <tr>
+            <td colspan="2"> <b>Brouillon</b><br><i>Draft</i> </td>
+            <td> Créateur+admins</td>
+            <td> Créateur+admins</td>
+        </tr>
+        <tr>
+            <td rowspan="3"> <b>Prête</b><br><i>Ready</i> </td>
+            <td> Avant </td>
+            <td> Tout le monde</td>
+            <td> Créateur+admins+correcteurs</td>
+        </tr>
+        <tr>
+            <td> Pendant </td>
+            <td> Tout le monde</td>
+            <td> Tout le monde</td>
+        </tr>
+        <tr>
+            <td> Après </td>
+            <td> Tous sauf étudiants<br>Le surveillant doit pouvoir rouvrir</td>
+            <td> Créateur+admins+correcteurs</td>
+        </tr>
+        <tr>
+            <td colspan="2"> <b>Correction</b><br><i>Grade</i> </td>
+            <td> Créateur+admins+correcteurs</td>
+            <td> Créateur+admins+correcteurs</td>
+        </tr>
+        <tr>
+            <td colspan="2"> <b>Terminée</b><br><i>Done</i> </td>
+            <td> Créateur+admins+correcteurs</td>
+            <td> Créateur+admins+correcteurs</td>
+        </tr>
+        <tr>
+            <td colspan="2"> <b>Archivée</b><br><i>Archive</i> </td>
+            <td> Créateur+admins</td>
+            <td> Créateur+admins</td>
+        </tr>
+    </table>
+
+    <p>
+        Chaque bloc contient les informations suivantes :
     </p>
     <ul>
         <li> Nom de la session.</li>
-        <li> Nombre de student qui se sont connectés sur la session.</li>
+        <li> Compilateur utilisé.</li>
+        <li> Nombre d'étudiants qui se sont connectés sur la session.</li>
         <li> Nombre d'étudiants attendant dans la salle d'attente de l'examen.</li>
+        <li> Nombre d'étudiants ayant travaillé il y a moins de 5 minutes.</li>
         <li> Nombre d'étudiants que j'ai placé sur le plan et que je surveille.</li>
         <li> Date de début de session (si vide depuis toujours).</li>
         <li> Date de fin de session (si vide à tout jamais).</li>
-        <li> Si c'est un exam (il y a une salle d'attente pour rentrer).</li>
-        <li> «Edit» permet de configurer la session si on est administrateur.</li>
-        <li> «Try» permet de tester la session (si elle n'est pas ouverte, il faut être administrateur de la session).
+        <li> Options de session :
+            <ul>
+                <li>🎨 coloration syntaxique</li>
+                <li>✂ copier/coller autorisé</li>
+                <li>🚦 mode examen (placement requis)</li>
+                <li>S accès séquenciel des questions</li>
+                <li>🔓 sauver débloque la question suivante</li>
+                <li>IP autorise les changements d'IP.</li>
+            </ul>
         </li>
-        <li> «Place» permet de gérer la salle d'attente, placer les étudiants sur le plan
+        <li> <tt class="link">Edit</tt> permet de configurer la session si on est administrateur.</li>
+        <li> <tt class="link">Try</tt> permet de tester la session (si elle n'est pas ouverte, il faut être
+            administrateur de la session).
+        </li>
+        <li> <tt class="link">Place</tt> permet de gérer la salle d'attente, placer les étudiants sur le plan
             et d'accéder à leur travail pour le corriger.
         </li>
         <li> «Creator» la personne qui a créé la session.</li>
@@ -518,21 +797,36 @@ options = { # These options are synchronized between GUI and compiler/session
             et tester l'examen avant son ouverture la session (en plus des admins).</li>
         <li> «Proctors» les personnes pouvant surveiller l'examen (en plus des correcteurs).</li>
     </ul>
-
-    <p> Ajout d'une nouvelle session.
-        Vous cliquez sur le compilateur puis choisissez le fichier Python
-        définissant la question.
-        Il est conseillé de préfixer le nom du fichier Python
-        par le code de l'UE.
+    <p>
+        Au desssous du tableau on trouve des actions dépendant
+        de la personnes connectée.
     </p>
+    <ul>
+        <li> La possibilité de désactiver un ensemble de sessions.
+            Par exemple pour que les étudiants ne puissent pas aller
+            sur des sessions d'exercices pendant un examen.
+        </li>
+        <li> La possibilité de changer le paramètrage d'un ensemble de sessions
+            afin de ne pas devoir faire la même action sur plein de sessions.
+        </li>
+        <li> Ajout d'une nouvelle session.
+            Vous cliquez sur le compilateur puis choisissez le fichier Python
+            définissant la question.
+            Il est conseillé de préfixer le nom du fichier Python
+            par le code de l'UE.
+        </li>
+        <li> Éditer le plan d'un bâtiment directement sur la page web.</li>
+    </ul>
     <p>
         Cette configuration est enregistrée sous le nom <tt>COMPILE_*/nom_sujet.cf</tt>
         le sujet est dans <tt>COMPILE_*/nom_sujet.py</tt> et les logs des étudiants
         dans le répertoire <tt>COMPILE_*/nom_sujet</tt>.
     </p>
 
-    <h2>Éditeur de session</h2>
-    <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-editor.png">
+    <h2>Les autres pages de C5.</h2>
+
+    <h3>Administrateur : éditeur de session.</h3>
+    <img class="screenshot" src="screen-editor.svg">
     <p>
         Il permet de définir les paramètres de la session en cours
         et de surveiller son déroulement.
@@ -569,20 +863,29 @@ options = { # These options are synchronized between GUI and compiler/session
         Partie droite, en haut des boutons pour :
     </p>
     <ul>
-        <li> Upload new source : permet de remplacer le fichier Python définissant la question.</li>
-        <li> Upload new media : une fois déposé cela affiche ce qu'il faut mettre dans l'énoncé
+        <li> <tt class="button">Upload a new source</tt> :
+            permet de remplacer le fichier Python définissant la question.</li>
+        <li> <tt class="button">Upload new media</tt> :
+            une fois déposé cela affiche ce qu'il faut mettre dans l'énoncé
             pour inclure l'image.</li>
-        <li> Edit source with C5 : permet d'éditer intéractivement le fichier précédent,
-            en faisant Ctrl+S cela le mettra en production.
+        <li> <tt class="button">Edit source with C5</tt> :
+            permet d'éditer intéractivement le fichier précédent,
+            en faisant <tt class="key">Ctrl+S</tt> cela le mettra en production.
         </li>
-        <li> Try the exercises : Essaye le sujet.</li>
-        <li> Place Student : Accès à l'interface pour placer les étudiants sur le plan.</li>
-        <li> See students results : Affiche les détails de la session et permet
+        <li> <tt class="button">Try the exercises</tt> :
+            Essaye le sujet.</li>
+        <li> <tt class="button">Place Student</tt> :
+            Accès à l'interface pour placer les étudiants sur le plan.</li>
+        <li> <tt class="button">See students results</tt> :
+            Affiche les détails de la session et permet
             d'exporter le travaildes étudiants.
         </li>
-        <li> Load full ZIP : charge l'ensemble des fichiers de la session y compris les logs.</li>
-        <li> Rename session : renomme une session. <b>Personne ne doit être en train de travailler dessus.</b></li>
-        <li> Delete <b>ALL</b> : détruit complètement la session et les logs.</li>
+        <li> <tt class="button">Load full ZIP</tt> :
+            charge l'ensemble des fichiers de la session y compris les logs.</li>
+        <li> <tt class="button">Rename session</tt> :
+            renomme une session. <b>Personne ne doit être en train de travailler dessus.</b></li>
+        <li> <tt class="button">Delete <b>ALL</b></tt> :
+            détruit complètement la session et les logs.</li>
     </ul>
     <p>
         Partie droite, au dessous des boutons :
@@ -597,14 +900,31 @@ options = { # These options are synchronized between GUI and compiler/session
     </ul>
 
 
-    <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-course.png">
-    <h2>Administrateur : détails d'une session</h2>
+    <h3>Administrateur : analyse d'une session.</h3>
+    <img class="screenshot" src="screen-course.svg">
     <p>
-        Les administrateurs de session peuvent regarder le détails de tous les cours.
+        Les administrateurs de session peuvent regarder le détail de la session.
         Pour chaque étudiant on a le détail et le résumé de toute
         la colonne sur la dernière ligne (importable directement dans TOMUSS).
     </p>
     <ul>
+        <li> L'identifiant de l'étudiant.
+            Si l'on clique dessus on arrive sur le plan du bâtiment
+            avec un zoom sur l'étudiant.
+        </li>
+        <li>
+            Le temps supplémentaire en minutes accordé par le surveillant.
+        </li>
+        <li>
+            Le status de l'étudiant :
+            <ul>
+                <li> En salle d'attente, il ne peut pas encore commencer.</li>
+                <li> En attente de début d'examen.</li>
+                <li> L'examen est en cours.</li>
+                <li> L'examen est fini sauf pour les tiers-temps.</li>
+                <li> L'examen est terminé.</li>
+            </ul>
+        </li>
         <li> Les questions réussies et leur nombre.
             En bas le code source des questions réussies ou des questions sauvegardées.
         </li>
@@ -616,7 +936,7 @@ options = { # These options are synchronized between GUI and compiler/session
         </li>
         <li>
             Le temps total pour faire l'examen en ajoutant la durée de chaque question
-            et ne comptant pas les arrêts de travail.
+            et en ne comptant pas les arrêts de travail.
         </li>
         <li>
             Nombre de touches frappées, de clics de souris, de 'copié' de texte,
@@ -635,32 +955,53 @@ options = { # These options are synchronized between GUI and compiler/session
             très exactement tout ce qu'il a fait.
         </li>
     </ul>
-
-    <img style="position: absolute; left: calc(var(--body) + 1em)" src="screen-checkpoint.png">
-    <h2>Surveillant</h2>
-    <img style="float: right" src="screen-teacher-list.png">
     <p>
-        Quand un surveillant (non administrateur) arrive sur C5
-        on lui liste tous les examens présents et futurs pour lesquels
-        il est surveillant.
-        Il clique alors sur <tt>Checkpoint</tt> pour gérer la salle d'attente.
+        Au dessous de la table, les listes des étudiants qui n'ont pas
+        été corrigés ou bien avec une correction incomplète.
+        Les listes sont aussi affichées en triant par correcteur.
+    </p>
+
+    <h3>Surveillant : placement des étudiants.</h3>
+    <img class="screenshot" src="screen-checkpoint.svg">
+    <p>
+        Le surveillant voit la liste des sessions qu'il doit surveiller,
+        Il clique alors sur <tt class="link">Place</tt> pour gérer la salle d'attente.
         Les enseignants peuvent tester la session même s'ils n'ont pas
         été placés sur le plan.
     </p>
     <p>
-        La salle d'attente affiche en haut de l'écran :
+        La salle d'attente affiche un menu à gauche de l'écran :
     </p>
     <ul>
         <li> ⟳ : force la mise à jour (elle est faite automatiquement toutes les minutes).</li>
-        <li> Nom de la session en cours.</li>
-        <li> Liste des plans des bâtiments.</li>
-        <li> Un gyrophare permettant d'afficher un message sur tous
+        <li> Un gyrophare 🚨 permet d'afficher un message sur tous
             les plans des surveillants.
-            Il y a un message en bas à droite de la copie d'écran.
-            Il est masquable avec le bouton ×.
+            Les messages sont affichés en bas à droite du plan.
+            Ils sont masquable avec le bouton ×.
         </li>
-        <li> Liste des étudiants qui n'ont pas été acceptés pour commencer l'examen.
-            Il faut les faire glisser sur une chaise sur le plan.
+        <li> La loupe 🔍 permet de zoomer sur l'étudiants dont on donne
+            le <b>début</b> du nom, prénom ou numéro d'étudiant.
+            Si plusieurs sont possibles, un menu est proposé.
+        </li>
+        <li> Liste des plans des bâtiments.
+            Le bâtiment initial affiché peut être choisi par l'administrateur
+            de la session.
+        </li>
+        <li> « Seulement les salles » permet de n'afficher que les
+            salles qui contiennent des étudiants que l'on a placé.
+            C'est utile pour retrouver ses étudiants ou bien si l'on
+            surveilles 2 salles éloignées car elles seront rapprochées
+            l'une de l'autre.
+            Cette fonctionnalité peut être (dés)activée par
+            l'administrateur de la session.
+        </li>
+        <li> « Mettre en évidence les logins » permet d'afficher en au de
+            la liste les étudiants dont le login est indiqué dans la liste.
+            Cette fonctionnalité peut être (dés)activée par
+            l'administrateur de la session.
+        </li>
+        <li> Liste des étudiants qui n'ont pas encore été acceptés pour commencer l'examen.
+            Il faut les faire glisser sur le sujet Ⓐ ou Ⓑ ou bien sur une chaise.
             Si le lien entre les noms des machines et les salles a été fait dans
             la configuration alors seul les étudiants présents dans les
             salles affichées complètement (pas à moitié) sur l'écran
@@ -669,29 +1010,47 @@ options = { # These options are synchronized between GUI and compiler/session
             pas pendant que le plan bouge sur l'écran.
         </li>
         <li>
-            Si l'étudiant a été noté, sa note est indiquée.
+            Le haut du plan contient la légende et comment l'utiliser.
+            Cette longue légende n'est pas présente sur la copie d'écran.
         </li>
     </ul>
     <p>
-        Le haut du plan contient la légende et comment l'utiliser.
-        Les surveillants normaux ne voient que leurs étudiants,
-        les administrateurs voient tous les étudiants passant l'examen.
-    </p>
     <p>
         Les ordinateurs en rouge sont ceux avec un problème,
         les surveillants peuvent déclarer les problèmes
         et on peut aussi indiquer que le poste a été réparé.
     </p>
-    <p>
-        Les étudiants qui changent de fenêtres pendant l'examen sont
-        mis en évidence sur cette vue avec un barre de progression rouge
-        indiquant le nombre de changements de fenêtres.
     </p>
     <p>
-        Au dessous de la barre de progression rouge il y a un barre verte
-        indiquant le nombre de questions réussies dans la suite d'exercices.
+        Concernant l'étudiant placé sur le plan :
     </p>
-    <img src="screen-time-travel.png" style="position: absolute; left: calc(var(--body) + 1em)">
+    <ul>
+        <li>
+            Les étudiants qui changent de fenêtres pendant l'examen sont
+            mis en évidence sur cette vue avec un barre de progression rouge
+            indiquant le nombre de changements de fenêtres.
+        </li>
+        <li>
+            Au dessous de la barre de progression rouge il y a un barre verte
+            indiquant le nombre de questions réussies dans la suite d'exercices.
+        </li>
+        <li>
+            Si l'étudiant a été noté, sa note est indiquée ainsi
+            que le nombre d'éléments notés.
+        </li>
+        <li>
+            La couleur de l'étudiant indique :
+            <ul>
+                <li> Gris : surveillé par un autre enseignant.</li>
+                <li> Noir : travaille avec vous.</li>
+                <li> Bleu : n'a rien fait depuis 5 minutes.</li>
+                <li> Vert : examen clôturé</li>
+                <li> Rouge : Placé dans la mauvaise salle.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <img src="screen-spy.svg" class="screenshot">
     <p>
         Quand on clique sur un étudiant on peut accéder à la dernière
         version de son travail.
@@ -711,12 +1070,25 @@ options = { # These options are synchronized between GUI and compiler/session
         Le bouton «Clôturer examen» doit être utilisé quand il quitte
         la salle afin qu'il ne puisse pas continuer l'examen à l'extérieur.
         L'étudiant a un bouton «Terminer Examen» sur l'éditeur de source pour terminer l'examen.
+        Une fois l'examen clôturé, le bouton devient «Rouvrir l'examen».
+    </p>
+    <p>
+        On peut indiquer le temps bonus total pour que l'étudiant
+        termine l'examen.
+        C'est utile si l'étudiant arrive en retard ou bien s'il y a
+        un problème technique pendant l'examen.
+        Les tiers-temps ont automatiquement du temps en plus
+        qui n'apparaît pas ici.
+    </p>
+    <p>
+        Ont ferme la popup en cliquant sur × ou bien en appuyant
+        sur la touche escape.
     </p>
     <p>
         Le bouton «Noter l'étudiant» permet de noter le source de l'étudiant :
     </p>
     <ul>
-        <li> Le source ayant passé le test.</li>
+        <li> Le source ayant passé les tests de régression.</li>
         <li> Le source sauvegardé par l'étudiant.</li>
         <li> Le source compilé avec <tt>compile_remote</tt>.</li>
         <li> Si aucun des précédents : le source qui était sur
@@ -724,7 +1096,8 @@ options = { # These options are synchronized between GUI and compiler/session
         </li>
     </ul>
 
-    <h2>Le correcteur</h2>
+    <h3>Correcteur : notes, commentaires et retours.</h3>
+    <img src="screen-grade.svg" class="screenshot">
     <p>
         Il clique sur l'étudiant placé et arrive sur l'éditeur C5
         avec le barème de notation affiché.
@@ -741,25 +1114,30 @@ options = { # These options are synchronized between GUI and compiler/session
         Le correcteur peut essayer le code de l'étudiant pour le tester
         et même le modifier temporairement pour voir ce que cela donne.
     </p>
-
-    <h2>Étudiant</h2>
-    <img style="float: right" src="screen-student.png">
     <p>
-        L'étudiant voit la liste de tous les examens en cours et à venir.
-        Il doit cliquer sur le bon si l'enseignant ne lui a pas donné
-        le lien direct.
+        Le correcteur peut décider de corriger autre chose que la
+        dernière version sauvegardée par l'étudiant :
     </p>
-    <p>
-        Une fois sur le cours, si celui-ci a une salle d'attente,
-        cela affiche «Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen»
-    </p>
+    <ul>
+        <li> La dernière compilation faite, mais seulement
+            si c'est un session avec le compilateur REMOTE.</li>
+        <li> La version qui a passé les tests de régression la première fois,
+            sans les améliorations que l'étudiant aurait pu ajouter après.
+        </li>
+        <li> La sauvegarde de dernière seconde qui est faite automatiquement
+            par C5 10 secondes avant la fin de l'examen si l'étudiant
+            n'a pas sauvegardé lui-même la minute précédente.            
+        </li>
+    </ul>
 
-    <h2>Installer C5</h2>
+    <h2>Installation et administration de C5.</h2>
+
+    <h3>Installer C5.</h3>
     <p>
         Lancez ces commandes (Ubuntu) :
     </p>
-    <pre>apt update
-apt install python3-websockets python3-aiohttp astyle curl npm racket # nginx certbot
+    <pre>sudo apt update
+sudo apt install python3-websockets python3-aiohttp astyle curl npm racket # nginx certbot
 git clone https://github.com/texcoffier/C5.git
 cd C5
 make</pre>
@@ -767,7 +1145,7 @@ make</pre>
         Si tout s'est bien passé, une page web s'ouvre sur l'interface d'administration.
         Vous pouvez alors cliquer sur «Session» pour choisir une session.
     </p>
-    <h2>Configuration et gestion C5</h2>
+    <h3>Configuration et gestion C5.</h3>
     <p>
         La configuration de C5 est un script exécutable, vous pouvez en créer
         autant que vous voulez.
@@ -806,7 +1184,7 @@ make</pre>
         <li> <tt>./c5 cp ; ./c5 restart</tt> Mise à jour d'une nouvelle version à partir des sources locaux</li>
     </ul>
 
-    <h2>Configuration NGINX</h2>
+    <h3>Configuration NGINX.</h3>
     <p>
         Il faut remplacer /WebSocket/, 4201, 4202 par les bonnes valeurs.
     </p>
@@ -831,7 +1209,10 @@ server {
         }
   }
             </pre>
-    <h2>Organisation des sources</h2>
+
+    <h2>Développement de C5.</h2>
+
+    <h3>Organisation des sources.</h3>
     <p>
         Légende :
     </p>
@@ -877,8 +1258,8 @@ server {
         </tr>
         <tr class="">
             <td>COMPILE_PYTHON/editor.py
-            <td>C'est l'éditeur interactif de questionnaire.
-                Les questionnaires étant écrits en Python,
+            <td>C'est l'éditeur interactif de sujet.
+                Les sujets étant écrits en Python,
                 il est nécessaire de les éditer et tester
                 dans l'environnement Python.
         </tr>
@@ -932,16 +1313,17 @@ server {
         </tr>
         <tr>
             <td>DOCUMENTATION/<br>
-                screen-admin.png<br>
-                screen-checkpoint.png<br>
-                screen-course.png<br>
-                screen-editor.png<br>
-                screen-python.png<br>
+                screen-admin.(png|svg)<br>
+                screen-checkpoint.(png|svg)<br>
+                screen-course.(png|svg)<br>
+                screen-editor.(png|svg)<br>
+                screen-grading.(png|svg)<br>
+                screen-python.(png|svg)<br>
+                screen-root.(png|svg)<br>
                 screen-src.png<br>
-                screen-student.png<br>
-                screen-teacher-list.png<br>
-                screen-time-travel.png
-            <td>Copies d'écran pour cette page.
+                screen-student.(png|svg)<br>
+                screen-time-travel.(png|svg)
+            <td>Graphiques utilisées par la documentation.
         </tr>
         <tr>
             <td>
@@ -1111,7 +1493,7 @@ server {
         </tr>
     </table>
 
-    <h2>Organisation des fichiers générés</h2>
+    <h3>Organisation des fichiers générés.</h3>
     <p>
         Les fichiers de configurations se terminent tous par <tt>.cf</tt>
         et contiennent une expression Python :
@@ -1175,7 +1557,7 @@ server {
     </ul>
 
 
-    <h2>Tests de régression</h2>
+    <h3>Tests de régression.</h3>
     <p>
         Installer les paquets :
     </p>
@@ -1213,7 +1595,7 @@ server {
             Affiche source étudiant : bascule entre le mode ascenseur temporel et tout le code.
         </li>
         <li>
-            Le questionnaire doit pouvoir définir dans les options le nombre de sujets qu'il permet.
+            Le sujet doit pouvoir définir dans les options le nombre de sujets qu'il permet.
         </li>
         <li>
             Désactiver intéractivement la sauvegarde des INPUTs ?
@@ -1236,7 +1618,7 @@ server {
             Détruire une sauvegarde.
         </li>
         <li>
-            Gestion des versions des sources des questionnaires.
+            Gestion des versions des sources des sujets.
             Même s'ils sont modifiés par plusieurs personnes.
         </li>
         <li>
@@ -1247,5 +1629,32 @@ server {
             qui sera affichée à l'étudiant et permettra de garder
             des noms de sessions courts.
         </li>
+        <li>
+            Faire en sorte que <tt class="key">Ctrl+Z</tt> fonctionne après le reformatage du code.
+        </li>
     </ul>
+
+    <script>
+        content = [];
+        what = {
+            'H2': ['<b>', '</b>'],
+            'H3': ['    ', '']
+        };
+        i = 0;
+        for (element = document.body.firstChild; element; element = element.nextSibling)
+            if (what[element.tagName]) {
+                content.push(
+                    what[element.tagName][0]
+                    + '<a href="#' + i + '">'
+                    + element.innerHTML
+                    + what[element.tagName][1]
+                    + '</a><br>'
+                );
+                element.innerHTML = '<a name="' + i + '">' + element.innerHTML + '</a>';
+                i++;
+            }
+        document.getElementById('toc').innerHTML = content.join('');
+
+
+    </script>
 </body>

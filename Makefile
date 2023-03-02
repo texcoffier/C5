@@ -97,7 +97,8 @@ DOCUMENTATION/index.html:ccccc.py Makefile
 	cp -a DOCUMENTATION/index.html xxx.orig
 	sed -n '/options = {/,/^    }/p' <ccccc.py | \
 		sed -e 's/    //' -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
-		>xxx.options
+		    -e 's/^options = /self.worker.set_options(/' -e 's/^}/})/' \
+			>xxx.options
 	awk '/START_OPTIONS/ { D=1; print $$0; next; } \
 	     D==1 && /<\/pre>/ { system("cat xxx.options"); D=0; } \
 		 D==0 { print($$0); }' <xxx.orig >DOCUMENTATION/index.html
