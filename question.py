@@ -51,7 +51,7 @@ class Question:
         return (building, int(coord_x), int(coord_y))
     def version(self):
         """Return 'a' or 'b'"""
-        return self.worker.options.WHERE[2].split(',')[3]
+        return self.worker.options.WHERE[2].split(',')[3] or 'a'
     def teacher(self):
         """Room managing Teacher"""
         return self.worker.options.WHERE[1]

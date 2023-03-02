@@ -16,7 +16,7 @@ def dict_values():
     """Dicts values"""
     THIS = eval('this') # pylint: disable=eval-used
     return [THIS[i] for i in THIS] # pylint: disable=undefined-variable
-Object.defineProperty(Object.prototype, 'values',
+Object.defineProperty(Object.prototype, 'Values',
                       {'enumerable': False, 'value': dict_values})
 def dict_items():
     """Dict items"""

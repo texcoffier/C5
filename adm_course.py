@@ -276,7 +276,7 @@ TABLE TR:hover TD { background: #EEE }
 
     by_teacher = {}
     partially_graded = []
-    nr_grades_max = max(*nr_grades.values())
+    nr_grades_max = max(*nr_grades.Values())
     for login, nrg in nr_grades.Items():
         if nrg and nrg < nr_grades_max:
             partially_graded.append(login)
@@ -294,7 +294,7 @@ TABLE TR:hover TD { background: #EEE }
         text.append('</tr>')
 
     partially_graded = []
-    nr_grades_max = max(*nr_grades.values())
+    nr_grades_max = max(*nr_grades.Values())
     for login, nrg in nr_grades.Items():
         if nrg and nrg < nr_grades_max - 1:
             partially_graded.append(login)

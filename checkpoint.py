@@ -210,7 +210,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.lines[line] = chars
     def put_students_in_rooms(self):
         """Create the list of student per room"""
-        for room in self.rooms.values():
+        for room in self.rooms.Values():
             room['students'] = []
             room['teachers'] = []
         for student in self.students:
@@ -219,7 +219,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 teachers = self.rooms[student.short_room_name]['teachers']
                 if student.teacher not in teachers:
                     teachers.append(student.teacher)
-        for room in self.rooms.values():
+        for room in self.rooms.Values():
             room['teachers'].sort()
             room['teachers'] = ' '.join(room['teachers'])
     def update_sizes(self, size):
@@ -628,7 +628,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.fillStyle = "#000"
         size = self.scale * 0.5
         ctx.font = size + "px sans-serif"
-        for room in self.rooms.values():
+        for room in self.rooms.Values():
             if room['teachers']:
                 column, line = room['label']
                 if (self.lines_height[2*line] < 0.5
