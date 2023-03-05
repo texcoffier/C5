@@ -1120,16 +1120,19 @@ def create_page(building_name):
         #top .course { font-size: 150%; }
         #top SELECT { font-size: 150%; }
         #top .drag_and_drop { display: inline-block }
-        #spy { position: absolute; left: 0% ; top: 0% ; right: 0%; bottom: 0%;
+        #spy { position: absolute; left: 9% ; top: 5% ; right: 1%; bottom: 5%;
                display: none; background: #FFF; opacity: 0.95; overflow: auto;
-               padding: 1em; font-size: 150%; z-index: 3
+               padding: 0px; font-size: 150%; z-index: 3;
+               border:0.5em solid #000;
              }
-        #spy BUTTON { font-size: 150%; }
+        #spy BUTTON, #spy INPUT { font-size: 100%; }
+        #spy INPUT { font-family: monospace,monospace; width: 2em }
         #spy .source {  white-space: pre; }
         .spytop {
             position: fixed;
-            width: calc(100% - 1em);
-            background: #FFF8;
+            width: calc(90% - 2em);
+            background: #FFFC;
+            padding: 0.2em;
         }
         #source { margin-top: 7em }
         .icon { font-size: 200% ; display: inline-block; font-family: emoji;
@@ -1342,7 +1345,10 @@ def spy_it(event=None):
     last = spy.sources[-1][0]
     width = last - first
     if event:
-        time = first + width * (event.clientX - time_bar.offsetLeft) / time_bar.offsetWidth
+        time = (first
+            + width
+            * (event.clientX - time_bar.offsetLeft - time_bar.parentNode.offsetLeft)
+            / time_bar.offsetWidth)
         source = None # To please pylint
         last_source = None
         for source in spy.sources:
@@ -1402,16 +1408,16 @@ def spy(sources, login, infos):
         state = '<button onclick="close_exam(\'' + login + '\')">Clôturer examen</button>'
     else:
         state = '<button onclick="open_exam(\'' + login + '\')">Rouvrir examen</button>'
-    if not student.good_room:
+    if not student.good_room and student.active:
         state += ' (Adresse IP dans la mauvaise salle)'
 
     div = document.getElementById('spy')
     content = [
         '<div class="spytop">',
-        '<button onclick="spy_close()">Fermer</button> ',
-        login, ' ', infos.fn, ' ', infos.sn, ' ', state,
-        '(<input onchange="set_time_bonus(this,\'' + login,
-        '\')" value="', student.bonus_time/60, '">Minutes bonus)',
+        '<button class="closepopup" onclick="spy_close()">×</button> ',
+        login, ' ', infos.fn, ' ', infos.sn, ', ', state,
+        ', <input onchange="set_time_bonus(this,\'' + login,
+        '\')" value="', student.bonus_time/60, '">minutes bonus, ',
         '<button onclick="window.open(\'/grade/', COURSE, '/', login, '?ticket=', TICKET,
         "')\">Noter l'étudiant</button>",
         '<div id="time" onmousedown="spy_it(event)"',
