@@ -369,7 +369,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """The computer problems menu"""
         x_pos, y_pos, x_size, y_size = self.xys(self.selected_computer[1] - 0.5,
                                                 self.selected_computer[2] - 0.5)
-        ctx.fillStyle = "#FFF"
+        ctx.fillStyle = "#FFC"
         ctx.globalAlpha = 0.9
         ctx.fillRect(x_pos, y_pos, x_size, y_size)
         ctx.fillRect(x_pos + self.scale, y_pos, MENU_WIDTH*self.scale, MENU_HEIGHT*self.scale)
