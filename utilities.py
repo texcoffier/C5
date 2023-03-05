@@ -767,15 +767,9 @@ class Session:
     def is_grader(self, course:CourseConfig) -> bool:
         """The user is course grader"""
         return course.is_grader(self.login) or CONFIG.is_admin(self.login)
-    def is_course_grader(self, course:CourseConfig) -> bool:
-        """The user is course grader"""
-        return course.is_grader(self.login)
     def is_proctor(self, course:CourseConfig) -> bool:
         """The user is course proctor"""
         return course.is_proctor(self.login) or CONFIG.is_admin(self.login)
-    def is_course_proctor(self, course:CourseConfig) -> bool:
-        """The user is course proctor"""
-        return course.is_proctor(self.login)
     def is_root(self) -> bool:
         """The user is C5 root"""
         return CONFIG.is_root(self.login)

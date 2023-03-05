@@ -721,8 +721,9 @@ return sum ;
         self.goto(f'grade/REMOTE=test/{student}')
         self.check('BODY', {'innerText': Contains('surveillez pas')})
         with self.admin_rights():
-            self.goto(f'grade/REMOTE=test/{student}')
-            self.check_alert('pas autorisé à noter', accept=True, required=True)
+            # admin is allowed to grade
+            # self.goto(f'grade/REMOTE=test/{student}')
+            # self.check_alert('pas autorisé à noter', accept=True, required=True)
 
             self.goto('adm/session/REMOTE=test')
             self.move_cursor('#graders')

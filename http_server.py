@@ -322,7 +322,7 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
 async def record_grade(request:Request) -> Response:
     """Log a grade"""
     session, course = await get_teacher_login_and_course(request)
-    is_grader = session.is_course_grader(course)
+    is_grader = session.is_grader(course)
     if not is_grader:
         return answer("window.parent.ccccc.record_not_done(\"Vous n'êtes pas autorisé à noter.\")")
     post = await request.post()
@@ -355,7 +355,7 @@ async def record_grade(request:Request) -> Response:
 async def record_comment(request:Request) -> Response:
     """Log a comment"""
     session, course = await get_teacher_login_and_course(request)
-    is_grader = session.is_course_grader(course)
+    is_grader = session.is_grader(course)
     if not is_grader:
         return answer("alert('Vous n'êtes pas autorisé à noter.')")
     post = await request.post()
