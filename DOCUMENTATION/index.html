@@ -1126,7 +1126,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         </li>
         <li> La sauvegarde de dernière seconde qui est faite automatiquement
             par C5 10 secondes avant la fin de l'examen si l'étudiant
-            n'a pas sauvegardé lui-même la minute précédente.            
+            n'a pas sauvegardé lui-même la minute précédente.
         </li>
     </ul>
 
@@ -1575,41 +1575,33 @@ server {
         Le résumé est dans <tt>tests.log</tt>
     </p>
     <h2>TODO</h2>
-    <p>
-        Fonctionnalités manquantes :
-    </p>
+    <p>Fonctionnalités manquantes dans l'éditeur :</p>
     <ul>
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
         <li> Affichage d'un corrigé aux étudiants.</li>
-        <li> Affichage de seulement ses sujets.</li>
-        <li> Exportation vers TOMUSS dans une colonne de type Notation.</li>
-        <li> Ajout du barème aux questions (en plus du barème global).</li>
+        <li> Session terminée mais accessible en mode consultation par l'étudiant.</li>
         <li> Choix du thème de coloriage syntaxique par l'étudiant.</li>
         <li> Icone pour passer en plein écran.</li>
-        <li>
-            Option pour désactiver la toute première compilation quand
+        <li> Option pour désactiver la toute première compilation quand
             la compilation automatique est désactivée.
             C'est complexe à faire.
         </li>
-        <li>
-            Affiche source étudiant : bascule entre le mode ascenseur temporel et tout le code.
+        <li> Désactiver intéractivement la sauvegarde des INPUTs ?</li>
+        <li> Gestion des versions des sources des sujets.
+            Même s'ils sont modifiés par plusieurs personnes.
         </li>
         <li>
-            Le sujet doit pouvoir définir dans les options le nombre de sujets qu'il permet.
+            Faire en sorte que <tt class="key">Ctrl+Z</tt> fonctionne après le reformatage du code.
         </li>
+    </ul>
+    <p>Fonctionnalités manquantes dans le checkpoint (placement) :</p>
+    <ul>
         <li>
-            Désactiver intéractivement la sauvegarde des INPUTs ?
+            Affiche source étudiant : bascule entre le mode ascenseur temporel et
+            les dernières réponses à toutes les questions.
         </li>
         <li>
             ZIP des étudiants d'une salle.
-        </li>
-        <li>
-            Session terminée mais accessible en mode consultation.
-        </li>
-        <li>
-            Le protocole d'échange avec '\001' n'est pas fiable
-            car il ne distingue pas les débuts et fins de message et
-            donc rend impossible une lecture du pipe sans jamais une erreur.
         </li>
         <li>
             Associer par apprentissage les adresses IP aux places sur le plan.
@@ -1617,22 +1609,42 @@ server {
         <li>
             Détruire une sauvegarde.
         </li>
+    </ul>
+    <p>Fonctionnalités manquantes dans la modélisation du sujet :</p>
+    <ul>
         <li>
-            Gestion des versions des sources des sujets.
-            Même s'ils sont modifiés par plusieurs personnes.
-        </li>
-        <li>
-            Regrouper editor+overlay+line pour tout scroller en même temps.
+            Le sujet doit pouvoir définir dans les options le nombre de sujets qu'il permet.
         </li>
         <li>
             Ajouter une description à la session (dans le code source ?)
             qui sera affichée à l'étudiant et permettra de garder
             des noms de sessions courts.
         </li>
+    </ul>
+    <p>Dette technique :</p>
+    <ul>
         <li>
-            Faire en sorte que <tt class="key">Ctrl+Z</tt> fonctionne après le reformatage du code.
+            Le protocole d'échange avec '\001' n'est pas fiable
+            car il ne distingue pas les débuts et fins de message et
+            donc rend impossible une lecture du pipe sans jamais une erreur.
+        </li>
+        <li>
+            Regrouper editor+overlay+line pour tout scroller en même temps.
         </li>
     </ul>
+    <p>Fonctionnalités manquantes de la page d'accueil :</p>
+    <ul>
+        <li> Affichage de seulement ses sujets.</li>
+    </ul>
+    <p>Fonctionnalités manquantes de la page d'analyse de cours :</p>
+    <ul>
+        <li> Exportation vers TOMUSS dans une colonne de type Notation.</li>
+    </ul>
+    <p>Fonctionnalités manquantes de la page de notation :</p>
+    <ul>
+        <li> Ajout du barème aux questions (en plus du barème global).</li>
+    </ul>
+
 
     <script>
         content = [];
