@@ -380,6 +380,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             return 'pending'
         if now < self.get_stop(login):
             return 'running'
+        if self.checkpoint:
+            active_teacher_room = self.active_teacher_room.get(login, None)
+            if not active_teacher_room or active_teacher_room[1] == '':
+                return 'checkpoint'
         return 'done'
 
     def running(self, login:str, client_ip:str=None) -> bool:
