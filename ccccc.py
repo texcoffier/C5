@@ -984,7 +984,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9'):
             return
         self.record(event.key or 'null')
-        self.clear_highlight_errors()
+        if event.target is self.editor:
+            self.clear_highlight_errors()
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
             event.preventDefault(True)
