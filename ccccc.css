@@ -148,6 +148,9 @@ DIV.executor > DIV:first-child
     font-size: 80%;
     pointer-events: all;
 }
+.comments TEXTAREA:hover {
+    opacity: 1;
+}
 
 .comments TEXTAREA.empty {
     width: 1vw;
