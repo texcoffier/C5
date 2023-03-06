@@ -130,10 +130,11 @@ def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-stat
     text = ["""<!DOCTYPE html>
 <style>
 BODY { font-family: sans-serif; }
-TABLE { border-spacing: 0px; border-collapse: collapse }
+TABLE { border-spacing: 0px; }
 TABLE TD { vertical-align: top; border: 1px solid #888; padding: 0px; white-space: pre}
 BUTTON { width: 100% }
 E { font-family: emoji }
+TABLE#report TR:first-child, TABLE#TOMUSS TR:first-child { position: sticky; top: 0px; background: #FFFD; }
 TABLE TR:hover TD { background: #EEE }
 BUTTON.download { width: calc(100% - 2px); font-size: 150%; height: 1.5em; margin: 1px;}
 DIALOG { position: fixed; right: 0px; top: 0px; border: 4px solid #0F0 }
@@ -346,10 +347,10 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
     <ul>
     <li> Passez une colonne TOMUSS dans le type «Notation»
     <li> Cliquez sur «Importer» (en rouge)
-    <li> Faite un copier/coller de la table suivante dans la zone blanche.
+    <li> Faite un copier/coller de la table suivante complète dans la zone blanche.
     <li> Cliquer sur le bouton «Importer les détails de notation»
     </ul>
-    <table><tr><td>ID<td>Nom<td>Prénom""")
+    <table id="TOMUSS"><tr><td>ID<td>Nom<td>Prénom""")
     labels = {}
     for infos in notation:
         _text, grade_label, values = infos
