@@ -328,7 +328,7 @@ async def record_grade(request:Request) -> Response:
     post = await request.post()
     login = str(post['student'])
     if not os.path.exists(f'{course.dirname}/{login}'):
-        return answer("window.parent.ccccc.record_not_done(\"Hacker?\")")
+        return answer("window.parent.ccccc.record_not_done(\"Aucun travail à noter.\")")
     grade_file = f'{course.dirname}/{login}/grades.log'
     if 'grade' in post:
         with open(grade_file, "a", encoding='utf-8') as file:
@@ -361,7 +361,7 @@ async def record_comment(request:Request) -> Response:
     post = await request.post()
     login = str(post['student'])
     if not os.path.exists(f'{course.dirname}/{login}'):
-        return answer("Hacker?")
+        return answer("Aucun travail à commenter.")
     comment_file = f'{course.dirname}/{login}/comments.log'
     if 'comment' in post:
         with open(comment_file, "a", encoding='utf-8') as file:
