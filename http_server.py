@@ -1209,7 +1209,7 @@ def checkpoint_table(session:Session, courses:List[CourseConfig],
 async def checkpoint_list(request:Request) -> Response:
     """Page with all checkpoints"""
     session = await Session.get_or_fail(request)
-    titles = '''<tr><th>Session<th>Comp<br>iler
+    titles = '''<tr class="sticky2"><th>Session<th>Comp<br>iler
         <th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
         <th>Start date<th>Stop date<th>Options<th>Edit<th>Try<th>Waiting<br>Room
         <th>Creator<th>Admins<th>Graders<th>Proctors</tr>'''
@@ -1236,7 +1236,7 @@ async def checkpoint_list(request:Request) -> Response:
             }
         TD { vertical-align: top }
         TD.names DIV { width: 6em ; }
-        TD.tipped DIV { white-space: nowrap; overflow: hidden }
+        TD.tipped DIV { white-space: nowrap; overflow: hidden; z-index: 1 }
         TD.tipped:hover DIV { background: #FFE ; overflow: visible; position: absolute;
                               white-space: normal; margin-left: 3em; border: 1px solid #880;
                               margin-top: -1em; width: 10em; padding: 0.5em; }
@@ -1253,6 +1253,8 @@ async def checkpoint_list(request:Request) -> Response:
         SPAN:hover VAR { display: block }
         SPAN:hover { background: #FF0 }
         BUTTON { font-size: 100% }
+        .sticky { position: sticky; top: 0px; }
+        .sticky2 { position: sticky; top: 1.6em; }
         </style>
         <table>''']
     def hide_header():
@@ -1261,7 +1263,7 @@ async def checkpoint_list(request:Request) -> Response:
             content[-1] = content[-1].replace('<th', '<th style="color:#AAF"')
     def add_header(label):
         hide_header()
-        content.append(f'<tr><th class="header" colspan="{titles.count("th")}">{label}</tr>')
+        content.append(f'<tr class="sticky"><th class="header" colspan="{titles.count("th")}">{label}</tr>')
         content.append(titles)
     CourseConfig.load_all_configs()
     now = time.time()
