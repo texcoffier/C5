@@ -439,6 +439,9 @@ async def adm_course(request:Request) -> Response:
 
             with open(f'{course.dirname}/{user}/grades.log', encoding='utf-8') as file:
                 student['grades'] = file.read()
+
+            with open(f'{course.dirname}/{user}/comments.log', encoding='utf-8') as file:
+                student['comments'] = file.read()
         except IOError:
             pass
 
@@ -447,6 +450,7 @@ async def adm_course(request:Request) -> Response:
             <script>
             STUDENTS = {json.dumps(students)};
             COURSE = '{course.course}';
+            NOTATION = {json.dumps(course.config['notation'])};
             </script>
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """)

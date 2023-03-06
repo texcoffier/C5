@@ -79,6 +79,27 @@ def parse_grading(history):
             grading[line[2]] = [line[3], d + '\n' + line[1]]
     return grading
 
+def parse_notation(notation):
+    """Returns a list or [text, grade_label, [grade_values]]"""
+    content = []
+    i = 0
+    text = ''
+    for item in notation.split('{'):
+        options = item.split('}')
+        if len(options) == 1 or not options[0].match(RegExp('^.*:[-0-9,.]+$')):
+            if i != 0:
+                text += '{'
+            text += item
+            continue
+        content.append(
+            [text,
+                options[0].replace(RegExp(':[-0-9,.]+$'), ''), # grade label
+                options[0].replace(RegExp('.*:'), '').split(',') # values
+            ])
+        text = options[1:].join('}')
+    content.append([text, '', []])
+    return content
+
 def two_digit(number):
     """ 6 → 06 """
     return ('0' + str(int(number)))[-2:]

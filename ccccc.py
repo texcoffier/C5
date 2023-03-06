@@ -1347,26 +1347,15 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         content.append('</select>')
         content.append('<span id="grading_sum"></span>')
         content.append('</h2></div><pre>')
+
         i = 0
-        for item in NOTATION.split('{'):
-            options = item.split('}')
-            if len(options) == 1 or not options[0].match(RegExp('^.*:[-0-9,.]+$')):
-                if i != 0:
-                    content.append('{')
-                content.append(html(item))
-                continue
-            values = options[0].replace(RegExp('.*:'), '')
-            label = options[0].replace(RegExp(':[-0-9,.]+$'), '')
-            content.append('<span>' + html(label))
-            for choice in values.split(','):
-                content.append('<button g="' + i + '">' + choice + '</button>')
-            content.append('</span>')
-            j = 0
-            for after in options[1:]:
-                if j:
-                    content.append('}')
-                j = 1
-                content.append(html(after))
+        for text, grade_label, values in parse_notation(NOTATION):
+            content.append(html(text))
+            if len(grade_label):
+                content.append('<span>' + html(grade_label))
+                for choice in values:
+                    content.append('<button g="' + i + '">' + choice + '</button>')
+                content.append('</span>')
             i += 1
         content.append('</pre>')
         self.nr_grades = i
