@@ -155,6 +155,7 @@ DIV.executor > DIV:first-child
 .comments TEXTAREA.empty {
     width: 1vw;
     height: 1vw;
+    resize: none;
 }
 
 .comments TEXTAREA.empty:focus {
