@@ -604,7 +604,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.line_numbers.childNodes[i].textContent = i+1
             if GRADING:
                 comment = self.comments.childNodes[i]
-                if not comment:
+                if comment:
+                    if comment.style.top != top + 'px':
+                        comment.style.top = top + 'px'
+                else:
                     comment = document.createElement('TEXTAREA')
                     comment.line = i
                     comment.style.top = top + 'px'
