@@ -1358,7 +1358,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 content.append('</span>')
             i += 1
         content.append('</pre>')
-        self.nr_grades = i
+        self.nr_grades = i - 1
         self.grading.id = "grading"
         self.grading.onclick = grade
         self.grading.innerHTML = ''.join(content)
