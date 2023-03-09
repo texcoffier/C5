@@ -90,7 +90,8 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             'time_bonus': time_bonus / 60,
            }
 
-WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'graders', 'time', 'key_stroke', 'mouse_click',
+WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'graders', 'time',
+        'key_stroke', 'mouse_click',
         'copy_ok', 'copy_bad', 'cut_ok', 'cut_bad', 'paste_ok', 'paste_bad', 'nr_blurs'
        ]
 
@@ -99,14 +100,14 @@ COLORS = ["888", "F44", "FF0", "0F0", "0FF", "88F", "F0F", "CCC"]
 sums = {}
 
 def hide():
+    """Close the dialog"""
     document.getElementById('dialog').close()
 
 def show(what):
     """Display the export file for this key"""
     dialog = document.getElementById('dialog')
     ths = document.getElementById('report').rows[0]
-    th = ths.cells[WHAT.indexOf(what.split('\001')[0]) + 1]
-    label = th.textContent
+    label = ths.cells[WHAT.indexOf(what.split('\001')[0]) + 1].textContent
     if '\001' in what:
         status = "done"
     else:

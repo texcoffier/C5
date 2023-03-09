@@ -76,6 +76,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     walls = windows = doors = chars = []
     left_column = right_column = top_line = bottom_line = 0
     highlight_disk = None
+    all_ips = {}
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.ips = {}
@@ -484,7 +485,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillText(student.grade[0] + '(' + student.grade[1] + 'notes)',
                              x_pos, y_pos + 2*y_size/3)
         ctx.globalAlpha = 1
-    def draw_map(self, ctx, canvas):
+    def draw_map(self, ctx, canvas): # pylint: disable=too-many-locals
         """Draw the character map"""
         canvas.setAttribute('width', self.width)
         canvas.setAttribute('height', self.height)
@@ -1274,7 +1275,7 @@ def get_login(student):
                 or canonize(login) == student
            ):
             possibles.append([login, verify.surname, verify.firstname])
-        if (canonize(verify.firstname)[:size] == student
+        if (canonize(verify.firstname)[:size] == student # pylint: disable=consider-using-in
                 or canonize(verify.surname)[:size] == student
                 or canonize(login)[:size] == student
            ):

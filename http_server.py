@@ -346,7 +346,6 @@ async def record_grade(request:Request) -> Response:
                     else:
                         grading.pop(line[2], None)
             new_value = [sum(grading.values()), len(grading)]
-            # XXX should be postponed a little...
             course.set_parameter('active_teacher_room', new_value, login, 8)
     else:
         grades = ''
@@ -1263,7 +1262,8 @@ async def checkpoint_list(request:Request) -> Response:
             content[-1] = content[-1].replace('<th', '<th style="color:#AAF"')
     def add_header(label):
         hide_header()
-        content.append(f'<tr class="sticky"><th class="header" colspan="{titles.count("th")}">{label}</tr>')
+        content.append('<tr class="sticky">')
+        content.append(f'<th class="header" colspan="{titles.count("th")}">{label}</tr>')
         content.append(titles)
     CourseConfig.load_all_configs()
     now = time.time()
@@ -1404,11 +1404,12 @@ async def checkpoint(request:Request) -> Response:
         ''')
 
 async def checkpoint_hosts(request:Request) -> Response:
+    """Display the unexpected IP in rooms"""
     session = await Session.get_or_fail(request)
     if session.is_student():
         raise session.exception('not_teacher')
     buildings = os.listdir('BUILDINGS')
-    ips = collections.defaultdict(lambda: collections.defaultdict(int))
+    ips:Dict[str,Dict[str,int]] = collections.defaultdict(lambda: collections.defaultdict(int))
     for course in utilities.CourseConfig.configs.values():
         if not course.checkpoint:
             continue

@@ -1,10 +1,10 @@
 [VARIABLES]
 # C5 provided
-additional-builtins=MORE,COURSE,TICKET,LOGIN,STUDENTS,CONFIG,MESSAGES,CHECKPOINT,BUILDINGS,GRADING,STUDENT,NOTATION,ANSWERS,ADMIN,SOCK,STOP,VERSIONS,CP,SAVE_UNLOCK,SEQUENTIAL,WHERE,INFOS,COLORING,ALL_SAVES,DISPLAY_STUDENT_FILTER,DISPLAY_MY_ROOMS,DISPLAY_SESSION_NAME,DEFAULT_BUILDING,
+additional-builtins=MORE,COURSE,TICKET,LOGIN,STUDENTS,CONFIG,MESSAGES,CHECKPOINT,BUILDINGS,GRADING,STUDENT,NOTATION,ANSWERS,ADMIN,SOCK,STOP,VERSIONS,CP,SAVE_UNLOCK,SEQUENTIAL,WHERE,INFOS,COLORING,ALL_SAVES,DISPLAY_STUDENT_FILTER,DISPLAY_MY_ROOMS,DISPLAY_SESSION_NAME,DEFAULT_BUILDING,IPS,
 # compile.py
 	Compile,Question,
 # compatibility.py
-	update_page,html,bind,hljs,record,nice_date,two_digit,parse_grading,millisecs,is_int,
+	update_page,html,bind,hljs,record,nice_date,two_digit,parse_grading,millisecs,is_int,parse_notation,
 # Javascript functions
 	confirm,prompt,alert,Math,setInterval,setTimeout,setTimeout,encodeURIComponent,isNaN,importScripts,
 # Javascript classes
@@ -17,3 +17,6 @@ additional-builtins=MORE,COURSE,TICKET,LOGIN,STUDENTS,CONFIG,MESSAGES,CHECKPOINT
 [MESSAGES CONTROL]
 disable=C0302
 
+[TYPECHECK]
+zope=yes
+generated-members=Items,Values,indexOf
