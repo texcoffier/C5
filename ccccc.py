@@ -61,12 +61,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question = editor = overlay = tester = compiler = executor = time = None
     index = popup_element = save_button = local_button = line_numbers = None
     stop_button = fullscreen = comments = save_history = editor_title = None
-    tag_button = indent_button = None
+    tag_button = indent_button = layered = None
     top = None # Top page HTML element
     source = None # The source code to compile
     source_with_newlines = None
     old_source = None
-    oldScrollTop = None
     highlight_errors = {}
     question_done = {}
     question_original = {}
@@ -111,7 +110,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'executor':    [70, 30,30, 70,'#EEFF'], # RightBottom: Execution messages
             'time':        [80, 20,98,  2,'#0000'], # BottomRight: Debugger for admin
             'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
-            'line_numbers':[100, 1, 0,100,'#EEEF'], # Outside the screen by defaut
             'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
         },
         # --------------------------
@@ -159,6 +157,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'display_tag': 1,                           # True if display 'icon_tag'
         'display_history': 1,                       # True if display version history
         'display_indent': 1,                        # True if display the F8 button
+        'display_line_numbers': 0,                  # True if display line numbers
         'automatic_compilation': True,              # True if compilation is automatic
         # ------------------------------------
         # Options defined by the compiler used
@@ -203,7 +202,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     nr_grades = None
     grading = None
     current_key = None
-    disable_overlay_scroll = False
+    meter = document.createRange()
 
     def __init__(self):
         print("GUI: start")
@@ -258,9 +257,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def update_gui(self):
         """Set the bloc position and background"""
+        if 'line_numbers' in self.options['positions'] and self.options['positions']['line_numbers'][0] != 100:
+            self.options['display_line_numbers'] = 1 # Compatibility with the past
+        if self.options['display_line_numbers']:
+            self.layered.setAttribute('display_line_numbers', 'yes')
+        else:
+            self.layered.setAttribute('display_line_numbers', 'no')
         self.options['positions']['editor_title'] = self.options['positions']['editor']
-        self.options['positions']['overlay'] = self.options['positions']['editor']
-        self.options['positions']['overlay'][4] = '#0000'
         if GRADING:
             left, width, top, height, background = self.options['positions']['editor']
             self.options['positions']['comments'] = [
@@ -274,8 +277,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
         for key in self.options['positions']:
             if key in DEPRECATED:
                 continue # No more used button
+            if key in ('line_numbers', 'comments'):
+                continue
             left, width, top, height, background = self.options['positions'][key]
             e = self[key] # pylint: disable=unsubscriptable-object
+            if key == 'editor':
+                key = 'layered'
+                e = self.layered
+                self.overlay.style.width = self.editor.offsetWidth + 'px'
+                # self.editor.style.width = self.editor.offsetWidth + 'px'
             if not e:
                 continue
             if left >= 100 or top >= 100:
@@ -283,16 +293,22 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 e.style.display = 'block'
             e.style.left = left + '%'
-            e.style.right = (100 - left - width) + '%'
-            if key in ('editor', 'overlay'):
+            if key == 'layered' and GRADING:
+                e.style.right = '0px'
+                self.comments.style.left = 100 * width / (100 - left) + '%'
+                self.comments.style.right = '0px'
+            else:
+                e.style.right = (100 - left - width) + '%'
+            if key == 'layered':
                 e.style.top = 'calc(' + top + '% + var(--header_height))'
             else:
                 e.style.top = top + '%'
             e.style.bottom = (100 - top - height) + '%'
             if key == 'editor_title':
                 e.style.bottom = 'calc(100% - var(--header_height))'
-            e.style.background = background
-            e.background = background
+            if key != 'layered':
+                e.style.background = background
+                e.background = background
         self.save_history.onchange = bind(self.change_history, self)
         if GRADING:
             self.save_button.style.display = 'none'
@@ -300,9 +316,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.stop_button.style.display = 'none'
     def create_gui(self): # pylint: disable=too-many-statements
         """The text editor container"""
-        self.options['positions']['overlay'] = self.options['positions']['editor']
         if GRADING:
-            self.options['positions']['comments'] = [] # Filled by update_gui()
+            document.body.className = 'dograding'
         for key in self.options['positions']:
             if key == 'stop_button' and not CHECKPOINT:
                 continue
@@ -312,14 +327,28 @@ class CCCCC: # pylint: disable=too-many-public-methods
             e = document.createElement('DIV')
             e.className = key
             e.style.position = 'absolute'
-            self.top.appendChild(e)
             self[key] = e # pylint: disable=unsupported-assignment-operation
+            if key == 'editor':
+                self.layered = document.createElement('DIV')
+                self.layered.appendChild(e)
+                self.layered.className = 'layered'
+                self.overlay = document.createElement('DIV')
+                self.overlay.className = 'overlay'
+                self.layered.appendChild(self.overlay)
+                self.line_numbers = document.createElement('DIV')
+                self.line_numbers.className = 'line_numbers'
+                self.layered.appendChild(self.line_numbers)
+                if GRADING:
+                    self.comments = document.createElement('DIV')
+                    self.comments.className = 'comments'
+                    self.layered.appendChild(self.comments)
+                e = self.layered
+            self.top.appendChild(e)
         self.editor.contentEditable = True
         self.editor.spellcheck = False
         self.editor.autocorrect = False
         self.editor.autocapitalize = False
         self.editor.autocomplete = False
-        self.editor.onscroll = bind(self.onscroll, self)
         self.editor.onmouseup = bind(self.update_cursor_position, self)
         self.editor.onkeyup = bind(self.update_cursor_position, self)
         # self.editor.setAttribute('dropzone', 'copy s:text/plain')
@@ -372,8 +401,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         <small>Mettez le curseur sur <span>⏱</span> pour voir le temps restant</small>
         """
         self.top.appendChild(self.fullscreen)
-
-        self.overlay.onscroll = bind(self.onscroll_overlay, self)
 
     def record_tag(self):
         """Replace tag on current saved version"""
@@ -519,7 +546,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay.style.visibility = 'hidden'
     def overlay_show(self):
         """The editor and the overlay are synched"""
-        self.onscroll()
         self.overlay.style.visibility = 'visible'
     def clear_highlight_errors(self, update_cursor=True):
         """Make space fo the new errors"""
@@ -584,33 +610,24 @@ class CCCCC: # pylint: disable=too-many-public-methods
             line_nr, char_nr = line_char.split(':')
             self.add_highlight_errors(line_nr, char_nr, what)
 
-        meter = document.createRange()
         line_height = 1000
         comments = self.all_comments[self.current_question] or {}
         comments = comments[self.version] or {}
         i = 0
         for i, line in enumerate(self.editor_lines):
-            if line.getBoundingClientRect:
-                rect = line.getBoundingClientRect()
-            else:
-                meter.selectNodeContents(line)
-                rect = meter.getBoundingClientRect()
-            if rect.top:
-                top = rect.top + self.editor.scrollTop
-            else:
-                top = line.offsetTop
+            rect = self.get_rect(line)
             if not self.line_numbers.childNodes[i]:
                 self.line_numbers.appendChild(document.createElement('DIV'))
                 self.line_numbers.childNodes[i].textContent = i+1
             if GRADING:
                 comment = self.comments.childNodes[i]
                 if comment:
-                    if comment.style.top != top + 'px':
-                        comment.style.top = top + 'px'
+                    if comment.style.top != rect.top + 'px':
+                        comment.style.top = rect.top + 'px'
                 else:
                     comment = document.createElement('TEXTAREA')
                     comment.line = i
-                    comment.style.top = top + 'px'
+                    comment.style.top = rect.top + 'px'
                     self.comments.appendChild(comment)
                 comment.textContent = (comments[i] or '').strip()
                 if comments[i]:
@@ -625,7 +642,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     comment.rows = 3
                     comment.cols = 40
 
-            self.line_numbers.childNodes[i].style.top = top + 'px'
+            self.line_numbers.childNodes[i].style.top = rect.top + 'px'
             if rect.height and rect.height < line_height:
                 line_height = rect.height
                 continue
@@ -633,15 +650,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 continue
             marker = document.createElement('DIV')
             marker.className = 'wrapped'
-            marker.style.left = rect.left - self.overlay.offsetLeft + 'px'
-            marker.style.top = (rect.top + line_height + self.editor.scrollTop
-                - self.overlay.offsetTop + 'px')
+            marker.style.left = rect.left + 'px'
+            marker.style.top = rect.top + line_height + 'px'
             marker.style.width = rect.width + 'px'
             marker.style.height = rect.height - line_height + 'px'
             self.overlay.appendChild(marker)
         for i in range(i+1, len(self.line_numbers.childNodes)):
             self.line_numbers.childNodes[i].style.top = '-10em'
         self.overlay_show()
+        self.line_numbers.style.height = self.overlay.offsetHeight + 'px'
+        if GRADING:
+            self.comments.style.height = self.overlay.offsetHeight + 'px'
 
     def record_now(self):
         """Record on the server"""
@@ -703,6 +722,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
         alert(message)
         self.records_in_transit = []
 
+    def get_rect(self, element):
+        """Get rectangle in self.layered coordinates"""
+        if not element.getBoundingClientRect:
+            self.meter.selectNodeContents(element)
+            element = self.meter
+        rect = element.getBoundingClientRect()
+        return {
+            'width': rect.width, 'height': rect.height,
+            'top': rect.top - self.layered.offsetTop + self.layered.scrollTop,
+            'left': rect.left - self.layered.offsetLeft - self.editor.offsetLeft
+        }
+
     def add_highlight_errors(self, line_nr, char_nr, what):
         """Add the error or warning"""
         if not what:
@@ -710,13 +741,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         box = document.createRange()
         def insert(element, class_name, move_right=0):
             """Set the element to the same place than the range"""
-            rect = box.getBoundingClientRect()
+            rect = self.get_rect(box)
             if move_right:
                 move_right = rect.width
-            element.style.top = (rect.top - self.editor.offsetTop + self.editor.scrollTop) + 'px'
+            element.style.top = rect.top + 'px'
             element.style.height = rect.height + 'px'
-            element.style.left = 'calc(' + (
-                rect.left - self.editor.offsetLeft + move_right) + 'px - var(--pad))'
+            element.style.left = 'calc(' + (rect.left + move_right) + 'px - var(--pad))'
             element.style.width = rect.width + 'px'
             element.className = class_name
             self.overlay.appendChild(element)
@@ -912,7 +942,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if error and error.startswith('cursor'):
                 self.highlight_errors[key] = None
         self.do_coloring = True
-        cursor = document.getSelection().getRangeAt(0).cloneRange()
+        try:
+            cursor = document.getSelection().getRangeAt(0).cloneRange()
+        except:
+            self.cursor_position = 0
+            return
         if not self.editor.firstChild:
             self.cursor_position = 0
             return
@@ -961,7 +995,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def save_cursor(self):
         """Save the cursor position"""
         self.last_answer_cursor[self.current_question] = [
-            self.editor.scrollTop,
+            self.layered.scrollTop,
             self.cursor_position,
             self.source[:self.cursor_position]
             ]
@@ -1009,8 +1043,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif event.key == 'F8':
             self.do_indent()
         elif event.key == 'Enter' and event.target is self.editor:
-            # Fix Firefox misbehavior
-            self.oldScrollTop = self.editor.scrollTop
+            # Automatic indent
             self.update_source()
             self.update_cursor_position_now()
             i = self.cursor_position
@@ -1053,23 +1086,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.do_not_register_this_blur = False
             return
         self.record('Blur')
-    def onscroll(self, _event=None):
-        """To synchronize syntax highlighting"""
-        if self.oldScrollTop is not None:
-            # Fix Firefox misbehavior
-            self.editor.scrollTop = self.oldScrollTop
-            self.oldScrollTop = None
-        else:
-            self.line_numbers.scrollTop = self.editor.scrollTop
-            if GRADING:
-                self.comments.scrollTop = self.editor.scrollTop
-            self.overlay.scrollTop = self.editor.scrollTop
-            self.disable_overlay_scroll = True
-    def onscroll_overlay(self, _event=None):
-        """The overlay was scrolled by Ctrl+F, must move source code"""
-        if not self.disable_overlay_scroll:
-            self.editor.scrollTop = self.overlay.scrollTop
-        self.disable_overlay_scroll = False
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':
@@ -1587,7 +1603,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                     i += 1
                 cursorpos = i
 
-            self.editor.scrollTop = scrollpos
+            self.layered.scrollTop = scrollpos
             for line in self.editor.childNodes:
                 if line.tagName:
                     cursorpos -= 1
@@ -1600,7 +1616,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                     document.getSelection().collapse(line, cursorpos + len(line.textContent))
                     break
         else:
-            self.editor.scrollTop = 0
+            self.layered.scrollTop = 0
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
         self.highlight_errors = {}
         self.do_coloring = True

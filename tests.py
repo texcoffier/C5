@@ -406,7 +406,7 @@ class Tests: # pylint: disable=too-many-public-methods
     def test_save_button(self):
         """Test save button"""
         self.load_page('=JS=introduction')
-        self.move_cursor('.editor')
+        self.move_cursor('.editor', 4, 4)
         self.check('.editor', {'innerHTML': ~Contains('§')})
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§')})
@@ -415,14 +415,14 @@ class Tests: # pylint: disable=too-many-public-methods
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§')})
         time.sleep(0.1) # For Firefox
-        self.move_cursor('.editor')
+        self.move_cursor('.editor', 4, 4)
         self.check('.editor').send_keys('§')
-        self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
+        self.check('.editor', {'innerHTML': Contains('§§<br>')})
         self.control('s')
         self.wait_save()
         self.load_page('=JS=introduction')
-        self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
-        self.move_cursor('.editor', 30, 200)
+        self.check('.editor', {'innerHTML': Contains('§§<br>')})
+        self.move_cursor('.editor', 30, 5)
         for _ in range(6):
             self.check('.editor').send_keys(Keys.BACKSPACE)
         self.check('.save_button').click()

@@ -4,6 +4,7 @@ BODY {
     --pad: 0.5em;
     --line_height: 1.18vw;
     --header_height: 2.1em;
+    --line_number_width: 40px;
     overflow: hidden;
 }
 
@@ -37,16 +38,13 @@ DIV.tester {
     overflow: auto;
 }
 
-DIV.editor, DIV.overlay {
-    scroll-behavior: auto;
-}
-
 DIV.grading {
     overflow: auto;
 }
 
 DIV.editor {
     outline: none;
+    right: 0px;
 }
 
 DIV.grading > DIV:first-child,
@@ -134,7 +132,7 @@ DIV.executor > DIV:first-child
 }
 .line_numbers DIV {
     position: absolute;
-    width: 2em;
+    width: 100%;
 }
 .comments {
     z-index: 1000;
@@ -187,9 +185,44 @@ BODY>DIV>DIV.index {
 }
 
 DIV.overlay {
-    pointer-events: none
+    pointer-events: none;
+    right: 0px;
 }
 
+DIV.layered {
+    position: absolute;
+    overflow-x: visible;
+    overflow-y: auto;
+    z-index: 10;
+}
+
+BODY.dograding DIV.layered { direction: rtl; }
+BODY.dograding DIV.layered > DIV { direction: ltr; }
+
+DIV.overlay, DIV.editor, DIV.line_numbers, DIV.comments {
+    position: absolute;
+    top: 0px;
+}
+DIV.layered > DIV {
+    left: 0px ;
+}
+DIV.layered[display_line_numbers=yes] > DIV.overlay,
+DIV.layered[display_line_numbers=yes] > DIV.editor,
+DIV.layered[display_line_numbers=yes] > DIV.comments {
+    left: var(--line_number_width);
+}
+DIV.line_numbers {
+    display: none;
+    left: 0px;
+    width: calc(var(--line_number_width) - 10px);
+}
+DIV.layered[display_line_numbers=yes] DIV.line_numbers {
+    display: block;
+}
+
+DIV.overlay {
+    background: #0000;
+}
 .executor INPUT {
     width: calc(100% - 0.3em);
     font-size: 100%;
@@ -391,7 +424,7 @@ H2:hover .timer SPAN DIV {
     text-align: center;
     font-size: 200%;
     padding: 2em;
-    z-index: 2;
+    z-index: 20;
 }
 
 .fullscreen {
