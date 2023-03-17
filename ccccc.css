@@ -62,6 +62,7 @@ DIV.executor > DIV:first-child
 .warning,
 .eval,
 .cursor,
+.cursor_after,
 .cursorbad {
     position: absolute;
     right: 0;
@@ -84,6 +85,10 @@ DIV.executor > DIV:first-child
     background: #FF0;
     opacity: 0.5;
 }
+.cursor_after {
+    background: #0FF;
+    opacity: 0.5;
+}
 
 .cursorbad {
     background: #F88;
@@ -94,7 +99,7 @@ DIV.executor > DIV:first-child
     border: 2px solid #000
 }
 
-.char.cursor, .char.cursorbad, .char.eval {
+.char.cursor, .char.cursor_after, .char.cursorbad, .char.eval {
     border: 0px solid #000
 }
 

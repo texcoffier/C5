@@ -862,7 +862,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def highlight_unbalanced(self): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         """Highlight unbalanced parenthesis. Returns the next character to check"""
-        highlight_start = 0
         highlight_stack = [] # stack of [cursor position, '({[']
         in_string = False
         in_comment = False
@@ -888,6 +887,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             start_comment = '\001'
             start_string = '"'
             start_comment_bloc = '\001'
+        highlight_start = -1
         for start, char in enumerate(self.source):
             if start == self.cursor_position:
                 if len(highlight_stack):
@@ -896,6 +896,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     self.highlight_errors[line_open + ':' + column_open] = 'cursor'
                 else:
                     highlight_start = -1
+            start_pos = -1
             if in_string:
                 if char == in_string:
                     in_string = False
@@ -920,8 +921,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     start_pos, start_char = highlight_stack.pop()
                     if char == {'{': '}', '(': ')', '[': ']'}[start_char]:
                         if start_pos == highlight_start:
+                            # The cursor is just inside this closing block
                             line_open, column_open = self.get_line_column(start+1)
                             self.highlight_errors[line_open + ':' + column_open] = 'cursor'
+                        if start == self.cursor_position - 1:
+                            # The cursor is after the closing parenthesis
+                            line_open, column_open = self.get_line_column(start_pos + 1)
+                            self.highlight_errors[line_open + ':' + column_open] = 'cursor_after'
+                            line_open, column_open = self.get_line_column(start + 1)
+                            self.highlight_errors[line_open + ':' + column_open] = 'cursor_after'
+                        if start_pos == self.cursor_position:
+                            # The cursor is before the opening parenthesis
+                            line_open, column_open = self.get_line_column(start_pos + 1)
+                            self.highlight_errors[line_open + ':' + column_open] = 'cursor_after'
+                            line_open, column_open = self.get_line_column(start + 1)
+                            self.highlight_errors[line_open + ':' + column_open] = 'cursor_after'
                     else:
                         line_bad, column_bad = self.get_line_column(start + 1)
                         self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
