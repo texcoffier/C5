@@ -1069,7 +1069,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9'):
             return
         self.record(event.key or 'null')
-        if event.target is self.editor:
+        if event.target is self.editor and event.key not in ('ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'):
             self.clear_highlight_errors()
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
@@ -1121,14 +1121,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.target.tagName == 'TEXTAREA':
             # The teacher enter a comment
             return
-        if event.key not in ('Left', 'Right', 'Up', 'Down'):
-            if self.insert_on_keyup:
-                document.execCommand('insertHTML', False, self.insert_on_keyup)
-                self.insert_on_keyup = None
-            self.do_coloring = True
-        #print("CURSOR", self.cursor_position,
-        #    JSON.stringify(self.source[self.cursor_position-10:self.cursor_position]),
-        #    JSON.stringify(self.source[self.cursor_position:self.cursor_position+10]))
+        if self.insert_on_keyup:
+            document.execCommand('insertHTML', False, self.insert_on_keyup)
+            self.insert_on_keyup = None
+        self.do_coloring = True
     def onkeypress(self, event):
         """Key press"""
     def onblur(self, _event):
