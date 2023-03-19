@@ -56,6 +56,60 @@ def cleanup(txt):
     """Remove character badly handled by browser with getSelection().toString()"""
     return txt.replace(RegExp('[  \n\r\t]', 'g'), '')
 
+def walk(node, pos=None, depth=0):
+    """Count the number of characters.
+    pos[0] = current position.
+    pos[1] is True if we are on a newline
+    """
+    if pos is None:
+        pos = [0, True]
+        # print(''.join([(i.outerHTML or i.textContent)  for i in node.childNodes]))
+    for child in node.childNodes:
+        # print('        '[:4*depth+1], '=' + str(pos),
+        #       '/// Tag=' + child.tagName,
+        #       '/// HTML=' + child.innerHTML,
+        #       '/// Text=' + child.textContent)
+        if child.tagName == 'BR':
+            # print('        '[:4*depth+1], 'BR+1')
+            pos[0] += 1
+            pos[1] = True
+        elif child.tagName == 'DIV':
+            if not pos[1]:
+                # print('        '[:4*depth+1], 'DIV+1')
+                pos[0] += 1
+            walk(child, pos, depth + 1)
+        else:
+            # print('        '[:4*depth+1], 'TEXT+' + child.textContent.length)
+            pos[0] += child.textContent.length
+            pos[1] = False # child.textContent[-1] == '\n'
+    return pos[0]
+
+def walk_regtests():
+    """To debug walk"""
+    div = document.createElement('DIV')
+    for innerHTML, expected in [
+        ["", 0],
+        ["a", 1],
+        ["<br>", 1],
+        ["<br>#", 1],
+        ["<br>a", 2],
+        ["<div>a<br></div><div></div>", 2],
+        ["<div>a<br></div><div>b</div>", 3],
+        ["<div>a</div><div>b</div>", 3],
+        ["a<div>b</div>", 3],
+        ['a<span>b</span><div><span>c</span></div>', 4],
+        ]:
+        div.innerHTML = innerHTML
+        if innerHTML[-1] == '#':
+            div.childNodes[-1].textContent = ''
+        computed = walk(div)
+        if computed != expected:
+            print("=======================================================")
+            print("Found " + computed + " in place of " + expected)
+            print("=======================================================")
+
+walk_regtests()
+
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     question = editor = overlay = tester = compiler = executor = time = None
@@ -967,29 +1021,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.cursor_position = 0
             return
         cursor.setStart(self.editor.firstChild, 0)
-        def walk(node, pos):
-            for child in node.childNodes:
-                if child.tagName == 'BR':
-                    #print('BR', pos, '+1')
-                    pos[0] += 1
-                    pos[1] = True
-                elif child.tagName: # DIV so newline
-                    #print('DIV before', pos)
-                    walk(child, pos)
-                    #print('DIV after', pos)
-                    if not pos[1]:
-                        pos[0] += 1
-                else:
-                    #print('TEXT', pos, '+' + child.textContent.length , child.textContent)
-                    pos[0] += child.textContent.length
-                    if child.textContent.length:
-                        pos[1] = False
-        pos = [0, False]
         left = cursor.cloneContents()
-        walk(left, pos)
-        if left.lastChild and left.lastChild.tagName == 'DIV':
-            pos[0] -= 1
-        self.cursor_position = pos[0]
+        self.cursor_position = walk(left)
         self.highlight_unbalanced()
         line, _column = self.get_line_column(self.cursor_position)
         errors = self.compiler.innerHTML.replace(
