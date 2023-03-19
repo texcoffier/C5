@@ -758,7 +758,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             line = line.previousSibling
         # Search the text element containing the column
         while char_nr > len(line.nodeValue or line.innerText):
-            if not line.nextSibling or line.nextSibling.tagName:
+            if not line.nextSibling or (line.nextSibling.tagName and line.nextSibling.tagName != 'SPAN'):
                 if char_nr > len(line.nodeValue or line.innerText) + 1:
                     print('BUG', char_nr, line.nodeValue, line.innerText, line.nextSibling)
                     char_nr = len(line.nodeValue or line.innerText)
