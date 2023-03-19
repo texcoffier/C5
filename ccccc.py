@@ -580,6 +580,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 state.text.append('\n')
                 state.last = None
             elif state.node.tagName == 'SPAN':
+                if not state.last:
+                    state.last = state.node
                 state.text.append(state.node.innerText)
             else:
                 state.text.append(state.node.nodeValue)
