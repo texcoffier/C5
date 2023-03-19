@@ -309,9 +309,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.shared_buffer[len(string) + 1] = -1 # String end
         self.shared_buffer[0] = 1
 
-    def update_gui(self):
+    def update_gui(self): # pylint: disable=too-many-branches,disable=too-many-statements
         """Set the bloc position and background"""
-        if 'line_numbers' in self.options['positions'] and self.options['positions']['line_numbers'][0] != 100:
+        if ('line_numbers' in self.options['positions']
+            and self.options['positions']['line_numbers'][0] != 100):
             self.options['display_line_numbers'] = 1 # Compatibility with the past
         if self.options['display_line_numbers']:
             self.layered.setAttribute('display_line_numbers', 'yes')
@@ -678,12 +679,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if GRADING:
                 comment = self.comments.childNodes[i]
                 if comment:
-                    if comment.style.top != rect.top + 'px':
-                        comment.style.top = rect.top + 'px'
+                    if comment.style.top != rect['top'] + 'px':
+                        comment.style.top = rect['top'] + 'px'
                 else:
                     comment = document.createElement('TEXTAREA')
                     comment.line = i
-                    comment.style.top = rect.top + 'px'
+                    comment.style.top = rect['top'] + 'px'
                     self.comments.appendChild(comment)
                 comment.textContent = (comments[i] or '').strip()
                 if comments[i]:
@@ -698,18 +699,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     comment.rows = 3
                     comment.cols = 40
 
-            self.line_numbers.childNodes[i].style.top = rect.top + 'px'
-            if rect.height and rect.height < line_height:
-                line_height = rect.height
+            self.line_numbers.childNodes[i].style.top = rect['top'] + 'px'
+            if rect['height'] and rect['height'] < line_height:
+                line_height = rect['height']
                 continue
-            if rect.height < line_height * 1.8:
+            if rect['height'] < line_height * 1.8:
                 continue
             marker = document.createElement('DIV')
             marker.className = 'wrapped'
-            marker.style.left = rect.left + 'px'
-            marker.style.top = rect.top + line_height + 'px'
-            marker.style.width = rect.width + 'px'
-            marker.style.height = rect.height - line_height + 'px'
+            marker.style.left = rect['left'] + 'px'
+            marker.style.top = rect['top'] + line_height + 'px'
+            marker.style.width = rect['width'] + 'px'
+            marker.style.height = rect['height'] - line_height + 'px'
             self.overlay.appendChild(marker)
         for i in range(i+1, len(self.line_numbers.childNodes)):
             self.line_numbers.childNodes[i].style.top = '-10em'
@@ -799,11 +800,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             """Set the element to the same place than the range"""
             rect = self.get_rect(box)
             if move_right:
-                move_right = rect.width
-            element.style.top = rect.top + 'px'
-            element.style.height = rect.height + 'px'
-            element.style.left = 'calc(' + (rect.left + move_right) + 'px - var(--pad))'
-            element.style.width = rect.width + 'px'
+                move_right = rect['width']
+            element.style.top = rect['top'] + 'px'
+            element.style.height = rect['height'] + 'px'
+            element.style.left = 'calc(' + (rect['left'] + move_right) + 'px - var(--pad))'
+            element.style.width = rect['width'] + 'px'
             element.className = class_name
             self.overlay.appendChild(element)
         line = self.editor_lines[line_nr - 1]
@@ -812,7 +813,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             line = line.previousSibling
         # Search the text element containing the column
         while char_nr > len(line.nodeValue or line.innerText):
-            if not line.nextSibling or (line.nextSibling.tagName and line.nextSibling.tagName != 'SPAN'):
+            if not line.nextSibling or (
+                    line.nextSibling.tagName and line.nextSibling.tagName != 'SPAN'):
                 if char_nr > len(line.nodeValue or line.innerText) + 1:
                     print('BUG', char_nr, line.nodeValue, line.innerText, line.nextSibling)
                     char_nr = len(line.nodeValue or line.innerText)
@@ -1014,7 +1016,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.do_coloring = True
         try:
             cursor = document.getSelection().getRangeAt(0).cloneRange()
-        except:
+        except: # pylint: disable=bare-except
             self.cursor_position = 0
             return
         if not self.editor.firstChild:
