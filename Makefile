@@ -92,7 +92,7 @@ kill:
 	-pkill -f compile_server.py
 pre-commit:
 	@echo "Running regression tests before commiting (it takes 2 minutes)"
-	./tests.py hidden 1 >xxx.regtests 2>&1
+	./tests.py hidden 1 2>&1 | tee xxx.regtests | grep -e FIREFOX -e CHROME
 	@echo "It is fine!"
 	@rm xxx.regtests
 
