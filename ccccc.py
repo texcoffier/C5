@@ -1295,6 +1295,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.all_comments[question][version][line] = comment
             ANSWERS[question][1] = version # Want to see the commented version
         self.do_coloring = True
+        self.update_grading_select()
 
     def update_grading(self, history=None):
         """Colorize buttons"""
@@ -1391,14 +1392,9 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             + encodeURIComponent(''.join(content))
             )
 
-    def add_grading(self):
-        """HTML of the grading interface"""
-        content = [
-            '''<div><h2>
-            Noter <select style="background:#FF0" onchange="version_change(this)">
-            '''
-            ]
-        self.version = (ANSWERS[self.current_question] or [0, 0])[1]
+    def update_grading_select(self):
+        """Upgrade the select choice with the good number of comments"""
+        content = []
         now = Date()
         for i, version in enumerate(VERSIONS[self.current_question] or []):
             content.append('<option')
@@ -1420,7 +1416,27 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 content.append(two_digit(now.getMinutes()))
                 content.append(':')
                 content.append(two_digit(now.getSeconds()))
+                comments = self.all_comments[self.current_question]
+                if comments:
+                    comments = comments[i]
+                    if comments:
+                        nr = 0
+                        for line, comment in comments.Items():
+                            if comment:
+                                nr += 1
+                        if nr:
+                            content.append(' (' + nr + ' commentaires)')
             content.append('</option>')
+        document.getElementById('grading_select').innerHTML = ''.join(content)
+
+    def add_grading(self):
+        """HTML of the grading interface"""
+        self.version = (ANSWERS[self.current_question] or [0, 0])[1]
+        content = [
+            '''<div><h2>
+            Noter <select id="grading_select" style="background:#FF0" onchange="version_change(this)">
+            '''
+            ]
         content.append('</select>')
         content.append('<span id="grading_sum"></span>')
         content.append('</h2></div><pre>')
@@ -1580,10 +1596,14 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             self.clear_if_needed(what)
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
+            need_update_grading_select = False
             if what == 'question' and GRADING and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
                 self.add_grading()
+                need_update_grading_select = True
             span = document.createElement('DIV')
             span.innerHTML = value
+            if need_update_grading_select:
+                self.update_grading_select()
             if '<error' in value:
                 self[what].style.background = '#FAA' # pylint: disable=unsubscriptable-object
             else:

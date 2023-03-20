@@ -42,6 +42,10 @@ DIV.grading {
     overflow: auto;
 }
 
+DIV.grading SELECT {
+    width: 12.5em;
+}
+
 DIV.editor {
     outline: none;
 }
