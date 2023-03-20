@@ -1389,7 +1389,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             Noter <select style="background:#FF0" onchange="version_change(this)">
             '''
             ]
-        self.version = ANSWERS[self.current_question][1]
+        self.version = (ANSWERS[self.current_question] or [0, 0])[1]
         now = Date()
         for i, version in enumerate(VERSIONS[self.current_question] or []):
             content.append('<option')
