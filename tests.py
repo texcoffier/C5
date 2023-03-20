@@ -414,7 +414,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.wait_save()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§')})
-        time.sleep(0.1) # For Firefox
+        time.sleep(0.2) # For Firefox
         self.move_cursor('.editor', 4, 4)
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§§<br>')})
@@ -557,6 +557,7 @@ return sum ;
                 try:
                     element = self.check(f'.executor INPUT:nth-child({2*i+3})')
                     element.click()
+                    time.sleep(0.1)
                     element.send_keys('1')
                     element.send_keys(Keys.ENTER)
                     break
@@ -742,6 +743,7 @@ return sum ;
             self.check('[g="1"]:nth-child(2)',
                 {'className': Contains('grade_selected')})
             self.check('.comments TEXTAREA:first-child', {'className': Equal('empty')}).click()
+            time.sleep(0.1)
             self.check('.comments TEXTAREA:first-child').send_keys(f'=={student}==')
             self.check('[g="1"]:nth-child(2)').click()
             self.check('.comments TEXTAREA:first-child', {'className': Equal('filled')}).click()
