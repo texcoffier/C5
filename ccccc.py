@@ -274,6 +274,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.shared_buffer = None
         self.worker.postMessage(['array', self.shared_buffer])
         if GRADING:
+            # Will be updated after
             self.options['positions']['grading'] = [0, 1, 0, 75, '#FFF8']
         print("GUI: wait worker")
 
@@ -288,7 +289,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.last_answer[question] = ANSWERS[question][0]
             if ANSWERS[question][1]:
                 self.question_done[question] = True
-
         self.inputs = {} # Indexed by the question number
         self.do_not_clear = {}
         self.seconds = int(millisecs() / 1000)
@@ -678,15 +678,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.line_numbers.childNodes[i].textContent = i+1
             if GRADING:
                 comment = self.comments.childNodes[i]
-                if comment:
-                    if comment.style.top != rect['top'] + 'px':
-                        comment.style.top = rect['top'] + 'px'
-                else:
+                if not comment:
                     comment = document.createElement('TEXTAREA')
                     comment.line = i
-                    comment.style.top = rect['top'] + 'px'
                     self.comments.appendChild(comment)
-                comment.textContent = (comments[i] or '').strip()
+                if comment.style.top != rect['top'] + 'px':
+                    comment.style.top = rect['top'] + 'px'
+                comment.value = (comments[i] or '').strip()
                 if comments[i]:
                     comment.className = 'filled'
                 else:
@@ -1286,6 +1284,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if version not in self.all_comments[question]:
                 self.all_comments[question][version] = {}
             self.all_comments[question][version][line] = comment
+            ANSWERS[question][1] = version # Want to see the commented version
         self.do_coloring = True
 
     def update_grading(self, history=None):
@@ -1390,11 +1389,11 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             Noter <select style="background:#FF0" onchange="version_change(this)">
             '''
             ]
+        self.version = ANSWERS[self.current_question][1]
         now = Date()
         for i, version in enumerate(VERSIONS[self.current_question] or []):
-            self.version = ANSWERS[self.current_question][1]
             content.append('<option')
-            if ANSWERS[self.current_question][1] == i:
+            if self.version == i:
                 content.append(' selected')
             if not version:
                 content.append(' disabled')
