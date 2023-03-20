@@ -339,8 +339,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if key == 'editor':
                 key = 'layered'
                 e = self.layered
-                self.overlay.style.width = self.editor.offsetWidth + 'px'
-                # self.editor.style.width = self.editor.offsetWidth + 'px'
+                if GRADING:
+                    if self.options['display_line_numbers']:
+                        padding = self.line_numbers.offsetWidth + 5
+                    else:
+                        padding = 12
+                    self.overlay.style.width = self.comments.offsetLeft - padding + 'px'
+                    self.editor.style.width = self.comments.offsetLeft - padding + 'px'
+                    self.overlay.style.left = self.editor.style.left = padding + 'px'
+                else:
+                    self.overlay.style.right = '0px'
+                    self.editor.style.right = '0px'
             if not e:
                 continue
             if left >= 100 or top >= 100:

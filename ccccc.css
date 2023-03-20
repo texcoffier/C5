@@ -44,7 +44,6 @@ DIV.grading {
 
 DIV.editor {
     outline: none;
-    right: 0px;
 }
 
 DIV.grading > DIV:first-child,
@@ -191,7 +190,6 @@ BODY>DIV>DIV.index {
 
 DIV.overlay {
     pointer-events: none;
-    right: 0px;
 }
 
 DIV.layered {
