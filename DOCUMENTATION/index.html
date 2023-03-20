@@ -1578,8 +1578,6 @@ server {
     <p>Fonctionnalités manquantes dans l'éditeur :</p>
     <ul>
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
-        <li> Affichage d'un corrigé aux étudiants.</li>
-        <li> Session terminée mais accessible en mode consultation par l'étudiant.</li>
         <li> Choix du thème de coloriage syntaxique par l'étudiant.</li>
         <li> Icone pour passer en plein écran.</li>
         <li> Option pour désactiver la toute première compilation quand
@@ -1596,11 +1594,31 @@ server {
         <li>
             Mettre en évidence le bloc plutôt que seulement les parenthèses.
         </li>
+        <li> Session terminée mais accessible en mode consultation par l'étudiant.</li>
+        <li>
+            Ajouter des modes d'affichage à l'éditeur :
+            <ul>
+                <li> Édition : le mode classique.</li>
+                <li> Retour : affiche le barème de notation à la place des questions,
+                    ainsi que les commentaires de l'enseignant si ces informations
+                    sont diffusées. Si c'est un enseignant, c'est éditable.</li>
+                <li> Correction : affiche la correction mis en parallèle
+                    avec le code de l'étudiant.</li>
+                <li> Édition sujet : permet d'avoir une unique fenêtre pour
+                    modifier le sujet de la session et l'essayer.</li>
+                <li> Guide de TP : le code source contient des consignes
+                    pour les surveillants de TP avec des exemples de codes.</li>
+            </ul>
+            Le mode d'édition est indiqué dans l'URL afin de pouvoir
+            mettre des lien directs à partir de la page d'accueil de l'étudiant
+            quand le mode est disponible.
+        </li>
     </ul>
     <p>Fonctionnalités manquantes dans le checkpoint (placement) :</p>
     <ul>
         <li>
-            Affiche source étudiant : bascule entre le mode ascenseur temporel et
+            Affiche source étudiant via la carte :
+            bascule entre le mode ascenseur temporel et
             les dernières réponses à toutes les questions.
         </li>
         <li>

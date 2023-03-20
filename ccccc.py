@@ -945,6 +945,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             start_comment = '\001'
             start_string = '"'
             start_comment_bloc = '\001'
+        cursor_position_min = self.cursor_position
+        while self.source[cursor_position_min-1] in ' \t\n':
+            cursor_position_min -= 1
+        cursor_position_max = self.cursor_position
+        while self.source[cursor_position_max] in ' \t\n':
+            cursor_position_max += 1
         highlight_start = -1
         for start, char in enumerate(self.source):
             if start == self.cursor_position:
@@ -982,13 +988,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
                             # The cursor is just inside this closing block
                             line_open, column_open = self.get_line_column(start+1)
                             self.highlight_errors[line_open + ':' + column_open] = 'cursor'
-                        if start == self.cursor_position - 1:
+                        if start == cursor_position_min - 1:
                             # The cursor is after the closing parenthesis
                             line_open, column_open = self.get_line_column(start_pos + 1)
                             self.highlight_errors[line_open + ':' + column_open] = 'cursor_after'
                             line_open, column_open = self.get_line_column(start + 1)
                             self.highlight_errors[line_open + ':' + column_open] = 'cursor_after'
-                        if start_pos == self.cursor_position:
+                        if start_pos == cursor_position_max:
                             # The cursor is before the opening parenthesis
                             line_open, column_open = self.get_line_column(start_pos + 1)
                             self.highlight_errors[line_open + ':' + column_open] = 'cursor_after'
