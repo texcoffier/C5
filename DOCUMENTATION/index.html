@@ -62,21 +62,6 @@
             vertical-align: top;
         }
 
-        .NI {
-            background: #FEE;
-            border: 1px solid #F00;
-        }
-
-        .NI:after {
-            content: 'pas encore implémenté';
-            font-size: 50%;
-            display: inline-block;
-            width: 6em;
-            background: #FCC;
-            line-height: 1em;
-            text-align: center;
-        }
-
         TT,
         PRE {
             background: #FFE;
@@ -109,6 +94,8 @@
         .screenshot {
             position: absolute;
             left: calc(var(--body) + 1em);
+            margin-top: -3em;
+            page-break-before: avoid;
         }
 
         .compilers {
@@ -149,7 +136,7 @@
             content: '❱';
         }
 
-        UE {
+        UL {
             page-break-inside: avoid;
         }
 
@@ -166,7 +153,8 @@
 
             .screenshot {
                 position: initial;
-                width: 100%
+                width: 100%;
+                margin-top: 0px;
             }
         }
     </style>
@@ -220,13 +208,14 @@
     </ul>
 
     <h3>Fluidifier le déroulement des examens.</h3>
+    <img class="screenshot" src="screen-checkpoint.png" style="width: 40em">
 
     <ul>
         <li> Le fait de placer les étudiants sur les chaises
             revient à faire l'appel.</li>
         <li> On voit immédiatement les noms des surveillants associés aux salles.</li>
         <li> On voit les machines qui sont en panne.</li>
-        <li> On voit dans quelles salles il reste des machines innocupées.</li>
+        <li> On voit dans quelles salles il reste des machines inocupées.</li>
         <li> Les surveillants peuvent s'échanger des messages d'alerte.</li>
         <li> Le surveillant peut voir l'historique du travail de l'étudiant,
             pendant et après la session.
@@ -240,6 +229,11 @@
         <li> On peut lister par correcteur les étudiants qui n'ont pas été corrigés
             ou bien corrigé de manière incomplète.</li>
     </ul>
+    <p>
+        La copie d'écran montre
+        <a href="#surveillant">l'interface du surveillant</a>
+        qui est présentée plus loin.
+    </p>
 
     <!--
     <p>
@@ -255,7 +249,6 @@
     <h2>Création d'une session de travail.</h2>
 
     <h3>Comment définir un sujet.</h3>
-    <img class="screenshot" src="screen-src.png">
     <p>
         L'ensemble de l'environnement est programmé en Python.
     </p>
@@ -273,16 +266,18 @@
         Voici les méthodes dans l'ordre d'appel lorsque l'étudiant arrive sur la question :
     </p>
     <ul>
-        <li> <tt>default_answer(self)</tt> retourne la valeur initiale de l'éditeur.
+        <li> <tt>default_answer(self)</tt>
+            calcule le code initial avec lequel l'étudiant commence dans l'éditeur.
             Si la question est aléatoire, on peut conserver dans l'instance
             de la question l'aléa choisi pour que les méthodes suivantes
-            puisse l'utiliser pour l'affichage et les tests.
+            puissent l'utiliser pour l'affichage et les tests.
         </li>
-        <li> <tt>question(self)</tt> retourne la question au format HTML.
+        <li> <tt>question(self)</tt> calcule le texte de la question au format HTML.
         </li>
-        <li> <tt>tester(self)</tt> affiche les indices
-            et décide quand faire passer à la question suivante.
-            C'est ce qui est affiché en bas à gauche.
+        <li> <tt>tester(self)</tt> affiche des indices pour aider l'étudiant
+            dans la zone «Les buts que vous devez atteindre» de l'interface étudiant.
+            Elle autorise le passage à la question suivante
+            si la réponse de l'étudiant est correcte.
         </li>
     </ul>
     </p>
@@ -315,12 +310,11 @@
     </p>
     <ul>
         <li> Vous avez accès à un serveur C5.
-            Les explications sont plus
-            loin sur la page si vous n'avez pas accès à un serveur existant.</li>
+            Si ce n'est pas le cas, les explications sont plus loin sur la page.</li>
         <li> L'administrateur C5 vous a indiqué comme «auteur».</li>
     </ul>
     <p>
-        Pour le mettre en production la première fois et l'essayer :
+        Pour le mettre en production <b>la première fois</b> et l'essayer :
     </p>
     <ul>
         <li> Vous allez sur la page d'accueil de C5.</li>
@@ -337,6 +331,7 @@
     </ul>
 
     <h3>Modifier le sujet et paramétrer la session.</h3>
+    <img class="screenshot" src="screen-session-editor.svg">
     <ul>
         <li> Sur la page d'accueil de C5, vous cliquez sur <tt class="link">Edit</tt>.</li>
         <li> Vous pouvez alors régler tous les paramètres de la session.</li>
@@ -380,7 +375,7 @@
     </ul>
 -->
 
-    <h2>Outils pour définir question.</h2>
+    <h2>Outils pour définir une question.</h2>
 
     <h3>Attributs de la question.</h3>
     <ul>
@@ -442,7 +437,6 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         'executor':    [70, 30,30, 70,'#EEFF'], # RightBottom: Execution messages
         'time':        [80, 20,98,  2,'#0000'], # BottomRight: Debugger for admin
         'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
-        'line_numbers':[100, 1, 0,100,'#EEEF'], # Outside the screen by defaut
         'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
     },
     # --------------------------
@@ -490,6 +484,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
     'display_tag': 1,                           # True if display 'icon_tag'
     'display_history': 1,                       # True if display version history
     'display_indent': 1,                        # True if display the F8 button
+    'display_line_numbers': 0,                  # True if display line numbers
     'automatic_compilation': True,              # True if compilation is automatic
     # ------------------------------------
     # Options defined by the compiler used
@@ -961,7 +956,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         Les listes sont aussi affichées en triant par correcteur.
     </p>
 
-    <h3>Surveillant : placement des étudiants.</h3>
+    <a name="surveillant"><h3>Surveillant : placement des étudiants.</h3></a>
     <img class="screenshot" src="screen-checkpoint.svg">
     <p>
         Le surveillant voit la liste des sessions qu'il doit surveiller,
@@ -1103,8 +1098,8 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         avec le barème de notation affiché.
         Il n'a plus qu'à cliquer pour mettre les notes qui
         sont immédiatement enregistrées.
-        Si 2 enseignants notent en même temps le même étudiants,
-        dans le pire cas ils perdent une seule note.
+        Si 2 enseignants notent en même temps le même étudiant,
+        ils perdent une seule note dans le pire cas.
     </p>
     <p>
         Le correcteur peut ajouter des commentaires aux lignes
@@ -1128,6 +1123,125 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
             par C5 10 secondes avant la fin de l'examen si l'étudiant
             n'a pas sauvegardé lui-même la minute précédente.
         </li>
+    </ul>
+
+    <h2>Guides rapides d'utilisation.</h2>
+    <p>
+        Pour les différents intervenants.
+    </p>
+
+    <h3>Le responsable de la session.</h3>
+
+    <p>
+        Pour lancer une session d'examen :
+    </p>
+    <ul>
+        <li> Déposer le fichier décrivant la session.</li>
+        <li> Indiquer les heures de début et fin.</li>
+        <li> Indiquer qu'il y a une salle d'attente (les étudiants devront être placés).</li>
+        <li> Indiquer la liste des tiers-temps.</li>
+        <li> Indiquer la liste des surveillants.</li>
+    </ul>
+    <p>
+        Après la session d'examen :
+    </p>
+    <ul>
+        <li> Indiquer la liste des correcteurs.</li>
+        <li> Demander aux correcteurs de corriger.
+            Si les correcteurs ne corrigent pas par salle,
+            on peut envoyer une liste d'URL pour
+            corriger chacun de leurs étudiants :
+            <tt>[adresse_C5]/grade/[nom-session]/[numéro-étudiant]</tt>
+        </li>
+        <li>
+            Cliquer sur <tt class="button">See student results</tt>
+            pour voir l'avancement des corrections,
+            exporter tous les codes sources ou toutes les notes des étudiants.
+        </li>
+    </ul>
+
+    <h3>Le surveillant.</h3>
+    <p>
+        Il est recommander d'envoyer un mail aux surveillants,
+        pour leur expliquer leur travail.
+    </p>
+    <ul>
+        <li> Aller sur C5.</li>
+        <li> Cliquer sur <tt class="link">Place</tt> de la session d'examen.</li>
+        <li> Une fois sur le plan du bon bâtiment :
+            cliquer sur un espace vide
+            dans votre salle pour zoomer dessus.
+            La molette et le glisser du plan fonctionnent aussi.
+        </li>
+        <li> Dire aux étudiants qui arrivent d'aller sur C5
+            et de cliquer sur le sujet d'examen.
+        </li>
+        <li>
+            Le nom de l'étudiant est en gros sur leur écran,
+            Faire glisser l'étudiant sur Ⓐ ou Ⓑ (pas sur l'ordi).
+            L'examen ne commencera que quand cela sera l'heure de début.
+        </li>
+        <li>
+            Quand l'examen commence, leur dire de recharger la page.
+        </li>
+        <li>
+            Si l'étudiant n'est pas en plein écran il y a un gros encart rouge
+            lui disant de passer en plein écran.
+        </li>
+        <li>
+            Laisser le plan ouvert : sur le nom de l'étudiant une barre rouge
+            va grandir à chaque fois que l'étudiant perd le focus.
+            Surveiller de près ces étudiants.
+        </li>
+        <li>
+            Dire aux étudiants de sauvegarder chaque fois qu'ils
+            ont une version qui fonctionne ou franchi une étape.
+            Il y a souvent des prises électriques mal enfoncées.
+            C'est la dernière sauvegarde qui sera notée.
+        </li>
+        <li>
+            Cliquer sur le début du nom d'étudiant, pour :
+            <ul>
+                <li>«Clôturer examen» si l'étudiant est parti avant la fin
+                    sans terminer l'examen lui même.</li>
+                <li>«Rouvrir l'examen» en cas de clôture par erreur.</li>
+                <li>Ajouter des minutes de temps bonus.
+                    Pour les tiers temps cela a déjà été fait,
+                    donc ne pas donner plus de temps.</li>
+                <li>Regarder l'évolution de son code source dans le temps.</li>
+            </ul>
+        <li>Le gyrophare 🚨 permet de faire afficher un message sur
+            les plans de tous les surveillants.</li>
+    </ul>
+
+    <h3>Le correcteur.</h3>
+    <p>
+        On suppose que la liste des correcteurs ainsi que le barème
+        ont été indiqués dans le paramétrage de la session.
+    </p>
+    <ul>
+    <li>
+        Allez sur C5 et cliquer sur <tt class="link">Place</tt>
+        de la bonne session
+        pour accèder à la salle contenant les étudiants à noter.
+    </li>
+    <li>
+        Noter un unique étudiant en cliquant sur le début de son nom
+        puis en cliquant sur le bouton <tt class="button">Noter</tt>.
+    </li>
+    <li>
+        Ou bien ouvrir un onglet de correction pour
+        chacun des étudiants de la salle en cliquant sur 📝.
+    </li>
+    <li>
+        Une fois sur la page de correction, cocher les différents éléments du barème
+        et saisir les commentaires dans les cases à droite du code source.
+    </li>
+    <li>
+        Quand le barème est complètement rempli «Préparer mail» passe en vert.
+        Cliquer dessus pour lui envoyer son code source commenté
+        avec la messagerie habituelle (ne fonctionne pas avec un webmail).
+    </li>
     </ul>
 
     <h2>Installation et administration de C5.</h2>
@@ -1574,6 +1688,104 @@ server {
     <p>
         Le résumé est dans <tt>tests.log</tt>
     </p>
+
+
+    <h2>Utilisation de C5 à l'université Lyon 1.</h2>
+    <p>
+        Les cours qui ont utilisé C5 :
+    </p>
+    <table>
+        <tr>
+            <th>Quand</th>
+            <th>Quoi</th>
+            <th>Année</th>
+            <th>Nbr Inscrits</th>
+            <th>Utilisation</th>
+        </tr>
+        <tr>
+            <td> 2022-09→2022-12</td>
+            <td>
+                Initiation Algorithmique et<br>
+                Programmation Impérative<br>
+                en langage C
+            <td> L1
+            <td> 585
+            <td>
+                2 sujets d'examen.<br>
+                5 sujets d'annales.<br>
+                2 devoirs maison.<br>
+                15 sujets de TD.<br>
+                11 sujets de TP.
+        </tr>
+        <tr>
+            <td> 2023-01→2023-05<br>
+                Pas terminée.</td>
+            <td>
+                Algorithmique et<br>
+                Programmation Récursive<br>
+                en LISP
+            <td> L1
+            <td> 414
+            <td>
+                ? sujets d'examen.<br>
+                ≥8 sujets de TP.
+        </tr>
+        <tr>
+            <td> 2023-02</td>
+            <td>
+                Programmation concurrente
+            <td> L3
+            <td> 165
+            <td>
+                1 sujet d'examen.<br>
+                1 sujet d'entraînement.<br>
+        </tr>
+    </table>
+
+    <p>
+        Sur l'ensemble des sessions d'examens,
+        voici l'histogramme du nombre de copies
+        en fonction du nombre de commentaires faits
+        par les correcteurs sur la copie.
+        Une grande partie des copies n'ont pas été commentées du tout.
+    </p>
+    <style>TABLE.histo SPAN { background: #8F8; display: inline-block }</style>
+    <table class="histo">
+    <tr><th>Nombre<br>de com-<br>mentaires<th>Nombre de copies<th></tr>
+    <tr><td>1<td><span style="width:27.428571428571427em">24</span></tr>
+    <tr><td>2<td><span style="width:35.42857142857143em">31</span></tr>
+    <tr><td>3<td><span style="width:40.0em">35</span></tr>
+    <tr><td>4<td><span style="width:37.714285714285715em">33</span></tr>
+    <tr><td>5<td><span style="width:21.714285714285715em">19</span></tr>
+    <tr><td>6<td><span style="width:17.142857142857142em">15</span></tr>
+    <tr><td>7<td><span style="width:22.857142857142858em">20</span></tr>
+    <tr><td>8<td><span style="width:9.142857142857142em">8</span></tr>
+    <tr><td>9<td><span style="width:11.428571428571429em">10</span></tr>
+    <tr><td>10<td><span style="width:10.285714285714286em">9</span></tr>
+    <tr><td>11<td><span style="width:14.857142857142858em">13</span></tr>
+    <tr><td>12<td><span style="width:6.857142857142857em">6</span></tr>
+    <tr><td>13<td><span style="width:5.714285714285714em">5</span></tr>
+    <tr><td>14<td><span style="width:2.2857142857142856em">2</span></tr>
+    <tr><td>15<td><span style="width:2.2857142857142856em">2</span></tr>
+    <tr><td>16<td><span style="width:2.2857142857142856em">2</span></tr>
+    <tr><td>17<td><span style="width:0.0em">0</span></tr>
+    <tr><td>18<td><span style="width:0.0em">0</span></tr>
+    <tr><td>19<td><span style="width:0.0em">0</span></tr>
+    <tr><td>20<td><span style="width:1.1428571428571428em">1</span></tr>
+    <tr><td><td>235 étudiants. Moyenne 5.5 commentaires. Médiane 4 commentaires.</tr>
+    </table>
+    <p>
+        Les surveillances d'examens sont faites dans des salles de TP
+        avec 18 étudiants.
+        Les étudiants doivent impérativement travailler sur les ordinateurs
+        de l'établissement et non leur ordinateur personnel.
+    </p>
+    <p>
+        Il est impératif que les étudiants aient fait un TP complet
+        en utilisant C5 avant le jour de l'examen afin de ne pas
+        être dans un environnement qu'ils ne connaissent pas.
+    </p>
+
     <h2>TODO</h2>
     <p>Fonctionnalités manquantes dans l'éditeur :</p>
     <ul>
@@ -1613,6 +1825,9 @@ server {
             mettre des lien directs à partir de la page d'accueil de l'étudiant
             quand le mode est disponible.
         </li>
+        <li>
+            Détruire une sauvegarde.
+        </li>
     </ul>
     <p>Fonctionnalités manquantes dans le checkpoint (placement) :</p>
     <ul>
@@ -1628,7 +1843,8 @@ server {
             Associer par apprentissage les adresses IP aux places sur le plan.
         </li>
         <li>
-            Détruire une sauvegarde.
+            Prédéfinir dans le paramétrage de la session la liste
+            des étudiants attendus et dans quelle salles ils doivent composer.
         </li>
     </ul>
     <p>Fonctionnalités manquantes dans la modélisation du sujet :</p>
@@ -1657,9 +1873,6 @@ server {
     <p>Fonctionnalités manquantes de la page de notation :</p>
     <ul>
         <li> Ajout du barème aux questions (en plus du barème global).</li>
-    </ul>
-    <p>Fonctionnalités manquantes pour la notation :</p>
-    <ul>
         <li> Déterminer la version du code qui a été corrigée (sans être commentée).
             De manière automatique ou bien explicitement.
         </li>
@@ -1669,6 +1882,37 @@ server {
             A faire étudiant par étudiant et/ou par session complète.
         </li>
     </ul>
+
+    <p>Page de paramétrage de session :</p>
+
+    <ul>
+        <li> Ajouter l'association des étudiants aux salles d'examen ou surveillant ou correcteurs.</li>
+        <li> Synchroniser certaines valeurs (admins/graders/proctors...)
+            entre toutes les sessions qui commencent par le même mot
+            car elles sont dans la même UE.
+        </li>
+        <li> Découper la page en plusieurs onglets :
+        <ul>
+            <li>Session : ce qui concerne le paramétrage du déroulement de la session.</li>
+            <li>UE : ce qui concerne l'UE (le premier mot avant le '_').
+                Les modifications faites ici sont enregistrées pour toutes les sessions.
+                Code couleur,
+                Description,
+                Liste des admin/grader/proctors,
+                Affectation des étudiants dans les salles,
+                Liste des tiers temps.
+            </li>
+
+        <li>Résultat : le bas de la colonne de droite actuelle.</li>
+        <li>Notation : le barème</li>
+        <li>Place : le placement des étudiants (sans ouvrir une nouvelle page)</li>
+        <li>Edit : édition du code source de la session (sans ouvrir une nouvelle page)</li>
+        <li>Exportation : la page 'See student results' (sans ouvrir une nouvelle page)</li>
+        <li>Administration : les boutons en haut de la colonne de droite.</li>
+        </ul>
+        </li>
+    </ul>
+
 
 
     <script>

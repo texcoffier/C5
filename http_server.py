@@ -1519,7 +1519,7 @@ async def home(request:Request) -> Response:
         A:hover { text-decoration: underline }
         </style>''',
         f'<p><a target="_blank" href="/zip/C5.zip?ticket={session.ticket}">',
-        '💾 ZIP</a> contenant vos derniers fichiers sauvegardés dans C5.'
+        '💾 ZIP</a> contenant la dernière sauvegarde de toutes vos sessions.'
         ]
     for course_name, course in sorted(CourseConfig.configs.items()):
         if course.status(session.login) not in ('pending', 'running'):
