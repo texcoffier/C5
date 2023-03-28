@@ -51,7 +51,7 @@ def compiler_initial_content(_self):
 
 def executor_initial_content(_self):
     """Use less space for title"""
-    return "<h2>Exécution</h2>"
+    return "<h2>Execution</h2>"
 
 class Q1(Question):
     """Nothing"""

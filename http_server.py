@@ -751,10 +751,12 @@ async def my_zip(request:Request) -> StreamResponse: # pylint: disable=too-many-
         for config in configs:
             if config.checkpoint:
                 continue
+            answers, _blurs = get_answers(config.dirname, session.login)
+            if not answers:
+                continue
             makefile = config.get_makefile()
             if makefile:
                 zipper.writestr(f'C5/{config.course}/Makefile', makefile)
-            answers, _blurs = get_answers(config.dirname, session.login)
             for question, sources in answers.items():
                 if sources:
                     source = sources[-1]
