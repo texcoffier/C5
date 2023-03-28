@@ -1798,7 +1798,9 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             self.clear_highlight_errors(False)
             event.target.removeChild(event.target.lastChild)
         span = document.createElement('DIV')
-        span.innerHTML = '\n'.join(text[1:])
+        span.innerHTML = '\n'.join(text[1:]).replace(
+            RegExp('^([^ ]*) (.*) (#&lt;continuation-mark-set&gt;.*)$', 's'),
+                '<i style="opacity:0.3">$1</i><br><b>$2</b><br><i style="opacity:0.3">$3</i>')
         span.onmouseenter = highlight
         span.onmouseleave = unhighlight
         self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
