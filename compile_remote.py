@@ -188,6 +188,8 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                         indent = indent[:-2]
                     elif char == '"':
                         in_string = True
+                    elif char == ';':
+                        break
             self.post('editor', '\n'.join(lines))
             return
         self.socket.send(JSON.stringify(['indent', source]))
