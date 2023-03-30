@@ -17,7 +17,7 @@
                                         )
                                 ])
                                 (if (exn:fail? result)
-                                    (cons ast (cons result '()))
+                                    (cons ast (cons result 'error))
                                     (cons ast (cons result (repl source ns)))
                                 )
                             )
@@ -36,11 +36,20 @@
        '()
        (list
             (display "\001\002RACKET")
-            (display (car a-list))
+            (write (car a-list))
             (display "\n")
-            (display (car (cdr a-list)))
-            (display "\001")
-            (show (cdr (cdr a-list))))
+            (if (equal? 'error (cdr (cdr a-list)))
+                (list
+                    (display (car (cdr a-list)))
+                    (display "\001")
+                    )
+                (list
+                    (write (car (cdr a-list)))
+                    (display "\001")
+                    (show (cdr (cdr a-list)))
+                    )
+                )
+            )
    )
 )
 
