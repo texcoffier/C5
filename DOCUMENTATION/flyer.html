@@ -1,0 +1,545 @@
+<title>C5 ???</title>
+<style>
+    BODY {
+        font-family: sans-serif;
+        margin: 0px;
+        --td-width: 39vh;
+        --th1: #D0D0FF;
+        --td1: #E0E0FF;
+        --th2: #D0FFD0;
+        --td2: #F8FFF8;
+        background: #F8FFF8;
+        width: var(--td-width);
+        padding: 0px;
+    }
+
+    TT {
+        font-family: monospace, monospace;
+    }
+
+    TR:first-child>TD {
+        text-align: center;
+        border-top-left-radius: 10vw;
+        border-top-right-radius: 10vw;
+    }
+
+    TR:first-child>TD>P {
+        margin-left: 4em;
+        margin-right: 4em;
+    }
+
+    /* Top TABLE */
+
+    BODY>TABLE {
+        border-spacing: 0px;
+        width: 100vw;
+        height: 100vh;
+    }
+
+    BODY>TABLE>TBODY>TR:first-child TD {
+        background: var(--th1);
+    }
+
+    BODY>TABLE>TBODY>TR>TD {
+        background: var(--td1);
+        white-space: nowrap;
+        padding: 0px;
+        vertical-align: top;
+    }
+
+    /* TABLE in TABLE */
+
+    BODY>TABLE>TBODY>TR>TD>TABLE {
+        border-spacing: 0px;
+        display: block;
+        margin: 1vh;
+        margin-left: 0px;
+    }
+
+    BODY>TABLE>TBODY>TR>TD>TABLE>TBODY>TR>TD {
+        background: var(--td2);
+        width: var(--td-width);
+        padding: 0px;
+    }
+
+    BODY>TABLE>TBODY>TR>TD>TABLE>TBODY>TR:first-child>TD {
+        background: var(--th2);
+    }
+
+    /* Cell content */
+
+    P {
+        margin: 0px;
+        border: 0.4vh solid #0000;
+        border-radius: 0.5vw;
+        outline: none;
+        white-space: nowrap;
+        cursor: pointer;
+        font-size: 1.94vh;
+    }
+
+    P.focus {
+        border-color: #00F;
+    }
+
+    TIP {
+        display: block;
+        visibility: hidden;
+    }
+
+    P TIP {
+        position: absolute;
+        right: 0px;
+        bottom: 0px;
+        left: calc(var(--td-width) + 0.5vw);
+        top: 4vh;
+        font-size: 2vw;
+        text-align: center;
+        overflow: hidden;
+        white-space: normal;
+        line-height: 1.2em;
+    }
+
+    P.focus TIP {
+        visibility: visible;
+    }
+
+    IMG {
+        position: absolute;
+        top: 2.5vw;
+        left: calc((100vw - var(--td-width) - 1vw) / 2);
+        top: 7.5vw;
+        max-height: calc(100% - 7.5vw);
+        max-width: 100%;
+        transform: translate(-50%, 0px);
+    }
+
+    /* DOC link */
+
+    A.doc:before {
+        font-size: 60%;
+        content: 'DOC';
+        height: 0.6em;
+        line-height: 1em;
+    }
+
+    A.doc {
+        background: #D0D0FF;
+        border: 1px solid #88F;
+        border-radius: 0.4em;
+        padding: 0.1em;
+        vertical-align: top;
+        text-decoration: none;
+        color: #000;
+        position: absolute;
+        right: 0.1em;
+        top: 0px;
+    }
+
+    A.doc:hover {
+        border-color: #00F;
+        background: #B0B0FF;
+    }
+
+
+    /* Languages table */
+
+    TABLE.languages {
+        border-spacing: 0.2vw;
+        background: var(--th1);
+        font-size: 2.5vh;
+    }
+
+    TABLE.languages TD {
+        background: var(--td2);
+        vertical-align: top;
+    }
+
+    TABLE.languages TH {
+        background: var(--th2);
+        white-space: nowrap;
+    }
+</style>
+
+<table>
+    <tr>
+        <td>
+            <p tabindex="0" autofocus>C5 Compiler Course Class in the Cloud
+                <tip>Vous pouvez vous déplacer sur cette page<br>
+                    avec la touche «Tabulation» ⭾<br>
+                    ou les touches curseurs ↑ ↓.<br>
+                    <br>
+                    <b style="background: #0F0">Cliquer sur les images pour avoir la légende.</b>
+                </tip>
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <table>
+                <tr>
+                    <td>
+                        <p tabindex="0">Travail en autonomie
+                            <tip>Un session peut comporter plusieurs questions.<br>
+                                <br>
+                                Les étudiants vont sur C5 et<br>
+                                peuvent immédiatement commencer à travailler.<br>
+                                <br>
+                                Les enseignants peuvent surveiller l'avancement du travail des étudiants.</tip>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p tabindex="0">Sur ordinateur, tablette, téléphone.
+                            <tip>Il suffit d'un navigateur web pour que les étudiants puissent travailler.<br>
+                                Rien besoin d'installer. Le sujet est immédiatement disponible.<br>
+                                Il édite son code et voit le résultat de la compilation et de l'exécution.
+                                <img src="screen-python.png"></tip>
+                        </p>
+                        <p tabindex="0">L'étudiant retrouve son travail partout.
+                            <tip>Pas besoin de recopier des fichiers d'un endroit à l'autre,<br>
+                                ils sont sur le serveur.<br>
+                                L'étudiant retrouve ce qu'il a commencé à la fac chez lui et inversement.
+                                <img src="screen-python.png"></tip>
+                        </p>
+                        <p tabindex="0">Sujet générable aléatoirement.
+                            <tip>Le sujet est un fichier Python téléchargeable.<br>
+                                Il est calculé par des fonctions et éditable en ligne.
+                                <a class="doc" href="index.html#outils-pour-definir-une-question"></a>
+                                <img src="screen-session-editor.png"></tip>
+                        </p>
+                        <p tabindex="0">Aide contextuelle guidant l'étudiant.
+                            <tip>Bloc en bas à gauche : «Les buts que vous devez atteindre».<br>
+                                Calculé à partir du code source et du résultat de l'exécution.
+                                <img src="screen-python.png"></tip>
+                        </p>
+                        <p tabindex="0">Notation automatique possible.
+                            <tip>L'aide contextuelle peut valider la question<br>
+                                et permet le passage à la question suivante.
+                                <img src="screen-python.png"></tip>
+                        </p>
+                        <p tabindex="0">Langages supportés
+                            <tip>Il est facile d'ajouter de nouveaux langages :<br>
+                                il suffit de créer une nouvelle classe<br>
+                                qui s'exécutera dans le navigateur web.
+                                <a class="doc" href="index.html#langages-supportes"></a><br>
+                                <br>
+                                <table class="languages">
+                                    <tr>
+                                        <th>
+                                        <th>Dans le navigateur Web.<br>
+                                            Compilation et exécution en temps réel.
+                                        <th>Sur le serveur C5.
+                                    </tr>
+                                    <tr>
+                                        <th>JavaScript
+                                        <td>Langage natif du navigateur web.
+                                        <td>
+                                    </tr>
+                                    <tr>
+                                        <th>Python
+                                        <td> <a href="https://brython.info/">Brython</a>
+                                            est assez compatible<br> pour une initiation à Python.
+                                        <td>
+                                    </tr>
+                                    <tr>
+                                        <th>SQL
+                                        <td> <a href="http://alasql.org/">AlaSQL</a>
+                                        <td>
+                                    </tr>
+                                    <tr>
+                                        <th>C++
+                                        <td> <a tabindex="-1" target="_blank"
+                                                href="https://github.com/felixhao28/JSCPP">JSCPP</a>
+                                            est extrêmement limité,<br> il n'y a pas de classes.
+                                        <td> <tt>g++</tt> dans une sandbox<br> limitée à 1 seconde CPU, 200Mo RAM et 10
+                                            processus.
+                                    </tr>
+                                    <tr>
+                                        <th>Lisp
+                                        <td> <a tabindex="-1" target="_blank"
+                                                href="https://github.com/jcubic/lips">LIPS</a>
+                                        <td><tt>Racket</tt> dans une sandbox<br> limitée à 1 seconde CPU.
+                                    </tr>
+                                    <tr>
+                                        <th>Texte libre
+                                        <td>Il est toujours possible de guider<br> l'étudiant vers la bonne réponse.
+                                        <td>
+                                    </tr>
+                                </table>
+                            </tip>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <td>
+                        <p tabindex="0">Gestion des examens
+                            <tip>C5 fournit un environnement limitant la triche en examen.<br>
+                                <br>
+                                Voici la page permettant de paramétrer la session :
+                                <a class="doc" href="index.html#administrateur---editeur-de-session"></a>
+                                <img src="screen-editor.png"></tip>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p tabindex="0">Même environnement pour tous.
+                            <tip>Pour l'égalité et la facilité de surveillance.<br>
+                                On fait passer C5 en plein écran, car rien d'autre n'est utile.<br>
+                                Un écran affichant autre chose sera immédiatement détecté.
+                                <img src="screen-python.png"></tip>
+                        </p>
+                        <p tabindex="0">Interdiction du copier/coller externe.
+                            <tip>Le copier/coller est autorisé à partir du sujet.<br>
+                                On peut autoriser le copier/coller externe en dehors des examens.<br>
+                                Toutes les frappes clavier et clics souris sont enregistrés.
+                                <a class="doc" href="index.html#administrateur---analyse-d-une-session"></a>
+                                <img src="screen-course.png"></tip>
+                        </p>
+                        <p tabindex="0">Seuls les présents peuvent composer.
+                            <tip>Le surveillant doit placer l'étudiant dans la pièce<br>
+                                pour qu'il puisse commencer l'examen.
+                                <a class="doc" href="index.html#surveillant---placement-des-etudiants"></a><br>
+                                Le sujet d'examen peut afficher la version Ⓐ ou Ⓑ.
+                                <img src="screen-checkpoint.png"></tip>
+                        </p>
+                        <p tabindex="0">Enregistrement des pertes de focus.
+                            <tip>Quand l'étudiant regarde dans une autre fenêtre ou change d'onglet<br>
+                                Un barre de progression rouge s'agrandit.<br>
+                                Il y a une barre verte pour indiquer la progression dans les questions.
+                                <a class="doc" href="index.html#surveillant---placement-des-etudiants"></a><br>
+                                <img src="screen-checkpoint.png"></tip>
+                        </p>
+                        <p tabindex="0">Pas besoin de déposer un fichier.
+                            <tip>Les étudiants font <tt>Ctrl+S</tt> pour sauver.<br>
+                                Cela évite tous les problèmes de téléchargement fichier.<br>
+                                Une sauvegarde automatique est faite avant la clôture si l'étudiant oublie.
+                                <img src="screen-python.png"></tip>
+                        </p>
+                        <p tabindex="0">Regarder le code. Gestion de session.
+                            <tip>Ouverture, fermeture et ajout de minutes à la session.<br>
+                                Navigation temporelle dans le code.
+                                <a class="doc"
+                                    href="index.html#surveillant---administrer-la-session--regarder-le-code"></a><br>
+                                Les versions compilées mais non sauvegardées sont visibles.
+                                <img src="screen-spy.png"></tip>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <td>
+                        <p tabindex="0">Corrections
+                            <tip>C5 fournit ce qu'il faut pour mettre des notes et des commentaires.<br>
+                                Il permet de les exporter globalements.<br>
+                                Il permet de surveiller l'avancement des corrections.</tip>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p tabindex="0">Noter en cliquant sur un barème.
+                            <tip>Tout passe en vert quand la correction est complète.<br>
+                                On peut noter à plusieurs et on sait qui a noté.
+                                <a class="doc" href="index.html#correcteur---notes--commentaires-et-retours"></a><br>
+                                On peut éventuellement tester des changements dans le code.
+                                <img src="screen-grade.png"></tip>
+                        </p>
+                        <p tabindex="0">Export des notes, détaillées ou pas.
+                            <tip>On peut exporter les notes de chaque étudiant,<br>
+                                ainsi que le détail du barème dans TOMUSS.<br>
+                                Toutes les colonnes sont exportables.
+                                <a class="doc" href="index.html#administrateur---analyse-d-une-session"></a>
+                                <img src="screen-course.png"></tip>
+                        </p>
+                        <p tabindex="0">Export du travail des étudiants.
+                            <tip>Un ZIP des différentes versions du travail :<br>
+                                sauvé, compilé, réussie (première version passant le test)<br>
+                                et dernière seconde (l'étudiant n'a pas sauvegardé).
+                                <a class="doc" href="index.html#administrateur---analyse-d-une-session"></a>
+                                <img src="screen-course.png"></tip>
+                        </p>
+                        <p tabindex="0">Voir l'avancement des corrections.
+                            <tip>Liste les codes qui n'ont pas été notés.<br>
+                                Liste les correcteurs qui ont oublié de noter des points.<br>
+                                Cliquer sur l'étudiant permet de corriger sa copie.
+                                <a class="doc" href="index.html#administrateur---analyse-d-une-session"></a>
+                                <img src="screen-course.png"></tip>
+                        </p>
+                        <p tabindex="0">Corriger par salle, par rangée.
+                            <tip>Détection facilitée des copieurs car on sait qui est à coté de qui.<br>
+                                <span style="font-family:emoji">📝</span> permet d'ouvrir un onglet de correction sur
+                                chaque étudiant de la salle.<br>
+                                On a accès à la navigation temporelle dans le code de l'étudiant.
+                                <a class="doc"
+                                    href="index.html#surveillant---administrer-la-session--regarder-le-code"></a><br>
+                                <img src="screen-checkpoint.png"></tip>
+                        </p>
+                        <p tabindex="0">Commenter le travail de l'étudiant.
+                            <tip>On peut faire un retour détaillé à l'étudiant ligne par ligne.
+                                <a class="doc" href="index.html#correcteur---notes--commentaires-et-retours"></a>
+                                <img src="screen-grade.png"></tip>
+                        </p>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <td>
+                        <p tabindex="0">Conclusion
+                            <tip>Utilisation à Lyon 1
+                                <table class="languages">
+                                    <tr>
+                                        <th>Quand</th>
+                                        <th>Quoi</th>
+                                        <th>Année</th>
+                                        <th>Nbr Inscrits</th>
+                                        <th>Utilisation</th>
+                                    </tr>
+                                    <tr>
+                                        <td> 2022-09→2022-12</td>
+                                        <td>
+                                            Initiation Algorithmique et<br>
+                                            Programmation Impérative<br>
+                                            en langage C
+                                        <td> L1
+                                        <td> 585
+                                        <td>
+                                            2 sujets d'examen.<br>
+                                            5 sujets d'annales.<br>
+                                            2 devoirs maison.<br>
+                                            15 sujets de TD.<br>
+                                            11 sujets de TP.
+                                    </tr>
+                                    <tr>
+                                        <td> 2023-01→2023-05<br>
+                                            Pas terminée.</td>
+                                        <td>
+                                            Algorithmique et<br>
+                                            Programmation Récursive<br>
+                                            en LISP
+                                        <td> L1
+                                        <td> 414
+                                        <td>
+                                            ? sujets d'examen.<br>
+                                            ≥8 sujets de TP.
+                                    </tr>
+                                    <tr>
+                                        <td> 2023-02</td>
+                                        <td>
+                                            Programmation concurrente
+                                        <td> L3
+                                        <td> 165
+                                        <td>
+                                            1 sujet d'examen.<br>
+                                            1 sujet d'entraînement.<br>
+                                    </tr>
+                                </table>
+                            </tip>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p tabindex="0">Page d'accueil étudiant
+                            <tip>L'étudiant voit la liste des sessions qui lui sont accessibles.<br>
+                                Il arrivera dans une salle d'attente pour les examens<br>
+                                en attendant le placement par le surveillant.
+                                <a class="doc" href="index.html#etudiant"></a>
+                                <img src="screen-student.svg">
+                            </tip>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p tabindex="0">Page d'accueil enseignant
+                            <tip>Le résumé global de toutes les sessions.<br>
+                                Edit/Try/Place sont affichés seulement si on est autorisé.<br>
+                                🚦indique qu'il y a une salle d'attente, ✂ que le copier/coller est possible.
+                                <a class="doc"
+                                    href="index.html#administrateur-c5--administrateur-session--correcteur-et-surveillants"></a>
+                                <img src="screen-admin.png"></tip>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p tabindex="0">Que manque-t-il à C5 ?
+                            <tip>
+                                La version actuelle est utilisable facilement.<br>
+                                De nombreuses améliorations sont néanmoins possibles.<br>
+                                Mais sont-elles vraiment utiles ?<br>
+                                À vous de nous dire ce qui est vraiment nécessaire.<br>
+                                Cliquez sur le bouton DOC pour avoir la liste.
+                                <a class="doc" href="index.html#todo"></a>
+                            </tip>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+<script>
+    var FOCUSABLES = document.getElementsByTagName('P');
+    for (var i in FOCUSABLES)
+        FOCUSABLES[i].my_index = Number(i);
+    var DIR = {
+        'ArrowDown': 1,
+        'ArrowUp': -1,
+        'ArrowRight': 7,
+        'ArrowLeft': -7,
+    };
+    var FOCUS;
+    FOCUS = document.getElementsByTagName('P')[0];
+    function take_focus(item) {
+        FOCUS.className = '';
+        FOCUS = item;
+        FOCUS.className = 'focus';
+        FOCUS.focus();
+    }
+    take_focus(FOCUS);
+    var LINKS = document.getElementsByTagName('A');
+    for (var i in LINKS)
+        if (LINKS[i].className == 'doc') {
+            LINKS[i].setAttribute('target', '_blank');
+            LINKS[i].setAttribute('tabIndex', -1);
+        }
+    function toggle_legend(img) {
+        if (img.tagName == 'TIP' || img.tagName == 'P')
+            img = img.getElementsByTagName('IMG')[0];
+        if (!img || img.tagName != 'IMG')
+            return;
+        var src = img.src.replace('.png', '.svg');
+        if (img.src == src)
+            src = img.src.replace('.svg', '.png');
+        img.src = src;
+    }
+    window.addEventListener('keydown',
+        function (event) {
+            var next = FOCUSABLES[event.target.my_index + DIR[event.key]];
+            if (next) {
+                take_focus(next);
+                event.preventDefault(false);
+            }
+            if (event.key == ' ')
+                toggle_legend(event.target);
+            if (event.key == 'Enter') {
+                var a = event.target.getElementsByTagName('A')[0];
+                if (a && a.className == 'doc')
+                    a.click();
+            }
+        }, false);
+    window.addEventListener('click',
+        function (event) {
+            if (event.target.tagName == 'TIP' || event.target.tagName == 'IMG')
+                toggle_legend(event.target);
+            if (event.target.tagName == 'P')
+                take_focus(event.target);
+        }, false);
+</script>

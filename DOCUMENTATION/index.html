@@ -956,7 +956,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         Les listes sont aussi affichées en triant par correcteur.
     </p>
 
-    <a name="surveillant"><h3>Surveillant : placement des étudiants.</h3></a>
+    <h3>Surveillant : placement des étudiants.</h3>
     <img class="screenshot" src="screen-checkpoint.svg">
     <p>
         Le surveillant voit la liste des sessions qu'il doit surveiller,
@@ -1045,6 +1045,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         </li>
     </ul>
 
+    <h3>Surveillant : administrer la session, regarder le code.</h3>
     <img src="screen-spy.svg" class="screenshot">
     <p>
         Quand on clique sur un étudiant on peut accéder à la dernière
@@ -1220,28 +1221,28 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         ont été indiqués dans le paramétrage de la session.
     </p>
     <ul>
-    <li>
-        Allez sur C5 et cliquer sur <tt class="link">Place</tt>
-        de la bonne session
-        pour accèder à la salle contenant les étudiants à noter.
-    </li>
-    <li>
-        Noter un unique étudiant en cliquant sur le début de son nom
-        puis en cliquant sur le bouton <tt class="button">Noter</tt>.
-    </li>
-    <li>
-        Ou bien ouvrir un onglet de correction pour
-        chacun des étudiants de la salle en cliquant sur 📝.
-    </li>
-    <li>
-        Une fois sur la page de correction, cocher les différents éléments du barème
-        et saisir les commentaires dans les cases à droite du code source.
-    </li>
-    <li>
-        Quand le barème est complètement rempli «Préparer mail» passe en vert.
-        Cliquer dessus pour lui envoyer son code source commenté
-        avec la messagerie habituelle (ne fonctionne pas avec un webmail).
-    </li>
+        <li>
+            Allez sur C5 et cliquer sur <tt class="link">Place</tt>
+            de la bonne session
+            pour accèder à la salle contenant les étudiants à noter.
+        </li>
+        <li>
+            Noter un unique étudiant en cliquant sur le début de son nom
+            puis en cliquant sur le bouton <tt class="button">Noter</tt>.
+        </li>
+        <li>
+            Ou bien ouvrir un onglet de correction pour
+            chacun des étudiants de la salle en cliquant sur 📝.
+        </li>
+        <li>
+            Une fois sur la page de correction, cocher les différents éléments du barème
+            et saisir les commentaires dans les cases à droite du code source.
+        </li>
+        <li>
+            Quand le barème est complètement rempli «Préparer mail» passe en vert.
+            Cliquer dessus pour lui envoyer son code source commenté
+            avec la messagerie habituelle (ne fonctionne pas avec un webmail).
+        </li>
     </ul>
 
     <h2>Installation et administration de C5.</h2>
@@ -1749,30 +1750,102 @@ server {
         par les correcteurs sur la copie.
         Une grande partie des copies n'ont pas été commentées du tout.
     </p>
-    <style>TABLE.histo SPAN { background: #8F8; display: inline-block }</style>
+    <style>
+        TABLE.histo SPAN {
+            background: #8F8;
+            display: inline-block
+        }
+    </style>
     <table class="histo">
-    <tr><th>Nombre<br>de com-<br>mentaires<th>Nombre de copies<th></tr>
-    <tr><td>1<td><span style="width:27.428571428571427em">24</span></tr>
-    <tr><td>2<td><span style="width:35.42857142857143em">31</span></tr>
-    <tr><td>3<td><span style="width:40.0em">35</span></tr>
-    <tr><td>4<td><span style="width:37.714285714285715em">33</span></tr>
-    <tr><td>5<td><span style="width:21.714285714285715em">19</span></tr>
-    <tr><td>6<td><span style="width:17.142857142857142em">15</span></tr>
-    <tr><td>7<td><span style="width:22.857142857142858em">20</span></tr>
-    <tr><td>8<td><span style="width:9.142857142857142em">8</span></tr>
-    <tr><td>9<td><span style="width:11.428571428571429em">10</span></tr>
-    <tr><td>10<td><span style="width:10.285714285714286em">9</span></tr>
-    <tr><td>11<td><span style="width:14.857142857142858em">13</span></tr>
-    <tr><td>12<td><span style="width:6.857142857142857em">6</span></tr>
-    <tr><td>13<td><span style="width:5.714285714285714em">5</span></tr>
-    <tr><td>14<td><span style="width:2.2857142857142856em">2</span></tr>
-    <tr><td>15<td><span style="width:2.2857142857142856em">2</span></tr>
-    <tr><td>16<td><span style="width:2.2857142857142856em">2</span></tr>
-    <tr><td>17<td><span style="width:0.0em">0</span></tr>
-    <tr><td>18<td><span style="width:0.0em">0</span></tr>
-    <tr><td>19<td><span style="width:0.0em">0</span></tr>
-    <tr><td>20<td><span style="width:1.1428571428571428em">1</span></tr>
-    <tr><td><td>235 étudiants. Moyenne 5.5 commentaires. Médiane 4 commentaires.</tr>
+        <tr>
+            <th>Nombre<br>de com-<br>mentaires
+            <th>Nombre de copies
+            <th>
+        </tr>
+        <tr>
+            <td>1
+            <td><span style="width:27.428571428571427em">24</span>
+        </tr>
+        <tr>
+            <td>2
+            <td><span style="width:35.42857142857143em">31</span>
+        </tr>
+        <tr>
+            <td>3
+            <td><span style="width:40.0em">35</span>
+        </tr>
+        <tr>
+            <td>4
+            <td><span style="width:37.714285714285715em">33</span>
+        </tr>
+        <tr>
+            <td>5
+            <td><span style="width:21.714285714285715em">19</span>
+        </tr>
+        <tr>
+            <td>6
+            <td><span style="width:17.142857142857142em">15</span>
+        </tr>
+        <tr>
+            <td>7
+            <td><span style="width:22.857142857142858em">20</span>
+        </tr>
+        <tr>
+            <td>8
+            <td><span style="width:9.142857142857142em">8</span>
+        </tr>
+        <tr>
+            <td>9
+            <td><span style="width:11.428571428571429em">10</span>
+        </tr>
+        <tr>
+            <td>10
+            <td><span style="width:10.285714285714286em">9</span>
+        </tr>
+        <tr>
+            <td>11
+            <td><span style="width:14.857142857142858em">13</span>
+        </tr>
+        <tr>
+            <td>12
+            <td><span style="width:6.857142857142857em">6</span>
+        </tr>
+        <tr>
+            <td>13
+            <td><span style="width:5.714285714285714em">5</span>
+        </tr>
+        <tr>
+            <td>14
+            <td><span style="width:2.2857142857142856em">2</span>
+        </tr>
+        <tr>
+            <td>15
+            <td><span style="width:2.2857142857142856em">2</span>
+        </tr>
+        <tr>
+            <td>16
+            <td><span style="width:2.2857142857142856em">2</span>
+        </tr>
+        <tr>
+            <td>17
+            <td><span style="width:0.0em">0</span>
+        </tr>
+        <tr>
+            <td>18
+            <td><span style="width:0.0em">0</span>
+        </tr>
+        <tr>
+            <td>19
+            <td><span style="width:0.0em">0</span>
+        </tr>
+        <tr>
+            <td>20
+            <td><span style="width:1.1428571428571428em">1</span>
+        </tr>
+        <tr>
+            <td>
+            <td>235 étudiants. Moyenne 5.5 commentaires. Médiane 4 commentaires.
+        </tr>
     </table>
     <p>
         Les surveillances d'examens sont faites dans des salles de TP
@@ -1787,26 +1860,46 @@ server {
     </p>
 
     <h2>TODO</h2>
-    <p>Fonctionnalités manquantes dans l'éditeur :</p>
+    <p>Fonctionnalités manquantes dans l'<b>éditeur</b> :</p>
     <ul>
+        <li> Bouton et icones à ajouter pour l'étudiant :
+            <ul>
+                <li> Choix du thème de coloriage syntaxique.</li>
+                <li> Passer en plein écran.</li>
+                <li> Désactiver intéractivement la sauvegarde des INPUTs.</li>
+                <li> Détruire une sauvegarde.</li>
+                <li> Complétion avec <tt class="key">Ctrl+Espace</tt></li>
+            </ul>
+        </li>
+        <li> Paramétrage :
+            <ul>
+                <li> Option pour désactiver la toute première compilation quand
+                    la compilation automatique est désactivée.
+                    C'est complexe à faire.
+            </ul>
+        </li>
+        <li> Backoffice :
+            <ul>
+                <li> Gestion des versions des sources des sujets.
+                    Même s'ils sont modifiés par plusieurs personnes.
+                </li>
+            </ul>
+        </li>
+        <li> Bugs à corriger :
+            <ul>
+                <li>
+                    Faire en sorte que <tt class="key">Ctrl+Z</tt> fonctionne après le reformatage du code.
+                </li>
+                <li>
+                    Rendre visible les sessions terminées en mode consultation par l'étudiant.
+                </li>
+                <li>
+                    Mettre en évidence le bloc plutôt que seulement les parenthèses ?
+                </li>
+            </ul>
+        </li>
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
-        <li> Choix du thème de coloriage syntaxique par l'étudiant.</li>
-        <li> Icone pour passer en plein écran.</li>
-        <li> Option pour désactiver la toute première compilation quand
-            la compilation automatique est désactivée.
-            C'est complexe à faire.
         </li>
-        <li> Désactiver intéractivement la sauvegarde des INPUTs ?</li>
-        <li> Gestion des versions des sources des sujets.
-            Même s'ils sont modifiés par plusieurs personnes.
-        </li>
-        <li>
-            Faire en sorte que <tt class="key">Ctrl+Z</tt> fonctionne après le reformatage du code.
-        </li>
-        <li>
-            Mettre en évidence le bloc plutôt que seulement les parenthèses.
-        </li>
-        <li> Session terminée mais accessible en mode consultation par l'étudiant.</li>
         <li>
             Ajouter des modes d'affichage à l'éditeur :
             <ul>
@@ -1825,11 +1918,8 @@ server {
             mettre des lien directs à partir de la page d'accueil de l'étudiant
             quand le mode est disponible.
         </li>
-        <li>
-            Détruire une sauvegarde.
-        </li>
     </ul>
-    <p>Fonctionnalités manquantes dans le checkpoint (placement) :</p>
+    <p>Fonctionnalités manquantes dans le <b>checkpoint</b> (placement) :</p>
     <ul>
         <li>
             Affiche source étudiant via la carte :
@@ -1847,8 +1937,11 @@ server {
             des étudiants attendus et dans quelle salles ils doivent composer.
         </li>
     </ul>
-    <p>Fonctionnalités manquantes dans la modélisation du sujet :</p>
+    <p>Fonctionnalités manquantes dans la <b>modélisation du sujet</b> :</p>
     <ul>
+        <li>
+            Mettre au propre l'API.
+        </li>
         <li>
             Le sujet doit pouvoir définir dans les options le nombre de sujets qu'il permet.
         </li>
@@ -1866,11 +1959,11 @@ server {
             donc rend impossible une lecture du pipe sans jamais une erreur.
         </li>
     </ul>
-    <p>Fonctionnalités manquantes de la page d'accueil :</p>
+    <p>Fonctionnalités manquantes de la <b>page d'accueil</b> :</p>
     <ul>
         <li> Affichage de seulement ses sujets.</li>
     </ul>
-    <p>Fonctionnalités manquantes de la page de notation :</p>
+    <p>Fonctionnalités manquantes de la <b>page de notation</b> :</p>
     <ul>
         <li> Ajout du barème aux questions (en plus du barème global).</li>
         <li> Déterminer la version du code qui a été corrigée (sans être commentée).
@@ -1883,7 +1976,7 @@ server {
         </li>
     </ul>
 
-    <p>Page de paramétrage de session :</p>
+    <p>Page de <b>paramétrage de session</b> :</p>
 
     <ul>
         <li> Ajouter l'association des étudiants aux salles d'examen ou surveillant ou correcteurs.</li>
@@ -1892,38 +1985,61 @@ server {
             car elles sont dans la même UE.
         </li>
         <li> Découper la page en plusieurs onglets :
-        <ul>
-            <li>Session : ce qui concerne le paramétrage du déroulement de la session.</li>
-            <li>UE : ce qui concerne l'UE (le premier mot avant le '_').
-                Les modifications faites ici sont enregistrées pour toutes les sessions.
-                Code couleur,
-                Description,
-                Liste des admin/grader/proctors,
-                Affectation des étudiants dans les salles,
-                Liste des tiers temps.
-            </li>
+            <ul>
+                <li>Session : ce qui concerne le paramétrage du déroulement de la session.</li>
+                <li>UE : ce qui concerne l'UE (le premier mot avant le '_').
+                    Les modifications faites ici sont enregistrées pour toutes les sessions.
+                    Code couleur,
+                    Description,
+                    Liste des admin/grader/proctors,
+                    Affectation des étudiants dans les salles,
+                    Liste des tiers temps.
+                </li>
 
-        <li>Résultat : le bas de la colonne de droite actuelle.</li>
-        <li>Notation : le barème</li>
-        <li>Place : le placement des étudiants (sans ouvrir une nouvelle page)</li>
-        <li>Edit : édition du code source de la session (sans ouvrir une nouvelle page)</li>
-        <li>Exportation : la page 'See student results' (sans ouvrir une nouvelle page)</li>
-        <li>Administration : les boutons en haut de la colonne de droite.</li>
-        </ul>
+                <li>Résultat : le bas de la colonne de droite actuelle.</li>
+                <li>Notation : le barème</li>
+                <li>Place : le placement des étudiants (sans ouvrir une nouvelle page)</li>
+                <li>Edit : édition du code source de la session (sans ouvrir une nouvelle page)</li>
+                <li>Exportation : la page 'See student results' (sans ouvrir une nouvelle page)</li>
+                <li>Administration : les boutons en haut de la colonne de droite.</li>
+            </ul>
         </li>
     </ul>
 
 
 
     <script>
+        /* From Olavi Ivask's Weblog */
+        function replaceDiacritics(s) {
+            if (s.search(/[\300-\377]/) == -1)
+                return s;
+
+            var diacritics = [
+                /[\300-\306]/g, /[\340-\346]/g, // A, a
+                /[\310-\313]/g, /[\350-\353]/g, // E, e
+                /[\314-\317]/g, /[\354-\357]/g, // I, i
+                /[\322-\330]/g, /[\362-\370]/g, // O, o
+                /[\331-\334]/g, /[\371-\374]/g,  // U, u
+                /[\321]/g, /[\361]/g, // N, n
+                /[\307]/g, /[\347]/g // C, c
+            ];
+
+            var chars = ['A', 'a', 'E', 'e', 'I', 'i', 'O', 'o', 'U', 'u', 'N', 'n', 'C', 'c'];
+
+            for (var i = 0; i < diacritics.length; i++) {
+                s = s.replace(diacritics[i], chars[i]);
+            }
+            return s;
+        }
+
         content = [];
         what = {
             'H2': ['<b>', '</b>'],
             'H3': ['    ', '']
         };
-        i = 0;
         for (element = document.body.firstChild; element; element = element.nextSibling)
             if (what[element.tagName]) {
+                i = replaceDiacritics(element.innerText).toLowerCase().replace(/[.?! ]*$/, "").replace(/[^a-zA-Z0-9]/g, '-');
                 content.push(
                     what[element.tagName][0]
                     + '<a href="#' + i + '">'
@@ -1932,7 +2048,6 @@ server {
                     + '</a><br>'
                 );
                 element.innerHTML = '<a name="' + i + '">' + element.innerHTML + '</a>';
-                i++;
             }
         document.getElementById('toc').innerHTML = content.join('');
 
