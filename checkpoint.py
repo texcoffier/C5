@@ -1166,7 +1166,7 @@ def create_page(building_name):
         <span class="icon" onclick="send_alert()">🚨</span>
         <span class="icon" onclick="search_student()">🔍</span>
         ''']
-    if DISPLAY_SESSION_NAME:
+    if window.DISPLAY_SESSION_NAME:
         content.append(
             '<span class="course">'
             + COURSE.split('=')[1].replace(RegExp('_', 'g'), ' ')
@@ -1181,11 +1181,11 @@ def create_page(building_name):
                  for building in BUILDINGS_SORTED])
         )
     content.append('</select>')
-    if DISPLAY_MY_ROOMS:
+    if window.DISPLAY_MY_ROOMS:
         content.append(
             '''<label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()"
                              type="checkbox">Seulement mes salles</label>''')
-    if DISPLAY_STUDENT_FILTER:
+    if window.DISPLAY_STUDENT_FILTER:
         content.append('''<label class="filter">Mettre en évidence les logins :<br>
             <input onchange="filters(this)" onblur="filters(this)"
                     style="box-sizing: border-box; width:100%"></label>''')
@@ -1451,6 +1451,6 @@ def debug():
         students_per_room[room_name] = [student.login for student in room.students]
     print(JSON.stringify(students_per_room))
 
-create_page(DEFAULT_BUILDING or "Nautibus")
-ROOM = Room(DEFAULT_BUILDING or "Nautibus")
+create_page(window.DEFAULT_BUILDING or "Nautibus")
+ROOM = Room(window.DEFAULT_BUILDING or "Nautibus")
 update_page()
