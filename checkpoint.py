@@ -724,9 +724,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.moved = False
         for student in self.students:
             if student.column == column and student.line == line:
-                self.moving = student
-                student.column_start = student.column
-                student.line_start = student.line
+                self.moving = {'login': student.login,
+                               'column': student.column,
+                               'line': student.line}
                 return
         self.drag_x_start = self.drag_x_current = self.event_x
         self.drag_y_start = self.drag_y_current = self.event_y
@@ -760,9 +760,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.drag_y_current = self.event_y
         else:
             if column != -1:
-                self.moving.line = line
-                self.moving.column = column
-                self.moving.update()
+                student = STUDENT_DICT[self.moving['login']]
+                student.line = line
+                student.column = column
+                student.update()
                 document.getElementById('top').style.background = TOP_INACTIVE
             else:
                 document.getElementById('top').style.background = TOP_ACTIVE
@@ -770,14 +771,14 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def drag_stop_student(self, column, line):
         """Stop moving a student"""
         if column != -1:
-            if self.moving.column_start != column or self.moving.line_start != line:
+            if self.moving['column'] != column or self.moving['line'] != line:
                 self.move_student_to(self.moving, column, line)
             elif not self.moved:
                 # Simple click
-                record('/checkpoint/SPY/' + COURSE + '/' + self.moving.login)
+                record('/checkpoint/SPY/' + COURSE + '/' + self.moving['login'])
         else:
             self.highlight_disk = None
-            record('/checkpoint/' + COURSE + '/' + self.moving.login + '/EJECT')
+            record('/checkpoint/' + COURSE + '/' + self.moving['login'] + '/EJECT')
     def drag_stop_click_on_computer_menu(self):
         """Select a compulter malfunction"""
         if self.selected_item:
@@ -938,7 +939,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Move student bloc"""
         self.get_event(event)
         login = event.currentTarget.getAttribute('login')
-        Student.moving_student = STUDENT_DICT[login]
+        Student.moving_student = login
         Student.moving_element = event.currentTarget
         Student.moving_element.style.position = 'fixed'
         Student.moving_student_position = [self.event_x, self.event_y]
@@ -954,7 +955,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         Student.moving_element.style.pointerEvents = 'none'
         pos = self.get_column_row(self.event_x, self.event_y)
         if pos[0] != -1:
-            if Student.moving_student.is_good_room(self.get_room_name(pos[0], pos[1])):
+            if STUDENT_DICT[Student.moving_student].is_good_room(
+                    self.get_room_name(pos[0], pos[1])):
                 Student.moving_element.style.background = "#0F0"
             else:
                 Student.moving_element.style.background = "#F00"
@@ -984,10 +986,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Drop the student"""
         pos = self.get_coord(event)
         if pos[0] != -1:
-            self.move_student_to(Student.moving_student, pos[0], pos[1])
+            self.move_student_to(STUDENT_DICT[Student.moving_student], pos[0], pos[1])
         else:
             if Student.moving_student_position == [self.event_x, self.event_y]:
-                record('/checkpoint/SPY/' + COURSE + '/' + Student.moving_student.login)
+                record('/checkpoint/SPY/' + COURSE + '/' + Student.moving_student)
         document.body.onmousemove = document.body.ontouchmove = None
         window.onmouseup = document.body.ontouchend = None
         del Student.moving_element.style.position
@@ -1213,6 +1215,11 @@ def send_alert():
 
 def update_page():
     """Update students"""
+    if ROOM.moving and ROOM.moving != True: # pylint: disable=singleton-comparison
+        student = STUDENT_DICT[ROOM.moving['login']]
+        line = student.line
+        column = student.column
+
     students = [Student(student) for student in STUDENTS if student[0]]
     students.sort(cmp_student_name)
     ROOM.students = []
@@ -1222,6 +1229,12 @@ def update_page():
             ROOM.students.append(student)
         elif not student.active:
             ROOM.waiting_students.append(student)
+
+    if ROOM.moving and ROOM.moving != True: # pylint: disable=singleton-comparison
+        student = STUDENT_DICT[ROOM.moving['login']]
+        student.line = line
+        student.column = column
+
     ROOM.put_students_in_rooms()
     ROOM.draw()
     ROOM.compute_rooms_on_screen()
@@ -1299,6 +1312,8 @@ def search_student():
     """Zoom on a student"""
     spy_close()
     student = prompt("Début de numéro d'étudiant ou nom ou prénom à chercher")
+    if not student:
+        return
     student = get_login(student)
     if student:
         ROOM.zoom_student(student)
