@@ -1250,7 +1250,7 @@ async def checkpoint_list(request:Request) -> Response:
         FORM SPAN { border: 1px outset #888; border-radius: 0.5em;
                     background: #EEE; padding: 0.2em }
         FORM SPAN:hover { border: 1px inset #888; background: #DDD }
-        SPAN VAR { display: none; background: #FFE;  border: 1px solid #880; position: absolute; }
+        SPAN VAR { display: none; background: #FFE;  border: 1px solid #880; position: absolute; z-index: 1}
         SPAN:hover VAR { display: block }
         SPAN:hover { background: #FF0 }
         BUTTON { font-size: 100% }
