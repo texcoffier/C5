@@ -673,8 +673,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.options['coloring']:
             hljs.highlightElement(self.overlay)
         for line_char, what in self.highlight_errors.Items():
-            line_nr, char_nr = line_char.split(':')
-            self.add_highlight_errors(line_nr, char_nr, what)
+            line_char = line_char.split(':')
+            if len(line_char) == 2:
+                line_nr, char_nr = line_char
+                width = 1
+            else:
+                line_nr, char_nr, width = line_char
+            self.add_highlight_errors(line_nr, char_nr, what, width)
 
         line_height = 1000
         comments = self.all_comments[self.current_question] or {}
@@ -798,7 +803,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             'left': rect.left - self.layered.offsetLeft - self.editor.offsetLeft
         }
 
-    def add_highlight_errors(self, line_nr, char_nr, what):
+    def add_highlight_errors(self, line_nr, char_nr, what, width=1):
         """Add the error or warning"""
         if not what:
             return
@@ -811,7 +816,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             element.style.top = rect['top'] + 'px'
             element.style.height = rect['height'] + 'px'
             element.style.left = 'calc(' + (rect['left'] + move_right) + 'px - var(--pad))'
-            element.style.width = rect['width'] + 'px'
+            element.style.width = width * rect['width'] + 'px'
             element.className = class_name
             self.overlay.appendChild(element)
         line = self.editor_lines[line_nr - 1]
@@ -1018,6 +1023,32 @@ class CCCCC: # pylint: disable=too-many-public-methods
             line_bad, column_bad = self.get_line_column(start_pos + 1)
             self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
 
+    def highlight_word(self):
+        """Highlight the current word in the text"""
+        char = RegExp('[a-zA-Z0-9_]')
+        start = self.cursor_position
+        if (not self.source[start].match(char)
+                and self.source[start-1] and self.source[start-1].match(char)):
+            start -= 1
+        while self.source[start] and self.source[start].match(char):
+            start -= 1
+        if start == self.cursor_position:
+            return # Not on a word
+        end = self.cursor_position
+        while self.source[end] and self.source[end].match(char):
+            end += 1
+
+        name = RegExp('\\b' + self.source[start + 1:end] + '\\b', 'g')
+
+        items = self.source.matchAll(name)
+        while True:
+            match = items.next()
+            if not match.value:
+                break
+            line_word, column_word = self.get_line_column(match.value.index + 1)
+            key = line_word + ':' + column_word + ':' + (end - start - 1)
+            self.highlight_errors[key] = 'cursorword'
+
     def update_cursor_position_now(self):
         """Get the cursor position
         pos = [current_position, do_div_br_collapse]
@@ -1039,6 +1070,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         left = cursor.cloneContents()
         self.cursor_position = walk(left)
         self.highlight_unbalanced()
+        try:
+            self.highlight_word()
+        except: # pylint: disable=bare-except
+            pass # May happen when text deletion and the cursor is outside source
         line, _column = self.get_line_column(self.cursor_position)
         errors = self.compiler.innerHTML.replace(
             '</b>', '').replace('<b style="color:#FFF;background:#F00">', '')
