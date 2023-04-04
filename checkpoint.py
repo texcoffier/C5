@@ -183,6 +183,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.drag_x_current = self.drag_x_start = None
         self.drag_y_current = self.drag_y_start = None
         self.moving = False
+        if document.getElementById('my_rooms').checked:
+            self.scale = 0
         self.update_sizes(0.5)
         self.update_visible()
         self.search_rooms()
