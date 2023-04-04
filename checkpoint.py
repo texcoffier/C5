@@ -11,6 +11,7 @@ BOLD_TIME_ACTIVE = 300 # In seconds for last activity
 MENU_WIDTH = 9
 MENU_HEIGHT = 10
 MENU_LINE = 0.6
+DECAL_Y = 0.15
 TOP_INACTIVE = '#FFFD'
 TOP_ACTIVE = '#8F8D'
 ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
@@ -98,7 +99,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 2 * self.scale * self.columns_width[2*column],
                 2 * self.scale * self.lines_height[2*line]]
     def get_column_row(self, pos_x, pos_y):
-        """Return character position (float) in the character map"""
+        """Return character position in the character map"""
         if pos_y < self.real_top or pos_x < self.real_left:
             return [-1, -1]
         column = -1
@@ -124,13 +125,41 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         else:
             self.event_x = event.clientX
             self.event_y = event.clientY
-    def get_coord(self, event):
+    def get_coord(self, event_x, event_y, free_slot=False):
         """Get column line as integer"""
-        self.get_event(event)
-        column, line = self.get_column_row(self.event_x, self.event_y)
-        column = Math.round(column)
-        line = Math.round(line)
-        return [column, line]
+        if event_y < self.real_top or event_x < self.real_left:
+            return [-1, -1]
+        col, lin = self.get_column_row(event_x, event_y)
+        if (lin >= 0 and col >= 0
+                and self.lines[lin][col] in ' cab'
+                and self.columns_width[2*col] == 0.5
+                and self.lines_height[2*lin] == 0.5
+           ):
+            return [col, lin]
+        if free_slot:
+            # Current slot is not free: search around
+            distances = []
+            for radius in range(1, 10):
+                for dir_x in range(-radius, radius + 1):
+                    for dir_y in range(-radius, radius + 1):
+                        if abs(dir_x) < radius and abs(dir_y) < radius:
+                            continue # Yet done
+                        event_x2 = event_x + (dir_x + 0.7)*self.scale/2
+                        event_y2 = event_y + dir_y*self.scale/2
+                        col2, lin2 = self.get_column_row(event_x2, event_y2)
+                        if (lin2 >= 0 and col2 >= 0 and self.lines[lin2][col2] in ' cab'
+                               and self.columns_width[2*col2] == 0.5
+                               and self.lines_height[2*lin2] == 0.5
+                           ):
+                            distances.append([
+                                # +1000 because of string javascript sort
+                                1000 + distance(event_x, event_y, event_x2, event_y2), col2, lin2])
+                if len(distances): # pylint: disable=len-as-condition
+                    break
+            if len(distances): # pylint: disable=len-as-condition
+                distances.sort()
+                return [distances[0][1], distances[0][2]]
+        return [col, lin]
     def get_room_name(self, column, line):
         """Return the short room name"""
         for room_name, room in self.rooms.Items():
@@ -440,6 +469,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
             x_pos, y_pos, x_size, y_size = self.xys(student.column, student.line)
             x_pos -= self.scale / 2
+            y_pos += DECAL_Y * self.scale
             ctx.globalAlpha = 0.7
             if student.active:
                 ctx.fillStyle = "#FF0"
@@ -556,8 +586,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillText(char, x_pos - char_size.width/2, y_pos + y_size/2)
     def draw_square_feedback(self, ctx):
         """Single square feedback"""
-        column, line = self.get_column_row(self.event_x, self.event_y)
+        column, line = self.get_coord(self.event_x, self.event_y, True)
         x_pos, y_pos, x_size, y_size = self.xys(column - 0.5, line - 0.5)
+        y_pos += DECAL_Y * self.scale
         ctx.fillStyle = "#0F0"
         ctx.globalAlpha = 0.5
         ctx.fillRect(x_pos, y_pos, x_size, y_size)
@@ -709,7 +740,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         event.preventDefault()
     def drag_start(self, event):
         """Start moving the map"""
-        column, line = self.get_coord(event)
+        self.get_event(event)
+        column, line = self.get_coord(self.event_x, self.event_y)
         window.onmousemove = window.ontouchmove = bind(self.drag_move, self)
         window.onmouseup = window.ontouchend = bind(self.drag_stop, self)
         if event.touches:
@@ -734,7 +766,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.draw()
     def drag_move(self, event):
         """Moving the map"""
-        column, line = self.get_coord(event)
+        self.get_event(event)
+        column, line = self.get_coord(self.event_x, self.event_y)
         if self.zooming:
             if len(event.touches) == 2:
                 zooming = distance(self.event_x, self.event_y,
@@ -760,6 +793,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.drag_y_current = self.event_y
         else:
             if column != -1:
+                column, line = self.get_coord(self.event_x, self.event_y, True)
                 student = STUDENT_DICT[self.moving['login']]
                 student.line = line
                 student.column = column
@@ -860,8 +894,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             print('bug')
             return
         document.getElementById('top').style.background = TOP_INACTIVE
-        column, line = self.get_coord(event)
+        self.get_event(event)
+        column, line = self.get_coord(self.event_x, self.event_y)
         if self.moving != True: # pylint: disable=singleton-comparison
+            column, line = self.get_coord(self.event_x, self.event_y, True)
             self.drag_stop_student(column, line)
         elif not self.moved:
             # Simple click
@@ -953,7 +989,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         Student.moving_element.style.left = self.event_x + 'px'
         Student.moving_element.style.top = self.event_y + 'px'
         Student.moving_element.style.pointerEvents = 'none'
-        pos = self.get_column_row(self.event_x, self.event_y)
+        pos = self.get_coord(self.event_x, self.event_y, True)
         if pos[0] != -1:
             if STUDENT_DICT[Student.moving_student].is_good_room(
                     self.get_room_name(pos[0], pos[1])):
@@ -984,7 +1020,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.highlight_disk = [column, line, seconds()]
     def stop_move_student(self, event):
         """Drop the student"""
-        pos = self.get_coord(event)
+        self.get_event(event)
+        pos = self.get_coord(self.event_x, self.event_y, True)
         if pos[0] != -1:
             self.move_student_to(STUDENT_DICT[Student.moving_student], pos[0], pos[1])
         else:
