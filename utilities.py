@@ -392,16 +392,18 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def get_students(self) -> List[List[Any]]:
         """Get all the students"""
-        if C5_VALIDATE:
-            # Clearly not efficient
-            return [
-                [student, active_teacher_room, await LDAP.infos(student)]
-                for student, active_teacher_room in self.active_teacher_room.items()
-                ]
-        return [
-                [student, active_teacher_room, {'fn': 'FN' + student, 'sn': 'SN'+student}]
-                for student, active_teacher_room in self.active_teacher_room.items()
-                ]
+        # Clearly not efficient
+        students = []
+        for student, active_teacher_room in self.active_teacher_room.items():
+            active_teacher_room = [*active_teacher_room[:6],
+                                   (await DNS.infos(active_teacher_room[6]))['name'],
+                                   *active_teacher_room[7:]]
+            if C5_VALIDATE:
+                infos = await LDAP.infos(student)
+            else:
+                infos = {'fn': 'FN' + student, 'sn': 'SN'+student}
+            students.append([student, active_teacher_room, infos])
+        return students
 
     @classmethod
     def get(cls, course:str) -> "CourseConfig":
@@ -714,7 +716,6 @@ class Session:
         forward = headers.get('x-forwarded-for', '')
         if forward:
             client_ip = forward.split(",")[0]
-        client_ip = (await DNS.infos(client_ip))['name']
         browser = headers.get('user-agent', '')
         if ticket in cls.session_cache:
             session = cls.session_cache[ticket]

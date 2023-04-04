@@ -21,9 +21,12 @@ def analyse():
         start = time.time()
         addr = line.strip()
         print("About:", addr, file=sys.stderr)
-        name = socket.getnameinfo((addr, 0), 0)[0]
-        if not name:
-            name = "?"
+        if addr.replace('.', '').isdigit():
+            name = socket.getnameinfo((addr, 0), 0)[0]
+            if not name:
+                name = "?"
+        else:
+            name = addr
         print("Name:", name, file=sys.stderr)
         sys.stdout.write(json.dumps([addr, {'name': name.lower()}]) + '\n')
         sys.stdout.flush()
