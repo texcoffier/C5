@@ -48,8 +48,11 @@ class Process: # pylint: disable=invalid-name
     cache:Dict[Any,Any] = {}
     started:bool = None
 
-    def __init__(self, command):
+    def __init__(self, command, name):
         self.command = command
+        self.cache_dir = f'CACHE.{name}/'
+        if not os.path.exists(self.cache_dir):
+            os.mkdir(self.cache)
 
     async def start(self) -> None:
         """
@@ -71,6 +74,9 @@ class Process: # pylint: disable=invalid-name
             infos = await self.process.stdout.readline()
             infos = json.loads(infos)
             self.cache[infos[0]] = infos[1]
+            if '/' not in infos[0]:
+                with open(self.cache_dir + infos[0], 'w', encoding='latin1') as file:
+                    file.write(json.dumps(infos[1]))
 
     async def infos(self, key:str) -> Dict[str, str]:
         """Get the informations about key"""
@@ -88,12 +94,17 @@ class Process: # pylint: disable=invalid-name
         while not self.process:
             await asyncio.sleep(0.1)
         self.process.stdin.write(key.encode('utf-8') + b'\n')
+        if '/' not in key and os.path.exists(self.cache_dir + key):
+            with open(self.cache_dir + key, 'r', encoding='ascii') as file:
+                infos = json.loads(file.read())
+            self.cache[key] = infos # Will be updated when the answer is received
+            return infos
         while key not in self.cache:
             await asyncio.sleep(0.1)
         return self.cache[key]
 
-LDAP = Process('./infos_server.py')
-DNS = Process('./dns_server.py')
+LDAP = Process('./infos_server.py', 'LDAP')
+DNS = Process('./dns_server.py', 'DNS')
 
 def student_log(course_name:str, login:str, data:str) -> None:
     """Add a line to the student log"""
