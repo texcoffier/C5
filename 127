@@ -1,6 +1,7 @@
 #!/bin/sh
 
-# Call utilities.py with the configuration defined.
+# This script calls utilities.py with the configuration defined here.
+# Run ./utilities.py to display explanation of variables
 
 export C5_HOST="127.0.0.1"
 export C5_IP="127.0.0.1"

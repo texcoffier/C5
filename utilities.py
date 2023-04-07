@@ -920,7 +920,7 @@ def print_help() -> None:
    * getall : copy production course (but not logs) locally
 """)
     print_state()
-    os.system("ps -fe | grep -e http_server.py -e compile_server.py | grep -v grep")
+    os.system("ps -fe | grep -e http_server.py -e compile_server.py -e dns_server.py -e infos_server.py | grep -v grep")
     print('for I in http compile infos dns; do pkill -f "$I"_server.py ; done ; rm *.log')
     sys.exit(1)
 

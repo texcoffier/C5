@@ -180,8 +180,7 @@
                 <tr>
                     <td>
                         <p tabindex="0">Travail en autonomie
-                            <tip>Un session peut comporter plusieurs questions.<br>
-                                <br>
+                            <tip>
                                 Les étudiants vont sur C5 et<br>
                                 peuvent immédiatement commencer à travailler.<br>
                                 <br>
@@ -267,6 +266,22 @@
                                         <td>Il est toujours possible de guider<br> l'étudiant vers la bonne réponse.
                                         <td>
                                     </tr>
+                                    <tr>
+                                        <th>HTML
+                                        <td colspan="3" rowspan="5" style="text-align: center;vertical-align:middle">Sera ajouté si c'est demandé.
+                                    </tr>
+                                    <tr>
+                                        <th>CSS
+                                    </tr>
+                                    <tr>
+                                        <th>Java
+                                    </tr>
+                                    <tr>
+                                        <th>Rust
+                                    </tr>
+                                    <tr>
+                                        <th>Shell
+                                    </tr>
                                 </table>
                             </tip>
                         </p>
@@ -343,11 +358,25 @@
                 </tr>
                 <tr>
                     <td>
+                        <p tabindex="0">Corriger par salle, par rangée.
+                            <tip>Détection facilitée des copieurs car on sait qui est à coté de qui.<br>
+                                <span style="font-family:emoji">📝</span> permet d'ouvrir un onglet de correction sur
+                                chaque étudiant de la salle.<br>
+                                On a accès à la navigation temporelle dans le code de l'étudiant.
+                                <a class="doc"
+                                    href="index.html#surveillant---administrer-la-session--regarder-le-code"></a><br>
+                                <img src="screen-checkpoint.png"></tip>
+                        </p>
                         <p tabindex="0">Noter en cliquant sur un barème.
-                            <tip>Tout passe en vert quand la correction est complète.<br>
-                                On peut noter à plusieurs et on sait qui a noté.
+                            <tip>On peut noter à plusieurs et on sait qui a noté.
                                 <a class="doc" href="index.html#correcteur---notes--commentaires-et-retours"></a><br>
-                                On peut éventuellement tester des changements dans le code.
+                                On peut éventuellement tester des changements dans le code.<br>
+                                Tout passe en vert quand la correction est complète.
+                                <img src="screen-grade.png"></tip>
+                        </p>
+                        <p tabindex="0">Commenter le travail de l'étudiant.
+                            <tip>On peut faire un retour détaillé à l'étudiant ligne par ligne.
+                                <a class="doc" href="index.html#correcteur---notes--commentaires-et-retours"></a>
                                 <img src="screen-grade.png"></tip>
                         </p>
                         <p tabindex="0">Export des notes, détaillées ou pas.
@@ -371,20 +400,6 @@
                                 <a class="doc" href="index.html#administrateur---analyse-d-une-session"></a>
                                 <img src="screen-course.png"></tip>
                         </p>
-                        <p tabindex="0">Corriger par salle, par rangée.
-                            <tip>Détection facilitée des copieurs car on sait qui est à coté de qui.<br>
-                                <span style="font-family:emoji">📝</span> permet d'ouvrir un onglet de correction sur
-                                chaque étudiant de la salle.<br>
-                                On a accès à la navigation temporelle dans le code de l'étudiant.
-                                <a class="doc"
-                                    href="index.html#surveillant---administrer-la-session--regarder-le-code"></a><br>
-                                <img src="screen-checkpoint.png"></tip>
-                        </p>
-                        <p tabindex="0">Commenter le travail de l'étudiant.
-                            <tip>On peut faire un retour détaillé à l'étudiant ligne par ligne.
-                                <a class="doc" href="index.html#correcteur---notes--commentaires-et-retours"></a>
-                                <img src="screen-grade.png"></tip>
-                        </p>
                 </tr>
             </table>
             <table>
@@ -396,16 +411,17 @@
                                     <tr>
                                         <th>Quand</th>
                                         <th>Quoi</th>
+                                        <th>Lang.</th>
                                         <th>Année</th>
-                                        <th>Nbr Inscrits</th>
+                                        <th>#Inscrits</th>
                                         <th>Utilisation</th>
                                     </tr>
                                     <tr>
-                                        <td> 2022-09→2022-12</td>
+                                        <td> 2022-09…<br>2022-12</td>
                                         <td>
                                             Initiation Algorithmique et<br>
-                                            Programmation Impérative<br>
-                                            en langage C
+                                            Programmation Impérative
+                                        <td>C
                                         <td> L1
                                         <td> 585
                                         <td>
@@ -416,27 +432,38 @@
                                             11 sujets de TP.
                                     </tr>
                                     <tr>
-                                        <td> 2023-01→2023-05<br>
-                                            Pas terminée.</td>
+                                        <td> 2023-01…<br>2023-05</td>
                                         <td>
                                             Algorithmique et<br>
-                                            Programmation Récursive<br>
-                                            en LISP
+                                            Programmation Récursive
+                                        <td>LISP
                                         <td> L1
                                         <td> 414
                                         <td>
-                                            ? sujets d'examen.<br>
-                                            ≥8 sujets de TP.
+                                            2 sujets d'examen blanc.<br>
+                                            1 sujet d'examen.<br>
+                                            8 sujets de TP.
                                     </tr>
                                     <tr>
-                                        <td> 2023-02</td>
+                                        <td> 2023-02…<br>2023-05</td>
                                         <td>
                                             Programmation concurrente
+                                        <td>C
                                         <td> L3
                                         <td> 165
                                         <td>
                                             1 sujet d'examen.<br>
                                             1 sujet d'entraînement.<br>
+                                    </tr>
+                                    <tr>
+                                        <td> 2023-04</td>
+                                        <td>
+                                            Applications En Mathématiques Et Informatique
+                                        <td>C
+                                        <td> L1
+                                        <td> 316
+                                        <td>
+                                            1 sujet d'examen.
                                     </tr>
                                 </table>
                             </tip>
@@ -447,8 +474,8 @@
                     <td>
                         <p tabindex="0">Page d'accueil étudiant
                             <tip>L'étudiant voit la liste des sessions qui lui sont accessibles.<br>
-                                Il arrivera dans une salle d'attente pour les examens<br>
-                                en attendant le placement par le surveillant.
+                                En suivant le lien il arrive dans une salle d'attente si c'est un examen,<br>
+                                il doit attendre le placement par le surveillant avant de commencer.
                                 <a class="doc" href="index.html#etudiant"></a>
                                 <img src="screen-student.svg">
                             </tip>
@@ -471,9 +498,9 @@
                     <td>
                         <p tabindex="0">Que manque-t-il à C5 ?
                             <tip>
-                                La version actuelle est utilisable facilement.<br>
+                                La version actuelle est utilisable facilement.<br><br>
                                 De nombreuses améliorations sont néanmoins possibles.<br>
-                                Mais sont-elles vraiment utiles ?<br>
+                                Mais sont-elles vraiment utiles ?<br><br>
                                 À vous de nous dire ce qui est vraiment nécessaire.<br>
                                 Cliquez sur le bouton DOC pour avoir la liste.
                                 <a class="doc" href="index.html#todo"></a>

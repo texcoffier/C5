@@ -247,7 +247,7 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     <a target="_blank" onclick="javascript:upload_media(this)">Upload a new media</a>
     <a target="_blank" href="/adm/editor/""" + COURSE + '?ticket=' + TICKET + """"
     >Edit source with C5</a>
-    <a target="_blank" href="=""" + COURSE + '?ticket=' + TICKET + """">Try the exercises</a>
+    <a target="_blank" href="=""" + COURSE + '?ticket=' + TICKET + """">Try the session</a>
     <br>
     <a target="_blank" href="/checkpoint/""" + COURSE + '?ticket=' + TICKET
     + """">Place students</a>
