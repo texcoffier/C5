@@ -283,6 +283,22 @@ class Tests: # pylint: disable=too-many-public-methods
             except selenium.common.exceptions.NoAlertPresentException:
                 return 'No alert on screen'
         retry(check, required, nbr=nbr)
+    def check_dialog(self, contains='', accept=True, required=True, nbr=20):
+        """Check if an alert is on screen and accept or cancel it"""
+        def check():
+            print(f'\tDIALOG Contains=«{contains}» Accept=«{accept}»')
+            alert = self.check('DIALOG')
+            if not alert:
+                return 'No dialog on screen'
+            content = alert.get_attribute('innerHTML')
+            if contains in content:
+                if accept:
+                    self.check('#popup_ok').click()
+                else:
+                    self.check('#popup_cancel').click()
+                return None
+            return f'The dialog does not contains «{contains}» but «{content}'
+        retry(check, required, nbr=nbr)
     def load_page(self, url):
         """Load page and clear popup"""
         self.goto(url)
@@ -449,7 +465,7 @@ class Tests: # pylint: disable=too-many-public-methods
 
         try:
             self.check('.editor').send_keys("print('Je suis un texte super long')")
-            self.check_alert(contains=' !')
+            self.check_dialog(contains=' !')
             self.check(question(3), {'innerText': Contains('1'), 'className': Equal('good')})
             self.check(question(4), {'innerText': Contains('2'), 'className': Equal('current possible')})
             self.check(question(5), {'innerText': Contains('3'), 'className': Equal('')})
@@ -578,7 +594,7 @@ return sum ;
         self.check('.save_history', {'length': Equal('1')})
         editor = self.move_cursor('.editor')
         editor.send_keys('univers vie')
-        self.check_alert(accept=True, required=True) # Ok to congratulation
+        self.check_dialog(accept=True, required=True) # Ok to congratulation
 
         self.check('.save_history', {'length': Equal('1')})
         self.check(question(3)).click() # Returns to the first question
@@ -586,9 +602,8 @@ return sum ;
 
         # Tag the good anwser on first question
         self.check('.tag_button').click()
-        prompt = Alert(self.driver)
-        prompt.send_keys('A')
-        prompt.accept()
+        self.check('#popup_input').send_keys('A')
+        self.check('#popup_ok').click()
         self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('<option timestamp="1">Vers')})
 
         # Change the answer and then change the question without saving
@@ -602,9 +617,8 @@ return sum ;
 
         # Tag the new save
         self.check('.tag_button').click()
-        prompt = Alert(self.driver)
-        prompt.send_keys('B')
-        prompt.accept()
+        self.check('#popup_input').send_keys('B')
+        self.check('#popup_input').send_keys(Keys.ENTER)
         self.check('.save_history', {'length': Equal('3')}, nbr=200)
         self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('>B<') and Contains('<option timestamp="1">Vers')})
 
@@ -628,9 +642,8 @@ return sum ;
 
         # Tag the new save
         self.check('.tag_button').click()
-        prompt = Alert(self.driver)
-        prompt.send_keys('C')
-        prompt.accept()
+        self.check('#popup_input').send_keys('C')
+        self.check('#popup_input').send_keys(Keys.ENTER)
         time.sleep(0.1)
         self.check('.save_history', {'length': Equal('4')})
         self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('>B<')
@@ -698,10 +711,10 @@ return sum ;
         self.check('.save_history OPTION:first-child', {'innerText': Contains('instant')})
         self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('false')})
         with self.change_ip():
+            self.check_dialog('session a expiré', accept=True, required=True)
             self.move_cursor('.editor')
             self.check('.editor').send_keys('/**/')
             self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('true')}).click()
-            self.check_alert('session a expiré', accept=True, required=True)
             self.check('.save_button', {'state': Equal('wait'), 'enabled': Equal('true')})
             self.move_cursor('.editor')
             self.goto('')
@@ -751,13 +764,13 @@ return sum ;
             with self.change_ip():
                 self.check('[g="1"]:nth-child(2)',
                     {'className': Contains('grade_unselected') & Contains('grade_undefined')}).click()
-                self.check_alert('session a expiré', accept=True, required=True)
+                self.check_dialog('session a expiré', accept=True, required=True)
 
                 self.check('.comments TEXTAREA:first-child').click()
                 self.control('a')
                 self.check('.comments TEXTAREA:first-child').send_keys(Keys.BACKSPACE)
                 self.check('.question H2').click()
-                self.check_alert('session a expiré', accept=True, required=True)
+                self.check_dialog('session a expiré', accept=True, required=True)
     def test_exam(self): # pylint: disable=too-many-statements
         """Test an exam"""
         with self.admin_rights():
@@ -826,7 +839,7 @@ return sum ;
             self.check('.editor').send_keys(' /*2*/')
             time.sleep(duration)
             self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('true')}).click()
-            self.check_alert('examen est terminé', accept=True, required=True)
+            self.check_dialog('examen est terminé', accept=True, required=True)
             self.check('.save_button', {'state': Equal('wait'), 'enabled': Equal('false')})
 
             self.ticket = admin

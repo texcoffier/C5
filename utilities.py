@@ -757,8 +757,8 @@ class Session:
     // {message} <!--
     try {{
         window.parent.ccccc.record_not_done({message_js}
-            + "\nLa sauvegarde n'a pas pu être faite.\n"
-            + "Copiez votre code source ailleurs et rechargez cette page.");
+            + "<br>\nLa sauvegarde n'a pas pu être faite.\n"
+            + "<br>Copiez votre code source ailleurs et rechargez cette page.");
         }}
     catch(err) {{
         window.innerHTML = {message_js};

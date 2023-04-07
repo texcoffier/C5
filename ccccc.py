@@ -295,10 +295,44 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.seconds = int(millisecs() / 1000)
         print("GUI: init done")
 
-    def popup_message(self, txt):
-        """OK popup with the message"""
-        self.do_not_register_this_blur = True
-        alert(txt) # pylint: disable=undefined-variable
+    def popup_message(self, txt, cancel='', ok='OK', callback=None): # pylint: disable=no-self-use
+        """For Alert and Prompt"""
+        popup = document.createElement('DIALOG')
+        if cancel != '':
+            cancel = '<button id="popup_cancel">' + cancel + '</button>'
+        if callback:
+            input_value = '<br><input id="popup_input">'
+        else:
+            input_value = ''
+        popup.innerHTML = txt + input_value + '<button id="popup_ok">' + ok + '</button>' + cancel
+        document.body.appendChild(popup)
+
+        def close():
+            """Close the dialog"""
+            document.body.removeChild(popup)
+
+        def validate():
+            if callback:
+                callback(document.getElementById('popup_input').value)
+            close()
+
+        if cancel != '':
+            document.getElementById('popup_cancel').onclick = close
+        document.getElementById('popup_ok').onclick = validate
+
+        def enter_escape(event):
+            """Enter is OK escape is Cancel"""
+            if event.key == 'Enter':
+                validate()
+            elif event.key == 'Escape':
+                close()
+
+        popup.onkeypress = enter_escape
+        popup.showModal()
+
+    def prompt(self, txt, callback): # pylint: disable=no-self-use
+        """Replace browser prompt"""
+        self.popup_message(txt, "Annuler", "OK", callback)
 
     def send_input(self, string):
         """Send the input value to the worker"""
@@ -475,18 +509,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 and len(ALL_SAVES[self.current_question])):
             timestamp = ALL_SAVES[self.current_question][-1][0]
         if timestamp <= 10:
-            self.popup_message("Rien à nommer, il faut d'abord sauvegarder.")
+            self.popup_message("Rien à nommer :<br>il faut d'abord sauvegarder.")
             return
-        self.do_not_register_this_blur = True
-        tag = prompt("Nom de la sauvegarde :")
-        if not tag or tag == 'null':
-            return
-        self.record(['tag', self.current_question, timestamp, tag], True)
-        for item in ALL_SAVES[self.current_question]:
-            if item[0] == timestamp:
-                item[2] = tag
-                break
-        self.update_save_history()
+
+        def do_tagging(tag):
+            """Record the tag"""
+            self.record(['tag', self.current_question, timestamp, tag], True)
+            for item in ALL_SAVES[self.current_question]:
+                if item[0] == timestamp:
+                    item[2] = tag
+                    break
+            self.update_save_history()
+        self.prompt("Nom de la sauvegarde :", do_tagging)
 
     def save_local(self):
         """Save the source on a local file"""
@@ -791,7 +825,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def record_not_done(self, message):
         """The server can't save the data"""
-        alert(message)
+        self.popup_message(message)
         self.records_in_transit = []
 
     def get_rect(self, element):
@@ -894,7 +928,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             clean = event.dataTransfer.getData('text/html').replace(
                 RegExp('</?(span|div|br)', 'g'), '')
             if '<' in clean:
-                alert("La glisser/déposer de balise HTML est impossible.\nFaites un copier/coller.")
+                self.popup_message("Le glisser/déposer de balise HTML est impossible.<br>Faites un copier/coller.")
                 event.preventDefault(True)
                 return
             # def xxx():
@@ -1652,8 +1686,13 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         elif what == 'eval':
             eval(value) # pylint: disable=eval-used
         elif what == 'stop':
-            alert("La session est terminée, rechargez la page pour la réactiver")
-            window.location = window.location
+            self.popup_message(
+                "La compilation ne fonctionne plus :"
+                + "<ul>"
+                + "<li>Sauvegardez votre source."
+                + "<li>Attendez que l'enveloppe passe au vert."
+                + "<li>Rechargez la page pour la réactiver."
+                + "</ul>")
         elif what == 'allow_edit':
             self.allow_edit = int(value)
         elif what == 'recompile':
