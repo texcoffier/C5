@@ -209,6 +209,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             ANSWERS = {json.dumps(last_answers)};
             ALL_SAVES = {json.dumps(all_saves)};
             WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0,'')))};
+            SERVER_TIME = {time.time()};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')
 
@@ -317,7 +318,7 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
                 f'window.parent.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
 
     return answer(
-        f"window.parent.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)})")
+        f"window.parent.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)},{time.time()})")
 
 async def record_grade(request:Request) -> Response:
     """Log a grade"""

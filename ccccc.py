@@ -112,6 +112,7 @@ walk_regtests()
 
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
+    server_time_delta = int(millisecs()/1000 - SERVER_TIME)
     question = editor = overlay = tester = compiler = executor = time = None
     index = popup_element = save_button = local_button = line_numbers = None
     stop_button = fullscreen = comments = save_history = editor_title = None
@@ -547,7 +548,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
-                delta = self.stop_timestamp - seconds # pylint: disable=undefined-variable
+                delta = self.stop_timestamp - seconds + self.server_time_delta # pylint: disable=undefined-variable
                 if delta == 10:
                     if seconds - self.last_save > 60 :
                         # The student has not saved in the last minute
@@ -763,8 +764,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if send_now or time - self.record_start > 60:
             self.record_now()
 
-    def record_done(self, recorded_timestamp, stop_timestamp):
+    def record_done(self, recorded_timestamp, stop_timestamp, server_time):
         """The server saved the recorded value"""
+        if server_time:
+            self.server_time_delta = int(millisecs()/1000 - server_time)
         self.stop_timestamp = stop_timestamp
         if self.records_in_transit[0] and recorded_timestamp == self.records_in_transit[0][0]:
             # Th expected recording has been done (in case of multiple retry)
