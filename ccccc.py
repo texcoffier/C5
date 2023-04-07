@@ -36,8 +36,7 @@ def get_xhr_data(event):
         event.target.abort()
 
 def get_xhr_error(event):
-    """Display received error. Never happen ?"""
-    alert("error")
+    """Display received error or timeout."""
     print(event)
 
 def do_post_data(dictionary, url):
@@ -45,6 +44,7 @@ def do_post_data(dictionary, url):
     xhr = eval('new XMLHttpRequest()') # pylint: disable=eval-used
     xhr.addEventListener('readystatechange', get_xhr_data, False)
     xhr.addEventListener('error', get_xhr_error, False)
+    xhr.addEventListener('timeout', get_xhr_error, False)
     xhr.responseType = 'text/html'
     xhr.open("POST", url, True)
     formData = eval('new FormData()') # pylint: disable=eval-used
