@@ -1694,7 +1694,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 old_version = localStorage[COURSE + '/' + self.current_question]
             except: # pylint: disable=bare-except
                 old_version = None
-            if old_version and old_version.strip() != message.strip():
+            if not GRADING and old_version and old_version.strip() != message.strip():
                 def get_old_version():
                     self.set_editor_content(old_version)
                 self.popup_message(
