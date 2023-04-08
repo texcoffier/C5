@@ -20,6 +20,7 @@ import io
 import pathlib
 import glob
 import urllib.request
+import csv
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response,StreamResponse
@@ -1722,6 +1723,34 @@ async def adm_building_store(request:Request) -> Response:
         file.write(str(post['map']).replace('\r', ''))
     return answer(f'«{building}» map recorded.')
 
+async def js_errors(request:Request) -> Response:
+    """Display javascript errors"""
+    session = await Session.get_or_fail(request)
+    if not session.is_root():
+        return session.message('not_root')
+    date = int(request.match_info['date'])
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(('When', 'Error', 'URL', 'Line', 'UserAgent', 'Stack'))
+    for filename in glob.glob('COMPILE_*/*/*/http_server.log'):
+        await asyncio.sleep(0)
+        try:
+            content = pathlib.Path(filename).read_text(encoding='ascii')
+        except UnicodeDecodeError:
+            print(filename)
+            continue
+        if '"JS"' not in content:
+            continue
+        for line in content.split('\n'):
+            if '"JS"' in line:
+                line = ast.literal_eval(line)
+                if line[0] < date:
+                    continue
+                for item in line[1:]:
+                    if isinstance(item, list) and item[0] == 'JS':
+                        writer.writerow([time.ctime(line[0]), *item[1:]])
+    return answer(output.getvalue(), content_type="text/csv")
+
 async def change_session_ip(request:Request) -> Response:
     """Change the current session IP"""
     session = await Session.get_or_fail(request)
@@ -1741,6 +1770,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/session/{course}/{action}/', adm_config),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/editor/{course}', adm_editor),
+                web.get('/adm/js_errors/{date}', js_errors),
                 web.get('/adm/building/{building}', adm_building),
                 web.get('/config/reload', config_reload),
                 web.get('/config/disable/{value}', config_disable),

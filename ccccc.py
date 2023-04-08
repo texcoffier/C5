@@ -261,6 +261,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def __init__(self):
         print("GUI: start")
+        window.onerror = bind(self.onJSerror, self)
         self.start_time = millisecs()
         self.course = COURSE
         self.stop_timestamp = STOP
@@ -343,6 +344,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.shared_buffer[i+1] = string.charCodeAt(i)
         self.shared_buffer[len(string) + 1] = -1 # String end
         self.shared_buffer[0] = 1
+
+    def onJSerror(self, message, url_error, lineNumber, _column_number, error):
+        """Send the JS error to the server"""
+        def nothing():
+            pass
+        window.onerror = nothing # Only first error
+        self.record(['JS', message,
+            url_error.split('?')[0].replace(window.location.origin, ''),
+            lineNumber,
+            navigator.userAgent,
+            (error and error.stack or 'NoStack').toString(
+                ).replace(RegExp('[?].*', 'g'), ')'
+                ).replace(RegExp(window.location.origin, 'g'), '')
+            ], True)
+        return False
 
     def update_gui(self): # pylint: disable=too-many-branches,disable=too-many-statements
         """Set the bloc position and background"""
@@ -928,7 +944,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             clean = event.dataTransfer.getData('text/html').replace(
                 RegExp('</?(span|div|br)', 'g'), '')
             if '<' in clean:
-                self.popup_message("Le glisser/déposer de balise HTML est impossible.<br>Faites un copier/coller.")
+                self.popup_message("""Le glisser/déposer de balise HTML est impossible.<br>
+                    Faites un copier/coller.""")
                 event.preventDefault(True)
                 return
             # def xxx():
@@ -1154,7 +1171,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9'):
             return
         self.record(event.key or 'null')
-        if event.target is self.editor and event.key not in ('ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'):
+        if event.target is self.editor and event.key not in (
+                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'):
             self.clear_highlight_errors()
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
@@ -1468,7 +1486,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         """Upgrade the select choice with the good number of comments"""
         content = []
         now = Date()
-        for i, version in enumerate(VERSIONS[self.current_question] or []):
+        for i, version in enumerate(VERSIONS[self.current_question] or []): # pylint: disable=too-many-nested-blocks
             content.append('<option')
             if self.version == i:
                 content.append(' selected')
@@ -1493,7 +1511,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                     comments = comments[i]
                     if comments:
                         nr = 0
-                        for line, comment in comments.Items():
+                        for _line, comment in comments.Items():
                             if comment:
                                 nr += 1
                         if nr:
@@ -1506,7 +1524,8 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         self.version = (ANSWERS[self.current_question] or [0, 0])[1]
         content = [
             '''<div><h2>
-            Noter <select id="grading_select" style="background:#FF0" onchange="version_change(this)">
+            Noter <select id="grading_select" style="background:#FF0"
+                          onchange="version_change(this)">
             '''
             ]
         content.append('</select>')
@@ -1528,7 +1547,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         self.grading.onclick = grade
         self.grading.innerHTML = ''.join(content)
 
-    def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements
+    def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
         # print(millisecs(), self.state, what, str(event.data[1])[:10])
