@@ -296,12 +296,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.seconds = int(millisecs() / 1000)
         print("GUI: init done")
 
-    def popup_message(self, txt, cancel='', ok='OK', callback=None): # pylint: disable=no-self-use
+    def popup_message(self, txt, cancel='', ok='OK', callback=None, add_input=False): # pylint: disable=no-self-use
         """For Alert and Prompt"""
         popup = document.createElement('DIALOG')
         if cancel != '':
             cancel = '<button id="popup_cancel">' + cancel + '</button>'
-        if callback:
+        if callback and add_input:
             input_value = '<br><input id="popup_input">'
         else:
             input_value = ''
@@ -314,7 +314,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         def validate():
             if callback:
-                callback(document.getElementById('popup_input').value)
+                if add_input:
+                    callback(document.getElementById('popup_input').value)
+                else:
+                    callback()
             close()
 
         if cancel != '':
@@ -333,7 +336,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def prompt(self, txt, callback): # pylint: disable=no-self-use
         """Replace browser prompt"""
-        self.popup_message(txt, "Annuler", "OK", callback)
+        self.popup_message(txt, "Annuler", "OK", callback, True)
 
     def send_input(self, string):
         """Send the input value to the worker"""
@@ -595,6 +598,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.update_save_history()
             if old_need_save != need_save:
                 self.save_button.setAttribute('enabled', need_save)
+                try:
+                    localStorage[COURSE + '/' + self.current_question] = self.source
+                except: # pylint: disable=bare-except
+                    pass
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
@@ -835,6 +842,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     ALL_SAVES[current_question].append([timestamp, source, ''])
                     self.update_save_history()
                     self.save_button.setAttribute('state', 'ok')
+                    try:
+                        del localStorage[COURSE + '/' + self.current_question]
+                    except: # pylint: disable=bare-except
+                        pass
             self.records_in_transit = self.records_in_transit[1:]
         if len(self.records_in_transit):
             self.record_now()
@@ -1679,6 +1690,18 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             self.compile_now = True
             message = value + '\n\n\n'
             self.set_editor_content(message)
+            try:
+                old_version = localStorage[COURSE + '/' + self.current_question]
+            except: # pylint: disable=bare-except
+                old_version = None
+            if old_version and old_version.strip() != message.strip():
+                def get_old_version():
+                    self.set_editor_content(old_version)
+                self.popup_message(
+                    "Une version non sauvegardée a été trouvée.",
+                    'Effacer définitivement', ok='Continuer avec',
+                    callback=get_old_version)
+                del localStorage[COURSE + '/' + self.current_question]
         elif what == 'default':
             self.question_original[value[0]] = value[1]
         elif what in ('tester', 'compiler', 'question', 'time'):

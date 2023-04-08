@@ -287,7 +287,10 @@ class Tests: # pylint: disable=too-many-public-methods
         """Check if an alert is on screen and accept or cancel it"""
         def check():
             print(f'\tDIALOG Contains=«{contains}» Accept=«{accept}»')
-            alert = self.check('DIALOG')
+            try:
+                alert = self.check('DIALOG', nbr=1)
+            except ValueError:
+                return 'No dialog on screen'
             if not alert:
                 return 'No dialog on screen'
             content = alert.get_attribute('innerHTML')
@@ -303,10 +306,12 @@ class Tests: # pylint: disable=too-many-public-methods
         """Load page and clear popup"""
         self.goto(url)
         self.check_alert(required=False, nbr=10)
+        self.check_dialog(required=False, nbr=2, accept=False)
         try:
             self.check('.question H2').click() # Hide popup
         except selenium.common.exceptions.ElementClickInterceptedException:
             self.check('.question H2').click() # Hide popup
+        self.check_dialog(required=False, nbr=2, accept=False)
     def move_to_element(self, element):
         """Make the element visible on screen in order to click on it"""
         self.driver.execute_script("arguments[0].scrollIntoView();", element)
@@ -363,12 +368,13 @@ class Tests: # pylint: disable=too-many-public-methods
             # Not a normal failure, a bug must be somewhere.
             # Rarely F9 is not working, so retry it
             self.move_cursor('.editor')
+            time.sleep(0.4)
             self.check('.editor').send_keys('\n/**/\n\n')
             # The F9 keys must be pressed twice with a delay
             # There is a problem somewhere
-            time.sleep(0.1)
+            time.sleep(0.4)
             self.check('.editor').send_keys(Keys.F9)
-            time.sleep(0.1)
+            time.sleep(0.4)
             self.check('.editor').send_keys(Keys.F9)
             try:
                 self.check('.compiler', {'innerText': Contains('Bravo')})
@@ -378,6 +384,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 pass
         if not recompile_done:
             raise ValueError('??????????????')
+        time.sleep(0.2)
         self.check('.executor INPUT:nth-child(3)', {'value': Equal('8')})
         self.check('.executor', {'innerHTML': Contains('symbole')})
 
@@ -554,6 +561,7 @@ class Tests: # pylint: disable=too-many-public-methods
     def test_many_inputs(self):
         """Test IP change in grader editor"""
         self.goto('=REMOTE=test')
+        self.check_dialog(contains='', accept=True, required=False, nbr=2)
         self.check('.editor').send_keys(' ')
         self.control('a')
         self.check('.editor').send_keys('''
@@ -570,10 +578,11 @@ return sum ;
         for i in range(10):
             self.check(f'.executor DIV:nth-child({2*i+2})', {'textContent': Equal(str(i)+'\n')})
             for _ in range(4):
+                time.sleep(0.1)
                 try:
                     element = self.check(f'.executor INPUT:nth-child({2*i+3})')
                     element.click()
-                    time.sleep(0.1)
+                    time.sleep(0.2)
                     element.send_keys('1')
                     element.send_keys(Keys.ENTER)
                     break
@@ -595,6 +604,7 @@ return sum ;
         editor = self.move_cursor('.editor')
         editor.send_keys('univers vie')
         self.check_dialog(accept=True, required=True) # Ok to congratulation
+        time.sleep(0.1)
 
         self.check('.save_history', {'length': Equal('1')})
         self.check(question(3)).click() # Returns to the first question
@@ -607,15 +617,18 @@ return sum ;
         self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('<option timestamp="1">Vers')})
 
         # Change the answer and then change the question without saving
+        time.sleep(0.1)
         editor.send_keys(' every')
         self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=200)
         self.check(question(4)).click() # Returns to the second question
         self.wait_save()
         self.check('.save_history', {'length': Equal('1')}) # Only initial version
+        time.sleep(1)
         self.check(question(3)).click() # Returns to the first question
         self.check('.save_history', {'length': Equal('3')}) # A new save !
 
         # Tag the new save
+        time.sleep(0.5)
         self.check('.tag_button').click()
         self.check('#popup_input').send_keys('B')
         self.check('#popup_input').send_keys(Keys.ENTER)
@@ -705,6 +718,7 @@ return sum ;
         """Test IP change in editor"""
         self.goto('=REMOTE=test')
         self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('false')})
+        self.check_dialog(contains='', accept=True, required=False, nbr=2)
         self.move_cursor('.editor')
         self.check('.editor').send_keys('/**/')
         self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('true')}).click()
@@ -724,6 +738,7 @@ return sum ;
         """Test IP change in grader editor"""
         self.goto('=REMOTE=test')
         self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('false')})
+        self.check_dialog(contains='', accept=True, required=False, nbr=2)
         self.move_cursor('.editor')
         self.check('.editor').send_keys('/**/')
         self.check('.save_button', {'state': Equal('ok'), 'enabled': Equal('true')}).click()
