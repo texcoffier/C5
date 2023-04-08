@@ -555,8 +555,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.do_update_cursor_position = False
 
         if self.do_coloring:
-            self.coloring()
             self.do_coloring = False
+            self.coloring()
 
         if self.state == 'started':
             return # Compiler is running
