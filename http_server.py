@@ -1735,7 +1735,7 @@ async def js_errors(request:Request) -> Response:
     for filename in glob.glob('COMPILE_*/*/*/http_server.log'):
         await asyncio.sleep(0)
         try:
-            content = pathlib.Path(filename).read_text(encoding='ascii')
+            content = pathlib.Path(filename).read_text(encoding='utf-8')
         except UnicodeDecodeError:
             print(filename)
             continue
