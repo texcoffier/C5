@@ -52,7 +52,7 @@ class Process: # pylint: disable=invalid-name
         self.command = command
         self.cache_dir = f'CACHE.{name}/'
         if not os.path.exists(self.cache_dir):
-            os.mkdir(self.cache)
+            os.mkdir(self.cache_dir)
 
     async def start(self) -> None:
         """
