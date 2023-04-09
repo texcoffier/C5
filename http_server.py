@@ -205,7 +205,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             SAVE_UNLOCK = {int(course.config['save_unlock'])};
             SEQUENTIAL = {int(course.config['sequential'])};
             COLORING = {int(course.config['coloring'])};
-            INFOS = {infos};
+            INFOS = {json.dumps(infos)};
             CHECKPOINT = {course.checkpoint};
             ANSWERS = {json.dumps(last_answers)};
             ALL_SAVES = {json.dumps(all_saves)};
