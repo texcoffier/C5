@@ -241,7 +241,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                     if status == 'done':
                         return session.message('done')
                     if status == 'pending':
-                        return session.message('pending')
+                        return session.message('pending', course.start_timestamp)
                     if status == 'checkpoint':
                         return session.message('checkpoint')
                 return await editor(session, is_admin, course, session.login)

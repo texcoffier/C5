@@ -394,7 +394,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if self.checkpoint:
             active_teacher_room = self.active_teacher_room.get(login, None)
             if not active_teacher_room or active_teacher_room[1] == '':
-                return 'checkpoint'
+                return 'checkpoint' # Always in the checkpoint after examination start
         return 'done'
 
     def running(self, login:str, client_ip:str=None) -> bool:
@@ -814,9 +814,28 @@ class Session:
             </script>
             """
 
-    def message(self, key:str) -> aiohttp.web_response.Response:
+    def message(self, key:str, start_time=0) -> aiohttp.web_response.Response:
         """Error message for the user in a standalone page or a post request"""
         name = self.infos['sn'].upper() + ' ' + self.infos['fn'].title()
+        if start_time:
+            more = f'''
+            <p>Début dans <span id="start"></span> secondes
+            <script>
+            START = {start_time} + Math.random() * 3;
+            function display() {{
+                var diff = START - (new Date()).getTime() / 1000;
+                if (diff <= 0 )
+                    window.location.reload();
+                else
+                    document.getElementById('start').innerHTML = 5 * Math.ceil(diff/5);
+            }}
+            setInterval(display, 5000);
+            display();
+            </script>
+
+            '''
+        else:
+            more = ''
         return web.HTTPOk(
             body=f"""<!DOCTYPE html>
             <html>
@@ -826,6 +845,7 @@ class Session:
             <link REL="icon" href="/favicon.ico?ticket={self.ticket}">
             </head>
             <h1>{name} : {CONFIG.config['messages'].get(key, key)}</h1>
+            {more}
             """,
             content_type='text/html',
             headers={'Cache-Control': 'no-cache'}

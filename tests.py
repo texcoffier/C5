@@ -372,10 +372,8 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.editor').send_keys('\n/**/\n\n')
             # The F9 keys must be pressed twice with a delay
             # There is a problem somewhere
-            time.sleep(0.4)
-            self.check('.editor').send_keys(Keys.F9)
-            time.sleep(0.4)
-            self.check('.editor').send_keys(Keys.F9)
+            # time.sleep(0.4)
+            # self.check('.editor').send_keys(Keys.F9)
             try:
                 self.check('.compiler', {'innerText': Contains('Bravo')})
                 recompile_done = True
@@ -384,7 +382,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 pass
         if not recompile_done:
             raise ValueError('??????????????')
-        time.sleep(0.2)
+        time.sleep(0.4)
         self.check('.executor INPUT:nth-child(3)', {'value': Equal('8')})
         self.check('.executor', {'innerHTML': Contains('symbole')})
 
@@ -574,6 +572,7 @@ for(int i = 0 ; i < 10 ; i++ ) { cout << i << endl ; cin >> v ; sum += v ; }
 return sum ;
 }
 ''')
+        time.sleep(0.1)
         self.check('.editor').send_keys(Keys.F9)
         for i in range(10):
             self.check(f'.executor DIV:nth-child({2*i+2})', {'textContent': Equal(str(i)+'\n')})
@@ -619,7 +618,8 @@ return sum ;
         # Change the answer and then change the question without saving
         time.sleep(0.1)
         editor.send_keys(' every')
-        self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=200)
+        self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=300)
+        time.sleep(0.2)
         self.check(question(4)).click() # Returns to the second question
         self.wait_save()
         self.check('.save_history', {'length': Equal('1')}) # Only initial version
