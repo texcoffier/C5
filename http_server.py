@@ -1731,7 +1731,7 @@ async def js_errors(request:Request) -> Response:
     date = int(request.match_info['date'])
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(('When', 'Error', 'URL', 'Line', 'UserAgent', 'Stack'))
+    writer.writerow(('Student', 'When', 'Error', 'URL', 'Line', 'UserAgent', 'Stack'))
     for filename in glob.glob('COMPILE_*/*/*/http_server.log'):
         await asyncio.sleep(0)
         try:
@@ -1748,7 +1748,11 @@ async def js_errors(request:Request) -> Response:
                     continue
                 for item in line[1:]:
                     if isinstance(item, list) and item[0] == 'JS':
-                        writer.writerow([time.ctime(line[0]), *item[1:]])
+                        writer.writerow([
+                            filename.split('/')[2],
+                            time.ctime(line[0]),
+                            *item[1:]
+                            ])
     return answer(output.getvalue(), content_type="text/csv")
 
 async def change_session_ip(request:Request) -> Response:
