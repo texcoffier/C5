@@ -979,7 +979,7 @@ ACTIONS = {
         """,
     'diff': f"""
         mkdir DIFF
-        git ls-files | grep -v DOCUMENTATION >xxx.tocopy
+        git ls-files | grep -v -e DOCUMENTATION -e BUILDINGS >xxx.tocopy
         rsync --files-from=xxx.tocopy '{C5_LOGIN}@{C5_HOST}:{C5_DIR}' DIFF
         for I in $(cat xxx.tocopy)
         do

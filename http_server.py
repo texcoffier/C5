@@ -1729,9 +1729,7 @@ async def js_errors(request:Request) -> Response:
     if not session.is_root():
         return session.message('not_root')
     date = int(request.match_info['date'])
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(('Student', 'When', 'Error', 'URL', 'Line', 'UserAgent', 'Stack'))
+    errors = []
     for filename in glob.glob('COMPILE_*/*/*/http_server.log'):
         await asyncio.sleep(0)
         try:
@@ -1748,11 +1746,21 @@ async def js_errors(request:Request) -> Response:
                     continue
                 for item in line[1:]:
                     if isinstance(item, list) and item[0] == 'JS':
-                        writer.writerow([
-                            filename.split('/')[2],
-                            time.ctime(line[0]),
+                        compilator, session, student, _  = filename.split('/')
+                        errors.append([
+                            line[0],
+                            compilator.replace('COMPILE_', '') + '=' + session,
+                            student,
                             *item[1:]
                             ])
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(('When', 'Session', 'Student', 'Error', 'URL', 'Line', 'UserAgent', 'Stack'))
+    errors.sort()
+    for error in errors:
+        error[0] = time.ctime(error[0])
+        writer.writerow(error)
     return answer(output.getvalue(), content_type="text/csv")
 
 async def change_session_ip(request:Request) -> Response:
