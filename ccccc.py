@@ -45,7 +45,7 @@ def do_post_data(dictionary, url):
     xhr.addEventListener('readystatechange', get_xhr_data, False)
     xhr.addEventListener('error', get_xhr_error, False)
     xhr.addEventListener('timeout', get_xhr_error, False)
-    xhr.responseType = 'text/html'
+    xhr.responseType = 'text'
     xhr.open("POST", url, True)
     formData = eval('new FormData()') # pylint: disable=eval-used
     for key, value in dictionary.Items():
@@ -884,6 +884,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             element.className = class_name
             self.overlay.appendChild(element)
         line = self.editor_lines[line_nr - 1]
+        if not line:
+            # The line number is bad: assumes the source code was modified
+            # so clear all the errors.
+            self.clear_highlight_errors()
+            return
         # Goto first text element of the line
         while line.previousSibling and not line.previousSibling.tagName:
             line = line.previousSibling
