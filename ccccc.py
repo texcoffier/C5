@@ -299,26 +299,27 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def popup_message(self, txt, cancel='', ok='OK', callback=None, add_input=False): # pylint: disable=no-self-use
         """For Alert and Prompt"""
         popup = document.createElement('DIALOG')
-        if cancel != '':
-            cancel = '<button id="popup_cancel">' + cancel + '</button>'
         if callback and add_input:
-            input_value = '<br><input id="popup_input">'
-        else:
-            input_value = ''
-        popup.innerHTML = txt + input_value + '<button id="popup_ok">' + ok + '</button>' + cancel
+            txt += '<br><input id="popup_input">'
+        if cancel != '':
+            txt += '<button id="popup_cancel">' + cancel + '</button>'
+        txt += '<button id="popup_ok">' + ok + '</button>'
+        popup.innerHTML = txt
         document.body.appendChild(popup)
 
-        def close():
+        def close(event):
             """Close the dialog"""
             document.body.removeChild(popup)
+            event.preventDefault()
+            event.stopPropagation()
 
-        def validate():
+        def validate(event):
             if callback:
                 if add_input:
                     callback(document.getElementById('popup_input').value)
                 else:
                     callback()
-            close()
+            close(event)
 
         if cancel != '':
             document.getElementById('popup_cancel').onclick = close
@@ -327,11 +328,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         def enter_escape(event):
             """Enter is OK escape is Cancel"""
             if event.key == 'Enter':
-                validate()
+                if event.target.tagName == 'INPUT' or event.target.id == 'popup_ok':
+                    validate(event)
             elif event.key == 'Escape':
-                close()
-
-        popup.onkeypress = enter_escape
+                close(event)
+            else:
+                event.stopPropagation()
+        popup.onkeydown = enter_escape
         popup.showModal()
 
     def prompt(self, txt, callback): # pylint: disable=no-self-use
