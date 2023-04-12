@@ -764,7 +764,7 @@ class Session:
         window.innerHTML = {message_js};
         }}
     // -->
-    """)
+    """.encode('utf-8'))
 
     def is_author(self) -> bool:
         """The user is C5 session creator"""
