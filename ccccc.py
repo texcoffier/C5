@@ -258,6 +258,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     grading = None
     current_key = None
     meter = document.createRange()
+    localstorage_checked = {} # For each question
 
     def __init__(self):
         print("GUI: start")
@@ -601,10 +602,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.update_save_history()
             if old_need_save != need_save:
                 self.save_button.setAttribute('enabled', need_save)
-                try:
-                    localStorage[COURSE + '/' + self.current_question] = self.source
-                except: # pylint: disable=bare-except
-                    pass
+            try:
+                localStorage[COURSE + '/' + self.current_question] = self.source
+            except: # pylint: disable=bare-except
+                pass
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
@@ -1702,7 +1703,11 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 old_version = localStorage[COURSE + '/' + self.current_question]
             except: # pylint: disable=bare-except
                 old_version = None
-            if not GRADING and old_version and old_version.strip() != message.strip():
+            if (self.current_question not in self.localstorage_checked
+                    and not GRADING
+                    and old_version
+                    and old_version.strip() != message.strip()):
+                self.localstorage_checked[self.current_question] = True
                 def get_old_version():
                     self.set_editor_content(old_version)
                 self.popup_message(
