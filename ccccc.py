@@ -602,10 +602,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.update_save_history()
             if old_need_save != need_save:
                 self.save_button.setAttribute('enabled', need_save)
-            try:
-                localStorage[COURSE + '/' + self.current_question] = self.source
-            except: # pylint: disable=bare-except
-                pass
+            if need_save:
+                try:
+                    localStorage[COURSE + '/' + self.current_question] = self.source
+                except: # pylint: disable=bare-except
+                    pass
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
@@ -847,7 +848,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     self.update_save_history()
                     self.save_button.setAttribute('state', 'ok')
                     try:
-                        del localStorage[COURSE + '/' + self.current_question]
+                        del localStorage[COURSE + '/' + current_question]
                     except: # pylint: disable=bare-except
                         pass
             self.records_in_transit = self.records_in_transit[1:]

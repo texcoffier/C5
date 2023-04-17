@@ -460,7 +460,7 @@ class Tests: # pylint: disable=too-many-public-methods
         """Test question index"""
         self.load_page('=JS=introduction')
         # Try to click on the next question
-        self.check(question(4)).click()
+        self.check(question(4)).click() # Will fail
         self.check('.editor', {'innerText': Contains('court') & ~Contains('long')})
 
         self.check(question(3), {'innerText': Contains('1'), 'className': Equal('current possible')})
@@ -469,7 +469,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.select_all()
 
         try:
-            self.check('.editor').send_keys("print('Je suis un texte super long')")
+            self.check('.editor').send_keys("print('Je suis un texte super long')") # Good answer
             self.check_dialog(contains=' !')
             self.check(question(3), {'innerText': Contains('1'), 'className': Equal('good')})
             self.check(question(4), {'innerText': Contains('2'), 'className': Equal('current possible')})
