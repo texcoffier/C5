@@ -902,12 +902,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if not line.nextSibling or (
                     line.nextSibling.tagName and line.nextSibling.tagName != 'SPAN'):
                 if char_nr > len(line.nodeValue or line.innerText) + 1:
-                    print('BUG', char_nr, line.nodeValue, line.innerText, line.nextSibling)
+                    self.record(['BUG', 'overflow', char_nr, line.nodeValue,
+                        line.innerText, line.nextSibling])
                     char_nr = len(line.nodeValue or line.innerText)
                 break
             char_nr -= len(line.nodeValue or line.innerText)
             line = line.nextSibling
-        box.selectNode(line)
+        try:
+            box.selectNode(line)
+        except: # pylint: disable=bare-except
+            self.record(['BUG', 'box.selectNode', str(line)])
+            return
         error = document.createElement('DIV')
         if not what.startswith('cursor'):
             insert(error, 'ERROR ' + what)

@@ -256,7 +256,6 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
         return File.get(filename).answer()
     return real_handle
 
-# https://pundit.univ-lyon1.fr:4201/grade/REMOTE=LIFAPI_Seq1TPnotep/p2100091
 async def grade(request:Request) -> Response:
     """Display the grading page"""
     session, course = await get_teacher_login_and_course(request)
@@ -835,7 +834,7 @@ async def my_git(request:Request) -> StreamResponse: # pylint: disable=too-many-
     if git_dir:
         await run('git', 'gc')
     else:
-        return answer("Rien n'a été trouvé pour mettre dans le dépôt GIT")     
+        return answer("Rien n'a été trouvé pour mettre dans le dépôt GIT")
 
     data = io.BytesIO()
 
@@ -1254,7 +1253,8 @@ async def checkpoint_list(request:Request) -> Response:
         FORM SPAN { border: 1px outset #888; border-radius: 0.5em;
                     background: #EEE; padding: 0.2em }
         FORM SPAN:hover { border: 1px inset #888; background: #DDD }
-        SPAN VAR { display: none; background: #FFE;  border: 1px solid #880; position: absolute; z-index: 1}
+        SPAN VAR { display: none; background: #FFE;  border: 1px solid #880;
+                   position: absolute; z-index: 1}
         SPAN:hover VAR { display: block }
         SPAN:hover { background: #FF0 }
         BUTTON { font-size: 100% }
@@ -1752,7 +1752,7 @@ async def js_errors(request:Request) -> Response:
         except UnicodeDecodeError:
             await write_lines(stream,(('BAD FILENAME', filename),))
             continue
-        if '"JS"' not in content:
+        if '"JS"' not in content and '"BUG"' not in content:
             continue
         lines = []
         for line in content.split('\n'):
@@ -1761,14 +1761,17 @@ async def js_errors(request:Request) -> Response:
                 if line[0] < date:
                     continue
                 for item in line[1:]:
-                    if isinstance(item, list) and item[0] == 'JS':
-                        compilator, session, student, _  = filename.split('/')
-                        lines.append([
-                            time.ctime(line[0]),
-                            compilator.replace('COMPILE_', '') + '=' + session,
-                            student,
-                            *item[1:]
-                            ])
+                    if isinstance(item, list):
+                        if item[0] == 'JS':
+                            compilator, session, student, _  = filename.split('/')
+                            lines.append((
+                                time.ctime(line[0]),
+                                compilator.replace('COMPILE_', '') + '=' + session,
+                                student,
+                                *item[1:]
+                            ))
+                        elif item[0] == 'BUG':
+                            lines.append((line[0], *item))
         await write_lines(stream, lines)
     return stream
 
