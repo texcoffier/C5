@@ -1723,22 +1723,36 @@ async def adm_building_store(request:Request) -> Response:
         file.write(str(post['map']).replace('\r', ''))
     return answer(f'«{building}» map recorded.')
 
+async def write_lines(stream, lines):
+    """Put CSV lines on stream"""
+    if lines:
+        output = io.StringIO()
+        csv.writer(output).writerows(lines)
+        await stream.write(output.getvalue().encode('utf-8'))
+
 async def js_errors(request:Request) -> Response:
     """Display javascript errors"""
     session = await Session.get_or_fail(request)
     if not session.is_root():
         return session.message('not_root')
     date = int(request.match_info['date'])
-    errors = []
-    for filename in glob.glob('COMPILE_*/*/*/http_server.log'):
+    filenames = await asyncio.get_event_loop().run_in_executor(
+        None, glob.glob, 'COMPILE_*/*/*/http_server.log')
+    stream = web.StreamResponse()
+    stream.content_type = 'text/csv'
+    await stream.prepare(request)
+    await write_lines(stream,
+        (('When', 'Session', 'Student', 'Error', 'URL', 'Line', 'UserAgent', 'Stack'),))
+    for filename in filenames:
         await asyncio.sleep(0)
         try:
             content = pathlib.Path(filename).read_text(encoding='utf-8')
         except UnicodeDecodeError:
-            print(filename)
+            await write_lines(stream,(('BAD FILENAME', filename),))
             continue
         if '"JS"' not in content:
             continue
+        lines = []
         for line in content.split('\n'):
             if '"JS"' in line:
                 line = ast.literal_eval(line)
@@ -1747,21 +1761,14 @@ async def js_errors(request:Request) -> Response:
                 for item in line[1:]:
                     if isinstance(item, list) and item[0] == 'JS':
                         compilator, session, student, _  = filename.split('/')
-                        errors.append([
-                            line[0],
+                        lines.append([
+                            time.ctime(line[0]),
                             compilator.replace('COMPILE_', '') + '=' + session,
                             student,
                             *item[1:]
                             ])
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(('When', 'Session', 'Student', 'Error', 'URL', 'Line', 'UserAgent', 'Stack'))
-    errors.sort()
-    for error in errors:
-        error[0] = time.ctime(error[0])
-        writer.writerow(error)
-    return answer(output.getvalue(), content_type="text/csv")
+        await write_lines(stream, lines)
+    return stream
 
 async def change_session_ip(request:Request) -> Response:
     """Change the current session IP"""
