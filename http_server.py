@@ -834,6 +834,8 @@ async def my_git(request:Request) -> StreamResponse: # pylint: disable=too-many-
              })
     if git_dir:
         await run('git', 'gc')
+    else:
+        return answer("Rien n'a été trouvé pour mettre dans le dépôt GIT")     
 
     data = io.BytesIO()
 
