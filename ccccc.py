@@ -40,7 +40,7 @@ def get_xhr_data(event):
 
 def get_xhr_error(event):
     """Display received error or timeout."""
-    print(event)
+    ccccc.record(['BUG', 'get_xhr_error', str(event)])
 
 def do_post_data(dictionary, url):
     """POST a dictionnary"""
