@@ -25,14 +25,17 @@ DEPRECATED = ('save_button', 'local_button', 'stop_button', 'reset_button')
 def get_xhr_data(event):
     """Evaluate the received javascript"""
     if event.target.readyState == 4:
-        if event.target.status == 200:
-            if event.target.responseText.startswith('<'):
-                alert(event.target.responseText.split('<h1>')[1].split('</h1>'))
+        try:
+            if event.target.status == 200:
+                if event.target.responseText.startswith('<'):
+                    alert(event.target.responseText.split('<h1>')[1].split('</h1>'))
+                else:
+                    eval(event.target.responseText) # pylint: disable=eval-used
             else:
-                eval(event.target.responseText) # pylint: disable=eval-used
-        else:
-            eval(event.target.responseText.replace( # pylint: disable=eval-used
-                RegExp('//.*', 'g'), '').replace(RegExp('\n', 'g'), ' '))
+                eval(event.target.responseText.replace( # pylint: disable=eval-used
+                    RegExp('//.*', 'g'), '').replace(RegExp('\n', 'g'), ' '))
+        except: # pylint: disable=bare-except
+            ccccc.record(['BUG', 'get_xhr_data', event.target.responseText])
         event.target.abort()
 
 def get_xhr_error(event):
