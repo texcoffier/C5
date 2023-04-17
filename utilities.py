@@ -764,7 +764,7 @@ class Session:
         window.innerHTML = {message_js};
         }}
     // -->
-    """.encode('utf-8'))
+    """)
 
     def is_author(self) -> bool:
         """The user is C5 session creator"""
@@ -1160,6 +1160,13 @@ export C5_LDAP_ENCODING='{C5_LDAP_ENCODING}'
         else:
             action = f'ssh {C5_LOGIN}@{C5_HOST} "' + action + '"'
     sys.exit(os.system(action))
+
+if aiohttp.__version__ < '3.8':
+    HTTPUnauthorizedOriginal = web.HTTPUnauthorized
+    def HTTPUnauthorizedFixed(*args, **kargs):
+        kargs['body'] = kargs['body'].encode('utf-8')
+        return HTTPUnauthorizedOriginal(*args, **kargs)
+    web.HTTPUnauthorized = HTTPUnauthorizedFixed
 
 if __name__ == "__main__":
     main()
