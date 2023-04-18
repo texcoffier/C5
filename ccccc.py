@@ -1961,12 +1961,16 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             line = 0
         line, column = self.get_line_column(position)
         def highlight(event):
+            if self.old_source != self.source:
+                return
             self.add_highlight_errors(line, column, 'eval')
             event.target.style.background = "#FF0"
             line_number = document.createElement("VAR")
             line_number.textContent = 'Ligne ' + line
             event.target.appendChild(line_number)
         def unhighlight(event):
+            if self.old_source != self.source:
+                return
             event.target.style.background = ""
             self.clear_highlight_errors(False)
             event.target.removeChild(event.target.lastChild)
