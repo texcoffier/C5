@@ -174,7 +174,7 @@ DIV.executor > DIV:first-child
 .comments TEXTAREA {
     position: absolute;
     display: block;
-    opacity: 0.7;
+    opacity: 0.6;
     font-size: 80%;
     pointer-events: all;
 }
@@ -184,13 +184,14 @@ DIV.executor > DIV:first-child
 
 .comments TEXTAREA.empty {
     width: 1vw;
-    height: 1vw;
     resize: none;
+    height: 1.2em;
 }
 
 .comments TEXTAREA.empty:focus {
     width: auto;
     height: auto;
+    resize: auto;
 }
 
 .comments TEXTAREA.filled, .comments TEXTAREA:focus {
