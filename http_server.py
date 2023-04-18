@@ -1760,14 +1760,14 @@ async def js_errors(request:Request) -> Response:
             continue
         lines = []
         for line in content.split('\n'):
-            if '"JS"' in line:
-                line = ast.literal_eval(line)
+            if '"JS"' in line or '"BUG"' in line:
+                line = json.loads(line)
                 if line[0] < date:
                     continue
+                compilator, session, student, _  = filename.split('/')
                 for item in line[1:]:
                     if isinstance(item, list):
                         if item[0] == 'JS':
-                            compilator, session, student, _  = filename.split('/')
                             lines.append((
                                 time.ctime(line[0]),
                                 compilator.replace('COMPILE_', '') + '=' + session,
@@ -1775,7 +1775,11 @@ async def js_errors(request:Request) -> Response:
                                 *item[1:]
                             ))
                         elif item[0] == 'BUG':
-                            lines.append((line[0], *item))
+                            lines.append((
+                                time.ctime(line[0]),
+                                compilator.replace('COMPILE_', '') + '=' + session,
+                                student,
+                                *item))
         await write_lines(stream, lines)
     return stream
 
