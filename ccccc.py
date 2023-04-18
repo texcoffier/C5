@@ -113,6 +113,12 @@ def walk_regtests():
 
 walk_regtests()
 
+def stop_event(event):
+    """Stop the event"""
+    event.preventDefault(True)
+    event.stopPropagation()
+    event.stopImmediatePropagation()
+
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     server_time_delta = int(millisecs()/1000 - SERVER_TIME)
@@ -315,8 +321,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         def close(event):
             """Close the dialog"""
             document.body.removeChild(popup)
-            event.preventDefault()
-            event.stopPropagation()
+            stop_event(event)
 
         def validate(event):
             if callback:
@@ -338,7 +343,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             elif event.key == 'Escape':
                 close(event)
             else:
-                event.stopPropagation()
+                stop_event(event)
         popup.onkeydown = enter_escape
         popup.showModal()
 
@@ -957,7 +962,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if text not in cleanup(self.source) and text not in cleanup(self.question.innerText):
             self.record(what + 'Rejected')
             self.popup_message(self.options['forbiden'])
-            event.preventDefault(True)
+            stop_event(event)
             return
         self.record(what + 'Allowed')
         self.copied = text
@@ -965,7 +970,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Cut"""
         if not self.allow_edit:
             self.record(['allow_edit', 'oncut'])
-            event.preventDefault(True)
+            stop_event(event)
             return
         self.oncopy(event, 'Cut')
         self.do_coloring = self.do_update_cursor_position = "oncut"
@@ -978,7 +983,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if '<' in clean:
                 self.popup_message("""Le glisser/déposer de balise HTML est impossible.<br>
                     Faites un copier/coller.""")
-                event.preventDefault(True)
+                stop_event(event)
                 return
             # def xxx():
             #     document.execCommand('undo', False)
@@ -986,7 +991,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # setTimeout(xxx, 500)
         else:
             document.execCommand('insertText', False, text)
-            event.preventDefault(True)
+            stop_event(event)
         self.do_coloring = self.do_update_cursor_position = "insert_text"
 
     def onpaste(self, event):
@@ -995,7 +1000,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return # Grading comment
         if not self.allow_edit:
             self.record(['allow_edit', 'onpaste'])
-            event.preventDefault(True)
+            stop_event(event)
             return
         text = (event.clipboardData or event.dataTransfer).getData("text/plain")
         text_clean = cleanup(text)
@@ -1011,7 +1016,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return # auto paste allowed
         self.record('PasteRejected')
         self.popup_message(self.options['forbiden'])
-        event.preventDefault(True)
+        stop_event(event)
 
     def get_line_column(self, position):
         """Get the cursor coordinates from the text"""
@@ -1212,7 +1217,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if not self.allow_edit:
             self.record(['allow_edit', 'onkeydown'])
         if not self.allow_edit:
-            event.preventDefault(True)
+            stop_event(event)
             return
         self.current_key = event.key
         if self.close_popup(event):
@@ -1225,11 +1230,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.clear_highlight_errors()
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
-            event.preventDefault(True)
+            stop_event(event)
         elif event.key == 's' and event.ctrlKey:
             self.save_unlock()
             # self.save_local() # No more local save with Ctrl+S
-            event.preventDefault(True)
+            stop_event(event)
         elif event.key == 'f' and event.ctrlKey:
             self.do_not_register_this_blur = True
             return
@@ -1242,7 +1247,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 document.getElementById('automatic_compilation').className = 'checked'
                 self.options['automatic_compilation'] = True
-            event.preventDefault(True)
+            stop_event(event)
         elif event.key == 'F8':
             self.do_indent()
         elif event.key == 'Enter' and event.target is self.editor:
@@ -1257,6 +1262,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 j += 1
             if j != i:
                 self.insert_on_keyup = self.source[i:j]
+        elif not self.options['allow_copy_paste'] and (
+                event.key == 'OS'
+                or event.key.startswith('F') and event.key != 'F11'
+                or event.ctrlKey and event.key in ('b', 'h')
+                ):
+            # Disables these keys to not lost focus
+            stop_event(event)
+            return
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
         if event.target.tagName == 'TEXTAREA':
@@ -1267,7 +1280,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Key up"""
         if not self.allow_edit:
             self.record(['allow_edit', 'onkeyup'])
-            event.preventDefault(True)
+            stop_event(event)
             return
         self.current_key = ''
         if event.target.tagName == 'TEXTAREA':
@@ -1663,8 +1676,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                         def onkeypress(event):
                             self.send_input(event.key)
                             G.canvas.onkeyup = None
-                            event.stopPropagation()
-                            event.preventDefault()
+                            stop_event(event)
                         G.canvas.onkeyup = onkeypress
                 elif value == '\002INPUT':
                     span = document.createElement('INPUT')
@@ -1870,7 +1882,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         if self.options['close'] == '' or GRADING:
             return None
         # self.record("Close", send_now=True) # The form cannot be submited
-        event.preventDefault()
+        stop_event(event)
         event.returnValue = self.options['close']
         return event.returnValue
 
@@ -1926,8 +1938,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         self.popup_element.parentNode.removeChild(self.popup_element)
         self.popup_element = None
         self.popup_done = True
-        event.stopPropagation()
-        event.preventDefault()
+        stop_event(event)
         return True
 
     def popup(self, content):
