@@ -187,7 +187,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.drag_x_current = self.drag_x_start = None
         self.drag_y_current = self.drag_y_start = None
         self.moving = False
-        if document.getElementById('my_rooms').checked:
+        if document.getElementById('my_rooms') and document.getElementById('my_rooms').checked:
             self.scale = 0
         self.update_sizes(0.5)
         self.update_visible()
@@ -620,7 +620,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.fillText("N'a rien fait depuis " + BOLD_TIME_ACTIVE/60 + " minutes.", column, line)
         line += size
         ctx.fillStyle = "#080"
-        ctx.fillText("Examen terminé.", column, line)
+        ctx.fillText("Examen terminé avant la fin.", column, line)
         line += size
         ctx.fillStyle = "#800"
         ctx.fillText("Dans la mauvaise salle.", column, line)
