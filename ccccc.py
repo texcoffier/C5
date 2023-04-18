@@ -262,6 +262,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     current_key = None
     meter = document.createRange()
     localstorage_checked = {} # For each question
+    span_highlighted = None # Racket eval result line highlighted
 
     def __init__(self):
         print("GUI: start")
@@ -1157,6 +1158,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.highlight_word()
         except: # pylint: disable=bare-except
             pass # May happen when text deletion and the cursor is outside source
+        self.highlight_error()
+        if self.options['compiler'] == 'racket' and self.old_source == self.source:
+            self.highlight_output()
+
+    def highlight_error(self):
+        """Highlight the error in the compiler output"""
         line, _column = self.get_line_column(self.cursor_position)
         errors = self.compiler.innerHTML.replace(
             '</b>', '').replace('<b style="color:#FFF;background:#F00">', '')
@@ -1170,6 +1177,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if errors != self.compiler.innerHTML:
             self.compiler.innerHTML = errors
 
+    def highlight_output(self):
+        """Highlight the error in the compiler output"""
+        line, _column = self.get_line_column(self.cursor_position)
+        span = document.getElementById('executor_line_' + line)
+        if span:
+            span.style.background = '#FF0'
+        if self.span_highlighted and self.span_highlighted != span:
+            self.span_highlighted.style.background = ''
+        self.span_highlighted = span
     def update_cursor_position(self):
         """Queue cursor update position"""
         self.do_update_cursor_position = True
@@ -1927,8 +1943,9 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             position = int(text[0].split(':::')[1].split(' ')[0])
         else:
             text = ['', text[0]]
+            line = 0
+        line, column = self.get_line_column(position)
         def highlight(event):
-            line, column = self.get_line_column(position)
             self.add_highlight_errors(line, column, 'eval')
             event.target.style.background = "#FF0"
             line_number = document.createElement("VAR")
@@ -1939,6 +1956,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             self.clear_highlight_errors(False)
             event.target.removeChild(event.target.lastChild)
         span = document.createElement('DIV')
+        span.id = 'executor_line_' + line
         span.innerHTML = '\n'.join(text[1:]).replace(
             RegExp('^([^ ]*) (.*) (#&lt;continuation-mark-set&gt;.*)$', 's'),
                 '<i style="opacity:0.3">$1</i><br><b>$2</b><br><i style="opacity:0.3">$3</i>')
