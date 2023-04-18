@@ -152,7 +152,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     focus_on_next_input = False
     cursor_position = 0
     insert_on_keyup = None
-    do_coloring = True
+    do_coloring = "default"
     do_update_cursor_position = True
     mouse_pressed = -1
     mouse_position = [0, 0]
@@ -577,11 +577,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.fullscreen.style.display = 'none'
 
         if self.do_update_cursor_position:
+            # print('do_update_cursor_position', self.do_update_cursor_position)
             self.update_source()
             self.update_cursor_position_now()
             self.do_update_cursor_position = False
 
         if self.do_coloring:
+            # print('do_coloring', self.do_coloring )
             self.do_coloring = False
             self.coloring()
 
@@ -773,7 +775,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if comments[i]:
                     lines = comments[i].strip().split('\n')
                     comment.rows = len(lines)
-                    comment.cols = min(max([len(line) for line in lines]), 50)
+                    comment.cols = min(max(*[len(line) for line in lines]), 50)
                 else:
                     comment.rows = 3
                     comment.cols = 40
@@ -966,7 +968,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             event.preventDefault(True)
             return
         self.oncopy(event, 'Cut')
-        self.do_coloring = self.do_update_cursor_position = True
+        self.do_coloring = self.do_update_cursor_position = "oncut"
     def insert_text(self, event, text):
         """Insert the pasted text"""
         self.overlay_hide()
@@ -985,10 +987,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         else:
             document.execCommand('insertText', False, text)
             event.preventDefault(True)
-        self.do_coloring = self.do_update_cursor_position = True
+        self.do_coloring = self.do_update_cursor_position = "insert_text"
 
     def onpaste(self, event):
         """Text paste"""
+        if event.target.tagName == 'TEXTAREA':
+            return # Grading comment
         if not self.allow_edit:
             self.record(['allow_edit', 'onpaste'])
             event.preventDefault(True)
@@ -1141,7 +1145,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         for key, error in self.highlight_errors.Items():
             if error and error.startswith('cursor'):
                 self.highlight_errors[key] = None
-        self.do_coloring = True
+        self.do_coloring = "update_cursor_position_now"
         try:
             cursor = document.getSelection().getRangeAt(0).cloneRange()
         except: # pylint: disable=bare-except
@@ -1188,7 +1192,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.span_highlighted = span
     def update_cursor_position(self):
         """Queue cursor update position"""
-        self.do_update_cursor_position = True
+        self.do_update_cursor_position = "update_cursor_position"
 
     def save_cursor(self):
         """Save the cursor position"""
@@ -1272,7 +1276,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.insert_on_keyup:
             document.execCommand('insertHTML', False, self.insert_on_keyup)
             self.insert_on_keyup = None
-        self.do_coloring = True
+        self.do_coloring = "onkeyup"
     def onkeypress(self, event):
         """Key press"""
     def onblur(self, _event):
@@ -1429,7 +1433,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.all_comments[question][version] = {}
             self.all_comments[question][version][line] = comment
             ANSWERS[question][1] = version # Want to see the commented version
-        self.do_coloring = True
+        self.do_coloring = "update_comments"
         self.update_grading_select()
 
     def update_grading(self, history=None):
@@ -1857,7 +1861,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             self.layered.scrollTop = 0
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
         self.highlight_errors = {}
-        self.do_coloring = True
+        self.do_coloring = "set_editor_content"
         self.source = message
         self.update_save_history()
 
@@ -1886,7 +1890,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         window.onbeforeunload = bind(self.onbeforeunload, self)
         window.onblur = bind(self.onblur, self)
         def do_coloring():
-            self.do_coloring = True
+            self.do_coloring = "onresize"
         window.onresize = do_coloring
         document.getElementsByTagName('BODY')[0].appendChild(self.top)
         self.create_gui()
