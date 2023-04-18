@@ -4,7 +4,7 @@ Display checkpoint page
 """
 # pylint: disable=chained-comparison
 
-RELOAD_INTERVAL = 60 # Number of seconds between update data
+RELOAD_INTERVAL = 5 # Number of seconds between update data
 HELP_LINES = 10
 BOLD_TIME = 180 # In seconds for new students in checking room
 BOLD_TIME_ACTIVE = 300 # In seconds for last activity
@@ -38,11 +38,12 @@ def seconds():
 def mouse_enter():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = True
+    reload_page()
 def mouse_leave():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = False
 
-mouse_enter()
+window.mouse_is_inside = True
 
 def distance2(x_1, y_1, x_2, y_2):
     """Squared distance beween 2 points"""
@@ -90,7 +91,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         window.onfocus = mouse_enter
         window.onresize = update_page
         if len(self.all_ips) == 0:
-            setInterval(reload_page, RELOAD_INTERVAL * 1000)
+            def start_reload_page():
+                setInterval(reload_page, RELOAD_INTERVAL * 1000)
+            setTimeout(start_reload_page,
+                       RELOAD_INTERVAL * 1000 - millisecs() % (RELOAD_INTERVAL * 1000))
         self.draw_times = []
     def xys(self, column, line):
         """Change coordinates system"""

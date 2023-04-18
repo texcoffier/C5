@@ -1453,7 +1453,11 @@ async def update_browser(request:Request) -> Response:
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
         return utilities.js_message('not_proctor')
-    return await update_browser_data(course)
+    if time.time() - update_browser.last_update > 1: # 1 second cache
+        update_browser.last_update = time.time()
+        update_browser.cache = await update_browser_data(course)
+    return update_browser.cache
+update_browser.last_update = 0
 
 async def checkpoint_student(request:Request) -> Response:
     """Display the students waiting checkpoint"""

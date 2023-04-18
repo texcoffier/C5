@@ -1098,9 +1098,9 @@ With Firefox:
         echo STOP SERVERS
         cd {C5_DIR}
         kill \$(cat http_server.pid) \$(cat compile_server.pid) || true
-        sleep 1
+        sleep 0.1
         kill -1 \$(cat http_server.pid) \$(cat compile_server.pid) || true
-        sleep 1
+        sleep 0.1
         kill -9 \$(cat http_server.pid) \$(cat compile_server.pid) || true
         rm http_server.pid compile_server.pid
         """,
