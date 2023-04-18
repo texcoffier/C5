@@ -236,9 +236,9 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log(("EXIT", return_value))
             if return_value < 0:
                 more = f'\n⚠️{signal.strsignal(-return_value)}'
-                if return_value == -9:
+                if return_value in (-6, -9):
                     more += "\nVotre programme utilise plus d'une seconde,\n" \
-                            "avez-vous fait une boucle infinie ?"
+                            "avez-vous fait une boucle/récursion infinie ?"
                 self.process = None
             else:
                 more = ''
