@@ -21,20 +21,29 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
     time_start = 0
     time_sum = []
     time_bonus = 0
+    blur_time = 0
     last = -1
     current_question = -1
+    current_time = 0
     if not http_server:
         http_server = ''
+    blur_start = 0
     for line in http_server.split('\n'):
         if len(line) == 0:
             continue
         line = eval(line) # pylint: disable=eval-used
+        if line[0] < current_time:
+            print(current_time, line)
+            continue
         current_time = line[0]
         for cell in line[1:]:
             if is_int(cell):
                 current_time += cell
                 continue
             if cell.toLowerCase:
+                if blur_start:
+                    blur_time += current_time - blur_start
+                    blur_start = 0
                 if cell.startswith('Mouse'):
                     mouse_click += 1
                 elif cell == 'CopyRejected':
@@ -51,6 +60,7 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
                     cut_ok += 1
                 elif cell.startswith('Blur'):
                     nr_blurs += 1
+                    blur_start = current_time
                 else:
                     key_stroke += 1
                 continue
@@ -88,11 +98,12 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             'nr_blurs': nr_blurs,
             'time_sum': time_sum,
             'time_bonus': time_bonus / 60,
+            'blur_time': blur_time
            }
 
 WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'graders', 'time',
         'key_stroke', 'mouse_click',
-        'copy_ok', 'copy_bad', 'cut_ok', 'cut_bad', 'paste_ok', 'paste_bad', 'nr_blurs'
+        'copy_ok', 'copy_bad', 'cut_ok', 'cut_bad', 'paste_ok', 'paste_bad', 'nr_blurs', 'blur_time'
        ]
 
 COLORS = ["888", "F44", "FF0", "0F0", "0FF", "88F", "F0F", "CCC"]
@@ -153,7 +164,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 <p>
 <table id="report" border>
     <tr><th>Login<th>Minutes<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Graders<th>Time<br>in sec.<th>Keys
-        <th>Mouse<th>Copy<th>Copy<br>Fail<th>Cut<th>Cut<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Time per question<br>
+        <th>Mouse<th>Copy<th>Copy<br>Fail<th>Cut<th>Cut<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Blur<br>time<th>Time per question<br>
         <E>🐌</E> : clipped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
 """)
     cache = {}
