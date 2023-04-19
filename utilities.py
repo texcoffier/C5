@@ -115,6 +115,30 @@ def student_log(course_name:str, login:str, data:str) -> None:
     with open(f'{course_name}/{login}/http_server.log', "a", encoding='utf-8') as file:
         file.write(data)
 
+# Active : examination is running
+# Inactive & Room=='' : wait access to examination
+# Inactive & Room!='' : examination done
+class State(list): # pylint: disable=too-many-instance-attributes
+    """State of the student"""
+    slots = [ # The order is fundamental: do not change it
+        'active', 'teacher', 'room', 'last_time', 'nr_blurs', 'nr_answers',
+        'client_ip', 'bonus_time', 'grade']
+    slot_index = {key: i for i, key in enumerate(slots)}
+
+    def __setattr__(self, attr, value):
+        """Store in the list"""
+        self[self.slot_index[attr]] = value
+
+    def __getattr__(self, attr):
+        """Get from the list"""
+        return self[self.slot_index[attr]]
+
+    async def list(self):
+        """For JavaScript checkpoint"""
+        return (*self[:6],
+                (await DNS.infos(self.client_ip))['name'],
+                *self[7:])
+
 class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """A course session"""
     configs:Dict[str,"CourseConfig"] = {}
@@ -157,19 +181,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        'highlight': '#FFF',
                        'notation': '',
                        'messages': [],
-                       # For each student login :
-                       #   [0] Active: True is the examination is possible.
-                       #   [1] the teacher who checkpointed  (or '')
-                       #   [2] Room: the building and the place
-                       #   [3] timestamp of last student interaction
-                       #   [4] Number of window blur
-                       #   [5] Number of questions
-                       #   [6] IP address
-                       #   [7] Bonus time in seconds
-                       #   [8] Grade
-                       # Active : examination is running
-                       # Inactive & Room=='' : wait access to examination
-                       # Inactive & Room!='' : examination done
                        'active_teacher_room': {},
                        # The session state:
                        # ┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
@@ -204,11 +215,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             print(f"Invalid configuration file: {self.filename}", flush=True)
             raise
         # Update old data structure
-        for active_teacher_room in self.config['active_teacher_room'].values():
+        for login, active_teacher_room in self.config['active_teacher_room'].items():
             if len(active_teacher_room) == 7:
                 active_teacher_room.append(0)
             if len(active_teacher_room) == 8:
                 active_teacher_room.append('')
+            self.config['active_teacher_room'][login] = State(active_teacher_room)
         if self.config['highlight'] == '0':
             self.config['highlight'] = '#FFF'
         elif self.config['highlight'] == '1':
@@ -226,7 +238,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                     if len(data) == 2:
                         config[data[0]] = data[1]
                     elif len(data) == 3:
-                        config[data[0]][data[1]] = data[2]
+                        if data[0] == 'active_teacher_room':
+                            config[data[0]][data[1]] = State(data[2])
+                        else:
+                            config[data[0]][data[1]] = data[2]
                     else:
                         config[data[0]][data[1]][data[2]] = data[3]
                 self.parse_position = file.tell()
@@ -295,7 +310,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         nb_active = 0
         now = time.time()
         for info in self.active_teacher_room.values():
-            if now - info[3] < last_seconds:
+            if now - info.last_time < last_seconds:
                 nb_active += 1
         return nb_active
 
@@ -324,7 +339,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
     def get_stop(self, login:str) -> int:
         """Get stop date, taking login into account"""
         if login in self.active_teacher_room:
-            bonus_time = self.active_teacher_room[login][7]
+            bonus_time = self.active_teacher_room[login].bonus_time
         else:
             bonus_time = 0
         if login in self.tt_list:
@@ -340,10 +355,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 # There is an http_server.log but nothing in session.cf
                 client_ip = 'broken_cf_file'
             # Add to the checkpoint room
-            active_teacher_room = [0, '', '', now, 0, 0, client_ip, 0, '']
+            active_teacher_room = State((0, '', '', now, 0, 0, client_ip, 0, ''))
             self.set_parameter('active_teacher_room', active_teacher_room, login)
             to_log = [now, ["checkpoint_in", client_ip]]
-        elif client_ip and client_ip != active_teacher_room[6]:
+        elif client_ip and client_ip != active_teacher_room.client_ip:
             # Student IP changed
             if self.checkpoint and not self.allow_ip_change:
                 # Undo checkpointing
@@ -382,8 +397,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             active_teacher_room = self.update_checkpoint(login, client_ip, now)
             if not active_teacher_room:
                 raise ValueError('Bug')
-            if self.checkpoint and not active_teacher_room[0]:
-                if active_teacher_room[1] == '':
+            if self.checkpoint and not active_teacher_room.active:
+                if active_teacher_room.teacher == '':
                     # Always in the checkpoint or examination is done
                     return 'checkpoint'
                 return 'done'
@@ -393,7 +408,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             return 'running'
         if self.checkpoint:
             active_teacher_room = self.active_teacher_room.get(login, None)
-            if not active_teacher_room or active_teacher_room[1] == '':
+            if not active_teacher_room or active_teacher_room.teacher == '':
                 return 'checkpoint' # Always in the checkpoint after examination start
         return 'done'
 
@@ -406,14 +421,11 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         # Clearly not efficient
         students = []
         for student, active_teacher_room in self.active_teacher_room.items():
-            active_teacher_room = [*active_teacher_room[:6],
-                                   (await DNS.infos(active_teacher_room[6]))['name'],
-                                   *active_teacher_room[7:]]
             if C5_VALIDATE:
                 infos = await LDAP.infos(student)
             else:
                 infos = {'fn': 'FN' + student, 'sn': 'SN'+student}
-            students.append([student, active_teacher_room, infos])
+            students.append([student, await active_teacher_room.list(), infos])
         return students
 
     @classmethod

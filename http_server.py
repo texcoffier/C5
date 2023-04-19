@@ -209,7 +209,8 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             CHECKPOINT = {course.checkpoint};
             ANSWERS = {json.dumps(last_answers)};
             ALL_SAVES = {json.dumps(all_saves)};
-            WHERE = {json.dumps(course.active_teacher_room.get(login,(False,'?','?,0,0',0,0,0,'ip',0,'')))};
+            WHERE = {json.dumps(course.active_teacher_room.get(
+                login, utilities.State((False, '?', '?,0,0', 0, 0, 0, 'ip', 0, ''))))};
             SERVER_TIME = {time.time()};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')
@@ -290,10 +291,10 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
         course.set_parameter('active_teacher_room',  int(time.time()), session.login, 3)
         nr_blurs =  data.count('"Blur"') + bad_json
         if nr_blurs:
-            course.set_parameter('active_teacher_room', infos[4] + nr_blurs, session.login, 4)
+            course.set_parameter('active_teacher_room', infos.nr_blurs + nr_blurs, session.login, 4)
         nr_answers = data.count('["answer",')
         if nr_answers:
-            course.set_parameter('active_teacher_room', infos[5] + nr_answers, session.login, 5)
+            course.set_parameter('active_teacher_room', infos.nr_answers + nr_answers, session.login, 5)
 
     if course.course == 'PYTHON=editor':
         source = None
@@ -983,9 +984,9 @@ async def adm_answers(request:Request) -> StreamResponse: # pylint: disable=too-
                 await asyncio.sleep(0)
                 answers, blurs = get_answers(course, user, compiled=True)
                 infos = config.active_teacher_room.get(user)
-                building, pos_x, pos_y, version = ((infos[2] or '?') + ',?,?,?').split(',')[:4]
+                building, pos_x, pos_y, version = ((infos.room or '?') + ',?,?,?').split(',')[:4]
                 version = version.upper()
-                where = f'Surveillant: {infos[1]}, {building} {pos_x}×{pos_y}, Version: {version}'
+                where = f'Surveillant: {infos.teacher}, {building} {pos_x}×{pos_y}, Version: {version}'
                 if answers:
                     zipper.writestr(
                         f'{course}/{user}#answers.{extension}',
@@ -1140,12 +1141,12 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     with_me = []
     done = []
     for student, active_teacher_room in course.active_teacher_room.items():
-        if active_teacher_room[1] == session.login:
+        if active_teacher_room.teacher == session.login:
             with_me.append(student)
-        if active_teacher_room[0]:
+        if active_teacher_room.active:
             working.append(student)
         else:
-            if active_teacher_room[2]:
+            if active_teacher_room.room:
                 done.append(student)
             else:
                 waiting.append(student)
@@ -1421,11 +1422,11 @@ async def checkpoint_hosts(request:Request) -> Response:
             continue
         await asyncio.sleep(0)
         for infos in course.active_teacher_room.values():
-            where = infos[2].split(',')
+            where = infos.room.split(',')
             if len(where) < 3:
                 continue
             if where[0] in buildings:
-                ips[','.join(where[:3])][infos[6].lower()] += 1
+                ips[','.join(where[:3])][infos.client_ip.lower()] += 1
     return answer(
         session.header() + f'''
         <script>
@@ -1487,7 +1488,7 @@ async def checkpoint_student(request:Request) -> Response:
         course.set_parameter('active_teacher_room', seconds, student, 3)
         to_log = [seconds, ["checkpoint_eject", session.login]]
     else:
-        if old[1] == '':
+        if old.teacher == '':
             # A moved STOPed student must not be reactivated
             course.set_parameter('active_teacher_room', 1, student, 0)
         course.set_parameter('active_teacher_room', session.login, student, 1)
@@ -1651,6 +1652,7 @@ async def get_course_config(request:Request) -> Tuple[Session,CourseConfig]:
 async def course_config(request:Request) -> Response:
     """The last answer from the student"""
     _session, config = await get_course_config(request)
+
     return answer(
         f'update_course_config({json.dumps(config.config)})',
         content_type='application/javascript')
