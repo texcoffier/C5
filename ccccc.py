@@ -409,9 +409,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         padding = self.line_numbers.offsetWidth + 5
                     else:
                         padding = 12
-                    self.overlay.style.width = self.comments.offsetLeft - padding + 'px'
-                    self.editor.style.width = self.comments.offsetLeft - padding + 'px'
                     self.overlay.style.left = self.editor.style.left = padding + 'px'
+                    ewidth = self.comments.offsetLeft - self.editor.offsetLeft + 'px'
+                    self.overlay.style.width = self.editor.style.width = ewidth
                 else:
                     self.overlay.style.right = '0px'
                     self.editor.style.right = '0px'
