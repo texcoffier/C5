@@ -1298,6 +1298,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.do_not_register_this_blur = False
             return
         self.record('Blur')
+    def onfocus(self, _event):
+        """Window focus"""
+        self.record('Focus')
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':
@@ -1901,6 +1904,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         window.onkeypress = bind(self.onkeypress, self)
         window.onbeforeunload = bind(self.onbeforeunload, self)
         window.onblur = bind(self.onblur, self)
+        window.onfocus = bind(self.onfocus, self)
         def do_coloring():
             self.do_coloring = "onresize"
         window.onresize = do_coloring

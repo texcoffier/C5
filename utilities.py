@@ -520,8 +520,8 @@ class Config: # pylint: disable=too-many-instance-attributes
             'messages': {
                 'unknown': "Cette session n'existe pas",
                 'checkpoint':
-                    "Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen.<br>"
-                    "Rechargez cette page quand l'intervenant vous aura placé.",
+                    "Demandez à votre intervenant de vous dire quand il vous aura "
+                    "ouvert l'examen puis rechargez cette page.",
                 'done': "La session d'exercice ou d'examen est terminée",
                 'not_root': "Vous n'êtes pas root C5",
                 'not_grader': "Vous n'êtes pas un correcteur de la session",
