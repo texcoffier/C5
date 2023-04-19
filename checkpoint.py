@@ -1179,6 +1179,7 @@ def create_page(building_name):
             width: calc(90% - 2em);
             background: #FFFC;
             padding: 0.2em;
+            z-index: 2;
         }
         #source { margin-top: 7em }
         .icon { font-size: 200% ; display: inline-block; font-family: emoji;
