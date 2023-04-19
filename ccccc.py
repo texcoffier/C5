@@ -342,8 +342,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     validate(event)
             elif event.key == 'Escape':
                 close(event)
-            else:
-                stop_event(event)
         popup.onkeydown = enter_escape
         popup.showModal()
 
