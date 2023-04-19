@@ -1904,6 +1904,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         window.onblur = bind(self.onblur, self)
         window.onfocus = bind(self.onfocus, self)
         def do_coloring():
+            self.update_gui()
             self.do_coloring = "onresize"
         window.onresize = do_coloring
         document.getElementsByTagName('BODY')[0].appendChild(self.top)
