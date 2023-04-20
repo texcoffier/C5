@@ -125,3 +125,25 @@ def list(items): # pylint: disable=redefined-builtin)
 def is_int(obj):
     """True is it is a number"""
     return obj.toFixed
+
+def post(url, value, iframe=False):
+    """POST a value"""
+    form = document.createElement("form")
+    form.setAttribute("method", "post")
+    form.setAttribute("action", url)
+    form.setAttribute("enctype", "multipart/form-data")
+    form.setAttribute("encoding", "multipart/form-data") # For IE
+    data = document.createElement("input")
+    data.setAttribute("type", "hidden")
+    data.setAttribute("name", "value")
+    data.setAttribute("value", value)
+    form.appendChild(data)
+    if iframe:
+        iframe = document.createElement("iframe")
+        form.target = iframe.name = 'post_iframe_' + millisecs()
+        form.appendChild(iframe)
+    document.body.appendChild(form)
+    form.submit()
+    #def remove_form(event):
+    #    print(event)
+    #form.onload = remove_form

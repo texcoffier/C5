@@ -5,21 +5,6 @@ def update_url():
     clean = url.replace(RegExp('(.*)/(adm|upload).*([?]ticket=.*)'), "$1/adm/root$3")
     history.replaceState('_a_', '_t_', clean)
 
-def post(url, value):
-    """POST a dictionnary"""
-    form = document.createElement("form")
-    form.setAttribute("method", "post")
-    form.setAttribute("action", url)
-    form.setAttribute("enctype", "multipart/form-data")
-    form.setAttribute("encoding", "multipart/form-data") # For IE
-    data = document.createElement("input")
-    data.setAttribute("type", "hidden")
-    data.setAttribute("name", "value")
-    data.setAttribute("value", value)
-    form.appendChild(data)
-    document.body.appendChild(form)
-    form.submit()
-
 def display(): # pylint: disable=too-many-statements
     """Display adm home page"""
     update_url()

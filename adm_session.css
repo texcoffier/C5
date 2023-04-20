@@ -38,7 +38,7 @@ LABEL, INPUT, TEXTAREA, SELECT {
     transition: background 0s;
 }
 .changed {
-    background: #FF8;
+    background: #DFD;
 }
 H1 {
     text-align: center;

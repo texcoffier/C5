@@ -592,13 +592,17 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         else:
             feedback = f"«{course}» «{value}» not in {buildings}!"
 
-    return answer(f'update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})',
-        content_type='application/javascript')
+    return answer(
+        f'<script>window.parent.update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})</script>')
 
 async def adm_config(request:Request) -> Response: # pylint: disable=too-many-branches
     """Course details page for administrators"""
     action = request.match_info['action']
-    value = request.match_info.get('value', '')
+    try:
+        post = await request.post()
+        value = post['value']
+    except: # pylint: disable=bare-except
+        value = request.match_info.get('value')
 
     session, config = await get_course_config(request)
     course = config.course
@@ -1800,8 +1804,8 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/answers/{course:.*}', adm_answers),
                 web.get('/adm/root', adm_root),
                 web.get('/adm/session/{course}', adm_session), # Edit page
-                web.get('/adm/session/{course}/{action}/{value}', adm_config),
-                web.get('/adm/session/{course}/{action}/', adm_config),
+                web.get('/adm/session2/{course}/{action}/{value}', adm_config),
+                web.get('/adm/session2/{course}/{action}', adm_config),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/editor/{course}', adm_editor),
                 web.get('/adm/js_errors/{date}', js_errors),
@@ -1833,6 +1837,7 @@ APP.add_routes([web.get('/', home),
                 web.post('/record_comment/{course}', record_comment),
                 web.post('/adm/c5/{action}', adm_c5),
                 web.post('/adm/building/{building}', adm_building_store),
+                web.post('/adm/session/{course}/{action}', adm_config),
                 ])
 APP.on_startup.append(startup)
 logging.basicConfig(level=logging.DEBUG)

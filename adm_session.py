@@ -171,10 +171,7 @@ def onchange(event):
         else:
             value = target.value
     target.className = 'wait_answer'
-    script = document.createElement('SCRIPT')
-    script.src = ('/adm/session/' + COURSE + '/' + attr + '/'
-        + encodeURIComponent(value) + '?ticket=' + TICKET)
-    add(script)
+    post('/adm/session/' + COURSE + '/' + attr + '?ticket=' + TICKET, value, True)
     event.stopPropagation()
 
 def init():
@@ -258,16 +255,16 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     <br>
     <a href="javascript:name=prompt('New name?');
             if (name && name != 'null')
-                window.location = '/adm/session/' + COURSE + '/rename/' + name + '?ticket=' + TICKET;
+                window.location = '/adm/session2/' + COURSE + '/rename/' + name + '?ticket=' + TICKET;
             else
                 undefined;
             ">
      Rename session</a>
-    <a href="javascript:if(confirm('Really delete?'))window.location='/adm/session/"""
-    + COURSE + '/delete/?ticket=' + TICKET + """'">
+    <a href="javascript:if(confirm('Really delete everything?'))window.location='/adm/session2/"""
+    + COURSE + '/delete?ticket=' + TICKET + """'">
      Delete <b>ALL</b></a>
-    <a href="javascript:if(confirm('Really delete?'))window.location='/adm/session/"""
-    + COURSE + '/delete_students/?ticket=' + TICKET + """'">
+    <a href="javascript:if(confirm('Really delete student logs?'))window.location='/adm/session2/"""
+    + COURSE + '/delete_students?ticket=' + TICKET + """'">
      Delete <b>Students</b></a>
     <p class="title">Feedback</p>
     <div id="feedback"></div>
