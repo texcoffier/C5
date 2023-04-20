@@ -174,7 +174,7 @@ DIV.executor > DIV:first-child
 .comments TEXTAREA {
     position: absolute;
     display: block;
-    opacity: 0.6;
+    opacity: 0.3;
     font-size: 80%;
     pointer-events: all;
 }
@@ -202,6 +202,7 @@ DIV.executor > DIV:first-child
 }
 .comments TEXTAREA.filled {
     background: #DFD;
+    border-left: 0.5em solid #000;
 }
 .comments TEXTAREA:focus {
     background: #FFF;

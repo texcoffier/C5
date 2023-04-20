@@ -966,6 +966,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.copied = text
     def oncut(self, event):
         """Cut"""
+        if event.target.tagName == 'TEXTAREA':
+            return # Grading comment
         if not self.allow_edit:
             self.record(['allow_edit', 'oncut'])
             stop_event(event)
