@@ -776,7 +776,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 else:
                     comment.className = 'empty'
                 if comments[i]:
-                    lines = comments[i].strip().split('\n')
+                    lines = comments[i].split('\n')
                     comment.rows = len(lines)
                     comment.cols = min(max(*[len(line) for line in lines]), 50)
                 else:
@@ -1930,7 +1930,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             {
                 'question': self.current_question,
                 'line': event.target.line,
-                'comment': event.target.value,
+                'comment': event.target.value.replace(RegExp('[\n ]*$'), ''),
                 'student': STUDENT,
                 'version': self.version,
             }, 'record_comment/' + COURSE + '?ticket=' + TICKET)
