@@ -4,7 +4,6 @@ Display checkpoint page
 """
 # pylint: disable=chained-comparison
 
-RELOAD_INTERVAL = 5 # Number of seconds between update data
 HELP_LINES = 10
 BOLD_TIME = 180 # In seconds for new students in checking room
 BOLD_TIME_ACTIVE = 300 # In seconds for last activity
@@ -38,7 +37,6 @@ def seconds():
 def mouse_enter():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = True
-    reload_page()
 def mouse_leave():
     """Manage window.mouse_is_inside"""
     window.mouse_is_inside = False
@@ -90,11 +88,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         window.onblur = mouse_leave
         window.onfocus = mouse_enter
         window.onresize = update_page
-        if len(self.all_ips) == 0:
-            def start_reload_page():
-                setInterval(reload_page, RELOAD_INTERVAL * 1000)
-            setTimeout(start_reload_page,
-                       RELOAD_INTERVAL * 1000 - millisecs() % (RELOAD_INTERVAL * 1000))
         self.draw_times = []
     def xys(self, column, line):
         """Change coordinates system"""
@@ -485,8 +478,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 continue
             width = max(ctx.measureText(student.firstname).width,
                         ctx.measureText(student.surname).width)
-            ctx.fillStyle = "#FFF"
-            ctx.fillRect(x_pos, y_pos - y_size/2, width + 2, y_size + 2)
+            if student.data.blurred:
+                ctx.fillStyle = "#F0F"
+                ctx.fillRect(x_pos - width/4, y_pos - y_size/2 - width/4,
+                             width + 2 + width/4, y_size + 2 + width/2)
+            else:
+                ctx.fillStyle = "#FFF"
+                ctx.fillRect(x_pos, y_pos - y_size/2, width + 2, y_size + 2)
             if student.blur:
                 ctx.fillStyle = "#F00"
                 ctx.fillRect(x_pos, y_pos - y_size/2,
@@ -520,6 +518,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillStyle = "#000"
                 ctx.fillText(student.grade[0] + '(' + student.grade[1] + 'notes)',
                              x_pos, y_pos + 2*y_size/3)
+            if student.blur_time > 2:
+                ctx.fillStyle = "#000"
+                ctx.fillText(student.blur_time + ' secs', x_pos, y_pos - y_size/3)
         ctx.globalAlpha = 1
     def draw_map(self, ctx, canvas): # pylint: disable=too-many-locals
         """Draw the character map"""
@@ -543,8 +544,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.stroke()
 
         if self.highlight_disk:
-            age = seconds() - self.highlight_disk[2]
-            max_age = 10
+            age = millisecs() - self.highlight_disk[2]
+            max_age = 10000
             if age > max_age:
                 self.highlight_disk = None
             else:
@@ -738,7 +739,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
         self.top += (pos_y - self.top) * (1 - new_scale/self.scale)
         self.scale = new_scale
-        self.draw()
+        scheduler.draw = True
     def zoom(self, event):
         """Zooming on the map"""
         self.do_zoom(event.clientX, event.clientY,
@@ -769,7 +770,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.drag_x_start = self.drag_x_current = self.event_x
         self.drag_y_start = self.drag_y_current = self.event_y
         self.moving = True
-        self.draw()
+        scheduler.draw = True
     def drag_move(self, event):
         """Moving the map"""
         self.get_event(event)
@@ -780,7 +781,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                                    event.touches[1].pageX, event.touches[1].pageY)
                 self.do_zoom(self.zooming_x, self.zooming_y,
                              self.scale_start * zooming / self.zooming)
-                self.draw()
+                scheduler.draw = True
                 return
             self.zooming = 0
             window.onmousemove = window.ontouchmove = None
@@ -788,7 +789,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             return
         if not self.moving:
             if self.selected_computer:
-                self.draw()
+                scheduler.draw = True
             return
         self.moved = self.moved or distance2(self.drag_x_start, self.drag_y_start,
                                              self.event_x, self.event_y) > 10
@@ -807,7 +808,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 document.getElementById('top').style.background = TOP_INACTIVE
             else:
                 document.getElementById('top').style.background = TOP_ACTIVE
-        self.draw()
+        scheduler.draw = True
     def drag_stop_student(self, column, line):
         """Stop moving a student"""
         if column != -1:
@@ -830,7 +831,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                    + self.selected_computer[2] + '/'
                    + self.selected_item)
             self.selected_item = None
-            self.draw()
+            scheduler.draw = True
             return True
         return False
     def drag_stop_click_on_computer(self, column, line):
@@ -839,7 +840,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             select = [self.building, column, line]
             if self.selected_computer != select:
                 self.selected_computer = select
-                self.draw()
+                scheduler.draw = True
                 self.moving = False
             return True
         return False
@@ -915,7 +916,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 # No special click
                 if self.selected_computer:
                     self.selected_computer = None
-                    self.draw()
+                    scheduler.draw = True
         else:
             # Panning: recompute waiting room list
             self.compute_rooms_on_screen()
@@ -930,7 +931,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Transition from zoom"""
         if len(self.transitions): # pylint: disable=len-as-condition
             self.scale, self.left, self.top = self.transitions.pop()
-            self.draw()
+            scheduler.draw = True
             setTimeout(bind(self.animate_zoom, self), 50)
         else:
             self.compute_rooms_on_screen()
@@ -1006,7 +1007,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         else:
             Student.moving_element.style.background = "#FFF"
             document.getElementById('top').style.background = TOP_ACTIVE
-        self.draw(square_feedback=True)
+        scheduler.draw = True
+        scheduler.square_feedback = True
     def move_student_to(self, student, column, line):
         """Move the student on a chair.
         If not an A or B version, ask for the version.
@@ -1023,7 +1025,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 version = student.version or 'a'
         record('/checkpoint/' + COURSE + '/' + student.login + '/'
                + self.building + ',' + column + ',' + line + ',' + version)
-        self.highlight_disk = [column, line, seconds()]
+        self.highlight_disk = [column, line, millisecs()]
     def stop_move_student(self, event):
         """Drop the student"""
         self.get_event(event)
@@ -1042,21 +1044,21 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         Student.moving_student = None
         Student.moving_element = None
         if pos[0] == -1:
-            update_page()
+            scheduler.update_page = True
 
     def zoom_student(self, login):
         "Zoom on this student"
         student = STUDENT_DICT[login]
         if student.building != self.building:
             self.change(student.building)
-            update_page()
+            scheduler.update_page = True
             document.getElementById('buildings').value = student.building
         self.scale = self.width / 5
         self.left = self.top = 0
         left, top, _dx, _dy = self.xys(student.column, student.line)
         self.left = self.real_left - left + (self.width - self.real_left) / 2
         self.top = self.real_top - top + (self.height - self.real_top) / 2
-        self.draw()
+        scheduler.draw = True
 
 STUDENT_DICT = {}
 
@@ -1064,6 +1066,7 @@ class Student: # pylint: disable=too-many-instance-attributes
     """To simplify code"""
     building = column = line = None
     def __init__(self, data):
+        self.data = data
         self.login = data[0]
         self.active = data[1][0]
         self.teacher = data[1][1]
@@ -1080,6 +1083,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.client_ip = data[1][6]
         self.bonus_time = data[1][7]
         self.grade = data[1][8]
+        self.blur_time = data[1][9]
         self.firstname = data[2]['fn']
         self.surname = data[2]['sn']
         self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
@@ -1208,18 +1212,16 @@ def create_page(building_name):
         #time SPAN.cs { color: #00F ; }
         </style>
         <div id="top">
-        <span class="icon" onclick="reload_page()">⟳</span>
         <span class="icon" onclick="send_alert()">🚨</span>
         <span class="icon" onclick="search_student()">🔍</span>
         ''']
-    if window.DISPLAY_SESSION_NAME:
-        content.append(
-            '<span class="course">'
-            + COURSE.split('=')[1].replace(RegExp('_', 'g'), ' ')
-            + '</span>')
     content.append(
-        ''' <select style="width:100%" id="buildings"
-                    onchange="ROOM.change(this.value); update_page(); ROOM.draw()">''')
+        '<span class="course" id="DISPLAY_SESSION_NAME">'
+        + COURSE.split('=')[1].replace(RegExp('_', 'g'), ' ')
+        + '</span>')
+    content.append(
+        '''<select style="width:100%" id="buildings"
+               onchange="ROOM.change(this.value); scheduler.update_page = True;">''')
     content.append(
         ''.join(['<option'
                  + (building == building_name and ' selected' or '')
@@ -1227,14 +1229,14 @@ def create_page(building_name):
                  for building in BUILDINGS_SORTED])
         )
     content.append('</select>')
-    if window.DISPLAY_MY_ROOMS:
-        content.append(
-            '''<label><input id="my_rooms" onchange="ROOM.scale = 0;ROOM.draw()"
-                             type="checkbox">Seulement mes salles</label>''')
-    if window.DISPLAY_STUDENT_FILTER:
-        content.append('''<label class="filter">Mettre en évidence les logins :<br>
-            <input onchange="filters(this)" onblur="filters(this)"
-                    style="box-sizing: border-box; width:100%"></label>''')
+    content.append(
+        '<label id="DISPLAY_MY_ROOMS">'
+        + '<input id="my_rooms" onchange="ROOM.scale = 0; scheduler.draw=true"'
+        + '       type="checkbox">Seulement mes salles</label>')
+    content.append(
+        '<label id="DISPLAY_STUDENT_FILTER" class="filter">Mettre en évidence les logins :<br>'
+        + '<input onchange="filters(this)" onblur="filters(this)"'
+        + '       style="box-sizing: border-box; width:100%"></label>')
     content.append('''
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
@@ -1250,6 +1252,9 @@ def create_page(building_name):
         ''')
     document.body.innerHTML = ''.join(content)
     document.body.onkeydown = key_event_handler
+    set_visibility('DISPLAY_STUDENT_FILTER')
+    set_visibility('DISPLAY_MY_ROOMS')
+    set_visibility('DISPLAY_SESSION_NAME')
 
 def send_alert():
     """Sent an on map alert message to all teachers"""
@@ -1288,12 +1293,7 @@ def update_page():
     if student and len(student) > 1:
         ROOM.zoom_student(student[1:])
         window.location.hash = ''
-
-def reload_page():
-    """Update data now"""
-    if document.body.onmousemove is None and window.mouse_is_inside:
-        record('/update/' + COURSE)
-
+        ROOM.draw()
 
 def close_exam(login):
     """Terminate the student exam"""
@@ -1510,6 +1510,74 @@ def debug():
         students_per_room[room_name] = [student.login for student in room.students]
     print(JSON.stringify(students_per_room))
 
+
+def set_visibility(attr):
+    """For DISPLAY_STUDENT_FILTER DISPLAY_MY_ROOMS DISPLAY_SESSION_NAME"""
+    document.getElementById(attr).style.display = window[attr] and 'initial' or 'none' # pylint: disable=consider-using-ternary
+
+def reader(event): # pylint: disable=too-many-branches
+    """Read the live journal"""
+    chunk = event.target.responseText.substr(event.target.last_size or 0)
+    for expression in chunk.split('\n'):
+        if expression == '':
+            continue
+        data = JSON.parse(expression)
+        print(data)
+        if data[0] == 'messages':
+            for message in data[1][len(MESSAGES):]:
+                MESSAGES.append(message)
+                scheduler.update_messages = True
+        elif data[0] == "active_teacher_room":
+            if STUDENT_DICT[data[2]]:
+                student = STUDENT_DICT[data[2]].data
+                if data[3] == 3: # Blur
+                    student.blurred = True
+                elif data[3] == 9: # Focus
+                    student.blurred = False
+                student[1][data[3]] = data[1]
+            else:
+                student = [data[2], data[1], { 'fn': "?", 'sn': "?" }]
+                STUDENTS.append(student)
+            Student(student) # Update structure from data
+            scheduler.update_page = True
+        elif data[0] == "infos":
+            student = STUDENT_DICT[data[1]].data
+            student[2] = data[2]
+        elif data[0] == 'display_student_filter':
+            window.DISPLAY_STUDENT_FILTER = int(data[1])
+            set_visibility('DISPLAY_STUDENT_FILTER')
+        elif data[0] == 'display_my_rooms':
+            window.DISPLAY_MY_ROOMS = int(data[1])
+            set_visibility('DISPLAY_MY_ROOMS')
+        elif data[0] == 'display_session_name':
+            window.DISPLAY_SESSION_NAME = int(data[1])
+            set_visibility('DISPLAY_SESSION_NAME')
+
+    event.target.last_size = len(event.target.responseText)
+
+def scheduler():
+    """To not redraw needlessly"""
+    if scheduler.update_page:
+        update_page()
+    elif scheduler.draw:
+        scheduler.draw = False
+        ROOM.draw(scheduler.draw_square_feedback)
+    if scheduler.update_messages:
+        ROOM.update_messages()
+
+    scheduler.draw_square_feedback = False
+    scheduler.update_page = False
+    scheduler.update_messages = False
+    scheduler.draw = ROOM.highlight_disk
+
 create_page(window.DEFAULT_BUILDING or "Nautibus")
 ROOM = Room(window.DEFAULT_BUILDING or "Nautibus")
-update_page()
+scheduler.update_page = True
+
+XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
+XHR.addEventListener('readystatechange', reader)
+XHR.addEventListener('error', bind(window.location.reload, window.location))
+XHR.open("GET", '/journal/' + COURSE + '?ticket=' + TICKET)
+XHR.send()
+
+setInterval(scheduler, 20)

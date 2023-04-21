@@ -122,7 +122,7 @@ class State(list): # pylint: disable=too-many-instance-attributes
     """State of the student"""
     slots = [ # The order is fundamental: do not change it
         'active', 'teacher', 'room', 'last_time', 'nr_blurs', 'nr_answers',
-        'client_ip', 'bonus_time', 'grade']
+        'client_ip', 'bonus_time', 'grade', 'blur_time']
     slot_index = {key: i for i, key in enumerate(slots)}
 
     def __setattr__(self, attr, value):
@@ -156,6 +156,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.load()
         self.update()
         self.configs[course] = self
+        self.streams = [] # To send changes
+        self.to_send = [] # Data to send
+        self.send_journal_running = False
         try:
             with open(self.dirname + '.json', 'r', encoding="ascii") as file:
                 self.questions = json.loads(file.read())
@@ -215,12 +218,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             print(f"Invalid configuration file: {self.filename}", flush=True)
             raise
         # Update old data structure
-        for login, active_teacher_room in self.config['active_teacher_room'].items():
-            if len(active_teacher_room) == 7:
-                active_teacher_room.append(0)
-            if len(active_teacher_room) == 8:
-                active_teacher_room.append('')
-            self.config['active_teacher_room'][login] = State(active_teacher_room)
         if self.config['highlight'] == '0':
             self.config['highlight'] = '#FFF'
         elif self.config['highlight'] == '1':
@@ -239,19 +236,26 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                         config[data[0]] = data[1]
                     elif len(data) == 3:
                         if data[0] == 'active_teacher_room':
-                            config[data[0]][data[1]] = State(data[2])
+                            state = data[2]
+                            if len(state) <= 9:
+                                if len(state) <= 8:
+                                    if len(state) <= 7:
+                                        state.append(0)
+                                    state.append('')
+                                state.append(0)
+                            config[data[0]][data[1]] = State(state)
                         else:
                             config[data[0]][data[1]] = data[2]
                     else:
                         config[data[0]][data[1]][data[2]] = data[3]
                 self.parse_position = file.tell()
-            except KeyError:
-                # Rewrite configuration with the new format
-                config.update(data)
-                self.record_config()
+            # except (KeyError, IndexError):
+            #     # Rewrite configuration with the new format
+            #     config.update(data)
+            #     self.record_config()
             except: # pylint: disable=bare-except
-                print(self.filename)
-                print(line)
+                print('Filename:', self.filename)
+                print('Line:', line, flush=True)
                 raise
 
     def record_config(self):
@@ -336,6 +340,24 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             else:
                 file.write(f'{(parameter, value)}{timestamp}')
         self.time = time.time()
+        self.to_send.append((parameter, value, key, index))
+        if not self.send_journal_running:
+            self.send_journal_running = True
+            asyncio.ensure_future(self.send_journal())
+    async def send_journal(self):
+        """Send the changes to all listening browsers"""
+        while self.to_send:
+            data = self.to_send.pop(0)
+            if data[0] == 'active_teacher_room' and data[3] is None: # New student
+                self.to_send.append(('infos', data[2], await LDAP.infos(data[2])))
+            data = (json.dumps(data) + '\n').encode('utf-8')
+            for stream in tuple(self.streams):
+                try:
+                    await stream.write(data)
+                    await stream.drain()
+                except: # pylint: disable=bare-except
+                    self.streams.remove(stream)
+        self.send_journal_running = False
     def get_stop(self, login:str) -> int:
         """Get stop date, taking login into account"""
         if login in self.active_teacher_room:
@@ -355,7 +377,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 # There is an http_server.log but nothing in session.cf
                 client_ip = 'broken_cf_file'
             # Add to the checkpoint room
-            active_teacher_room = State((0, '', '', now, 0, 0, client_ip, 0, ''))
+            active_teacher_room = State((0, '', '', now, 0, 0, client_ip, 0, '', 0))
             self.set_parameter('active_teacher_room', active_teacher_room, login)
             to_log = [now, ["checkpoint_in", client_ip]]
         elif client_ip and client_ip != active_teacher_room.client_ip:

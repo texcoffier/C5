@@ -1297,10 +1297,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.do_not_register_this_blur:
             self.do_not_register_this_blur = False
             return
-        self.record('Blur')
+        if CHECKPOINT:
+            self.record('Blur', send_now=True)
     def onfocus(self, _event):
         """Window focus"""
-        self.record('Focus')
+        if CHECKPOINT:
+            self.record('Focus', send_now=True)
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':

@@ -288,13 +288,22 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
 
     if session.login in course.active_teacher_room:
         infos = course.active_teacher_room[session.login]
-        course.set_parameter('active_teacher_room',  int(time.time()), session.login, 3)
-        nr_blurs =  data.count('"Blur"') + bad_json
-        if nr_blurs:
-            course.set_parameter('active_teacher_room', infos.nr_blurs + nr_blurs, session.login, 4)
-        nr_answers = data.count('["answer",')
+        last_time = infos.last_time
+        course.set_parameter('active_teacher_room', int(time.time()), session.login, 3)
+        if parsed_data[-1] == 'Blur':
+            course.set_parameter('active_teacher_room', infos.nr_blurs + 1, session.login, 4)
+            infos.last_time = sum(i for i in parsed_data if isinstance(i, int))
+        if parsed_data[-1] == 'Focus':
+            duration = int(time.time() - last_time)
+            course.set_parameter(
+                'active_teacher_room', infos.blur_time + duration, session.login, 9)
+        nr_answers = 0
+        for item in parsed_data:
+            if isinstance(item, list) and item[0] == 'answer':
+                nr_answers += 1
         if nr_answers:
-            course.set_parameter('active_teacher_room', infos.nr_answers + nr_answers, session.login, 5)
+            course.set_parameter(
+                'active_teacher_room', infos.nr_answers + nr_answers, session.login, 5)
 
     if course.course == 'PYTHON=editor':
         source = None
@@ -1453,17 +1462,6 @@ async def update_browser_data(course:CourseConfig) -> Response:
         ''',
         content_type='application/javascript')
 
-async def update_browser(request:Request) -> Response:
-    """Send update values in javascript"""
-    session, course = await get_teacher_login_and_course(request)
-    if not session.is_proctor(course):
-        return utilities.js_message('not_proctor')
-    if time.time() - update_browser.last_update > 1: # 1 second cache
-        update_browser.last_update = time.time()
-        update_browser.cache = await update_browser_data(course)
-    return update_browser.cache
-update_browser.last_update = 0
-
 async def checkpoint_student(request:Request) -> Response:
     """Display the students waiting checkpoint"""
     student = request.match_info['student']
@@ -1623,9 +1621,7 @@ async def checkpoint_message(request:Request) -> Response:
         'messages',
         course.messages + [[session.login, int(time.time()), request.match_info['message']]]
         )
-    return answer(
-        f'''MESSAGES.push({json.dumps(course.messages[-1])});ROOM.update_messages()''',
-        content_type='application/javascript')
+    return answer('')
 
 async def get_course_config(request:Request) -> Tuple[Session,CourseConfig]:
     """Returns the session and the courses configuration"""
@@ -1789,6 +1785,18 @@ async def js_errors(request:Request) -> Response:
         await write_lines(stream, lines)
     return stream
 
+async def journal(request:Request) -> StreamResponse:
+    """Get a file or a ZIP"""
+    session, course = await get_teacher_login_and_course(request)
+    if not session.is_proctor(course):
+        raise session.exception('not_proctor')
+    stream = StreamResponse()
+    await stream.prepare(request)
+    course.streams.append(stream)
+    while stream in course.streams:
+        await asyncio.sleep(60)
+    return stream
+
 async def change_session_ip(request:Request) -> Response:
     """Change the current session IP"""
     session = await Session.get_or_fail(request)
@@ -1822,9 +1830,9 @@ APP.add_routes([web.get('/', home),
                 web.get('/checkpoint/TIME_BONUS/{course}/{student}/{bonus}', checkpoint_bonus),
                 web.get('/checkpoint/HOSTS/*', checkpoint_hosts),
                 web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
+                web.get('/journal/{course}', journal),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
-                web.get('/update/{course}', update_browser),
                 web.get('/grade/{course}/{login}', grade),
                 web.get('/zip/{course}', my_zip),
                 web.get('/git/{course}', my_git),
