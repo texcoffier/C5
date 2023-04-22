@@ -1916,6 +1916,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         setInterval(bind(self.scheduler, self), 200)
         if GRADING:
             self.comments.onclick = bind(self.add_comment, self)
+            self.comments.onpaste = bind(self.add_comment, self)
             self.comments.onblur = bind(self.save_comment, self)
             # Get grades
             do_post_data({'student': STUDENT}, 'record_grade/' + COURSE + '?ticket=' + TICKET)
