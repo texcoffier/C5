@@ -177,6 +177,7 @@ DIV.executor > DIV:first-child
     opacity: 0.3;
     font-size: 80%;
     pointer-events: all;
+    white-space: pre; /* To be wysiwyg */
 }
 .comments TEXTAREA:hover, .comments TEXTAREA:focus {
     opacity: 1;

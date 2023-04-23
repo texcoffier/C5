@@ -770,7 +770,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     self.comments.appendChild(comment)
                 if comment.style.top != rect['top'] + 'px':
                     comment.style.top = rect['top'] + 'px'
-                comment.value = (comments[i] or '').strip()
+                comment.value = comments[i] or ''
                 if comments[i]:
                     comment.className = 'filled'
                 else:
@@ -1933,7 +1933,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             {
                 'question': self.current_question,
                 'line': event.target.line,
-                'comment': event.target.value.replace(RegExp('[\n ]*$'), ''),
+                'comment': event.target.value,
                 'student': STUDENT,
                 'version': self.version,
             }, 'record_comment/' + COURSE + '?ticket=' + TICKET)
