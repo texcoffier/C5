@@ -1210,6 +1210,7 @@ def create_page(building_name):
         #time SPAN.ca { color: #080 ; }
         #time SPAN.cc { color: #000 ; }
         #time SPAN.cs { color: #00F ; }
+        #time .blur_span { position: absolute; background: #FAA;  height: 100% ; top: 0px }
         </style>
         <div id="top">
         <span class="icon" onclick="send_alert()">🚨</span>
@@ -1460,7 +1461,7 @@ def set_time_bonus(element, login):
     element.style.background = "#DFD"
     STUDENT_DICT[login].bonus_time = element.value
 
-def spy(sources, login, infos):
+def spy(sources, login, infos, blurs):
     """Display the infos source code"""
     student = STUDENT_DICT[login]
     sources.sort()
@@ -1494,6 +1495,10 @@ def spy(sources, login, infos):
                 + '%" class="' + source[2] + '">'
                 + (source[2] == 'a' and (source[1]+1) or '')
                 + '</span>')
+        for (blur_start, blur_length) in blurs:
+            content.append(
+                '<tt style="left:' + 100*(blur_start - first)/width
+                + '%;width:' +   100*blur_length/width + '%" class="blur_span">blur</tt>')
     else:
         content.append("Aucune sauvegarde n'a été faite.")
     content.append('<span class="cursor right"></span>')

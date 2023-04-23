@@ -1583,6 +1583,7 @@ async def checkpoint_spy(request:Request) -> Response:
         return utilities.js_message("not_proctor")
     student = request.match_info['student']
     answers = []
+    blurs = []
     try:
         with open(f'{course.dirname}/{student}/compile_server.log', encoding='utf-8') as file:
             for line in file:
@@ -1596,20 +1597,26 @@ async def checkpoint_spy(request:Request) -> Response:
     try:
         with open(f'{course.dirname}/{student}/http_server.log', encoding='utf-8') as file:
             for line in file:
-                if '["answer",' in line or '["save",' in line:
-                    seconds = 0
-                    for item in json.loads(line):
-                        if isinstance(item, list) and item[0] in ('answer', 'save'):
-                            answers.append((seconds, item[1], item[0][0], item[2]))
-                        elif isinstance(item, int):
-                            seconds += item
+                seconds = 0
+                for item in json.loads(line):
+                    if isinstance(item, list) and item[0] in ('answer', 'save'):
+                        answers.append((seconds, item[1], item[0][0], item[2]))
+                    elif isinstance(item, int):
+                        seconds += item
+                    elif item == 'Blur':
+                        blur_start = seconds
+                    elif item == 'Focus':
+                        blurs.append((blur_start, seconds - blur_start))
+                await asyncio.sleep(0)
+
     except (IndexError, FileNotFoundError):
         pass
 
     return answer(
         f'''spy({json.dumps(answers)},
                {json.dumps(student)},
-               {json.dumps(await utilities.LDAP.infos(student))})''',
+               {json.dumps(await utilities.LDAP.infos(student))},
+               {json.dumps(blurs)})''',
         content_type='application/javascript')
 
 async def checkpoint_message(request:Request) -> Response:
