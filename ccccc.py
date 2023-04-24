@@ -269,6 +269,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     meter = document.createRange()
     localstorage_checked = {} # For each question
     span_highlighted = None # Racket eval result line highlighted
+    first_F11 = True
 
     def __init__(self):
         print("GUI: start")
@@ -575,9 +576,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 and not self.options['allow_copy_paste']
                 and screen.height != max(window.innerHeight, window.outerHeight)
            ):
-            self.fullscreen.style.display = 'block'
+            if self.fullscreen.style.display != 'block':
+                self.fullscreen.style.display = 'block'
+                self.record('FullScreenQuit')
+                if not self.first_F11:
+                    self.record('Blur', send_now=True)
         else:
-            self.fullscreen.style.display = 'none'
+            if self.fullscreen.style.display != 'none':
+                self.fullscreen.style.display = 'none'
+                self.record('FullScreenEnter')
+                if self.first_F11:
+                    self.first_F11 = False
+                else:
+                    self.record('Focus', send_now=True)
 
         if self.do_update_cursor_position:
             # print('do_update_cursor_position', self.do_update_cursor_position)

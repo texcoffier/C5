@@ -468,7 +468,7 @@ H2:hover .timer SPAN DIV {
     display: none;
     background: #F00;
     color: #FFF;
-    font-size: 100%;
+    font-size: 200%;
     padding: 0.5em;
 }
 .fullscreen SPAN {
