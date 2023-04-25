@@ -66,6 +66,7 @@ DIV.grading SELECT {
 
 DIV.editor {
     outline: none;
+    pointer-events: initial;
 }
 
 DIV.grading > DIV:first-child,
@@ -228,6 +229,7 @@ DIV.layered {
     overflow-x: visible;
     overflow-y: auto;
     z-index: 10;
+    pointer-events: none;
 }
 
 BODY.dograding DIV.layered { direction: rtl; }
