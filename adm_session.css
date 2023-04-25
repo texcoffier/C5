@@ -16,7 +16,7 @@ BODY > DIV {
     white-space: nowrap;
 }
 
-#feedback {
+#server_feedback {
     height: 5em;
     overflow: auto;
     font-size: 70%;
@@ -60,7 +60,7 @@ P.title {
     margin-bottom: 0.1em;
 }
 TEXTAREA#notation {
-    height: calc(100vh - 28em);
+    height: calc(100vh - 33em);
     width: 100%;
     margin-top: 0em;
     white-space: pre;

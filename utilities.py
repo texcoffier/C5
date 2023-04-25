@@ -118,11 +118,12 @@ def student_log(course_name:str, login:str, data:str) -> None:
 # Active : examination is running
 # Inactive & Room=='' : wait access to examination
 # Inactive & Room!='' : examination done
+# Feedback for the student after the examination (same values than for CourseConfig)
 class State(list): # pylint: disable=too-many-instance-attributes
     """State of the student"""
     slots = [ # The order is fundamental: do not change it
         'active', 'teacher', 'room', 'last_time', 'nr_blurs', 'nr_answers',
-        'client_ip', 'bonus_time', 'grade', 'blur_time']
+        'client_ip', 'bonus_time', 'grade', 'blur_time', 'feedback']
     slot_index = {key: i for i, key in enumerate(slots)}
 
     def __setattr__(self, attr, value):
@@ -183,8 +184,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        'theme': 'a11y-light',
                        'highlight': '#FFF',
                        'notation': '',
+                       'notation_max': '?',
                        'messages': [],
                        'active_teacher_room': {},
+                       'feedback': 0, # None, Work, Solution, Comment, Grade, Detailed grades
                        # The session state:
                        # ┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
                        # ┃ State  ┃    Visible by      ┃    Usable by       ┃
@@ -229,7 +232,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             self.time = time.time()
             file.seek(self.parse_position)
             config = self.config
-            try:
+            try: # pylint: disable=too-many-nested-blocks
                 for line in file:
                     data = eval(line) # pylint: disable=eval-used
                     if len(data) == 2:
@@ -237,12 +240,14 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                     elif len(data) == 3:
                         if data[0] == 'active_teacher_room':
                             state = data[2]
-                            if len(state) <= 9:
-                                if len(state) <= 8:
-                                    if len(state) <= 7:
-                                        state.append(0)
-                                    state.append('')
-                                state.append(0)
+                            if len(state) <= 10:
+                                if len(state) <= 9:
+                                    if len(state) <= 8:
+                                        if len(state) <= 7:
+                                            state.append(0) # Bonus time
+                                        state.append('') # Grade
+                                    state.append(0) # Blur time
+                                state.append(1) # Feedback default: Student work
                             config[data[0]][data[1]] = State(state)
                         else:
                             config[data[0]][data[1]] = data[2]
@@ -299,6 +304,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.active_teacher_room = self.config['active_teacher_room']
         self.messages = self.config['messages']
         self.state = self.config['state']
+        self.feedback = self.config['feedback']
         self.update_disabled()
 
     def update_disabled(self) -> None:
@@ -377,7 +383,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 # There is an http_server.log but nothing in session.cf
                 client_ip = 'broken_cf_file'
             # Add to the checkpoint room
-            active_teacher_room = State((0, '', '', now, 0, 0, client_ip, 0, '', 0))
+            active_teacher_room = State((0, '', '', now, 0, 0, client_ip, 0, '', 0, 1))
             self.set_parameter('active_teacher_room', active_teacher_room, login)
             to_log = [now, ["checkpoint_in", client_ip]]
         elif client_ip and client_ip != active_teacher_room.client_ip:
@@ -433,6 +439,53 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             if not active_teacher_room or active_teacher_room.teacher == '':
                 return 'checkpoint' # Always in the checkpoint after examination start
         return 'done'
+
+    def get_feedback(self, login:str) -> int:
+        """Return the feedback level"""
+        active_teacher_room = self.active_teacher_room.get(login, None)
+        if not active_teacher_room:
+            return 0
+        if self.status(login) != 'done':
+            return 0
+        return min(self.feedback, active_teacher_room.feedback)
+
+    def get_comments(self, login:str) -> str:
+        """Get the comments"""
+        comment_file = f'{self.dirname}/{login}/comments.log'
+        if os.path.exists(comment_file):
+            with open(comment_file, "r", encoding='utf-8') as file:
+                return file.read()
+        return ''
+    def append_comment(self, login:str, comment:List) -> None:
+        """Append a comment to the file"""
+        comment_file = f'{self.dirname}/{login}/comments.log'
+        with open(comment_file, "a", encoding='utf-8') as file:
+            file.write(json.dumps(comment) + '\n')
+
+    def get_grades(self, login:str) -> str:
+        """Get the grades"""
+        grade_file = f'{self.dirname}/{login}/grades.log'
+        if os.path.exists(grade_file):
+            with open(grade_file, "r", encoding='utf-8') as file:
+                return file.read()
+        return ''
+    def append_grade(self, login:str, grade:List) -> str:
+        """Append a grade to the file"""
+        grade_file = f'{self.dirname}/{login}/grades.log'
+        with open(grade_file, "a", encoding='utf-8') as file:
+            file.write(json.dumps(grade) + '\n')
+        grades = self.get_grades(login)
+        grading = {}
+        for line in grades.split('\n'):
+            if line:
+                line = json.loads(line)
+                if line[3]:
+                    grading[line[2]] = float(line[3])
+                else:
+                    grading.pop(line[2], None)
+        new_value = [sum(grading.values()), len(grading)]
+        self.set_parameter('active_teacher_room', new_value, login, 8)
+        return grades
 
     def running(self, login:str, client_ip:str=None) -> bool:
         """If the session running for the user"""

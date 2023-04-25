@@ -60,8 +60,21 @@ DIV.grading {
     overflow: auto;
 }
 
-DIV.grading SELECT {
-    width: 12.5em;
+#grading_select {
+    width: 11.5em;
+}
+
+#grading_feedback {
+    width: 15em;
+}
+
+#grading_sum SMALL {
+    font-size: 70%;
+    line-height: 1em;
+}
+#grading_sum {
+    margin-top: -0.2em;
+    line-height: 0.5em;
 }
 
 DIV.editor {
@@ -205,6 +218,9 @@ DIV.executor > DIV:first-child
 .comments TEXTAREA.filled {
     background: #DFD;
     border-left: 0.5em solid #000;
+}
+.comments TEXTAREA.feedback {
+    opacity: 1;
 }
 .comments TEXTAREA:focus {
     background: #FFF;

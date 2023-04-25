@@ -255,6 +255,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'SEQUENTIAL': SEQUENTIAL and not GRADING,   # True if questions are sequential
         'ADMIN': ADMIN,                             # True if administrator
         'STOP': STOP,                               # True if the session is stopped
+        'FEEDBACK': FEEDBACK,                       # 0 if no feedback
     }
     stop_timestamp = 0
     last_save = 0
@@ -270,6 +271,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     localstorage_checked = {} # For each question
     span_highlighted = None # Racket eval result line highlighted
     first_F11 = True
+    first_update = True
 
     def __init__(self):
         print("GUI: start")
@@ -287,7 +289,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         except: # pylint: disable=bare-except
             self.shared_buffer = None
         self.worker.postMessage(['array', self.shared_buffer])
-        if GRADING:
+        if GRADING or FEEDBACK >= 5:
             # Will be updated after
             self.options['positions']['grading'] = [0, 1, 0, 75, '#FFF8']
         print("GUI: wait worker")
@@ -385,7 +387,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         else:
             self.layered.setAttribute('display_line_numbers', 'no')
         self.options['positions']['editor_title'] = self.options['positions']['editor']
-        if GRADING:
+        if GRADING or FEEDBACK >= 5:
             left, width, top, height, background = self.options['positions']['editor']
             self.options['positions']['comments'] = [
                 left + width, 100 - (left + width), top, height]
@@ -405,7 +407,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if key == 'editor':
                 key = 'layered'
                 e = self.layered
-                if GRADING:
+                if GRADING or FEEDBACK >= 3:
                     if self.options['display_line_numbers']:
                         padding = self.line_numbers.offsetWidth + 5
                     else:
@@ -423,7 +425,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 e.style.display = 'block'
             e.style.left = left + '%'
-            if key == 'layered' and GRADING:
+            if key == 'layered' and (GRADING or FEEDBACK >= 3):
                 e.style.right = '0px'
                 self.comments.style.left = 100 * width / (100 - left) + '%'
                 self.comments.style.right = '0px'
@@ -440,7 +442,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 e.style.background = background
                 e.background = background
         self.save_history.onchange = bind(self.change_history, self)
-        if GRADING:
+        if GRADING or FEEDBACK:
             self.save_button.style.display = 'none'
             if self.stop_button:
                 self.stop_button.style.display = 'none'
@@ -468,7 +470,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.line_numbers = document.createElement('DIV')
                 self.line_numbers.className = 'line_numbers'
                 self.layered.appendChild(self.line_numbers)
-                if GRADING:
+                if GRADING or FEEDBACK >= 3:
                     self.comments = document.createElement('DIV')
                     self.comments.className = 'comments'
                     self.layered.appendChild(self.comments)
@@ -515,7 +517,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.tag_button.className = 'tag_button'
             self.editor_title.firstChild.appendChild(self.tag_button)
 
-        if GRADING:
+        if GRADING or FEEDBACK:
             self.save_history.style.display = 'none'
             self.tag_button.style.display = 'none'
 
@@ -575,6 +577,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if (not GRADING
                 and not self.options['allow_copy_paste']
                 and screen.height != max(window.innerHeight, window.outerHeight)
+                and not FEEDBACK
            ):
             if self.fullscreen.style.display != 'block':
                 self.fullscreen.style.display = 'block'
@@ -773,7 +776,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if not self.line_numbers.childNodes[i]:
                 self.line_numbers.appendChild(document.createElement('DIV'))
                 self.line_numbers.childNodes[i].textContent = i+1
-            if GRADING:
+            if GRADING or (FEEDBACK >= 3 and comments[i]):
                 comment = self.comments.childNodes[i]
                 if not comment:
                     comment = document.createElement('TEXTAREA')
@@ -783,7 +786,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     comment.style.top = rect['top'] + 'px'
                 comment.value = comments[i] or ''
                 if comments[i]:
-                    comment.className = 'filled'
+                    if GRADING:
+                        comment.className = 'filled'
+                    else:
+                        comment.className = 'filled feedback'
                 else:
                     comment.className = 'empty'
                 if comments[i]:
@@ -811,7 +817,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.line_numbers.childNodes[i].style.top = '-10em'
         self.overlay_show()
         self.line_numbers.style.height = self.overlay.offsetHeight + 'px'
-        if GRADING:
+        if GRADING or FEEDBACK >= 3:
             self.comments.style.height = self.overlay.offsetHeight + 'px'
 
     def record_now(self):
@@ -832,7 +838,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def record(self, data, send_now=False):
         """Append event to record to 'record_to_send'"""
-        if GRADING:
+        if GRADING or FEEDBACK:
             return
         time = Math.floor(Date().getTime()/1000)
         if time != self.record_last_time:
@@ -1487,13 +1493,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 nr_grades += 1
             else:
                 button.className = 'grade_unselected'
-        element = document.getElementById('grading_sum')
-        element.innerHTML = '<i style="color:#00F">Préparer mail</i> Σ=' + grading_sum
-        element.onclick = bind(self.send_mail, self)
-        if self.nr_grades == nr_grades:
-            element.style.background = "#0F0"
-        else:
-            element.style.background = "#FF0"
+        element = document.getElementById('grading_value')
+        if element:
+            element.innerHTML = grading_sum
+            element = document.getElementById('grading_sum')
+            if self.nr_grades == nr_grades:
+                element.style.background = "#0F0"
+            else:
+                element.style.background = "#FF0"
 
     def get_comment(self, line_number):
         """Get the actual line comment"""
@@ -1503,62 +1510,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if comment:
                 comment = comment[line_number]
         return comment
-
-    def send_mail_right(self):
-        """Send a mail to the student"""
-        width = 0
-        for line in self.source.split("\n"):
-            width = max(width, len(line))
-        content = ['<pre>']
-        for i, line in enumerate(self.source.split("\n")):
-            content.append(html(line))
-            for _ in range(width - len(line)):
-                content.append(' ')
-            content.append('//')
-            comment = self.get_comment(i)
-            if comment:
-                add_blank = False
-                for comment_line in comment.strip().split('\n'):
-                    if add_blank:
-                        content.append('\n')
-                        for _ in range(width):
-                            content.append(' ')
-                        content.append('//')
-                    content.append(html(comment_line))
-                    add_blank = True
-            content.append('\n')
-        content.append("</pre>")
-        return content
-
-    def send_mail_top(self):
-        """Send a mail to the student"""
-        content = ['<pre>']
-        for i, line in enumerate(self.source.split("\n")):
-            comment = self.get_comment(i)
-            if comment:
-                content.append('\n')
-                for comment_line in comment.strip().split('\n'):
-                    content.append('// ' + LOGIN + ' : ')
-                    content.append(html(comment_line))
-                    content.append('\n')
-            content.append(html(line))
-            content.append('\n')
-        content.append("</pre>")
-        return content
-
-    def send_mail(self):
-        """Prepare mail for student"""
-        if confirm('''OK pour mettre les commentaires à droite des lignes.
-
-CANCEL pour les mettre au dessus des lignes de code.'''):
-            content = self.send_mail_right()
-        else:
-            content = self.send_mail_top()
-        window.location = ("mailto:" + INFOS['mail']
-            + "?subject=" + encodeURIComponent(COURSE.split('=')[1])
-            + "&html-body="
-            + encodeURIComponent(''.join(content))
-            )
 
     def update_grading_select(self):
         """Upgrade the select choice with the good number of comments"""
@@ -1600,30 +1551,55 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
     def add_grading(self):
         """HTML of the grading interface"""
         self.version = (ANSWERS[self.current_question] or [0, 0])[1]
-        content = [
-            '''<div><h2>
-            Noter <select id="grading_select" style="background:#FF0"
-                          onchange="version_change(this)">
-            '''
+        content = ['<div><h2>',
+            GRADING and 'Noter' or '<x style="font-weight:normal">Version</x>',
+            ' <select id="grading_select" style="background:#FF0"',
+            '        onchange="version_change(this)">',
             ]
         content.append('</select>')
-        content.append('<span id="grading_sum"></span>')
-        content.append('</h2></div><pre>')
+        if GRADING:
+            content.append('<span id="grading_sum"><small>Retour étudiant via C5:<br>')
+            content.append('<select id="grading_feedback" onchange="feedback_change(this)">')
+            for level, label in FEEDBACK_LEVEL.Items():
+                content.append('<option value="' + level + '">' + label + '</option>')
+            content.append('</select> </small>Σ=<tt id="grading_value"></tt></span>')
+        elif FEEDBACK >= 4 and GRADE:
+            if FEEDBACK == 4:
+                size = 60
+            else:
+                size = 80
+            content.append(
+                '''
+                <x style="font-size:''' + size + '''%; font-weight:normal;
+                          margin-left:0.3em; margin-right:0.1em; display:inline-block; 
+                          text-align:right; line-height:1em;vertical-align:middle">
+                Note<br>temporaire</x>
+                <x style="border:0.2em solid #000; background:#FFF;
+                          padding: 0.2em;font-size:''' + (size+20) + '''%">'''
+                + GRADE[0] + '/' + NOTATION_MAX + '</x>')
+        content.append('</h2></div>')
 
-        i = 0
-        for text, grade_label, values in parse_notation(NOTATION):
-            content.append(html(text))
-            if len(grade_label):
-                content.append('<span>' + html(grade_label))
-                for choice in values:
-                    content.append('<button g="' + i + '">' + choice + '</button>')
-                content.append('</span>')
-            i += 1
-        content.append('</pre>')
-        self.nr_grades = i - 1
-        self.grading.id = "grading"
-        self.grading.onclick = grade
-        self.grading.innerHTML = ''.join(content)
+        if GRADING or NOTATION:
+            content.append('<pre>')
+            i = 0
+            for text, grade_label, values in parse_notation(NOTATION):
+                content.append(html(text))
+                if len(grade_label):
+                    content.append('<span>' + html(grade_label))
+                    for choice in values:
+                        content.append('<button g="' + i + '">' + choice + '</button>')
+                    content.append('</span>')
+                i += 1
+            content.append('</pre>')
+            self.nr_grades = i - 1
+            self.grading.id = "grading"
+            if GRADING:
+                self.grading.onclick = grade
+            self.grading.innerHTML = ''.join(content)
+        else:
+            self.question.innerHTML = ''.join(content)
+        if GRADING:
+            update_feedback(WHERE[10])
 
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         """Interprete messages from the worker: update self.messages"""
@@ -1744,7 +1720,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             for item in links:
                 content.append('<div>' + item + '</div>')
             content.append('</div>') # End links
-            if GRADING and ',' in WHERE[2]:
+            if (GRADING or FEEDBACK) and ',' in WHERE[2]:
                 content.append(
                     '<div class="version">'
                     + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ')
@@ -1762,6 +1738,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
                 old_version = None
             if (self.current_question not in self.localstorage_checked
                     and not GRADING
+                    and not FEEDBACK
                     and old_version
                     and old_version.strip() != message.strip()):
                 self.localstorage_checked[self.current_question] = True
@@ -1781,8 +1758,14 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
             need_update_grading_select = False
-            if what == 'question' and GRADING and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
+            if what == 'question' and (GRADING or FEEDBACK) and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
                 self.add_grading()
+                if self.first_update:
+                    self.first_update = False
+                    if FEEDBACK >= 3 and COMMENTS:
+                        self.update_comments(COMMENTS)
+                if FEEDBACK >= 5 and GRADES:
+                    self.update_grading(GRADES)
                 need_update_grading_select = True
             span = document.createElement('DIV')
             span.innerHTML = value
@@ -1895,7 +1878,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
 
     def onbeforeunload(self, event):
         """Prevent page closing"""
-        if self.options['close'] == '' or GRADING:
+        if self.options['close'] == '' or GRADING or FEEDBACK:
             return None
         # self.record("Close", send_now=True) # The form cannot be submited
         stop_event(event)
@@ -2303,6 +2286,14 @@ def version_change(select):
     ccccc.save_cursor()
     ccccc.set_editor_content(source)
     ccccc.compile_now = True
+
+def feedback_change(element):
+    """The grader changed the feedback level"""
+    record('/record_feedback/' + COURSE + '/' + STUDENT + '/' + element.value)
+
+def update_feedback(feedback):
+    """Update the feedback from server answer"""
+    document.getElementById('grading_feedback').value = feedback
 
 ccccc = CCCCC()
 G = Grapic(ccccc)

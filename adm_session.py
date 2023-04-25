@@ -110,7 +110,7 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
 
     update_course_config.div.style.display = 'block'
     if feedback:
-        div = document.getElementById('feedback')
+        div = document.getElementById('server_feedback')
         div.innerHTML = feedback
         if feedback[-1] == '!':
             div.className = "error"
@@ -158,7 +158,7 @@ def onchange(event):
         value = target.id
         attr = target.name
         target = target.parentNode
-    elif not target.original_value and target.original_value != '':
+    elif not target.original_value and target.original_value != 0 and target.original_value != '':
         return
     else:
         attr = target.id
@@ -194,6 +194,12 @@ def init():
     for building in BUILDINGS:
         buildings.append('<option>' + building + '</option>')
     buildings = ''.join(buildings)
+    feedback = ['<select id="feedback">']
+    for i, name in FEEDBACK_LEVEL.Items():
+        feedback.append('<option value="' + i + '">' + name + '</option>')
+    feedback.append('</select>')
+    feedback = ''.join(feedback)
+
     div.onchange = onchange
     div.innerHTML = ("<h1>" + html(COURSE.replace('=', '   ')) + """</h1>
     <title>""" + html(COURSE.replace(RegExp('.*=', ''), ' ')) + """</title>
@@ -230,10 +236,13 @@ def init():
     <label><input type="checkbox" id="display_student_filter">Student filter</label>.
     <label><input type="checkbox" id="display_my_rooms">My rooms</label>.
     <label><input type="checkbox" id="display_session_name">Session name</label>.
-    <label>Building: <select id="default_building">""" + buildings  + """</select></label>
+    <label>Building: <select id="default_building">""" + buildings  + """</select></label><br>
+    After the end, display to students: """ + feedback + """ if the grader indicated its work is done.
     <p class="title"><b>Logins</b> of students with ⅓ more time to answer</p>
     <textarea id="tt"></textarea>
-    <p class="title">Grading ladder</p>
+    <p class="title">Grading ladder. <span style="font-weight:normal">Maximum grade (20 for example):
+        <input id="notation_max" size="4">
+    </span></p>
     <pre style="margin-top: 0px">The grading part is right aligned and green with buttons
 bla bla bla {It's working:0,0.5,1,1.5,2}
 bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
@@ -267,7 +276,7 @@ bla bla bla bla {Copy/Paste:-3,-2,-1,0}</pre>
     + COURSE + '/delete_students?ticket=' + TICKET + """'">
      Delete <b>Students</b></a>
     <p class="title">Feedback</p>
-    <div id="feedback"></div>
+    <div id="server_feedback"></div>
     <p class="title">Messages posted</p>
     <div id="messages" class="tips"></div>
     <p class="title">Students</p>

@@ -244,7 +244,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         if not self.options['GRADING'] and self.options['CHECKPOINT']:
             title += (' <tt class="stop_button" onclick="ccccc.stop()">'
                 + self.options['icon_stop'] + '</tt>')
-        if not self.options['GRADING'] and self.options['display_timer']:
+        if not self.options['GRADING'] and self.options['display_timer'] and not self.options['FEEDBACK']:
             title += ' <div class="timer"><span id="timer"></span>⏱</div>'
         title += '</h2>'
         return title

@@ -62,6 +62,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.login = login
         self.launcher = launcher
         self.course = utilities.CourseConfig.get(utilities.get_course(course))
+        self.feedback = self.course.get_feedback(login)
         course = self.course.dirname
         self.dir = f"{course}/{login}"
         if not os.path.exists(self.dir):
@@ -78,12 +79,14 @@ class Process: # pylint: disable=too-many-instance-attributes
 
     def log(self, more:Union[str,Tuple]) -> None:
         """Log action to COURSE/login/compile_server.log"""
+        if self.feedback:
+            return
         with open(self.log_file, "a", encoding="utf-8") as file:
             file.write(repr((int(time.time()), self.conid, more)) + '\n')
 
     def course_running(self) -> bool:
         """Check if the course is running for the user"""
-        return self.course.running(self.login)
+        return self.course.running(self.login) or self.feedback
 
     def kill(self):
         """Kill all the processes of the process group"""

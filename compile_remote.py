@@ -24,7 +24,7 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
             'language': 'cpp',
             'extension': 'cpp',
             })
-        if self.options.GRADING:
+        if self.options.GRADING or self.options.FEEDBACK:
             return
         self.popup("""
         <p>

@@ -147,3 +147,12 @@ def post(url, value, iframe=False):
     #def remove_form(event):
     #    print(event)
     #form.onload = remove_form
+
+FEEDBACK_LEVEL = {
+    0: "Rien",
+    1: "Code source",
+    # 2:  "+ correction"
+    3: "+ commentaires correcteur",
+    4: "+ note totale",
+    5: "+ barème détaillé"
+}

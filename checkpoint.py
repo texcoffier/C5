@@ -644,13 +644,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         line += size
         ctx.fillText("Tirez-le pour déplacer l'étudiant.", column, line)
         line += size
-        ctx.fillText("Tirez-le tout en haut pour le remettre en salle d'attente.", column, line)
+        ctx.fillText("Tirez-le tout à gauche pour le remettre en salle d'attente.", column, line)
         line += size
-        ctx.fillText("Cliquez dessus pour terminer l'examen.", column, line)
+        ctx.fillText("Il passe en violet quand la fenêtre perd le focus.", column, line)
         line += size
-        ctx.fillText("Il se remplit de rouge quand l'étudiant change de fenêtre.", column, line)
+        ctx.fillText("Il se remplit de rouge à chaque perte de focus.", column, line)
         line += size
-        ctx.fillText("Il se remplit de vert avec les bonnes réponses.", column, line)
+        ctx.fillText("Il se remplit de vert pour chaque bonne réponse.", column, line)
 
         line = line_top
         column = self.left + 0 * size * 2

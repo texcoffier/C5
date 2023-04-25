@@ -143,7 +143,7 @@ def filter_last_answer(answers:List[Answer]) -> AnswerPerType:
     return last
 
 async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: disable=too-many-arguments,too-many-locals
-                 login:str, grading:bool=False, author:int=0) -> Response:
+                 login:str, grading:bool=False, author:int=0, feedback:int=0) -> Response:
     """Return the editor page.
        'saved' : see 'get_answer' comment.
     """
@@ -157,8 +157,8 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
         course = CourseConfig.get('COMPILE_PYTHON/editor')
     else:
         last_answers = {}
-        answers, _blurs = get_answers(course.dirname, login, compiled = grading)
-        if grading:
+        answers, _blurs = get_answers(course.dirname, login, compiled = grading or feedback)
+        if grading or feedback:
             # The last save or ok or compiled or snapshot
             for key, value in answers.items():
                 last = filter_last_answer(value)
@@ -179,7 +179,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
                 last_answers[key] = value[-1] # Only the last answer
         if course:
             stop = course.get_stop(login)
-    if grading:
+    if grading or feedback >= 5:
         notation = f"NOTATION = {json.dumps(course.notation)};"
         infos = await utilities.LDAP.infos(login)
         title = infos['sn'].upper() + ' ' + infos['fn'].title()
@@ -187,6 +187,17 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
         notation = 'NOTATION = "";'
         infos = session.infos
         title = course.course.split('=', 1)[1]
+
+    comments = None
+    grades = None
+    the_grade = None
+    if feedback >= 3:
+        comments = course.get_comments(login)
+        if feedback >= 4:
+            the_grade = course.active_teacher_room.get(login).grade
+            if feedback >= 5:
+                grades = course.get_grades(login)
+
     return answer(
         session.header() + f'''
         <title>{title}</title>
@@ -210,8 +221,13 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             ANSWERS = {json.dumps(last_answers)};
             ALL_SAVES = {json.dumps(all_saves)};
             WHERE = {json.dumps(course.active_teacher_room.get(
-                login, utilities.State((False, '?', '?,0,0', 0, 0, 0, 'ip', 0, ''))))};
+                login, utilities.State((False, '?', '?,0,0', 0, 0, 0, 'ip', 0, '', 0, 0))))};
             SERVER_TIME = {time.time()};
+            FEEDBACK = {feedback};
+            GRADE = {json.dumps(the_grade)};
+            COMMENTS = {json.dumps(comments)};
+            GRADES = {json.dumps(grades)};
+            NOTATION_MAX = {json.dumps(course.config['notation_max'])};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')
 
@@ -238,14 +254,15 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                 if status == 'draft':
                     return session.message('draft')
                 is_admin = session.is_grader(course)
+                feedback = course.get_feedback(login)
                 if not is_admin:
-                    if status == 'done':
+                    if status == 'done' and not feedback:
                         return session.message('done')
                     if status == 'pending':
                         return session.message('pending', course.start_timestamp)
                     if status == 'checkpoint':
                         return session.message('checkpoint')
-                return await editor(session, is_admin, course, session.login)
+                return await editor(session, is_admin, course, session.login, feedback=feedback)
             if '=' in filename:
                 course = CourseConfig.get(utilities.get_course(filename))
                 filename = course.filename.replace('.cf', '.js')
@@ -253,7 +270,10 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                 if status == 'draft':
                     return session.message('draft')
                 if not session.is_grader(course) and not status.startswith('running'):
-                    return session.message('done')
+                    if status == 'done' and course.get_feedback(login) > 0:
+                        pass # Feedback allowed
+                    else:
+                        return session.message('done')
         return File.get(filename).answer()
     return real_handle
 
@@ -340,26 +360,11 @@ async def record_grade(request:Request) -> Response:
     login = str(post['student'])
     if not os.path.exists(f'{course.dirname}/{login}'):
         return answer("window.parent.ccccc.record_not_done(\"Aucun travail à noter.\")")
-    grade_file = f'{course.dirname}/{login}/grades.log'
     if 'grade' in post:
-        with open(grade_file, "a", encoding='utf-8') as file:
-            file.write(json.dumps([int(time.time()), session.login,
-                                   post['grade'], post['value']]) + '\n')
-    if os.path.exists(grade_file):
-        with open(grade_file, "r", encoding='utf-8') as file:
-            grades = file.read()
-            grading = {}
-            for line in grades.split('\n'):
-                if line:
-                    line = json.loads(line)
-                    if line[3]:
-                        grading[line[2]] = float(line[3])
-                    else:
-                        grading.pop(line[2], None)
-            new_value = [sum(grading.values()), len(grading)]
-            course.set_parameter('active_teacher_room', new_value, login, 8)
+        grades = course.append_grade(
+            login, [int(time.time()), session.login, post['grade'], post['value']])
     else:
-        grades = ''
+        grades = course.get_grades(login)
     return answer(f"window.parent.ccccc.update_grading({json.dumps(grades)})")
 
 async def record_comment(request:Request) -> Response:
@@ -372,17 +377,12 @@ async def record_comment(request:Request) -> Response:
     login = str(post['student'])
     if not os.path.exists(f'{course.dirname}/{login}'):
         return answer("Aucun travail à commenter.")
-    comment_file = f'{course.dirname}/{login}/comments.log'
     if 'comment' in post:
-        with open(comment_file, "a", encoding='utf-8') as file:
-            file.write(json.dumps([int(time.time()), session.login, int(str(post['question'])),
-                                   int(str(post['version'])), int(str(post['line'])),
-                                   post['comment']]) + '\n')
-    if os.path.exists(comment_file):
-        with open(comment_file, "r", encoding='utf-8') as file:
-            comments = file.read()
-    else:
-        comments = ''
+        course.append_comment(
+            login,
+            [int(time.time()), session.login, int(str(post['question'])),
+             int(str(post['version'])), int(str(post['line'])), post['comment']])
+    comments = course.get_comments(login)
     return answer(f"window.parent.ccccc.update_comments({json.dumps(comments)})")
 
 async def load_student_infos() -> None:
@@ -450,8 +450,7 @@ async def adm_course(request:Request) -> Response:
             with open(f'{course.dirname}/{user}/grades.log', encoding='utf-8') as file:
                 student['grades'] = file.read()
 
-            with open(f'{course.dirname}/{user}/comments.log', encoding='utf-8') as file:
-                student['comments'] = file.read()
+            student['comments'] = course.get_comments()
         except IOError:
             pass
 
@@ -540,6 +539,9 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
     elif action == 'notation':
         config.set_parameter('notation', value)
         feedback = f"«{course}» Notation set to {value[:100]}"
+    elif action == 'notation_max':
+        config.set_parameter('notation_max', float(value))
+        feedback = f"«{course}» Maximum grade set to {value[:100]}"
     elif action == 'highlight':
         assert re.match('#[0-9A-Z]{3}', value)
         config.set_parameter('highlight', value)
@@ -600,6 +602,9 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             feedback = f"«{course}» default building is «{value}»."
         else:
             feedback = f"«{course}» «{value}» not in {buildings}!"
+    elif action == 'feedback':
+        config.set_parameter('feedback', int(value))
+        feedback = f"«{course}» feedback={value}"
 
     return answer(
         f'<script>window.parent.update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})</script>')
@@ -1542,6 +1547,24 @@ async def home(request:Request) -> Response:
             f'''<li> <a href="/={course.course}?ticket={session.ticket}"
                         style="background:{course.highlight}">{name}</a>''')
 
+    content.append('<h2>Retour sur les examens terminés</h2>')
+    for course_name, course in sorted(CourseConfig.configs.items()):
+        feedback = course.get_feedback(session.login)
+        if not feedback:
+            continue
+        name = '<span>' + course_name.replace('COMPILE_','').replace('/','</span> ')
+        content.append(
+            f'''<li> <a href="/={course.course}?ticket={session.ticket}"
+                        style="background:{course.highlight}">{name}</a> : ''')
+        content.append((
+            None,
+            'Vos réponses.',
+            'Une correction possible.',
+            'Commentaire de votre travail.',
+            'Votre note.',
+            'Détails de votre note.')[feedback])
+    if content[-1].startswith('<h2>'):
+        content.append("Aucun pour le moment.")
     return answer(''.join(content))
 
 async def checkpoint_buildings(request:Request) -> Response:
@@ -1804,6 +1827,17 @@ async def journal(request:Request) -> StreamResponse:
         await asyncio.sleep(60)
     return stream
 
+async def record_feedback(request:Request) -> Response:
+    """Record feedback status"""
+    session, course = await get_teacher_login_and_course(request)
+    is_grader = session.is_grader(course)
+    if not is_grader:
+        return answer("Vous n'êtes pas autorisé à noter.")
+    student = request.match_info['student']
+    feedback = int(request.match_info['feedback'])
+    course.set_parameter('active_teacher_room', feedback, student, 10)
+    return answer(f"window.parent.update_feedback({feedback})")
+
 async def change_session_ip(request:Request) -> Response:
     """Change the current session IP"""
     session = await Session.get_or_fail(request)
@@ -1840,6 +1874,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/journal/{course}', journal),
                 web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
                 web.get('/computer/{course}/{building}/{column}/{line}', computer),
+                web.get('/record_feedback/{course}/{student}/{feedback}', record_feedback),
                 web.get('/grade/{course}/{login}', grade),
                 web.get('/zip/{course}', my_zip),
                 web.get('/git/{course}', my_git),
