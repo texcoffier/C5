@@ -516,10 +516,20 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
             ctx.fillText(student.surname, x_pos, y_pos + line_height)
+            grading = ''
             if student.grade != '':
+                grading += student.grade[0]
+                if student.feedback >= 4:
+                    grading += '👁'
+                grading += '(' + student.grade[1] + 'notes'
+                if student.feedback >= 5:
+                    grading += '👁'
+                grading += ')'
+            if student.feedback >= 3:
+                grading += '#👁'
+            if grading != '':
                 ctx.fillStyle = "#000"
-                ctx.fillText(student.grade[0] + '(' + student.grade[1] + 'notes)',
-                             x_pos, y_pos + 2*line_height)
+                ctx.fillText(grading, x_pos, y_pos + 2*line_height)
             if student.blur_time > 2:
                 ctx.fillStyle = "#000"
                 ctx.fillText(student.blur_time + ' secs', x_pos, y_pos - line_height)
@@ -1085,6 +1095,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.bonus_time = data[1][7]
         self.grade = data[1][8]
         self.blur_time = data[1][9]
+        self.feedback = data[1][10]
         self.firstname = data[2]['fn']
         self.surname = data[2]['sn']
         self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
