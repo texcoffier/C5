@@ -29,6 +29,40 @@ def local_ip() -> str:
     except OSError:
         return '127.0.0.1'
 
+# To please pylint:
+C5_HOST = C5_IP = C5_ROOT = C5_LOGIN = C5_HTTP = C5_SOCK = C5_MAIL = C5_CERT = None
+C5_LOCAL = C5_URL = C5_DIR = C5_WEBSOCKET = C5_REDIRECT = C5_VALIDATE = C5_LDAP = None
+C5_LDAP_LOGIN = C5_LDAP_PASSWORD = C5_LDAP_BASE = C5_LDAP_ENCODING = None
+
+CONFIGURATIONS = (
+    ('C5_HOST'         ,'Production host (for SSH)'            , local_ip()),
+    ('C5_IP'           ,'For Socket IP binding'                , local_ip()),
+    ('C5_ROOT'         ,'login allowed to sudo'                , 'root'),
+    ('C5_LOGIN'        ,'user C5 login'                        , os.getlogin()),
+    ('C5_HTTP'         ,'Port number for HTTP'                 , 8000),
+    ('C5_SOCK'         ,'Port number for WebSocket'            , 4200),
+    ('C5_MAIL'         ,"To create Let's Encrypt certificate"  , lambda: 'root@' + C5_ROOT),
+    ('C5_CERT'         ,"SS: C5/SSL directory, NGINX: NGINX"   , 'SS'),
+    ('C5_LOCAL'        ,'Run on local host'                    , 1),
+    ('C5_URL'          ,'Browser visible address'              , ''),
+    ('C5_DIR'          ,'C5 install directory name'            , 'C5'),
+    ('C5_WEBSOCKET'    ,'Browser visible address for WebSocket', lambda: f'{C5_HOST}:{C5_SOCK}'),
+    ('C5_REDIRECT'     ,'CAS redirection'                      , ''), # https://cas.univ-lyon1.fr/login?service=
+    ('C5_VALIDATE'     ,'CAS get login'                        , ''), # https://cas.univ-lyon1.fr/cas/validate?service=%s&ticket=%s
+    ('C5_LDAP'         ,'LDAP URL'                             , ''),
+    ('C5_LDAP_LOGIN'   ,'LDAP reader login'                    , ''),
+    ('C5_LDAP_PASSWORD','LDAP reader password'                 , ''),
+    ('C5_LDAP_BASE'    ,'LDAP user search base'                , ''),
+    ('C5_LDAP_ENCODING','LDAP character encoding'              , 'utf-8'),
+)
+
+def var(name, comment):
+    """Display a shell affectation with the current variable value"""
+    val = globals()[name]
+    escaped = str(val).replace("'", "'\"'\"'")
+    affectation = name + "='" + escaped + "'"
+    return affectation.ljust(50) + " # " + comment
+
 def get_certificate(server=True):
     """Returns None if no certificate needed"""
     if C5_CERT == 'SS': # Encryption is done by NGINX
@@ -961,51 +995,33 @@ def js_message(key:str) -> aiohttp.web_response.Response:
         content_type='application/javascript',
         headers={'Cache-Control': 'no-cache'})
 
-C5_HOST = os.getenv('C5_HOST', local_ip())           # Production host (for SSH)
-C5_IP = os.getenv('C5_IP', local_ip())               # For Socket IP binding
-C5_ROOT = os.getenv('C5_ROOT', 'root')               # login allowed to sudo
-C5_LOGIN = os.getenv('C5_LOGIN', os.getlogin())      # c5 login
-C5_HTTP = int(os.getenv('C5_HTTP', '8000'))          # HTTP server port
-C5_SOCK = int(os.getenv('C5_SOCK', '4200'))          # WebSocket server port
-C5_MAIL = os.getenv('C5_MAIL', f'root@{C5_ROOT}')    # For Let's encrypt certificate
-C5_CERT = os.getenv('C5_CERT', 'SS')                 # Encrypt by self or NGINX
-C5_URL = os.getenv('C5_URL', f'{C5_HOST}:{C5_HTTP}') # c5 public URL
-C5_DIR = os.getenv('C5_DIR', 'C5')                   # c5 install directory name
-C5_WEBSOCKET = os.getenv('C5_WEBSOCKET', f'{C5_HOST}:{C5_SOCK}') # c5 public websocket
-# CAS redirection as: 'https://cas.univ-lyon1.fr/login?service='
-C5_REDIRECT = os.getenv('C5_REDIRECT', '')
-# CAS login validation as:  'https://cas.univ-lyon1.fr/cas/validate?service=%s&ticket=%s'
-C5_VALIDATE = os.getenv('C5_VALIDATE', '')
-C5_LOCAL = int(os.getenv('C5_LOCAL', '1'))
-C5_LDAP = os.getenv('C5_LDAP')
-C5_LDAP_LOGIN = os.getenv('C5_LDAP_LOGIN')
-C5_LDAP_PASSWORD = os.getenv('C5_LDAP_PASSWORD')
-C5_LDAP_BASE = os.getenv('C5_LDAP_BASE')
-C5_LDAP_ENCODING = os.getenv('C5_LDAP_ENCODING', 'utf-8')
+def init_globals():
+    """Initialise global variables of this module from shell variables"""
+    for name, _comment, default in CONFIGURATIONS:
+        if not isinstance(default, (int, str)):
+            default = default()
+        value = os.getenv(name, default)
+        if isinstance(default, int):
+            value = int(value)
+        globals()[name] = value
+
+init_globals()
 
 def print_state() -> None:
     """Print the current configuration"""
-    print(f"""Uses environment shell variables :
-{'C5_HOST=' + str(C5_HOST):<40}     # Production host (for SSH)
-{'C5_IP=' + str(C5_IP):<40}     # For Socket IP binding
-{'C5_ROOT=' + str(C5_ROOT):<40}     # login allowed to sudo
-{'C5_LOGIN=' + str(C5_LOGIN):<40}     # c5 login
-{'C5_HTTP=' + str(C5_HTTP):<40}     # Port number for HTTP
-{'C5_SOCK=' + str(C5_SOCK):<40}     # Port number for WebSocket
-{'C5_MAIL=' + str(C5_MAIL):<40}     # Mail address to create Let's Encrypt certificate
-{'C5_CERT=' + str(C5_CERT):<40}     # SS: C5/SSL directory, NGINX: NGINX
-{'C5_LOCAL=' + str(C5_LOCAL):<40}     # Run on local host
-{'C5_URL=' + str(C5_URL):<40}     # Browser visible address
-{'C5_DIR=' + str(C5_DIR):<40}     # c5 install directory name
-{'C5_WEBSOCKET=' + str(C5_WEBSOCKET):<40}     # Browser visible address for WebSocket
-{'C5_REDIRECT=' + str(C5_REDIRECT):<40} # CAS redirection
-{'C5_VALIDATE=' + str(C5_VALIDATE):<40} # CAS get login
-{'C5_LDAP=' + str(C5_LDAP):<40}     # LDAP URL
-{'C5_LDAP_LOGIN=' + str(C5_LDAP_LOGIN):<40}     # LDAP reader login
-{'C5_LDAP_PASSWORD=' + str(C5_LDAP_PASSWORD):<40}     # LDAP reader password
-{'C5_LDAP_BASE=' + str(C5_LDAP_BASE):<40}     # LDAP user search base
-{'C5_LDAP_ENCODING=' + str(C5_LDAP_ENCODING):<40}     # LDAP character encoding
-""")
+    print("Uses environment shell variables :")
+    for name, comment, _default in CONFIGURATIONS:
+        print(var(name, comment))
+
+def create_start_script():
+    """Create the start script on the distant host"""
+    with open('xxx-start-c5', 'w', encoding='utf-8') as file:
+        file.write('#!/bin/sh\n')
+        file.write('# Starts C5 with configuration\n')
+        file.write(''.join(var(name, comment) + '\n'
+                           for name, comment, _default in CONFIGURATIONS))
+        file.write('./utilities.py start\n')
+    os.chmod('xxx-start-c5', 0o755)
 
 def print_help() -> None:
     """Print help and default configuration values"""
@@ -1170,6 +1186,7 @@ With Firefox:
         cd {C5_DIR} 2>/dev/null || true
         mkdir TICKETS 2>/dev/null || true
         make prepare
+        ./utilities.py create_start_script
         if [ '' != '{C5_URL}' ]
         then
             ./http_server.py >>http_server.log 2>&1 &
@@ -1207,34 +1224,17 @@ ACTIONS['restart'] = ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
 
 def main() -> None:
     """MAIN"""
+    if 'create_start_script' in sys.argv:
+        create_start_script()
+        return
     if len(sys.argv) < 2 or sys.argv[1] not in ACTIONS:
         print_help()
     action = sys.argv[1]
     if action != 'open':
         print(f"{' '.join(sys.argv)}")
         print_state()
-    action = f"""
-export C5_HOST={C5_HOST}
-export C5_IP={C5_IP}
-export C5_ROOT={C5_ROOT}
-export C5_LOGIN={C5_LOGIN}
-export C5_HTTP={C5_HTTP}
-export C5_URL={C5_URL}
-export C5_DIR={C5_DIR}
-export C5_SOCK={C5_SOCK}
-export C5_MAIL={C5_MAIL}
-export C5_CERT={C5_CERT}
-export C5_WEBSOCKET='{C5_WEBSOCKET}'
-export C5_REDIRECT='{C5_REDIRECT}'
-export C5_VALIDATE='{C5_VALIDATE}'
-export C5_LOCAL='{C5_LOCAL}'
-export C5_LDAP='{C5_LDAP}'
-export C5_LDAP_LOGIN='{C5_LDAP_LOGIN}'
-export C5_LDAP_PASSWORD='{C5_LDAP_PASSWORD}'
-export C5_LDAP_BASE='{C5_LDAP_BASE}'
-export C5_LDAP_ENCODING='{C5_LDAP_ENCODING}'
-
-""" + ACTIONS[action]
+    action = ''.join('export ' + name + '\n'
+                       for name, _comment, _default in CONFIGURATIONS) + ACTIONS[action]
     assert '"' not in action
     if '#C5_ROOT' in action:
         if C5_LOCAL:
