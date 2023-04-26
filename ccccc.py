@@ -283,6 +283,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
         self.worker.onerror = bind(self.onerror, self)
+        self.options['url'] = window.location.toString()
         self.worker.postMessage(['config', self.options])
         try:
             self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used

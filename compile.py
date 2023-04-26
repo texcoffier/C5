@@ -261,11 +261,21 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                     + self.options['executor_title_button'] + '</label>')
         else:
             more = ''
+        more += '<span style="float:right; background: #CCF; margin-right: 0.3em;">'
+        if self.options['GRADING']:
+            more += (
+            '<a style="font-family:emoji;text-decoration:none" href="mailto:'
+            + self.options['INFOS']['mail']
+            + '?subject=' + self.options['COURSE']
+            + '&amp;body=Bonjour.%0A%0AVotre devoir corrigé : '
+            + self.options['url'].split('/grade/')[0] + '/=' + self.options['COURSE']
+            + '%0A%0ACordialement.'
+            + '">✉</a>'
+            )
         # Keep <!-- --> explanation is in ccccc.py
         # about : The first space is replaced by an unsecable space
         return ("<h2><!-- -->" + self.options['executor_title']
             + more
-            + '<span style="float:right; background: #CCF; margin-right: 0.3em;">'
             + '<tt class="truncate_sn">' + self.options['INFOS']['sn'].upper() + '</tt>'
             + ' '
             + '<tt class="truncate_fn">' + self.options['INFOS']['fn'].lower() + '</tt>'
