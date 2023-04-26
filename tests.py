@@ -106,6 +106,7 @@ class Tests: # pylint: disable=too-many-public-methods
             course.set_parameter('stop', '2100-01-01 00:00:01')
             course.set_parameter('checkpoint', '0')
             course.set_parameter('admins', '')
+            course.set_parameter('feedback', 0)
 
         start = time.time()
         self.wait_start()
@@ -130,6 +131,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_exam,
                     self.test_source_edit,
                     self.test_many_inputs,
+                    self.test_feedback,
                     ):
                 print('*'*99)
                 print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -786,6 +788,59 @@ return sum ;
                 self.check('.comments TEXTAREA:first-child').send_keys(Keys.BACKSPACE)
                 self.check('.question H2').click()
                 self.check_dialog('session a expiré', accept=True, required=True)
+
+    def test_dates(self, start, end, check):
+        """No feedback exam even if allowed"""
+        with self.admin_rights():
+            self.goto('adm/session/REMOTE=test')
+            self.check('#start').click()
+            self.control('a')
+            self.check('#start').send_keys(start)
+            self.check('#stop').click()
+            self.check('#server_feedback', {'innerHTML': Contains('Start date updated')})
+            self.check('#stop').click()
+            self.control('a')
+            self.check('#stop').send_keys(end)
+            self.check('#start').click()
+            self.check('#server_feedback', {'innerHTML': Contains('Stop date updated')})
+        self.goto('=REMOTE=test')
+        self.check('BODY', check)
+
+    def test_feedback(self):
+        """Test feedback"""
+        student = f'Anon_{self.ticket}'
+        no_grades = Contains('GRADES = null')
+        no_grade = Contains('GRADE = null')
+        no_details = Contains('NOTATION = ""')
+        no_comments = Contains('COMMENTS = null')
+        no_feedback = {'innerHTML': no_grades and no_grade and no_details and no_comments}
+        nothing = { 'innerHTML': ~Contains('ccccc.js') }
+        self.test_dates('2099-01-01 01:00:50', '2100-01-01 01:00:50', nothing)
+        self.test_dates('2000-01-01 01:00:51', '2100-01-01 01:00:51', no_feedback)
+        self.test_dates('2000-01-01 01:00:52', '2001-01-01 01:00:52', nothing)
+        cases = (
+            (0, 5, {'innerHTML': Not(Contains('ccccc.js'))}),
+            (5, 0, {'innerHTML': Not(Contains('ccccc.js'))}),
+            (5, 1, {'innerHTML': no_grades and no_grade and no_details and no_comments}),
+            (1, 5, {'innerHTML': no_grades and no_grade and no_details and no_comments}),
+            (3, 5, {'innerHTML': no_grades and no_grade and no_details and ~no_comments}),
+            (4, 5, {'innerHTML': ~no_grades and ~no_grade and no_details and ~no_comments}),
+            (5, 5, {'innerHTML': ~no_grades and ~no_grade and ~no_details and ~no_comments}),
+            (0, 0, {'innerHTML': Not(Contains('ccccc.js'))}),
+        )
+        for admin_feeback, grader_feedback, check in cases:
+            with self.admin_rights():
+                self.goto('adm/session/REMOTE=test')
+                self.check(f'#feedback OPTION[value="{admin_feeback}"]').click()
+                self.check('#start').click()
+                self.goto(f'grade/REMOTE=test/{student}')
+                time.sleep(0.5)
+                self.check(f'#grading_feedback OPTION[value="{grader_feedback}"]').click()
+                self.check('.editor').click()
+            self.goto('=REMOTE=test')
+            self.check('BODY', check)
+        self.test_dates('2000-01-01 01:00:01', '2100-01-01 01:00:01', no_feedback)
+
     def test_exam(self): # pylint: disable=too-many-statements
         """Test an exam"""
         with self.admin_rights():
