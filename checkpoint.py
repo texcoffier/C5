@@ -460,6 +460,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def draw_students(self, ctx): # pylint: disable=too-many-branches
         """Draw students names"""
         now = seconds()
+        line_height = self.scale/4
+        ctx.font = line_height + "px sans-serif"
         self.students.sort(cmp_student_position)
         for student in self.students:
             if (student.column < self.left_column or student.column > self.right_column
@@ -513,14 +515,14 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillStyle = "#F88"
             ctx.globalAlpha = 1
             ctx.fillText(student.firstname, x_pos, y_pos)
-            ctx.fillText(student.surname, x_pos, y_pos + y_size/3)
+            ctx.fillText(student.surname, x_pos, y_pos + line_height)
             if student.grade != '':
                 ctx.fillStyle = "#000"
                 ctx.fillText(student.grade[0] + '(' + student.grade[1] + 'notes)',
-                             x_pos, y_pos + 2*y_size/3)
+                             x_pos, y_pos + 2*line_height)
             if student.blur_time > 2:
                 ctx.fillStyle = "#000"
-                ctx.fillText(student.blur_time + ' secs', x_pos, y_pos - y_size/3)
+                ctx.fillText(student.blur_time + ' secs', x_pos, y_pos - line_height)
         ctx.globalAlpha = 1
     def draw_map(self, ctx, canvas): # pylint: disable=too-many-locals
         """Draw the character map"""
@@ -717,7 +719,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if self.bottom_line == -1:
             self.bottom_line = len(self.lines)
         self.draw_map(ctx, canvas)
-        ctx.font = self.scale/3 + "px sans-serif"
         self.draw_students(ctx)
         ctx.font = self.scale/2 + "px sans-serif"
         self.draw_teachers(ctx)
