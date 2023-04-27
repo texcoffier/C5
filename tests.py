@@ -110,6 +110,10 @@ class Tests: # pylint: disable=too-many-public-methods
 
         start = time.time()
         self.wait_start()
+        if 'screenshots' in sys.argv:
+            self.screenshots()
+            self.driver.close()
+            return
         try:
             for test in (
                     self.test_before,
@@ -947,6 +951,14 @@ class Q1(Question):
             self.check_alert('COMPILE_REMOTE/xxx.py → COMPILE_REMOTE/xxx.js', accept=True, required=True)
             self.control('w')
 
+    def screenshots(self):
+        """Dump screen shots"""
+        self.goto('')
+        self.driver.save_screenshot("xxx-home-student.png")
+        self.goto('=JS=introduction')
+        self.check('.executor', {'innerHTML': Contains('suis un texte')})
+        self.driver.save_screenshot("xxx-try-student.png")
+
 IN_DOCKER = not os.getenv('DISPLAY')
 
 os.system('./127 start')
@@ -971,7 +983,7 @@ except FileNotFoundError:
 try:
     EXIT_CODE = 1
     while True:
-        if not IN_DOCKER and 'FF' not in sys.argv:
+        if not IN_DOCKER and 'FF' not in sys.argv and 'screenshots' not in sys.argv:
             OPTIONS = selenium.webdriver.ChromeOptions()
             OPTIONS.add_argument('ignore-certificate-errors')
             Tests(selenium.webdriver.Chrome(options=OPTIONS))
@@ -979,7 +991,7 @@ try:
         PROFILE = selenium.webdriver.FirefoxProfile()
         PROFILE.accept_untrusted_certs = True
         Tests(selenium.webdriver.Firefox(firefox_profile=PROFILE))
-        if '1' in sys.argv:
+        if '1' in sys.argv or 'screenshots' in sys.argv:
             # Exit after one test
             EXIT_CODE = 0
             break
