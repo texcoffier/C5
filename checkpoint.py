@@ -1234,7 +1234,7 @@ def create_page(building_name):
         + '</span>')
     content.append(
         '''<select style="width:100%" id="buildings"
-               onchange="ROOM.change(this.value); scheduler.update_page = True;">''')
+               onchange="ROOM.change(this.value); scheduler.update_page = true;">''')
     content.append(
         ''.join(['<option'
                  + (building == building_name and ' selected' or '')
