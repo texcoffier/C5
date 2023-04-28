@@ -136,6 +136,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_source_edit,
                     self.test_many_inputs,
                     self.test_feedback,
+                    self.test_results,
                     ):
                 print('*'*99)
                 print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -950,6 +951,12 @@ class Q1(Question):
             self.control('s')
             self.check_alert('COMPILE_REMOTE/xxx.py → COMPILE_REMOTE/xxx.js', accept=True, required=True)
             self.control('w')
+
+    def test_results(self):
+        """Check session display"""
+        with self.admin_rights():
+            self.goto('adm/course/REMOTE=test')
+            self.check('BODY', {'innerHTML': Contains('TOMUSS')})
 
     def screenshots(self):
         """Dump screen shots"""

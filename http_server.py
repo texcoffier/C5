@@ -450,7 +450,7 @@ async def adm_course(request:Request) -> Response:
             with open(f'{course.dirname}/{user}/grades.log', encoding='utf-8') as file:
                 student['grades'] = file.read()
 
-            student['comments'] = course.get_comments()
+            student['comments'] = course.get_comments(user)
         except IOError:
             pass
 
