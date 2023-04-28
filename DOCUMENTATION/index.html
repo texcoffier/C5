@@ -183,7 +183,7 @@
                 <li> Leur avancement dans les exercices.</li>
                 <li> Le nombre de fois qu'ils ont changé de fenêtre.</li>
                 <li> En cliquant sur l'étudiant il peut voir son travail,
-                    le noté suivant un barème et l'annoter.
+                    le noter suivant un barème et l'annoter.
                 </li>
             </ul>
         </li>
@@ -228,6 +228,7 @@
         <li> Un outil permet de noter et commenter facilement le travail de l'étudiant.</li>
         <li> On peut lister par correcteur les étudiants qui n'ont pas été corrigés
             ou bien corrigé de manière incomplète.</li>
+        <li> On peut faire le retour de la corrections aux étudiants.</li>
     </ul>
     <p>
         La copie d'écran montre
@@ -309,8 +310,9 @@
         On suppose que :
     </p>
     <ul>
-        <li> Vous avez accès à un serveur C5.
-            Si ce n'est pas le cas, les explications sont plus loin sur la page.</li>
+        <li> Vous avez accès à un serveur C5.<br>
+            Si ce n'est pas le cas, les explications pour en installer
+            un sont plus loin sur la page.</li>
         <li> L'administrateur C5 vous a indiqué comme «auteur».</li>
     </ul>
     <p>
@@ -537,7 +539,8 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
 
     <h3>Langages supportés</h3>
     <p>
-        Il est nécessaire d'avoir un compilateur du langage écrit en JavaScript :
+        Il est nécessaire d'avoir un compilateur du langage écrit en JavaScript
+        ou bien de déporter la compilation et/ou l'exécution sur le serveur C5 :
     </p>
     <table class="compilers">
         <tr>
@@ -664,11 +667,12 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
     <pre>Donnez votre nom à l'enseignant pour qu'il vous ouvre l'examen</pre>
     <p>
         Quand l'enseignant a placé l'étudiant sur son plan,
-        cela considère l'étudiant présent et il pourra commencer
-        l'examen en rechargeant la page web quand l'heure sera venue.
-        Si l'étudiant recharge avant l'heure, cela lui affiche :
+        l'étudiant recharge la page et cela affiche :
     </p>
-    <pre>La session d'exercice ou d'examen n'a pas commencé</pre>
+    <pre>Début dans XXX secondes.</pre>
+    <p>
+        LA page se recharge à la fin du compte à rebour.
+    </p>
 
     <h3>Root C5.</h3>
     <img class="screenshot" src="screen-root.svg">
@@ -711,7 +715,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
     <img class="screenshot" src="screen-admin.svg">
     <p>
         Ces personnes voient la liste des sessions les concernant
-        classée dans différents blocs :
+        classées dans différents blocs :
     </p>
     <table>
         <tr>
@@ -747,8 +751,11 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         </tr>
         <tr>
             <td colspan="2"> <b>Terminée</b><br><i>Done</i> </td>
-            <td> Créateur+admins+correcteurs</td>
-            <td> Créateur+admins+correcteurs</td>
+            <td> Créateur+admins+correcteurs<br>
+                Étudiants s'il y a un retour.</td>
+            <td> Créateur+admins+correcteurs<br>
+                Étudiants s'il y a un retour.
+            </td>
         </tr>
         <tr>
             <td colspan="2"> <b>Archivée</b><br><i>Archive</i> </td>
@@ -794,7 +801,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
     </ul>
     <p>
         Au desssous du tableau on trouve des actions dépendant
-        de la personnes connectée.
+        de la personne connectée.
     </p>
     <ul>
         <li> La possibilité de désactiver un ensemble de sessions.
@@ -842,7 +849,22 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         <li> Dates de début et fin de session.</li>
         <li> État de la session.</li>
         <li> Des bascules permettant de configurer l'éditeur de source.</li>
+        <li> La couleur de la session pour les pages d'accueil</li>
+        <li> La configuration de la page de placement des étudiants,
+            et notamment le bâtiment à afficher par défaut.
+        </li>
+        <li> Le retour fait aux étudiants quand l'examen est terminé.
+            Ce retour est fait seulement si le correcteur est d'accord
+            pour la diffusion (quand il a fini de corriger).
+            L'administrateur peut débloquer tout les retours des
+            correcteurs d'un coup ou bien laisser les correcteurs
+            débloquer au fil des corrections.
+        </li>
         <li> Les étudiants qui ont automatiquement un tiers-temps.</li>
+        <li> Indique sur combien la note finale comptera.
+            Ce n'est pas forcément la somme du max de tous les points
+            car il peut y avoir des bonus.
+        </li>
         <li> Le barème de notation de la session en texte libre.
             Les éléments de notations sont indiqués par <tt>{Une explication:0,0.5,1,1.5,2}</tt>
             en en mettant un par ligne au maximum.
@@ -881,7 +903,9 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
             renomme une session. <b>Personne ne doit être en train de travailler dessus.</b></li>
         <li> <tt class="button">Delete <b>ALL</b></tt> :
             détruit complètement la session et les logs.</li>
-    </ul>
+            <li> <tt class="button">Delete <b>Students</b></tt> :
+                détruit complètement les logs étudiants.</li>
+        </ul>
     <p>
         Partie droite, au dessous des boutons :
     </p>
@@ -942,6 +966,9 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
             Ce nombre est utilisé sur le plan de salle pour indiquer qu'il y a un problème.
         </li>
         <li>
+            Blur time : le temps en secondes avec le focus perdu.
+        </li>
+        <li>
             Un graphique avec un rectangle par question dont la taille
             est proportionnelle au temps passé pour répondre à la question.
         </li>
@@ -968,7 +995,6 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         La salle d'attente affiche un menu à gauche de l'écran :
     </p>
     <ul>
-        <li> ⟳ : force la mise à jour (elle est faite automatiquement toutes les minutes).</li>
         <li> Un gyrophare 🚨 permet d'afficher un message sur tous
             les plans des surveillants.
             Les messages sont affichés en bas à droite du plan.
@@ -1024,6 +1050,8 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
             Les étudiants qui changent de fenêtres pendant l'examen sont
             mis en évidence sur cette vue avec un barre de progression rouge
             indiquant le nombre de changements de fenêtres.
+            Au dessus de cette barre il est indiqué le nombre de
+            secondes pendant lesquelles le focus a été perdu.
         </li>
         <li>
             Au dessous de la barre de progression rouge il y a un barre verte
@@ -1032,6 +1060,9 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         <li>
             Si l'étudiant a été noté, sa note est indiquée ainsi
             que le nombre d'éléments notés.
+            Le symbole <span style="font-family:emoji">👁</span> indique les informations dont la diffusion
+            est autorisées par le correcteur :
+            commentaires, notes et détail des notes.
         </li>
         <li>
             La couleur de l'étudiant indique :
@@ -1053,6 +1084,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         On peut utiliser un ascenseur temporel pour voir l'évolution
         de ce qu'il a fait.
         Le déplacement dans le temps est instantané.
+        Les zones rouges indiquent les moments où le focus a été perdu.
     </p>
     <ul>
         <li> Traits noirs : les compilations.
@@ -1125,6 +1157,32 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
             n'a pas sauvegardé lui-même la minute précédente.
         </li>
     </ul>
+    <p>
+        Une fois la correction faite, il indique ce qu'il veut diffuser à l'étudiant.
+    </p>
+    <ul>
+        <li> Rien du tout.</li>
+        <li> Le code source de l'étudiant. C'est le choix par défaut.</li>
+        <li> + Les commentaires saisis.</li>
+        <li> + La note globale.</li>
+        <li> + Le détail du barème et des points.</li>
+    </ul>
+    <p>
+        Le gestionnaire de session indique la même chose de son coté
+        pour l'ensemble des étudiants et ce qui est appliqué est
+        ce sur quoi ils sont d'accord, donc le minimum des 2 quantités
+        d'information.
+    </p>
+    <p>
+        Sur la plan, un <span style="font-family:emoji">👁</span> indique les informations dont la diffusion
+        est autorisé par le correcteur.
+    </p>
+    <p>
+        <span style="font-family:emoji">✉</span> permet d'ouvrir la messagerie
+        afin de composer un message pour l'étudiant.
+        Le corps du message indique que l'étudiant peut
+        trouver la correction sur C5, avec un lien direct sur celle-ci.
+    </p>
 
     <h2>Guides rapides d'utilisation.</h2>
     <p>
@@ -1179,11 +1237,12 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         </li>
         <li>
             Le nom de l'étudiant est en gros sur leur écran,
-            Faire glisser l'étudiant sur Ⓐ ou Ⓑ (pas sur l'ordi).
-            L'examen ne commencera que quand cela sera l'heure de début.
+            Faire glisser l'étudiant sur Ⓐ ou Ⓑ.
         </li>
         <li>
-            Quand l'examen commence, leur dire de recharger la page.
+            Dire à l'étudiant de recharger la page,
+            il y aura un compte à rebour à la fin duquel
+            la page se rechargera automatiquement.
         </li>
         <li>
             Si l'étudiant n'est pas en plein écran il y a un gros encart rouge
@@ -1239,9 +1298,12 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
             et saisir les commentaires dans les cases à droite du code source.
         </li>
         <li>
-            Quand le barème est complètement rempli «Préparer mail» passe en vert.
-            Cliquer dessus pour lui envoyer son code source commenté
-            avec la messagerie habituelle (ne fonctionne pas avec un webmail).
+            Quand le barème est complètement rempli «Retour étudiant via C5» passe en vert.
+            Choisissez ce que vous voulez faire afficher à l'étudiant.
+        </li>
+        <li>
+            L'enveloppe à gauche de son nom permet d'ouvrir la messagerie
+            pour le prévenir si nécessaire.
         </li>
     </ul>
 
@@ -1494,6 +1556,10 @@ server {
             <td>clean.py
             <td>Script effaçant toutes les traces laissées par les tests de régression.
         </tr>
+        <tr class="executable">
+            <td>comments.py
+            <td>Calcule les statistiques sur les commentaires faits par les correcteurs.
+        </tr>
         <tr class="js">
             <td>compatibility.py
             <td>Utilitaires pour ajouter des fonctions manquantes à JavaScript.
@@ -1675,6 +1741,8 @@ server {
         <li> <tt>sandbox</tt> librairie pour filtrer les appels système.</li>
         <li> <tt>node_modules</tt>, <tt>package-lock.json</tt> généré par <tt>npm</tt></li>
         <li> <tt>geckodriver.log</tt> généré par Selenium (tests de régression).</li>
+        <li> <tt>xxx-start-c5</tt> script shell lançant C5 avec les mêmes paramètres que
+            lors du dernier lancement du serveur.
     </ul>
 
 
@@ -1691,6 +1759,7 @@ server {
         <li> <tt>./tests.py hidden</tt> : caché (xvfb).</li>
         <li> <tt>./tests.py FF</tt> : seulement FireFox.</li>
         <li> <tt>./tests.py 1</tt> : une seule fois (sinon ils ne s'arrêtent pas).</li>
+        <li> <tt>./tests.py screenshots</tt> : fait des copies d'écrans automatiquement.</li>
     </ul>
     <p>
         Le résumé est dans <tt>tests.log</tt>
@@ -1764,6 +1833,7 @@ server {
         en fonction du nombre de commentaires faits
         par les correcteurs sur la copie.
         Une grande partie des copies n'ont pas été commentées du tout.
+        Ceci a été calculé par <tt>comments.py</tt>.
     </p>
     <style>
         TABLE.histo SPAN {
