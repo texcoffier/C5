@@ -476,7 +476,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     self.comments.className = 'comments'
                     self.layered.appendChild(self.comments)
                 e = self.layered
-            self.top.appendChild(e)
+            if GRADING and key in ('executor', 'compiler'):
+                e.style.position = 'fixed'
+                self.layered.appendChild(e)
+            else:
+                self.top.appendChild(e)
         self.editor.contentEditable = True
         self.editor.spellcheck = False
         self.editor.autocorrect = False
