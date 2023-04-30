@@ -2087,6 +2087,8 @@ class Grapic: # pylint: disable=too-many-public-methods
         self.canvas.style.background = '#FFF'
         self.ccccc.executor.appendChild(self.canvas)
         self.ctx = self.canvas.getContext('2d')
+        if not self.ctx:
+            self.ccccc.record(['BUG', 'noctx'])
         self.plots = []
         self.images = []
         self.ctxs = []
