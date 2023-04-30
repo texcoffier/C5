@@ -995,6 +995,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             stop_event(event)
             return
         self.oncopy(event, 'Cut')
+        self.clear_highlight_errors()
         self.do_coloring = self.do_update_cursor_position = "oncut"
     def insert_text(self, event, text):
         """Insert the pasted text"""
@@ -1014,6 +1015,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         else:
             document.execCommand('insertText', False, text)
             stop_event(event)
+        self.clear_highlight_errors()
         self.do_coloring = self.do_update_cursor_position = "insert_text"
 
     def onpaste(self, event):
