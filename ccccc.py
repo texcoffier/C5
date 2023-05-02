@@ -255,7 +255,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'SEQUENTIAL': SEQUENTIAL and not GRADING,   # True if questions are sequential
         'ADMIN': ADMIN,                             # True if administrator
         'STOP': STOP,                               # True if the session is stopped
-        'FEEDBACK': FEEDBACK,                       # 0 if no feedback
+        'FEEDBACK': FEEDBACK,                       # Student feedback level 0(none)...5
     }
     stop_timestamp = 0
     last_save = 0

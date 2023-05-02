@@ -520,6 +520,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
     'SEQUENTIAL': SEQUENTIAL and not GRADING,   # True if questions are sequential
     'ADMIN': ADMIN,                             # True if administrator
     'STOP': STOP,                               # True if the session is stopped
+    'FEEDBACK': FEEDBACK,                       # Student feedback level 0(none)...5
 })
 </pre>
             <p>
@@ -1292,6 +1293,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
         <li>
             Ou bien ouvrir un onglet de correction pour
             chacun des étudiants de la salle en cliquant sur 📝.
+            Il faut autoriser l'affichage des popups.
         </li>
         <li>
             Une fois sur la page de correction, cocher les différents éléments du barème

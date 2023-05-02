@@ -80,7 +80,9 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
                 else:
                     current_question = cell[1]
                 time_start = current_time
-
+    if current_question >= 0:
+        time_sum[current_question] = (time_sum[current_question] or 0
+                                     ) + (current_time - time_start)
     text = ''
     for i in range(last+1):
         if answered[i]:
@@ -358,7 +360,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
     text.append("""<h2>Importation du détail des notes dans TOMUSS</h2>
     <ul>
     <li> Passez une colonne TOMUSS dans le type «Notation»
-    <li> Cliquez sur «Importer» (en rouge)
+    <li> Cliquez sur le «Importer» à droite du bouton «Notation» (en rouge)
     <li> Faite un copier/coller de la table suivante complète dans la zone blanche.
     <li> Cliquer sur le bouton «Importer les détails de notation»
     </ul>
