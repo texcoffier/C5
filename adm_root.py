@@ -104,6 +104,7 @@ def display(): # pylint: disable=too-many-statements
     <li> utilities.CONFIG.is_admin("thierry.excoffier")
     <li> utilities.CONFIG.load()
     <li> _session.is_proctor(utilities.CourseConfig.get("COMPILE_PYTHON/editor"))
+    <li> len(utilities.CourseConfig.get("COMPILE_PYTHON/introduction").streams)
     </ul>
     ''')
     add_textarea('/adm/c5/eval', '')

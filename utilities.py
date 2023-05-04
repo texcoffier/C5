@@ -1078,7 +1078,7 @@ ACTIONS = {
         """,
     'cp': f"""
         tar -cf - $(git ls-files | grep -v -e DOCUMENTATION -e BUILDINGS) |
-        ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -xvf -'
+        ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -xvf - ; touch *.py'
         """,
     'diff': f"""
         mkdir DIFF
