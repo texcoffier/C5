@@ -1233,8 +1233,8 @@ def main() -> None:
     if action != 'open':
         print(f"{' '.join(sys.argv)}")
         print_state()
-    action = ''.join('export ' + name + '\n'
-                       for name, _comment, _default in CONFIGURATIONS) + ACTIONS[action]
+    action = ''.join('export ' + var(name, comment) + '\n'
+                       for name, comment, _default in CONFIGURATIONS) + ACTIONS[action]
     assert '"' not in action
     if '#C5_ROOT' in action:
         if C5_LOCAL:
