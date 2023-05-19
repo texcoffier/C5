@@ -982,8 +982,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             login, date, message = infos
             content.append(
                 "<p>"
-                + '<button onclick="MESSAGES_TO_HIDE['
-                + i + ']=1;ROOM.update_messages()">×</button> '
+                + '<button onclick="hide_messages(0,'+i+')">↑</button>'
+                + '<button onclick="hide_messages('+i+','+i+')">×</button> '
                 + nice_date(date)
                 + ' ' + login + ' <b>' + html(message) + '</b>')
         messages = document.getElementById('messages')
@@ -1070,6 +1070,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.left = self.real_left - left + (self.width - self.real_left) / 2
         self.top = self.real_top - top + (self.height - self.real_top) / 2
         scheduler.draw = True
+
+def hide_messages(first, last):
+    """Hide the indicated message indexes (last not included)"""
+    for i in range(first, last + 1):
+        MESSAGES_TO_HIDE[i] = 1
+    ROOM.update_messages()
 
 STUDENT_DICT = {}
 
