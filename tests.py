@@ -117,7 +117,6 @@ class Tests: # pylint: disable=too-many-public-methods
         try:
             for test in (
                     self.test_before,
-                    self.test_popup,
                     self.test_f9,
                     self.test_inputs,
                     self.test_auto_compile,
@@ -335,21 +334,6 @@ class Tests: # pylint: disable=too-many-public-methods
         action.click()
         action.perform()
         return element
-    def test_popup(self):
-        """Page display"""
-        self.goto('=REMOTE=test')
-        self.check('.popup', {'innerHTML': Contains('ATTENTION')})
-        action = selenium.webdriver.ActionChains(self.driver)
-        action.key_down('§')
-        action.key_up('§')
-        action.perform()
-        self.check('.popup', expected=0)
-        self.check('.editor', {'innerHTML':  ~Contains('§')})
-        self.check('.compiler', {'innerText': Contains('Bravo')}, nbr=60)
-        self.check('.executor', {'innerHTML': Contains('Saisir')})
-        self.check('.question', {'innerHTML': Contains('Plus de questions')})
-        self.check('.tester', {'innerHTML': Contains('Les buts que')})
-        self.check('.executor INPUT')
     def test_f9(self):
         """Check if F9 launch compilation"""
         self.load_page('=REMOTE=test')

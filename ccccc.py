@@ -123,7 +123,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     server_time_delta = int(millisecs()/1000 - SERVER_TIME)
     question = editor = overlay = tester = compiler = executor = time = None
-    index = popup_element = save_button = local_button = line_numbers = None
+    index = save_button = local_button = line_numbers = None
     stop_button = fullscreen = comments = save_history = editor_title = None
     tag_button = indent_button = layered = None
     top = None # Top page HTML element
@@ -143,7 +143,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     record_last_time = 0
     record_start = 0
     records_in_transit = []
-    popup_done = False
     compile_now = False
     last_compile = {}
     editor_lines = []
@@ -534,8 +533,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         self.fullscreen = document.createElement('DIV')
         self.fullscreen.className = 'fullscreen'
-        self.fullscreen.innerHTML = """Appuyez sur la touche F11 pour passer en plein écran.<br>
-        <small>Mettez le curseur sur <span>⏱</span> pour voir le temps restant</small>
+        self.fullscreen.innerHTML = """
+        ATTENTION
+        <p>
+        Tout ce que vous faites est enregistré et pourra être
+        retenu contre vous en cas de tricherie.
+        <p>
+        Si une autre personne a utilisé vos identifiants, c'est vous qui
+        serez tenu comme responsable de ses crimes.
+        <p>
+        Mettez le curseur sur <span>⏱</span> pour voir le temps restant.
+        <p>
+        Cliquez sur
+        <button onclick="document.body.requestFullscreen({navigationUI:'hide'})"
+        >plein écran</button>
+        pour commencer à travailler.
         """
         self.top.appendChild(self.fullscreen)
 
@@ -963,8 +975,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onmousedown(self, event):
         """Mouse down"""
         self.mouse_pressed = event.button
-        if self.close_popup(event):
-            return
         self.record('MouseDown')
     def onmouseup(self, _event):
         """Mouse up"""
@@ -1244,8 +1254,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             stop_event(event)
             return
         self.current_key = event.key
-        if self.close_popup(event):
-            return
         if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9'):
             return
         self.record(event.key or 'null')
@@ -1939,26 +1947,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 'version': self.version,
             }, 'record_comment/' + COURSE + '?ticket=' + TICKET)
         event.target.className = "saving"
-
-    def close_popup(self, event):
-        """Returns True if the popup was closed"""
-        if not self.popup_element:
-            return False
-        self.popup_element.parentNode.removeChild(self.popup_element)
-        self.popup_element = None
-        self.popup_done = True
-        stop_event(event)
-        return True
-
-    def popup(self, content):
-        """Display a popup with html content"""
-        if self.popup_done:
-            return
-        div = document.createElement('DIV')
-        div.className = 'popup'
-        div.innerHTML = content
-        self.top.appendChild(div)
-        self.popup_element = div
 
     def racket(self, text):
         """Parse messages from the Racket remote compiler"""

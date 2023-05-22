@@ -24,18 +24,6 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
             'language': 'cpp',
             'extension': 'cpp',
             })
-        if self.options.GRADING or self.options.FEEDBACK:
-            return
-        self.popup("""
-        <p>
-        ATTENTION
-        <p>
-        Tout ce que vous faites est enregistré et pourra être
-        retenu contre vous en cas de tricherie.
-        <p>
-        Si une autre personne a utilisé vos identifiants, c'est vous qui
-        serez tenu comme responsable de ses crimes.
-        """)
 
     def connect(self): # pylint: disable=too-many-statements
         """Connect to the remote compiler/executor with a WebSocket"""
