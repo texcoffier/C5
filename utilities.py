@@ -56,11 +56,11 @@ CONFIGURATIONS = (
     ('C5_LDAP_ENCODING','LDAP character encoding'              , 'utf-8'),
 )
 
-def var(name, comment):
+def var(name, comment, export='export '):
     """Display a shell affectation with the current variable value"""
     val = globals()[name]
     escaped = str(val).replace("'", "'\"'\"'")
-    affectation = name + "='" + escaped + "'"
+    affectation = f"{export}{name}='{escaped}'"
     return affectation.ljust(50) + " # " + comment
 
 def get_certificate(server=True):
@@ -1011,14 +1011,14 @@ def print_state() -> None:
     """Print the current configuration"""
     print("Uses environment shell variables :")
     for name, comment, _default in CONFIGURATIONS:
-        print(var(name, comment))
+        print(var(name, comment, export=''))
 
 def create_start_script():
     """Create the start script on the distant host"""
     with open('xxx-start-c5', 'w', encoding='utf-8') as file:
         file.write('#!/bin/sh\n')
         file.write('# Starts C5 with configuration\n')
-        file.write(''.join(var(name, comment) + '\n'
+        file.write(''.join(var(name, comment).replace("LOCAL='0'", "LOCAL='1'") + '\n'
                            for name, comment, _default in CONFIGURATIONS))
         file.write('./utilities.py start\n')
     os.chmod('xxx-start-c5', 0o755)
@@ -1037,6 +1037,7 @@ def print_help() -> None:
    * stop : servers
    * restart : servers
    * compile : create JS
+   * create_start_script : create 'xxx-start-c5' on server
    * open : launch web browser (second argument may be js|python|cpp|remote)
    * cp : copy local files to production ones
    * diff : compare local files to production ones
@@ -1186,7 +1187,6 @@ With Firefox:
         cd {C5_DIR} 2>/dev/null || true
         mkdir TICKETS 2>/dev/null || true
         make prepare
-        ./utilities.py create_start_script
         if [ '' != '{C5_URL}' ]
         then
             ./http_server.py >>http_server.log 2>&1 &
@@ -1219,12 +1219,17 @@ With Firefox:
         mkdir TICKETS 2>/dev/null || true
         make prepare
         """,
+    'create_start_script': fr"""#C5_LOGIN
+        echo CREATES START SCRIPT 'xxx-start-c5'
+        cd {C5_DIR}
+        ./utilities.py __create_start_script__
+        """,
 }
 ACTIONS['restart'] = ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
 
 def main() -> None:
     """MAIN"""
-    if 'create_start_script' in sys.argv:
+    if '__create_start_script__' in sys.argv:
         create_start_script()
         return
     if len(sys.argv) < 2 or sys.argv[1] not in ACTIONS:
@@ -1233,7 +1238,7 @@ def main() -> None:
     if action != 'open':
         print(f"{' '.join(sys.argv)}")
         print_state()
-    action = ''.join('export ' + var(name, comment) + '\n'
+    action = ''.join(var(name, comment) + '\n'
                        for name, comment, _default in CONFIGURATIONS) + ACTIONS[action]
     assert '"' not in action
     if '#C5_ROOT' in action:
