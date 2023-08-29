@@ -201,7 +201,10 @@ def init():
     feedback = ''.join(feedback)
 
     div.onchange = onchange
-    div.innerHTML = ("<h1>" + html(COURSE.replace('=', '   ')) + """</h1>
+    title = html(COURSE.replace('=', '   '))
+    if title.startswith('^'):
+        title = '<span style="background: #F00; color: #FFF">' + title + ' (session set)</span>'
+    div.innerHTML = ("<h1>" + title + """</h1>
     <title>""" + html(COURSE.replace(RegExp('.*=', ''), ' ')) + """</title>
     <link rel="stylesheet" href="/adm_session.css?ticket=""" + TICKET + """">
     <div class="boxed rights">
