@@ -733,7 +733,7 @@ async def adm_root(request:Request, more:str='') -> Response:
 
 async def adm_get(request:Request) -> StreamResponse:
     """Get a file or a ZIP"""
-    _session = await get_admin_login(request)
+    session = await get_admin_login(request)
     filename = request.match_info['filename']
     if '/.' in filename:
         content = 'Hacker'
@@ -743,8 +743,19 @@ async def adm_get(request:Request) -> StreamResponse:
             stream.content_type = 'application/zip'
             await stream.prepare(request)
             course = filename[:-4]
+            if course.startswith('COMPILE_^'):
+                course = course.split('COMPILE_')[1]
+                courses = [config.dirname
+                           for config in CourseConfig.configs.values()
+                           if session.is_admin(config) and re.match(course, config.session)
+                           ]
+            else:
+                courses = [course]
+            args = ['zip', '-r', '-']
+            for course in courses:
+                args.extend((course, course + '.py', course + '.cf'))
             process = await asyncio.create_subprocess_exec(
-                'zip', '-r', '-', course, course + '.py', course + '.cf',
+                *args,
                 *tuple(glob.glob(course + '-*')),
                 stdout=asyncio.subprocess.PIPE,
                 )
