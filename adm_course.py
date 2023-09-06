@@ -18,16 +18,16 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
     paste_ok = 0
     nr_answered = 0
     nr_blurs = 0
-    time_start = 0
     time_sum = []
     time_bonus = 0
     blur_time = 0
     last = -1
-    current_question = -1
+    current_question = 0
     current_time = 0
     if not http_server:
         http_server = ''
     blur_start = 0
+    thinking_time = 0
     for line in http_server.split('\n'):
         if len(line) == 0:
             continue
@@ -37,9 +37,6 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             continue
         current_time = line[0]
         for cell in line[1:]:
-            if is_int(cell):
-                current_time += cell
-                continue
             if cell.toLowerCase:
                 if blur_start:
                     blur_time += current_time - blur_start
@@ -64,6 +61,11 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
                 else:
                     key_stroke += 1
                 continue
+            elif is_int(cell):
+                current_time += cell
+                if cell < 600:
+                    thinking_time += cell
+                continue
             if cell[0] == 'time bonus':
                 time_bonus = cell[1]
             if cell[0] == 'answer':
@@ -73,16 +75,14 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
 
             if cell[0] in ('question', 'answer'):
                 if current_question >= 0:
-                    time_sum[current_question] = (time_sum[current_question] or 0
-                                                 ) + (current_time - time_start)
+                    time_sum[current_question] = (time_sum[current_question] or 0) + thinking_time
                 if cell[0] == 'answer':
                     current_question = -1
                 else:
                     current_question = cell[1]
-                time_start = current_time
+                thinking_time = 0
     if current_question >= 0:
-        time_sum[current_question] = (time_sum[current_question] or 0
-                                     ) + (current_time - time_start)
+        time_sum[current_question] = (time_sum[current_question] or 0) + thinking_time
     text = ''
     for i in range(last+1):
         if answered[i]:
