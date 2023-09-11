@@ -1708,6 +1708,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     span.innerHTML = value.replace(' ', ' ')
                     if value[-1] not in '>\n':
                         span.style.float = 'left'
+                    if value[0] == '\n':
+                        span.style.clear = 'left'
                     self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
             links = []
