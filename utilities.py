@@ -262,13 +262,14 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def parse(self):
         """Parse the end of the file"""
-        with open(self.filename, 'r', encoding='utf-8') as file:
+        with open(self.filename, 'br') as file:
             self.time = time.time()
             file.seek(self.parse_position)
             config = self.config
             try: # pylint: disable=too-many-nested-blocks
-                for line in file:
-                    data = eval(line) # pylint: disable=eval-used
+                for binary_line in file:
+                    data = eval(binary_line.decode('utf-8')) # pylint: disable=eval-used
+                    self.parse_position += len(binary_line) # file.tell() forbiden here
                     if len(data) == 2:
                         config[data[0]] = data[1]
                     elif len(data) == 3:
@@ -287,15 +288,13 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                             config[data[0]][data[1]] = data[2]
                     else:
                         config[data[0]][data[1]][data[2]] = data[3]
-                self.parse_position = file.tell()
             # except (KeyError, IndexError):
             #     # Rewrite configuration with the new format
             #     config.update(data)
             #     self.record_config()
             except: # pylint: disable=bare-except
                 print('Filename:', self.filename)
-                print('Line:', line, flush=True)
-                raise
+                print('Line:', binary_line, flush=True)
 
     def record_config(self):
         """Record the default start configuration"""
