@@ -336,7 +336,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
-        print(f"./launcher "
+        print(f"{time.strftime('%Y%m%d%H%M%S')} ./launcher "
               f"{self.course.dirname}/{self.login}/{self.conid} {self.allowed} {self.launcher}",
               flush=True)
         stdin_r, stdin_w = os.pipe()
@@ -375,7 +375,7 @@ async def bad_session(websocket:WebSocketServerProtocol) -> None:
 
 async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: disable=too-many-branches
     """Analyse the requests from one websocket connection"""
-    print(path, flush=True)
+    print(time.strftime('%Y%m%d%H%M%S'), path, flush=True)
 
     _, ticket, course = path.split('/')
     if not os.path.exists('TICKETS/' + ticket):
