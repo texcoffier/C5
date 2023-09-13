@@ -644,7 +644,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.save_button.setAttribute('enabled', need_save)
             if need_save:
                 try:
-                    localStorage[COURSE + '/' + self.current_question] = self.source
+                    localStorage[COURSE + '/' + self.current_question] = JSON.stringify([seconds, self.source])
                 except: # pylint: disable=bare-except
                     pass
             self.seconds = seconds
@@ -1750,9 +1750,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             message = value + '\n\n\n'
             self.set_editor_content(message)
             try:
-                old_version = localStorage[COURSE + '/' + self.current_question]
+                old_time, old_version = JSON.parse(localStorage[COURSE + '/' + self.current_question])
             except: # pylint: disable=bare-except
                 old_version = None
+            if old_version and millisecs()/1000 - old_time > 86400*30*3:
+                # Remove old stuff
+                old_version = None
+                del localStorage[COURSE + '/' + self.current_question]
             if (self.current_question not in self.localstorage_checked
                     and not GRADING
                     and not FEEDBACK
@@ -1761,8 +1765,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.localstorage_checked[self.current_question] = True
                 def get_old_version():
                     self.set_editor_content(old_version)
+                date = Date()
+                date.setTime(1000 * old_time)
                 self.popup_message(
-                    "Une version non sauvegardée a été trouvée.",
+                    "J'ai trouvé une version non sauvegardée du<br><br>" + str(date),
                     'Effacer définitivement', ok='Continuer avec',
                     callback=get_old_version)
                 del localStorage[COURSE + '/' + self.current_question]
