@@ -1762,7 +1762,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     and not FEEDBACK
                     and old_version
                     and old_version.strip() != message.strip()):
-                self.localstorage_checked[self.current_question] = True
                 def get_old_version():
                     self.set_editor_content(old_version)
                 date = Date()
@@ -1772,6 +1771,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     'Effacer définitivement', ok='Continuer avec',
                     callback=get_old_version)
                 del localStorage[COURSE + '/' + self.current_question]
+            self.localstorage_checked[self.current_question] = True
         elif what == 'default':
             self.question_original[value[0]] = value[1]
         elif what in ('tester', 'compiler', 'question', 'time'):
