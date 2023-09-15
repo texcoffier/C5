@@ -65,9 +65,9 @@ TEXTAREA#notation {
     margin-top: 0em;
     white-space: pre;
 }
-TEXTAREA#tt {
+TEXTAREA#tt, TEXTAREA#expected_students {
     height: 4em;
-    width: 100%;
+    width: 95%;
     margin-top: 0em;
 }
 DIV.rights, DIV.configs, DIV.state {

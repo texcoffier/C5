@@ -205,6 +205,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.config = {'start': "2000-01-01 00:00:00",
                        'stop': "2100-01-01 00:00:00",
                        'tt': '',
+                       'expected_students': '',
+                       'expected_students_required': '0',
                        'creator': 'nobody',
                        'admins': '',
                        'graders': '',
@@ -338,6 +340,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.messages = self.config['messages']
         self.state = self.config['state']
         self.feedback = self.config['feedback']
+        self.expected_students = set(re.split('[ \n\r\t]+', self.config['expected_students']))
+        self.expected_students_required = int(self.config['expected_students_required'])
         self.update_disabled()
 
     def update_disabled(self) -> None:

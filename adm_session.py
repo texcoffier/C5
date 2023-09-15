@@ -169,6 +169,8 @@ def onchange(event):
                 value = '0'
             target = target.parentNode
         else:
+            if target.id in ('tt', 'expected_students'):
+                target.value = target.value.replace(RegExp('\\b1', 'g'), 'p')
             value = target.value
     target.className = 'wait_answer'
     post('/adm/session/' + COURSE + '/' + attr + '?ticket=' + TICKET, value, True)
@@ -241,8 +243,18 @@ def init():
     <label><input type="checkbox" id="display_session_name">Session name</label>.
     <label>Building: <select id="default_building">""" + buildings  + """</select></label><br>
     After the end, display to students: """ + feedback + """ if the grader indicated its work is done.
+    <table style="width:100%">
+    <tr>
+    <td style="width:49%">
+    <p class="title">All student <b>logins</b>
+    (<label><input type="checkbox" id="expected_students_required">hide session to other students</label>)
+    </p>
+    <textarea id="expected_students"></textarea>
+    <td style="width:49%">
     <p class="title"><b>Logins</b> of students with ⅓ more time to answer</p>
     <textarea id="tt"></textarea>
+    </tr>
+    </table>
     <p class="title">Grading ladder. <span style="font-weight:normal">Maximum grade (20 for example):
         <input id="notation_max" size="4">
     </span></p>

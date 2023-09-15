@@ -490,6 +490,15 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
     elif action == 'tt':
         config.set_parameter('tt', value)
         feedback = f"«{course}» TT list updated with «{value}»"
+    elif action == 'expected_students':
+        config.set_parameter('expected_students', value)
+        feedback = f"«{course}» Expected student list updated with «{value}»"
+    elif action == 'expected_students_required':
+        config.set_parameter('expected_students_required', value)
+        if value == '0':
+            feedback = f"«{course}» All students see this session."
+        else:
+            feedback = f"«{course}» Restricted to expected students."
     elif action == 'admins':
         config.set_parameter('admins', value)
         feedback = f"«{course}» Admins list updated with «{value}»"
@@ -1546,36 +1555,39 @@ async def home(request:Request) -> Response:
         A:hover SPAN { opacity: 1 }
         A { text-decoration: none }
         A:hover { text-decoration: underline }
+        TABLE TD { vertical-align: top }
         </style>''',
+        f'<h1>C5 de {session.login}</h2>',
         f'<p><a target="_blank" href="/zip/C5.zip?ticket={session.ticket}">',
-        '💾 ZIP</a> contenant la dernière sauvegarde de toutes vos sessions.'
+        '💾 ZIP</a> contenant la dernière sauvegarde de toutes vos sessions.',
+        '<p>'
         ]
-    for course_name, course in sorted(CourseConfig.configs.items()):
-        if course.status(session.login) not in ('pending', 'running'):
-            continue
-        name = '<span>' + course_name.replace('COMPILE_','').replace('/','</span> ')
-        content.append(
-            f'''<li> <a href="/={course.course}?ticket={session.ticket}"
-                        style="background:{course.highlight}">{name}</a>''')
 
-    content.append('<h2>Retour sur les examens terminés</h2>')
-    for course_name, course in sorted(CourseConfig.configs.items()):
+    courses = sorted(CourseConfig.configs.items())
+
+    for course_name, course in courses:
+        if (course.expected_students_required
+            and session.login not in course.expected_students):
+            continue
+        status = course.status(session.login)
         feedback = course.get_feedback(session.login)
-        if not feedback:
+        if status not in ('pending', 'running') and not feedback:
             continue
         name = '<span>' + course_name.replace('COMPILE_','').replace('/','</span> ')
         content.append(
-            f'''<li> <a href="/={course.course}?ticket={session.ticket}"
-                        style="background:{course.highlight}">{name}</a> : ''')
-        content.append((
-            None,
-            'Vos réponses.',
-            'Une correction possible.',
-            'Commentaire de votre travail.',
-            'Votre note.',
-            'Détails de votre note.')[feedback])
-    if content[-1].startswith('<h2>'):
-        content.append("Aucun pour le moment.")
+            f'''<a href="/={course.course}?ticket={session.ticket}"
+                        style="background:{course.highlight}">{name}</a>''')
+        if session.login in course.expected_students:
+            content[-1] = '<b>' + content[-1] + '</b>'
+        if feedback :
+            content.append(' Examen terminé : ' + (
+                None,
+                'Vos réponses.',
+                'Une correction possible.',
+                'Commentaire de votre travail.',
+                'Votre note.',
+                'Détails de votre note.')[feedback])
+        content.append('<br>')
     return answer(''.join(content))
 
 async def checkpoint_buildings(request:Request) -> Response:
