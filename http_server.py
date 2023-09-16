@@ -1215,7 +1215,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
     <td>{len(course.active_teacher_room) or ''}
     <td>{len(waiting) if course.checkpoint else ''}
-    <td>{course.number_of_active_students() or ''}
+    <td><b>{course.number_of_active_students() or ''}</b>
     <td>{len(with_me) or ''}
     <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
     <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
