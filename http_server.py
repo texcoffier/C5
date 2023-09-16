@@ -1548,23 +1548,9 @@ async def home(request:Request) -> Response:
         return await checkpoint_list(request)
     # Student
     CourseConfig.load_all_configs()
-    content = [session.header(),
-        '''<style>
-        BODY { font-family: sans-serif }
-        SPAN { opacity: 0.3 }
-        A:hover SPAN { opacity: 1 }
-        A { text-decoration: none }
-        A:hover { text-decoration: underline }
-        TABLE TD { vertical-align: top }
-        </style>''',
-        f'<h1>C5 de {session.login}</h2>',
-        f'<p><a target="_blank" href="/zip/C5.zip?ticket={session.ticket}">',
-        '💾 ZIP</a> contenant la dernière sauvegarde de toutes vos sessions.',
-        '<p>'
-        ]
 
     courses = sorted(CourseConfig.configs.items())
-
+    data = []
     for course_name, course in courses:
         if (course.expected_students_required
             and session.login not in course.expected_students):
@@ -1573,22 +1559,12 @@ async def home(request:Request) -> Response:
         feedback = course.get_feedback(session.login)
         if status not in ('pending', 'running') and not feedback:
             continue
-        name = '<span>' + course_name.replace('COMPILE_','').replace('/','</span> ')
-        content.append(
-            f'''<a href="/={course.course}?ticket={session.ticket}"
-                        style="background:{course.highlight}">{name}</a>''')
-        if session.login in course.expected_students:
-            content[-1] = '<b>' + content[-1] + '</b>'
-        if feedback :
-            content.append(' Examen terminé : ' + (
-                None,
-                'Vos réponses.',
-                'Une correction possible.',
-                'Commentaire de votre travail.',
-                'Votre note.',
-                'Détails de votre note.')[feedback])
-        content.append('<br>')
-    return answer(''.join(content))
+        data.append((course.course, course.highlight,
+                     session.login in course.expected_students, feedback))
+    return answer(f'''{session.header()}
+<script src="/home.js?ticket={session.ticket}"></script>
+<script>home({json.dumps(data)})</script>
+''')
 
 async def checkpoint_buildings(request:Request) -> Response:
     """Building list"""
