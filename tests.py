@@ -689,6 +689,7 @@ return sum ;
         """Test IP change on admin"""
         with self.admin_rights():
             self.goto('adm/session/JS=example')
+            self.check('#Access').click()
             self.check('#admins').send_keys('titi')
             self.check('#creator').click()
             self.check('#admins', {'className': Contains('changed')})
@@ -696,8 +697,9 @@ return sum ;
             self.control('a')
             self.check('#admins').send_keys(Keys.BACKSPACE)
             self.check('#creator').click()
-            self.check('#allow_ip_change', {'..className': Equal(''), 'checked': Equal(None)}).click()
             self.check('#admins', {'className': Equal('')})
+            self.check('#Config').click()
+            self.check('#allow_ip_change', {'..className': Equal(''), 'checked': Equal(None)}).click()
             self.check('#allow_ip_change', {'..className': Contains('changed'), 'checked': Equal('true')}, nbr=200)
             self.check('#allow_ip_change').click()
             self.check('#allow_ip_change', {'..className': Equal('')}, nbr=200)
@@ -746,14 +748,19 @@ return sum ;
             # self.check_alert('pas autorisé à noter', accept=True, required=True)
 
             self.goto('adm/session/REMOTE=test')
+            self.check('#Access').click()
             self.move_cursor('#graders')
             self.control('a')
             self.check('#graders').send_keys(f'\nAnon_{self.ticket}')
+            self.check('#creator').click()
+            self.check('#graders', {'className': Contains('changed')})
+
+            self.check('#Grading').click()
             self.move_cursor('#notation')
             self.control('a')
             self.check('#notation').send_keys(f'{student}\na {{A:0,1,2}}\nb {{B:0.1,0.2,0.3}}\n')
-            self.check('#graders', {'className': Contains('changed')})
-            self.check('#creator').click()
+            self.check('#Access').click()
+            self.check('#Grading').click()
             self.check('#notation', {'className': Contains('changed')})
 
             self.goto(f'grade/REMOTE=test/{student}')

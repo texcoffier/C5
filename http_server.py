@@ -291,7 +291,7 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
     course = CourseConfig.get(utilities.get_course(str(post['course'])))
     session = await Session.get_or_fail(request, allow_ip_change=bool(course.allow_ip_change))
     if not course.running(session.login, session.client_ip):
-        return answer('''window.parent.ccccc.record_not_done(
+        return answer('''window.ccccc.record_not_done(
             "Ce que vous faites n'est plus enregistré car l'examen est terminé\")''')
     data = urllib.parse.unquote(str(post['line']))
     # Must do sanity check on logged data
@@ -332,9 +332,9 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
                 source = item[2]
         if source:
             if not session.is_admin(session.edit):
-                return answer('window.parent.ccccc.record_not_done("Vous n\'avez pas le droit !")')
+                return answer('window.ccccc.record_not_done("Vous n\'avez pas le droit !")')
             if session.edit is None:
-                return answer('window.parent.ccccc.record_not_done("Rechargez la page.")')
+                return answer('window.ccccc.record_not_done("Rechargez la page.")')
             os.rename(session.edit.dirname + '.py', session.edit.dirname + '.py~')
             os.rename(session.edit.dirname + '.js', session.edit.dirname + '.js~')
             with open(session.edit.dirname + '.py', 'w', encoding="utf-8") as file:
@@ -345,10 +345,10 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
                 os.rename(session.edit.dirname + '.py~', session.edit.dirname + '.py')
                 os.rename(session.edit.dirname + '.js~', session.edit.dirname + '.js')
             return answer(
-                f'window.parent.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
+                f'window.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
 
     return answer(
-        f"window.parent.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)},{time.time()})")
+        f"window.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)},{time.time()})")
 
 async def record_grade(request:Request) -> Response:
     """Log a grade"""
@@ -1835,7 +1835,7 @@ async def record_feedback(request:Request) -> Response:
     student = request.match_info['student']
     feedback = int(request.match_info['feedback'])
     course.set_parameter('active_teacher_room', feedback, student, 10)
-    return answer(f"window.parent.update_feedback({feedback})")
+    return answer(f"window.update_feedback({feedback})")
 
 async def change_session_ip(request:Request) -> Response:
     """Change the current session IP"""
