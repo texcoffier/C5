@@ -26,7 +26,8 @@ class Question:
             self.message(text.match(RegExp(needle)), message)
     def set_question(self, index):
         """Change question"""
-        self.worker.current_question = index
+        if index < len(self.worker.questions):
+            self.worker.current_question = index
     def set_options(self, options):
         """Change options"""
         self.worker.set_options(options)
