@@ -230,6 +230,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         'ld_options': [],      # '-lm'
         'language': '',        # Language to use for syntaxic coloring: 'cpp' 'python' ...
         'extension': '',       # Source code filename extension for ZIP and GIT: 'cpp', 'py'...
+        'filetree_in': [],     # Initialize file tree [['foo', 'content'], ['BAR/1', 'one']]
+        'filetree_out': [],    # File contents to get as ['foo', 'BAR/1']
         # System call always allowed for g++/gcc, no need to specify them:
         #       clock_gettime close exit exit_group fstat futex lseek
         #       mmap munmap newfstatat openat read write
@@ -237,7 +239,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         #       access arch_prctl brk clock_nanosleep
         #       clone clone3 execve getpid getrandom gettid madvise mprotect
         #       pipe pread64 prlimit64 rseq rt_sigaction rt_sigprocmask
-        #       sched_yield set_robust_list set_tid_address tgkill
+        #       sched_yield set_robust_list set_tid_address tgkill open
         'allowed': [],
         # -------------------------------
         # Unmodifiable session parameters

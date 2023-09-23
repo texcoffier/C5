@@ -18,6 +18,8 @@ import urllib.request
 import array
 import fcntl
 import termios
+import pathlib
+import shutil
 import websockets
 from websockets import WebSocketServerProtocol
 import utilities
@@ -34,7 +36,8 @@ ALLOWABLE = {'brk', 'access', 'arch_prctl',
              'mprotect', 'pread64', 'prlimit64',
              'rseq', 'rt_sigaction', 'rt_sigprocmask', 'sched_yield',
              'set_robust_list', 'set_tid_address', 'getpid', 'gettid', 'tgkill',
-             'clock_nanosleep', 'pipe'}
+             'clock_nanosleep', 'pipe',
+             'open'}
 
 resource.setrlimit(resource.RLIMIT_NOFILE, (10000, 10000))
 
@@ -76,6 +79,8 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.canary = b''
         self.stdin_w:int = 0
         self.stdout:Optional[asyncio.StreamReader] = None
+        self.filetree_in = ()
+        self.filetree_out = ()
 
     def log(self, more:Union[str,Tuple]) -> None:
         """Log action to COURSE/login/compile_server.log"""
@@ -245,8 +250,13 @@ class Process: # pylint: disable=too-many-instance-attributes
                 self.process = None
             else:
                 more = ''
+            files = []
+            for filename in self.filetree_out:
+                file = pathlib.Path(f'{self.home}/{filename}')
+                if file.exists():
+                    files.append((filename, file.read_text('utf8')))
             await self.websocket.send(json.dumps(
-                ['return', f"\nCode de fin d'exécution = {return_value}{more}"]))
+                ['return', f"\nCode de fin d'exécution = {return_value}{more}", files]))
             self.cleanup()
     async def compile(self, data:Tuple) -> None:
         """Compile"""
@@ -308,7 +318,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         assert process.stdout
         indented = await process.stdout.read()
         await self.websocket.send(json.dumps(['indented', indented.decode('utf-8')]))
-    async def run(self) -> None:
+    async def run(self, data) -> None:
         """Launch process"""
         if not hasattr(self, 'compiler'):
             self.log("UNCOMPILED")
@@ -336,17 +346,32 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
+        self.dirname = f"{self.course.dirname}/{self.login}"
+        self.home = f"{self.dirname}/HOME"
         print(f"{time.strftime('%Y%m%d%H%M%S')} ./launcher "
-              f"{self.course.dirname}/{self.login}/{self.conid} {self.allowed} {self.launcher}",
+              f"{self.course.dirname}/{self.login}/{self.conid} {self.allowed} {self.launcher} {self.home}",
               flush=True)
         stdin_r, stdin_w = os.pipe()
         stdout_r, stdout_w = os.pipe()
 
+        if data:
+            self.filetree_in, self.filetree_out = data
+        else:
+            self.filetree_in, self.filetree_out = [(), ()]
+
+        shutil.rmtree(self.home, ignore_errors=True)
+        pathlib.Path(self.home).mkdir(exist_ok=True)
+        for filename, content in self.filetree_in:
+            filename = pathlib.Path(f"{self.home}/{filename}")
+            filename.parent.mkdir(parents=True, exist_ok=True)
+            filename.write_text(content, encoding='utf8')
+
         self.process = await asyncio.create_subprocess_exec(
             "./launcher",
-            f"{self.course.dirname}/{self.login}/{self.conid}",
+            f"{self.dirname}/{self.conid}",
             self.allowed,
             str(self.launcher),
+            self.home,
             stdout=stdout_w,
             stdin=stdin_r,
             stderr=asyncio.subprocess.STDOUT,
@@ -417,7 +442,7 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
                 else:
                     process.send_input(data)
             elif action == 'run':
-                await process.run()
+                await process.run(data)
             else:
                 process.log(("BUG", action, data))
                 await websocket.send(json.dumps(['compiler', 'bug']))

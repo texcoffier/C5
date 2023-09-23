@@ -12,6 +12,7 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
     nr_errors = nr_warnings = 0
     stoped = False
     previous_source = ''
+    files = [] # Content of remote created files
 
     def init(self):
         """Your own compiler init"""
@@ -68,6 +69,7 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                     self.execution_result += data[1]
                 else:
                     self.execution_returns += data[1]
+                    self.files = data[2]
                 if '\002WAIT' in data[1]:
                     self.socket.send(JSON.stringify(['input', self.read_input(True)]))
                 if data[0] == 'return':
@@ -151,7 +153,8 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
             return
         try:
             self.execution_returns = ''
-            self.socket.send(JSON.stringify(['run', ''])) # pylint: disable=undefined-variable
+            self.socket.send(JSON.stringify([
+                'run', [self.options['filetree_in'], self.options['filetree_out']]])) # pylint: disable=undefined-variable
         except Error as err: # pylint: disable=undefined-variable
             self.post(
                 'executor', '<error>'

@@ -496,6 +496,8 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
     'ld_options': [],      # '-lm'
     'language': '',        # Language to use for syntaxic coloring: 'cpp' 'python' ...
     'extension': '',       # Source code filename extension for ZIP and GIT: 'cpp', 'py'...
+    'filetree_in': [],     # Initialize file tree [['foo', 'content'], ['BAR/1', 'one']]
+    'filetree_out': [],    # File contents to get as ['foo', 'BAR/1']
     # System call always allowed for g++/gcc, no need to specify them:
     #       clock_gettime close exit exit_group fstat futex lseek
     #       mmap munmap newfstatat openat read write
@@ -503,7 +505,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
     #       access arch_prctl brk clock_nanosleep
     #       clone clone3 execve getpid getrandom gettid madvise mprotect
     #       pipe pread64 prlimit64 rseq rt_sigaction rt_sigprocmask
-    #       sched_yield set_robust_list set_tid_address tgkill
+    #       sched_yield set_robust_list set_tid_address tgkill open
     'allowed': [],
     # -------------------------------
     # Unmodifiable session parameters
@@ -1456,6 +1458,10 @@ server {
         <tr class="cours">
             <td>COMPILE_REMOTE/errors.py
             <td>Une série d'exercices dans lesquels l'étudiant doit corriger des erreurs de syntaxe.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_REMOTE/files.py
+            <td>Exemple de test sur la lecture et l'écriture de fichiers.
         </tr>
         <tr class="">
             <td>COMPILE_REMOTE/grapic-chien.png
