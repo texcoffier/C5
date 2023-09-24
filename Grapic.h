@@ -107,6 +107,10 @@ void print(int x, int y, const char *text) {
                 *write++ = '\\';
                 *write++ = 'n';
                 continue;
+            case '\r':
+                *write++ = '\\';
+                *write++ = 'r';
+                continue;
             case '&':
                 *write++ = '\\';
                 *write++ = 'x';
