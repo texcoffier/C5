@@ -1718,7 +1718,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             tips = []
             if self.options['display_home']:
                 tips.append("Aller à l'accueil C5 listant toutes les sessions.")
-                links.append('<a href="/' + window.location.search + '">'
+                links.append('<a onclick="ccccc.goto_home()">'
                     + self.options['icon_home'] + '</a>')
                 tips.append(' ')
                 links.append(' ')
@@ -1905,6 +1905,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Prevent page closing"""
         if self.options['close'] == '' or GRADING or FEEDBACK:
             return None
+        if not self.need_save():
+            return None
         # self.record("Close", send_now=True) # The form cannot be submited
         stop_event(event)
         event.returnValue = self.options['close']
@@ -1990,7 +1992,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         span.onmouseleave = unhighlight
         self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
 
-
+    def goto_home(self):
+        """Goto C5 home"""
+        self.save()
+        setTimeout("window.location = window.location.search", 200)
 
 class Plot:
     """Grapic state and utilities"""
