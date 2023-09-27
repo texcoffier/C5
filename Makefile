@@ -1,26 +1,26 @@
 
 PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 
-%.js:%.py compatibility.py compile.py question.py compile_[!s]*.py
+%.js:%.py compatibility.py options.py compile.py question.py compile_[!s]*.py
 	@echo '$*.py → $*.js'
 	@case $* in \
 	COMPILE*) \
 		COMPILER=$$(echo $* | sed -e 's,/.*,,' | tr '[A-Z]' '[a-z]') ; \
-		FILES="compatibility.py compile.py question.py $$COMPILER.py $*.py" ; \
+		FILES="compatibility.py options.py compile.py question.py $$COMPILER.py $*.py" ; \
 		SESSION=$$(echo ; echo 'if not Compile.worker: Session([' ; \
 		grep '^class.*(Question)' $*.py | sed -r 's/.*class *(.*)\(Question\).*/\1(),/' ;\
 		echo '])') ; \
 		Q=1 ; \
 		;; \
 	*) \
-		FILES="compatibility.py $*.py" ;\
+		FILES="compatibility.py options.py $*.py" ;\
 		Q=0 \
 		;; \
 	esac ; \
 	cat $$FILES > $*.py.xxx ; \
 	echo "$$SESSION" >> $*.py.xxx ; \
 	$(PYTOJS) $*.py.xxx >$*.js && \
-	([ $$Q = 1 ] && (cat question_before.py $*.py question_after.py | python3 >$*.json) || true) && \
+	([ $$Q = 1 ] && (cat options.py question_before.py $*.py question_after.py | python3 >$*.json) || true) && \
 	rm $*.py.xxx
 
 default:all
@@ -99,12 +99,7 @@ pre-commit:
 # Update document from sources
 
 DOCUMENTATION/index.html:ccccc.py Makefile
-	cp -a DOCUMENTATION/index.html xxx.orig
-	sed -n '/options = {/,/^    }/p' <ccccc.py | \
-		sed -e 's/    //' -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
-		    -e 's/^options = /self.worker.set_options(/' -e 's/^}/})/' \
-			>xxx.options
 	awk '/START_OPTIONS/ { D=1; print $$0; next; } \
-	     D==1 && /<\/pre>/ { system("cat xxx.options"); D=0; } \
-		 D==0 { print($$0); }' <xxx.orig >DOCUMENTATION/index.html
-	rm xxx.orig xxx.options
+	     D==1 && /<\/pre>/ { system("sed -e \"s/&/\\&amp;/g\" -e \"s/</\\&lt;/g\" -e \"s/>/\\&gt;/g\" options.py"); D=0; } \
+		 D==0 { print($$0); }' <DOCUMENTATION/index.html >xxx.new
+	mv xxx.new $@

@@ -161,103 +161,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
     do_update_cursor_position = True
     mouse_pressed = -1
     mouse_position = [0, 0]
-    options = { # These options are synchronized between GUI and compiler/session
-        # ---------------------
-        # Frame screen position
-        # ---------------------
-        'positions' : { # X%, Width%, Y%, Heigth%, background color
-            'question':    [ 1, 29, 0, 30,'#EFEF'], # LeftTop    : The question
-            'tester':      [ 1, 29,30, 70,'#EFEF'], # LeftBottom : Goal checker
-            'editor':      [30, 40, 0,100,'#FFFF'], # Middle     : Source editor
-            'compiler':    [70, 30, 0, 30,'#EEFF'], # RightTop   : Compiler messages
-            'executor':    [70, 30,30, 70,'#EEFF'], # RightBottom: Execution messages
-            'time':        [80, 20,98,  2,'#0000'], # BottomRight: Debugger for admin
-            'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
-            'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
-        },
-        # --------------------------
-        # Titles, label and messages
-        # --------------------------
-        'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
-        'close': "Voulez-vous vraiment quitter cette page ?",
-        'question_title': 'Question',
-        'editor_title': 'Code source',
-        'editor_indent': 'Indent(F8)',
-        'tester_title': 'Les buts que vous devez atteindre',
-        'compiler_title': 'Compilation',
-        'compiler_title_toggle': 'Automatique (F9)',
-        'compiler_title_button': 'Maintenant ! (F9)',
-        'executor_title_button': 'GO!(F9)',
-        'executor_title': 'Exécution',
-        'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
-        'icon_home': '🏠',
-        'icon_save': '📩',
-        'icon_local': '💾', # Used by session and question local save.
-        'icon_git': '<b style="font-size:50%">GIT</b>',
-        'icon_tag': 'TAG',
-        'icon_stop': 'Terminer<br>Examen', # Only displayed if CHECKPOINT
-        'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
-        'stop_done': "<h1>C'est fini.</h1>",
-        'time_running': 'Fini dans',
-        'time_done': "Fini depuis",
-        'time_seconds': " secondes",
-        'time_days': " jours",
-        'time_d': " j ",
-        'time_m': " m ",
-        'time_h': " h ",
-        # ------------------------------------
-        # Default compiler and session options
-        # ------------------------------------
-        'allow_copy_paste': CP or GRADING or ADMIN, # True if copy/paste allowed
-        'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
-        'coloring': COLORING,                       # True if source highlighting is done
-        'display_local_save': 0,                    # True if question 'icon_local' displayed
-        'display_home': 1,                          # True if display 'icon_home'
-        'display_local_git': 1,                     # True if question 'icon_git' displayed
-        'display_local_zip': 1,                     # True if question 'icon_local' displayed
-        'display_timer': 1,                         # True if the timer is displayed
-        'display_compile_run': 1,                   # True if display the F9 button
-        'display_tag': 1,                           # True if display 'icon_tag'
-        'display_history': 1,                       # True if display version history
-        'display_indent': 1,                        # True if display the F8 button
-        'display_line_numbers': 0,                  # True if display line numbers
-        'automatic_compilation': True,              # True if compilation is automatic
-        # ------------------------------------
-        # Options defined by the compiler used
-        # ------------------------------------
-        'compiler': '',        # 'g++' 'gcc' 'racket'
-        'compile_options': [], # '-Wall' '-pedantic' '-pthread' '-std=c++11' '-std=c++20'
-        'ld_options': [],      # '-lm'
-        'language': '',        # Language to use for syntaxic coloring: 'cpp' 'python' ...
-        'extension': '',       # Source code filename extension for ZIP and GIT: 'cpp', 'py'...
-        'filetree_in': [],     # Initialize file tree [['foo', 'content'], ['BAR/1', 'one']]
-        'filetree_out': [],    # File contents to get as ['foo', 'BAR/1']
-        # System call always allowed for g++/gcc, no need to specify them:
-        #       clock_gettime close exit exit_group fstat futex lseek
-        #       mmap munmap newfstatat openat read write
-        # System calls allowable for g++/gcc:
-        #       access arch_prctl brk clock_nanosleep
-        #       clone clone3 execve getpid getrandom gettid madvise mprotect
-        #       pipe pread64 prlimit64 rseq rt_sigaction rt_sigprocmask
-        #       sched_yield set_robust_list set_tid_address tgkill open
-        'allowed': [],
-        # -------------------------------
-        # Unmodifiable session parameters
-        # -------------------------------
-        'COURSE': COURSE,                           # Course short name
-        'TICKET': TICKET,                           # Session ticket: ?ticket=TICKET
-        'LOGIN': LOGIN,                             # Login of the connected user
-        'SOCK': SOCK,                               # Websocked for remote compilation
-        'ANSWERS': ANSWERS,                         # All the questions/answers recorded
-        'WHERE': WHERE,                             # See 'active_teacher_room' declaration
-        'INFOS': INFOS,                             # Student identity
-        'CHECKPOINT': CHECKPOINT,                   # True if checkpoint
-        'GRADING': GRADING,                         # True if in grading mode
-        'SEQUENTIAL': SEQUENTIAL and not GRADING,   # True if questions are sequential
-        'ADMIN': ADMIN,                             # True if administrator
-        'STOP': STOP,                               # True if the session is stopped
-        'FEEDBACK': FEEDBACK,                       # Student feedback level 0(none)...5
-    }
+     # These options are synchronized between GUI and compiler/session
+    options = {}
     stop_timestamp = 0
     last_save = 0
     in_past_history = 0
@@ -275,6 +180,30 @@ class CCCCC: # pylint: disable=too-many-public-methods
     first_update = True
 
     def __init__(self):
+        options = self.options
+        for line in DEFAULT_COURSE_OPTIONS:
+            if len(line) == 3:
+                options[line[0]] = line[1]
+
+        # XXX to remove
+        options['allow_copy_paste'] = CP or GRADING or ADMIN
+        options['save_unlock'] = SAVE_UNLOCK
+        options['coloring'] = COLORING
+
+        options['COURSE'] = COURSE                         # Course short name
+        options['TICKET'] = TICKET                         # Session ticket: ?ticket=TICKET
+        options['LOGIN'] = LOGIN                           # Login of the connected user
+        options['SOCK'] = SOCK                             # Websocked for remote compilation
+        options['ANSWERS'] = ANSWERS                       # All the questions/answers recorded
+        options['WHERE'] = WHERE                           # See 'active_teacher_room' declaration
+        options['INFOS'] = INFOS                           # Student identity
+        options['CHECKPOINT'] = CHECKPOINT                 # True if checkpoint
+        options['GRADING'] = GRADING                       # True if in grading mode
+        options['SEQUENTIAL'] = SEQUENTIAL and not GRADING # True if questions are sequential
+        options['ADMIN'] = ADMIN                           # True if administrator
+        options['STOP'] = STOP                             # True if the session is stopped
+        options['FEEDBACK'] = FEEDBACK                     # Student feedback level 0(none)...5
+
         print("GUI: start")
         window.onerror = bind(self.onJSerror, self)
         self.start_time = millisecs()
@@ -646,7 +575,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.save_button.setAttribute('enabled', need_save)
             if need_save:
                 try:
-                    localStorage[COURSE + '/' + self.current_question] = JSON.stringify([seconds, self.source])
+                    localStorage[COURSE + '/' + self.current_question
+                                ] = JSON.stringify([seconds, self.source])
                 except: # pylint: disable=bare-except
                     pass
             self.seconds = seconds
@@ -1752,7 +1682,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             message = value + '\n\n\n'
             self.set_editor_content(message)
             try:
-                old_time, old_version = JSON.parse(localStorage[COURSE + '/' + self.current_question])
+                old_time, old_version = JSON.parse(
+                    localStorage[COURSE + '/' + self.current_question])
             except: # pylint: disable=bare-except
                 old_version = None
             if old_version and millisecs()/1000 - old_time > 86400*30*3:
