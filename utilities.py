@@ -1210,15 +1210,12 @@ With Firefox:
             tail -1 compile_server.log
         fi
         """,
-    'stop': fr"""#C5_LOGIN
+    'stop': r"""#C5_LOGIN
         echo STOP SERVERS
-        cd {C5_DIR}
-        kill \$(cat http_server.pid) \$(cat compile_server.pid) || true
-        sleep 0.1
-        kill -1 \$(cat http_server.pid) \$(cat compile_server.pid) || true
-        sleep 0.1
-        kill -9 \$(cat http_server.pid) \$(cat compile_server.pid) || true
-        rm http_server.pid compile_server.pid
+        for I in http_server compile_server infos_server dns_server
+        do
+            pkill --oldest -f python3\ ./$I
+        done
         """,
     'open': f"""
         xdg-open https://{C5_URL}/{'=' + sys.argv[2] if len(sys.argv) >= 3 else ''}
