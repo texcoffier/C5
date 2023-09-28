@@ -180,10 +180,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     first_update = True
 
     def __init__(self):
-        options = self.options
-        for line in DEFAULT_COURSE_OPTIONS:
-            if len(line) == 3:
-                options[line[0]] = line[1]
+        self.options = options = COURSE_CONFIG
 
         # XXX to remove
         options['allow_copy_paste'] = CP or GRADING or ADMIN
@@ -381,6 +378,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """The text editor container"""
         if GRADING:
             document.body.className = 'dograding'
+        self.options['positions']['editor_title'] = self.options['positions']['editor']
         for key in self.options['positions']:
             if key == 'stop_button' and not CHECKPOINT:
                 continue

@@ -21,6 +21,7 @@ import pathlib
 import glob
 import urllib.request
 import csv
+import options
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response,StreamResponse
@@ -53,6 +54,12 @@ Lancer les commandes :
     make # Pour compiler toutes les questions
     make 01 # Pour compiler (si c'est nécessaire) et exécuter la question 1
 """
+
+DEFAULT_COURSE_OPTIONS_DICT = {
+    line[0]: (line[1], line[2])
+    for line in options.DEFAULT_COURSE_OPTIONS
+    if len(line) == 3
+}
 
 def answer(content:Union[str,bytes], content_type:str="text/html",
            charset:str='utf-8', cache:bool=False) -> Response:
@@ -228,6 +235,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             COMMENTS = {json.dumps(comments)};
             GRADES = {json.dumps(grades)};
             NOTATION_MAX = {json.dumps(course.config['notation_max'])};
+            COURSE_CONFIG = {json.dumps(course.config)};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')
 
@@ -494,7 +502,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         config.set_parameter('expected_students', value)
         feedback = f"«{course}» Expected student list updated with «{value}»"
     elif action == 'expected_students_required':
-        config.set_parameter('expected_students_required', value)
+        config.set_parameter('expected_students_required', int(value))
         if value == '0':
             feedback = f"«{course}» All students see this session."
         else:
@@ -521,26 +529,26 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         else:
             feedback = f"«{course}» state «{value}» does not exists!"
     elif action == 'copy_paste':
-        config.set_parameter('copy_paste', value)
+        config.set_parameter('copy_paste', int(value))
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
     elif action == 'allow_ip_change':
-        config.set_parameter('allow_ip_change', value)
+        config.set_parameter('allow_ip_change', int(value))
         feedback = f"«{course}» Allow IP change «{'not' if value == '0' else ''} allowed»"
     elif action == 'coloring':
-        config.set_parameter('coloring', value)
+        config.set_parameter('coloring', int(value))
         feedback = f"«{course}» Syntax coloring: «{value != '0'}»"
     elif action == 'save_unlock':
-        config.set_parameter('save_unlock', value)
+        config.set_parameter('save_unlock', int(value))
         yes_no = 'not' if value == '0' else ''
         feedback = f"«{course}» Unlock next question on save «{yes_no} allowed»"
     elif action == 'checkpoint':
-        config.set_parameter('checkpoint', value)
+        config.set_parameter('checkpoint', int(value))
         if value == '0':
             feedback = f"«{course}» Automatic access to the session"
         else:
             feedback = f"«{course}» Need teacher approval to start"
     elif action == 'sequential':
-        config.set_parameter('sequential', value)
+        config.set_parameter('sequential', int(value))
         if value == '0':
             feedback = f"«{course}» All questions are accessible in a random order."
         else:
@@ -593,16 +601,13 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
         return f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!"
     elif action == 'display_student_filter':
-        assert value in "01"
-        config.set_parameter('display_student_filter', value)
+        config.set_parameter('display_student_filter', int(value))
         feedback = f"«{course}» «{'do not' if value == '0' else ''} display student filter."
     elif action == 'display_session_name':
-        assert value in "01"
-        config.set_parameter('display_session_name', value)
+        config.set_parameter('display_session_name', int(value))
         feedback = f"«{course}» «{'do not' if value == '0' else ''} display session name."
     elif action == 'display_my_rooms':
-        assert value in "01"
-        config.set_parameter('display_my_rooms', value)
+        config.set_parameter('display_my_rooms', int(value))
         feedback = f"«{course}» «{'do not' if value == '0' else ''} display «My rooms»."
     elif action == 'default_building':
         buildings = os.listdir('BUILDINGS')
@@ -614,6 +619,16 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
     elif action == 'feedback':
         config.set_parameter('feedback', int(value))
         feedback = f"«{course}» feedback={value}"
+    elif action in DEFAULT_COURSE_OPTIONS_DICT:
+        default_value, comment = DEFAULT_COURSE_OPTIONS_DICT[action]
+        if isinstance(default_value, int):
+            if value == 'on':
+                value = 1
+            value = int(value)
+        elif isinstance(default_value, (list, dict)):
+            value = json.loads(value)
+        config.set_parameter(action, value)
+        feedback = f"«{course}» {action}={value}"
 
     return answer(
         f'<script>window.parent.update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})</script>')

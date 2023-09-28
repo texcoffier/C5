@@ -22,28 +22,37 @@ DEFAULT_COURSE_OPTIONS = [
         'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
     }, "For each bloc : [Bloc X%, Width%, Y%, Heigth%, background color]"],
 
-    "Titles, label and messages",
+    "Popup messages",
 
     ['forbiden', "Coller du texte copié venant d'ailleurs n'est pas autorisé.", "Alert"],
     ['close', "Voulez-vous vraiment quitter cette page ?", "Alert"],
-    ['question_title', 'Question', "Bloc title"],
-    ['editor_title', 'Code source', "Bloc title"],
-    ['editor_indent', 'Indent(F8)', "Button label"],
-    ['tester_title', 'Les buts que vous devez atteindre', "Bloc title"],
-    ['compiler_title', 'Compilation', "Bloc title"],
-    ['compiler_title_toggle', 'Automatique (F9)', "Button label"],
-    ['compiler_title_button', 'Maintenant ! (F9)', "Button label"],
-    ['executor_title_button', 'GO!(F9)', "Button label"],
-    ['executor_title', 'Exécution', "Bloc title"],
+    ['stop_confirm', "Vous voulez vraiment terminer l'examen maintenant ?", "Alert"],
+    ['stop_done', "<h1>C'est fini.</h1>", "Alert"],
     ['good', ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"], "Alert on success"],
+
+    "Bloc titles",
+
+    ['question_title', 'Question', "Bloc title"],
+    ['tester_title', 'Les buts que vous devez atteindre', "Bloc title"],
+    ['editor_title', 'Code source', "Bloc title"],
+    ['compiler_title', 'Compilation', "Bloc title"],
+    ['executor_title', 'Exécution', "Bloc title"],
+
+    "Labels of button and toggles",
+
+    ['editor_indent', 'Indent(F8)', "Button label"],
+    ['compiler_title_toggle', 'Automatique (F9)', "Button label"],
+    ['compiler_title_button', 'Maintenant ! (F9)', "Toggle label"],
+    ['executor_title_button', 'GO!(F9)', "Button label"],
     ['icon_home', '🏠', "Button label"],
     ['icon_save', '📩', "Button label"],
     ['icon_local', '💾', "Button label"],
     ['icon_git', '<b style="font-size:50%">GIT</b>', "Button label"],
     ['icon_tag', 'TAG', "Button label"],
     ['icon_stop', 'Terminer<br>Examen', "Button label displayed if checkpoint"],
-    ['stop_confirm', "Vous voulez vraiment terminer l'examen maintenant ?", "Alert"],
-    ['stop_done', "<h1>C'est fini.</h1>", "Alert"],
+
+    "Time countdown",
+
     ['time_running', 'Fini dans', "Time message"],
     ['time_done', "Fini depuis", "Time message"],
     ['time_seconds', " secondes", "Time message"],
@@ -54,9 +63,9 @@ DEFAULT_COURSE_OPTIONS = [
 
     "Default compiler and session options",
 
-    ['allow_copy_paste',     1, "copy/paste allowed"],
-    ['save_unlock',          0, "saving a question unlock next"],
-    ['coloring',             1, "source highlighting is done"],
+#    ['allow_copy_paste',     1, "copy/paste allowed"],
+#    ['save_unlock',          0, "saving a question unlock next"],
+#    ['coloring',             1, "source highlighting is done"],
     ['display_local_save',   0, "question 'icon_local' displayed"],
     ['display_home',         1, "display 'icon_home'"],
     ['display_local_git',    1, "question 'icon_git' displayed"],
@@ -67,9 +76,9 @@ DEFAULT_COURSE_OPTIONS = [
     ['display_history',      1, "display version history"],
     ['display_indent',       1, "display the F8 button"],
     ['display_line_numbers', 0, "display line numbers"],
-    ['automatic_compilation',True,"compilation is automatic"],
+    ['automatic_compilation',1,"compilation is automatic"],
 
-    "Options defined by the compiler used",
+    "Options defined by the compiler used by the course",
 
     ['compiler', '',        "'g++' 'gcc' 'racket'"],
     ['compile_options', [], "'-Wall' '-pedantic' '-pthread' '-std=c++11' '-std=c++20'"],

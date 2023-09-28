@@ -19,6 +19,7 @@ import urllib.parse
 import asyncio
 import aiohttp
 from aiohttp import web
+import options
 
 def local_ip() -> str:
     """Get the local IP"""
@@ -188,17 +189,17 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.time = 0
         self.disabled = False
         self.parse_position = 0
+        try:
+            with open(self.dirname + '.json', 'r', encoding="ascii") as file:
+                self.questions = json.loads(file.read())
+        except FileNotFoundError:
+            self.questions = []
         self.load()
         self.update()
         self.configs[course] = self
         self.streams = [] # To send changes
         self.to_send = [] # Data to send
         self.send_journal_running = False
-        try:
-            with open(self.dirname + '.json', 'r', encoding="ascii") as file:
-                self.questions = json.loads(file.read())
-        except FileNotFoundError:
-            self.questions = []
 
     def load(self):
         """Load course configuration file"""
@@ -206,17 +207,17 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        'stop': "2100-01-01 00:00:00",
                        'tt': '',
                        'expected_students': '',
-                       'expected_students_required': '0',
+                       'expected_students_required': 0,
                        'creator': 'nobody',
                        'admins': '',
                        'graders': '',
                        'proctors': '',
-                       'copy_paste': '0',
-                       'coloring': '1',
-                       'checkpoint': '0',
-                       'allow_ip_change': '0',
-                       'save_unlock': '0',
-                       'sequential': '1',
+                       'copy_paste': 0,
+                       'coloring': 1,
+                       'checkpoint': 0,
+                       'allow_ip_change': 0,
+                       'save_unlock': 0,
+                       'sequential': 1,
                        'theme': 'a11y-light',
                        'highlight': '#FFF',
                        'notation': '',
@@ -243,11 +244,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        # ┗━━━━━━━━┹────────────────────┴────────────────────┘
                        'state': 'Ready',
                        # Checkpoint configuration
-                       'display_student_filter': '0',
-                       'display_my_rooms': '1',
-                       'display_session_name': '0',
+                       'display_student_filter': 0,
+                       'display_my_rooms': 1,
+                       'display_session_name': 0,
                        'default_building': sorted(os.listdir('BUILDINGS'))[0],
                       }
+        for line in options.DEFAULT_COURSE_OPTIONS: # Defaults
+            if len(line) == 3:
+                self.config[line[0]] = line[1]
+        self.config.update(self.questions[0]['options']) # Course defaults
+
         try:
             self.parse()
         except (IOError, FileNotFoundError):
@@ -273,7 +279,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                     data = eval(binary_line.decode('utf-8')) # pylint: disable=eval-used
                     self.parse_position += len(binary_line) # file.tell() forbiden here
                     if len(data) == 2:
-                        config[data[0]] = data[1]
+                        if data[1] in ('0', '1', True, False):
+                            config[data[0]]  = int(data[1]) # XXX To read old files (to remove)
+                        else:
+                            config[data[0]] = data[1]
                     elif len(data) == 3:
                         if data[0] == 'active_teacher_room':
                             state = data[2]

@@ -37,11 +37,11 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
         value = config[attr]
         if attr == 'highlight':
             attr = value # One element ID per radio button
-            value = '1'
+            value = 1
         element = document.getElementById(attr)
         if element:
             if element.tagName != 'DIV':
-                if value == State.original_value[attr]:
+                if JSON.stringify(value) == JSON.stringify(State.original_value[attr]):
                     class_name = ''
                 else:
                     class_name = 'changed'
@@ -53,8 +53,10 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                 element.value = value
             elif element.tagName == 'INPUT':
                 if element.type in ('checkbox', 'radio'):
-                    element.checked = value != '0'
+                    element.checked = value != 0
                 else:
+                    if not value.toLowerCase:
+                        value = JSON.stringify(value)
                     element.value = value
             elif element.tagName == 'SELECT':
                 element.value = value
@@ -289,7 +291,9 @@ int main()                       {main declaration:0,1}
             feedback.append('<option value="' + i + '">' + name + '</option>')
         feedback.append('</select>')
         feedback = ''.join(feedback)
-        content = """
+        content = ["""
+    <div style="height: 100%; display: grid">
+    <div>
     <input id="start">→<input id="stop"> <div id="invalid_date">START&gt;END</div>
     State: <select id="state">
     <option>Draft</option>
@@ -313,7 +317,26 @@ int main()                       {main declaration:0,1}
     <label><input type="checkbox" id="display_session_name">Session name</label>.
     <label>Building: <select id="default_building">""" + buildings  + """</select></label><br>
     After the end, display to students: """ + feedback + """ if the grader indicated its work is done.
-    """
+    </div>
+    """]
+        content.append('<div style="align-self:stretch; overflow:scroll">')
+        content.append('<table style="width:100%">')
+        for line in DEFAULT_COURSE_OPTIONS:
+            if len(line) != 3:
+                content.append('<tr><td colspan="2"><h2>' + line + '</h2></tr>')
+            else:
+                key, default_value, comment = line
+                if default_value in (0, 1):
+                    tag = ('<label><input type="checkbox" id="' + key + '">'
+                        + comment + '</label>')
+                    comment = ''
+                else:
+                    tag = '<input style="width: 100%" id="' + key + '">'
+                    comment = '<div style="float:right">' + comment + '</div>'
+                content.append(
+                    '<tr><td style="width: 30em">' + key + comment + '<td>' + tag + '</tr>')
+        content.append('</table></div>')
+        content = ''.join(content)
     else:
         content = ''
 
