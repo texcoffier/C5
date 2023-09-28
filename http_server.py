@@ -219,10 +219,6 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             ADMIN = {int(is_admin)};
             STOP = {stop};
             VERSIONS = {json.dumps(versions)};
-            CP = {course.config['copy_paste']};
-            SAVE_UNLOCK = {int(course.config['save_unlock'])};
-            SEQUENTIAL = {int(course.config['sequential'])};
-            COLORING = {int(course.config['coloring'])};
             INFOS = {json.dumps(infos)};
             CHECKPOINT = {course.checkpoint};
             ANSWERS = {json.dumps(last_answers)};
@@ -234,7 +230,6 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             GRADE = {json.dumps(the_grade)};
             COMMENTS = {json.dumps(comments)};
             GRADES = {json.dumps(grades)};
-            NOTATION_MAX = {json.dumps(course.config['notation_max'])};
             COURSE_CONFIG = {json.dumps(course.config)};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')

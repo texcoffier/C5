@@ -183,10 +183,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.options = options = COURSE_CONFIG
 
         # XXX to remove
-        options['allow_copy_paste'] = CP or GRADING or ADMIN
-        options['save_unlock'] = SAVE_UNLOCK
-        options['coloring'] = COLORING
-
+        options['allow_copy_paste'] = options.copy_paste or GRADING or ADMIN
         options['COURSE'] = COURSE                         # Course short name
         options['TICKET'] = TICKET                         # Session ticket: ?ticket=TICKET
         options['LOGIN'] = LOGIN                           # Login of the connected user
@@ -196,7 +193,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         options['INFOS'] = INFOS                           # Student identity
         options['CHECKPOINT'] = CHECKPOINT                 # True if checkpoint
         options['GRADING'] = GRADING                       # True if in grading mode
-        options['SEQUENTIAL'] = SEQUENTIAL and not GRADING # True if questions are sequential
         options['ADMIN'] = ADMIN                           # True if administrator
         options['STOP'] = STOP                             # True if the session is stopped
         options['FEEDBACK'] = FEEDBACK                     # Student feedback level 0(none)...5
@@ -1521,7 +1517,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 Note<br>temporaire</x>
                 <x style="border:0.2em solid #000; background:#FFF;
                           padding: 0.2em;font-size:''' + (size+20) + '''%">'''
-                + GRADE[0] + '/' + NOTATION_MAX + '</x>')
+                + GRADE[0] + '/' + self.options.notation_max + '</x>')
         content.append('</h2></div>')
 
         if GRADING or NOTATION:

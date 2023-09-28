@@ -318,7 +318,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 html_class.append('good')
             else:
                 if (i <= self.current_question_max
-                        or not self.options['SEQUENTIAL']
+                        or not self.options['sequential']
+                        or self.options['GRADING']
                         or self.options['ANSWERS'][i]):
                     html_class.append('possible')
                 else:

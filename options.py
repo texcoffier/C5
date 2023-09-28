@@ -9,7 +9,14 @@ FEEDBACK_LEVEL = {
 }
 
 DEFAULT_COURSE_OPTIONS = [
-    "Frame screen position",
+
+    "Session option",
+
+    ['allow_copy_paste',     1, "copy/paste allowed"],
+    ['save_unlock',          0, "saving a question unlock next"],
+    ['automatic_compilation',1, "compilation is automatic"],
+
+    "Student interface",
 
     ['positions', {
         'question':    [ 1, 29, 0, 30,'#EFEF'], # LeftTop    : The question
@@ -21,6 +28,18 @@ DEFAULT_COURSE_OPTIONS = [
         'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
         'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
     }, "For each bloc : [Bloc X%, Width%, Y%, Heigth%, background color]"],
+
+    ['coloring',             1, "source highlighting is done"],
+    ['display_local_save',   0, "display 'icon_local' to download the current source code"],
+    ['display_home',         1, "display 'icon_home'"],
+    ['display_local_git',    1, "display 'icon_git' to download a repository of all history"],
+    ['display_local_zip',    1, "display 'icon_local' to download a repository of all questions"],
+    ['display_timer',        1, "display the timer"],
+    ['display_compile_run',  1, "display the F9 button"],
+    ['display_tag',          1, "display 'icon_tag'"],
+    ['display_history',      1, "display version history"],
+    ['display_indent',       1, "display the F8 button"],
+    ['display_line_numbers', 0, "display line numbers"],
 
     "Popup messages",
 
@@ -60,23 +79,6 @@ DEFAULT_COURSE_OPTIONS = [
     ['time_d', " j ", "Time message"],
     ['time_m', " m ", "Time message"],
     ['time_h', " h ", "Time message"],
-
-    "Default compiler and session options",
-
-#    ['allow_copy_paste',     1, "copy/paste allowed"],
-#    ['save_unlock',          0, "saving a question unlock next"],
-#    ['coloring',             1, "source highlighting is done"],
-    ['display_local_save',   0, "question 'icon_local' displayed"],
-    ['display_home',         1, "display 'icon_home'"],
-    ['display_local_git',    1, "question 'icon_git' displayed"],
-    ['display_local_zip',    1, "question 'icon_local' displayed"],
-    ['display_timer',        1, "the timer is displayed"],
-    ['display_compile_run',  1, "display the F9 button"],
-    ['display_tag',          1, "display 'icon_tag'"],
-    ['display_history',      1, "display version history"],
-    ['display_indent',       1, "display the F8 button"],
-    ['display_line_numbers', 0, "display line numbers"],
-    ['automatic_compilation',1,"compilation is automatic"],
 
     "Options defined by the compiler used by the course",
 
