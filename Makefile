@@ -11,6 +11,7 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 		grep '^class.*(Question)' $*.py | sed -r 's/.*class *(.*)\(Question\).*/\1(),/' ;\
 		echo '])') ; \
 		Q=1 ; \
+		[ -d $* ] && chmod 700 $* ; \
 		;; \
 	*) \
 		FILES="compatibility.py options.py $*.py" ;\

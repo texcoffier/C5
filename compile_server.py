@@ -72,6 +72,10 @@ class Process: # pylint: disable=too-many-instance-attributes
             if not os.path.exists(course):
                 os.mkdir(course)
             os.mkdir(f"{course}/{login}")
+        try:
+            os.link('sandbox/libsandbox.so', self.dir + '/libsandbox.so')
+        except FileExistsError:
+            pass
         self.log_file = f"{self.dir}/compile_server.log"
         self.exec_file = f"{self.dir}/{self.conid}"
         self.source_file = f"{self.dir}/{self.conid}.cpp"
@@ -349,7 +353,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.dirname = f"{self.course.dirname}/{self.login}"
         self.home = f"{self.dirname}/HOME"
         print(f"{time.strftime('%Y%m%d%H%M%S')} ./launcher "
-              f"{self.course.dirname}/{self.login}/{self.conid} {self.allowed} {self.launcher} {self.home}",
+              f"{self.conid} {self.allowed} {self.launcher} {self.home}",
               flush=True)
         stdin_r, stdin_w = os.pipe()
         stdout_r, stdout_w = os.pipe()
@@ -368,7 +372,7 @@ class Process: # pylint: disable=too-many-instance-attributes
 
         self.process = await asyncio.create_subprocess_exec(
             "./launcher",
-            f"{self.dirname}/{self.conid}",
+            self.conid,
             self.allowed,
             str(self.launcher),
             self.home,

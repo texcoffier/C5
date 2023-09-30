@@ -1,5 +1,5 @@
 // Arguments:
-//   * The executable PATH
+//   * The executable name
 //   * The SECCOMP_SYSCALL_ALLOW value
 //   * The UID
 //   * The HOME path
@@ -79,23 +79,23 @@ int main(int argc, char **argv)
     // The created files must be writable/destroyable by compile_server
     umask(7);
 
+    // Setup environment
+    setenv("LD_PRELOAD", "../libsandbox.so", 1);
+    setenv("SECCOMP_SYSCALL_ALLOW", argv[2], 1);
+
+    // Goto home
+    if (chdir(argv[4])) {
+        perror(argv[4]);
+        return 43;
+    }
 
     // Drop root rights
     setreuid(uid, uid);
     setregid(uid, uid);
 
-    getcwd(filename, sizeof(filename) - 100);
-    strcat(filename, "/sandbox/libsandbox.so");
-
-    getcwd(execname, sizeof(execname) - strlen(argv[1]) - 1);
-    strcat(execname, "/");
-    strcat(execname, argv[1]);
-
-    setenv("LD_PRELOAD", filename, 1);
-    setenv("SECCOMP_SYSCALL_ALLOW", argv[2], 1);
-
-    // Goto home
-    chdir(argv[4]);
-
+    // Execute
+    snprintf(execname, sizeof(execname), "../%s", argv[1]);
     execl(execname, argv[1], NULL);
+    perror(execname);
+    return 42;
 }
