@@ -303,9 +303,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def update_gui(self): # pylint: disable=too-many-branches,disable=too-many-statements
         """Set the bloc position and background"""
-        if ('line_numbers' in self.options['positions']
-            and self.options['positions']['line_numbers'][0] != 100):
-            self.options['display_line_numbers'] = 1 # Compatibility with the past
         if self.options['display_line_numbers']:
             self.layered.setAttribute('display_line_numbers', 'yes')
         else:
