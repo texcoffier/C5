@@ -4,9 +4,6 @@ Python compiler and interpreter
 
 # pylint: disable=self-assigning-variable,eval-used,len-as-condition
 
-importScripts('node_modules/brython/brython.js') # pylint: disable=undefined-variable
-importScripts('node_modules/brython/brython_stdlib.js') # pylint: disable=undefined-variable
-
 if False: # pylint: disable=using-constant-test
     # pylint: disable=undefined-variable,invalid-name
     __BRYTHON__ = __BRYTHON__
@@ -16,7 +13,12 @@ if False: # pylint: disable=using-constant-test
     html = html
     Question = Question
 
-brython({'debug': 1})
+try:
+    importScripts('node_modules/brython/brython.js') # pylint: disable=undefined-variable
+    importScripts('node_modules/brython/brython_stdlib.js') # pylint: disable=undefined-variable
+    brython({'debug': 1})
+except NameError:
+    pass # Called from Makefile
 
 PREAMBLE = '''
 def print(*args, sep=' ', end='\\n'):
@@ -36,10 +38,7 @@ class Session(Compile):
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None
-
-    def init(self):
-        """Initialisations"""
-        self.set_options({'language': 'python', 'extension': 'py'})
+    default_options = {'language': 'python', 'extension': 'py'}
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""

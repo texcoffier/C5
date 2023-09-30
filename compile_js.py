@@ -33,10 +33,7 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     """JavaScript compiler and evaluator"""
     execution_result = ''
     execution_returns = None
-
-    def init(self):
-        """Initialisations"""
-        self.set_options({'language': 'javascript', 'extension': 'js'})
+    default_options = {'language': 'javascript', 'extension': 'js'}
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""

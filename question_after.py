@@ -9,6 +9,8 @@ for classe in question_classes: # pylint: disable=undefined-variable
     infos.append({'title': classe.__doc__ or ''})
 
 infos[0]['options'] = options = {}
+for key, value in Session.default_options.items():
+    options[key] = value
 try:
     for key, value in COURSE_OPTIONS.items():
         options[key] = value

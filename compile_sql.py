@@ -2,16 +2,16 @@
 SQL compiler and interpreter
 """
 
-importScripts('node_modules/alasql/dist/alasql.js') # pylint: disable=undefined-variable
+try:
+    importScripts('node_modules/alasql/dist/alasql.js') # pylint: disable=undefined-variable
+except NameError:
+    pass # Called from Makefile
 
 class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     """SQL compiler and evaluator"""
     execution_result = ''
     execution_returns = None
-
-    def init(self):
-        """Initialisations"""
-        self.set_options({'language': 'SQL', 'extension': 'sql'})
+    default_options = {'language': 'SQL', 'extension': 'sql'}
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""

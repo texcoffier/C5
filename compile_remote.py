@@ -13,18 +13,18 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
     stoped = False
     previous_source = ''
     files = [] # Content of remote created files
-
-    def init(self):
-        """Your own compiler init"""
-        self.connect()
-        self.set_options({
+    default_options = {
             'compiler': 'g++', # or 'gcc'
             'compile_options': ['-Wall'], # -pedantic -pthread
             'ld_options': [],
             'allowed': [],
             'language': 'cpp',
             'extension': 'cpp',
-            })
+            }
+
+    def init(self):
+        """Your own compiler init"""
+        self.connect()
 
     def connect(self): # pylint: disable=too-many-statements
         """Connect to the remote compiler/executor with a WebSocket"""

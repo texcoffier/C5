@@ -11,9 +11,11 @@ document = {
     'documentElement': {},
     'addEventListener': nothing,
 }
-window = self # pylint: disable=undefined-variable
-
-importScripts('node_modules/@jcubic/lips/src/lips.js')
+try:
+    window = self # pylint: disable=undefined-variable
+    importScripts('node_modules/@jcubic/lips/src/lips.js')
+except NameError:
+    pass # Called from Makefile
 
 class Session(Compile):
     """LISP compiler and evaluator"""
@@ -22,10 +24,7 @@ class Session(Compile):
     environment = None
     run_tester_after_exec = False
     source = None
-
-    def init(self):
-        """Initialisations"""
-        self.set_options({
+    default_options = {
             'language': 'lisp',
             'extension': 'rkt',
             'positions' : {
@@ -38,7 +37,7 @@ class Session(Compile):
                 'index': [0, 1, 0, 100, '#0000'],
                 'line_numbers': [100, 1, 0, 100, '#EEE'], # Outside the screen by defaut
                 }
-            })
+            }
 
     def run_compiler(self, source):
         """All is done in executor"""

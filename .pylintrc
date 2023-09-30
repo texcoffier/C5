@@ -2,7 +2,7 @@
 # C5 provided
 additional-builtins=MORE,COURSE,TICKET,LOGIN,STUDENTS,CONFIG,MESSAGES,CHECKPOINT,BUILDINGS,GRADING,STUDENT,NOTATION,ANSWERS,ADMIN,SOCK,STOP,VERSIONS,WHERE,INFOS,ALL_SAVES,DISPLAY_STUDENT_FILTER,DISPLAY_MY_ROOMS,DISPLAY_SESSION_NAME,DEFAULT_BUILDING,IPS,SERVER_TIME,FEEDBACK_LEVEL,FEEDBACK,GRADE,COMMENTS,GRADES,DEFAULT_COURSE_OPTIONS,
 # compile.py
-	Compile,Question,
+	Compile,Question,Session,
 # compatibility.py
 	update_page,html,bind,hljs,record,nice_date,two_digit,parse_grading,millisecs,is_int,parse_notation,post,
 # Javascript functions

@@ -4,19 +4,18 @@ CPP compiler and interpreter based upon JSCPP
 Very limited.
 """
 
-self.window = window = {'document': 'fake'} # pylint: disable=undefined-variable,invalid-name
-importScripts('xxx-JSCPP.js' + self.location.search) # pylint: disable=undefined-variable
-JSCPP = self.window.JSCPP # pylint: disable=undefined-variable
-
+try:
+    self.window = window = {'document': 'fake'} # pylint: disable=undefined-variable,invalid-name
+    importScripts('xxx-JSCPP.js' + self.location.search) # pylint: disable=undefined-variable
+    JSCPP = self.window.JSCPP # pylint: disable=undefined-variable
+except NameError:
+    pass # Called from Makefile
 
 class Session(Compile): # pylint: disable=undefined-variable,invalid-name
     """CPP compiler and evaluator"""
     execution_result = ''
     execution_returns = None
-
-    def init(self):
-        """Initialisations"""
-        self.set_options({'language': 'cpp', 'extension': 'cpp'})
+    default_options = {'language': 'cpp', 'extension': 'cpp'}
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""

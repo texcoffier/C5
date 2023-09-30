@@ -50,7 +50,19 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                 else:
                     element.className = class_name
             if element.tagName == 'TEXTAREA':
-                element.value = value
+                content = []
+                if value.splice:
+                    for val in value:
+                        content.append('    ' + JSON.stringify(val))
+                    element.value = '[\n' + ',\n'.join(content) + '\n]'
+                elif value.toLowerCase:
+                    element.value = value
+                    content = "overrided by style"
+                else:
+                    for key in value:
+                        content.append('    ' + JSON.stringify(key) + ':' + JSON.stringify(value[key]))
+                    element.value = '{\n' + ',\n'.join(content) + '\n}'
+                element.rows = len(content) + 3
             elif element.tagName == 'INPUT':
                 if element.type in ('checkbox', 'radio'):
                     element.checked = value != 0
@@ -321,17 +333,20 @@ int main()                       {main declaration:0,1}
         for line in DEFAULT_COURSE_OPTIONS:
             if len(line) != 3:
                 content.append('<tr><td colspan="2"><h2>' + line + '</h2></tr>')
+                continue
+            key, default_value, comment = line
+            if default_value in (0, 1):
+                tag = ('<label><input type="checkbox" id="' + key + '">'
+                    + comment + '</label>')
+                comment = ''
             else:
-                key, default_value, comment = line
-                if default_value in (0, 1):
-                    tag = ('<label><input type="checkbox" id="' + key + '">'
-                        + comment + '</label>')
-                    comment = ''
+                if isinstance(default_value, Object):
+                    tag = ('<textarea style="width: 100%" id="' + key + '"></textarea>')
                 else:
                     tag = '<input style="width: 100%" id="' + key + '">'
-                    comment = '<div style="float:right">' + comment + '</div>'
-                content.append(
-                    '<tr><td style="width: 30em">' + key + comment + '<td>' + tag + '</tr>')
+                comment = '<div style="float:right">' + comment + '</div>'
+            content.append(
+                '<tr><td style="width: 30em">' + key + comment + '<td>' + tag + '</tr>')
         content.append('</table></div>')
         content = ''.join(content)
     else:

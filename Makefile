@@ -21,7 +21,7 @@ PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 	cat $$FILES > $*.py.xxx ; \
 	echo "$$SESSION" >> $*.py.xxx ; \
 	$(PYTOJS) $*.py.xxx >$*.js && \
-	([ $$Q = 1 ] && (cat options.py question_before.py $*.py question_after.py | python3 >$*.json) || true) && \
+	([ $$Q = 1 ] && (cat options.py compile.py $$COMPILER.py question_before.py $*.py question_after.py | tee xxx.py | python3 >$*.json) || true) && \
 	rm $*.py.xxx
 
 default:all

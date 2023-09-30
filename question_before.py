@@ -9,7 +9,7 @@ def millisecs():
 
 PREAMBLE = ''
 
-class Session: # pylint: disable=too-few-public-methods
+class Session(Session): # pylint: disable=too-few-public-methods
     """Create a session with all the questions"""
     def __init__(self, questions):
         question_classes.clear()

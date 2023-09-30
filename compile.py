@@ -21,11 +21,7 @@ def onmessage(event):
             Compile.worker.set_config(event.data[1])
             if init_needed:
                 Compile.worker.start_question()
-                Compile.worker.set_default_options()
-                Compile.worker.send_options()
                 Compile.worker.init()
-                Compile.worker.set_default_options()
-                Compile.worker.send_options()
                 print("Worker: init done. current_question_max=",
                       Compile.worker.current_question_max)
 
@@ -50,7 +46,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     shared_buffer = []
     current_question_max = 0
     run_tester_after_exec = True
-    options = {} # Default options for the compiler can be defined here
+    options = {}
+    default_options = {} # Default options for the compiler can be defined here
 
     def __init__(self, questions):
         print("Worker: start")
@@ -69,10 +66,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Set course options and send them"""
         for key in options:
             self.options[key] = options[key]
-
-    def set_default_options(self):
-        """Set course default options and send them"""
-        self.set_options(COURSE_OPTIONS)
 
     def send_options(self):
         """Send current options to the GUI"""
@@ -160,7 +153,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         # print("START QUESTION", self.current_question, '/', self.current_question_max)
         self.post('current_question', self.current_question)
         self.post('allow_edit', '0')
-        self.set_default_options()
         if self.quest:
             self.quest.last_answer = self.source
         if self.current_question > self.current_question_max:
