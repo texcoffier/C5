@@ -7,6 +7,10 @@ COURSE_OPTIONS = {
 class Q1(Question): # pylint: disable=undefined-variable
     """Play with files"""
     def question(self):
+        self.set_options({
+            'filetree_in': [['a', 'Content of «a»'], ['A/a', 'Content of «A/a»']],
+            'filetree_out': ['a', 'A/a', 'c']
+            })
         return """File management.
         <ul>
         <li>Display «a» content.
@@ -33,10 +37,6 @@ class Q1(Question): # pylint: disable=undefined-variable
         self.message(c_ok, "«c» file has been created.")
         return
     def default_answer(self):
-        self.set_options({
-            'filetree_in': [['a', 'Content of «a»'], ['A/a', 'Content of «A/a»']],
-            'filetree_out': ['a', 'A/a', 'c']
-            })
         return """#include <stdio.h>
 
 int main(void) {
