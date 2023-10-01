@@ -357,9 +357,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             e.style.bottom = (100 - top - height) + '%'
             if key == 'editor_title':
                 e.style.bottom = 'calc(100% - var(--header_height))'
-            if key != 'layered':
-                e.style.background = background
-                e.background = background
+            e.style.background = background
+            e.background = background
         self.save_history.onchange = bind(self.change_history, self)
         if GRADING or self.options['feedback']:
             self.save_button.style.display = 'none'
