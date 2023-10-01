@@ -220,7 +220,6 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             STOP = {stop};
             VERSIONS = {json.dumps(versions)};
             INFOS = {json.dumps(infos)};
-            CHECKPOINT = {course.checkpoint};
             ANSWERS = {json.dumps(last_answers)};
             ALL_SAVES = {json.dumps(all_saves)};
             WHERE = {json.dumps(course.active_teacher_room.get(
@@ -1426,7 +1425,6 @@ async def checkpoint(request:Request) -> Response:
         COURSE = {json.dumps(course.course)};
         STUDENTS = {json.dumps(await course.get_students())};
         MESSAGES = {json.dumps(course.messages)};
-        CHECKPOINT = {json.dumps(course.checkpoint)};
         DISPLAY_STUDENT_FILTER = {course.config['display_student_filter']};
         DISPLAY_MY_ROOMS = {course.config['display_my_rooms']};
         DISPLAY_SESSION_NAME = {course.config['display_session_name']};

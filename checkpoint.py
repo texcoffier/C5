@@ -1026,7 +1026,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """
         version = self.lines[line][column]
         while version not in ('a', 'b'):
-            if not CHECKPOINT:
+            if not self.options['checkpoint']:
                 version = 'a'
                 break
             version = prompt('Version A / B:')

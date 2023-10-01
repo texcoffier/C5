@@ -191,7 +191,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         options['ANSWERS'] = ANSWERS                       # All the questions/answers recorded
         options['WHERE'] = WHERE                           # See 'active_teacher_room' declaration
         options['INFOS'] = INFOS                           # Student identity
-        options['CHECKPOINT'] = CHECKPOINT                 # True if checkpoint
         options['GRADING'] = GRADING                       # True if in grading mode
         options['ADMIN'] = ADMIN                           # True if administrator
         options['STOP'] = STOP                             # True if the session is stopped
@@ -372,7 +371,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             document.body.className = 'dograding'
         self.options['positions']['editor_title'] = self.options['positions']['editor']
         for key in self.options['positions']:
-            if key == 'stop_button' and not CHECKPOINT:
+            if key == 'stop_button' and not self.options['checkpoint']:
                 continue
             if key in DEPRECATED:
                 print(key, "this block position is no more used")
@@ -1251,11 +1250,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.do_not_register_this_blur:
             self.do_not_register_this_blur = False
             return
-        if CHECKPOINT:
+        if self.options['checkpoint']:
             self.record('Blur', send_now=True)
     def onfocus(self, _event):
         """Window focus"""
-        if CHECKPOINT:
+        if self.options['checkpoint']:
             self.record('Focus', send_now=True)
     def oninput(self, event):
         """Send the input to the worker"""
