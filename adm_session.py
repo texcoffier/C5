@@ -313,7 +313,6 @@ int main()                       {main declaration:0,1}
     <label><input type="checkbox" id="checkpoint"> Requires students to be placed on the map (examination mode).</label><br>
     <label><input type="checkbox" id="sequential"> Question must be answered from first to last.</label><br>
     <label>Syntaxic coloring of source code with:</label> <select>""" + themes + """</select><br>
-    <label><input type="checkbox" id="allow_ip_change"> Allow IP change (bad Internet connection)</label><br>
     Color in the session list: """ + colors + """<br>
     Checkpoint displays:
     <label><input type="checkbox" id="display_student_filter">Student filter</label>.

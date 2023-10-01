@@ -211,10 +211,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        'admins': '',
                        'graders': '',
                        'proctors': '',
-                       'copy_paste': 0,
-                       'coloring': 1,
                        'checkpoint': 0,
-                       'allow_ip_change': 0,
                        'save_unlock': 0,
                        'sequential': 1,
                        'theme': 'a11y-light',
@@ -223,7 +220,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        'notation_max': '?',
                        'messages': [],
                        'active_teacher_room': {},
-                       'feedback': 0, # None, Work, Solution, Comment, Grade, Detailed grades
                        # The session state:
                        # ┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
                        # ┃ State  ┃    Visible by      ┃    Usable by       ┃

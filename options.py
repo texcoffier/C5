@@ -16,6 +16,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['save_unlock',          0, "saving a question unlock next"],
     ['automatic_compilation',1, "compilation is automatic"],
     ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],
+    ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
 
     "Student interface",
 
