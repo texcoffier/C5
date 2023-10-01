@@ -695,12 +695,6 @@ async def adm_c5(request:Request) -> Response: # pylint: disable=too-many-branch
             more = f"IPs per room updated to<pre>{value}</pre>"
         except ValueError:
             more = "Invalid syntax!"
-    elif action == 'disabled':
-        try:
-            utilities.CONFIG.set_value_dict(action, text_to_dict(value))
-            more = f"Disabled updated to<pre>{value}</pre>"
-        except ValueError:
-            more = "Invalid syntax!"
     elif action == 'messages':
         try:
             utilities.CONFIG.set_value_dict(action, text_to_dict(value))
@@ -1220,7 +1214,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     # if session.login in course.teachers:
     status = course.status('')
     content.append(f'''
-    <tr style="{'opacity:0.3;' if course.disabled else ''}">
+    <tr>
     <td class="clipped course"><div>{course.course.split('=')[1]}</div>
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
     <td>{len(course.active_teacher_room) or ''}
@@ -1363,13 +1357,6 @@ async def checkpoint_list(request:Request) -> Response:
     if session.is_author():
         content.append('''
         <script>
-        function disable()
-        {
-            var t = document.getElementById('disable');
-            var s = document.createElement('SCRIPT');
-            s.src = '/config/disable/' + encodeURIComponent(t.value).replace(/\\./g, '%2E') + '?ticket=' + TICKET;
-            document.body.appendChild(s);
-        }
         function edit(t)
         {
             var t = document.getElementById('edit');
@@ -1408,11 +1395,7 @@ async def checkpoint_list(request:Request) -> Response:
                     }
         }
         </script>
-        <p>Disable all the sessions with a name (without the compiler) starting with this regular expression:
-        <input id="disable" onkeyup="update(this)" value="''')
-        content.append(utilities.CONFIG.config['disabled'].get(session.login, ''))
-        content.append('"><button onclick="disable()">Disable</button>')
-        content.append('''<p>Edit all the session with a name (without the compiler)
+        <p>Edit all the session with a name (without the compiler)
         starting with this regular expression:
         <input id="edit" onkeyup="update(this)"><button onclick="edit()">Edit</button>''')
         content.append("<p>Download a Python file to add a new session for the compiler: ")
@@ -1717,22 +1700,6 @@ async def adm_editor(request:Request) -> Response:
     session.edit = course # XXX If server is restarted, this attribute is lost
     return await editor(session, is_admin, course, session.login, author=1)
 
-async def config_disable(request:Request) -> Response:
-    """Session questions editor"""
-    session = await Session.get_or_fail(request)
-    if session.is_student():
-        return utilities.js_message('not_teacher')
-    disabled = utilities.CONFIG.config['disabled']
-    value = request.match_info.get('value', '')
-    if value:
-        disabled[session.login] = value
-    elif session.login in disabled:
-        del disabled[session.login]
-    else:
-        return answer('', content_type='application/javascript') # No change
-    utilities.CONFIG.set_value('disabled', disabled)
-    return answer('window.location.reload()', content_type='application/javascript')
-
 async def get_media(request:Request) -> Response:
     """Get a media file"""
     session = await Session.get_or_fail(request)
@@ -1869,8 +1836,6 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/js_errors/{date}', js_errors),
                 web.get('/adm/building/{building}', adm_building),
                 web.get('/config/reload', config_reload),
-                web.get('/config/disable/{value}', config_disable),
-                web.get('/config/disable/', config_disable),
                 web.get('/course_config/{course}', course_config),
                 web.get('/checkpoint/*', checkpoint_list),
                 web.get('/checkpoint/BUILDINGS', checkpoint_buildings),

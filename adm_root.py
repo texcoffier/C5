@@ -28,16 +28,14 @@ def display(): # pylint: disable=too-many-statements
     INPUT { font-size: 100% }
     </style>
     ''']
-    def add_input(url, value, name='', disable=False):
+    def add_input(url, value, name=''):
         text.append(
             '<input onchange="post(\'' + url + '?ticket=' + TICKET + '\',this.value)"'
             + ' value="' + value + '" class="' + name + '"'
-            + (disable and ' disabled' or '')
             + '>')
-    def add_textarea(url, value, disable=False, name=''):
+    def add_textarea(url, value, name=''):
         text.append(
             '<textarea onchange="post(\'' + url + '?ticket=' + TICKET + '\',this.value)"'
-            + (disable and ' disabled' or '')
             + (name and ' class="' + name + '"' or '')
             + '>'
             + html(value) + '</textarea>')
@@ -84,12 +82,6 @@ def display(): # pylint: disable=too-many-statements
         content.append(room + ' ' + CONFIG.ips_per_room[room])
     add_textarea('/adm/c5/ips_per_room', '\n'.join(content))
     text.append('<a href="/checkpoint/HOSTS/*?ticket=' + TICKET + '">Check IP usage per room</a>')
-    text.append('<hr>')
-    text.append('Sessions disabled by creators:')
-    content = []
-    for session in CONFIG.disabled:
-        content.append(session + ' ' + CONFIG.disabled[session])
-    add_textarea('/adm/c5/disabled', '\n'.join(content))
     text.append('<hr>')
     text.append('It is a student if the login match regexp: ')
     add_input('/adm/c5/student', CONFIG.student, name="student")

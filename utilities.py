@@ -187,7 +187,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.filename = course + '.cf'
         self.dirname = course
         self.time = 0
-        self.disabled = False
         self.parse_position = 0
         try:
             with open(self.dirname + '.json', 'r', encoding="ascii") as file:
@@ -351,15 +350,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.feedback = self.config['feedback']
         self.expected_students = set(re.split('[ \n\r\t]+', self.config['expected_students']))
         self.expected_students_required = int(self.config['expected_students_required'])
-        self.update_disabled()
-
-    def update_disabled(self) -> None:
-        """Compute disabled state on load or C5 configuration change"""
-        self.disabled = False
-        for login, regexp in CONFIG.disabled.items():
-            if login == self.creator or login in self.admins:
-                if regexp.match(self.session):
-                    self.disabled = True
 
     def number_of_active_students(self, last_seconds:int=600) -> int:
         """Compute the number of active students the last seconds"""
@@ -454,8 +444,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if os.path.getmtime(self.filename) > self.time:
             self.parse() # Load only the file end
             self.update()
-        if self.disabled:
-            return 'disabled'
         if self.state == 'Draft' and not self.is_admin(login):
             return 'draft'
         if self.state != 'Ready' and not self.is_grader(login):
@@ -636,7 +624,6 @@ class Config: # pylint: disable=too-many-instance-attributes
     roots:List[str] = []
     ticket_ttl = 86400
     computers:List[Tuple[str, int, int, str, int]] = []
-    disabled:Dict[str, re.Pattern] = {} # Login and pattern
     json = ''
     def __init__(self):
         self.config = {
@@ -648,8 +635,6 @@ class Config: # pylint: disable=too-many-instance-attributes
             'computers': [],
             'ips_per_room': {"Nautibus,TP3": "b710l0301.univ-lyon1.fr b710l0302.univ-lyon1.fr"},
             'student': '[0-9][0-9]$',
-            # For each session creator/admin: a regexp of sessions to disable
-            'disabled': {},
             'messages': {
                 'unknown': "Cette session n'existe pas",
                 'checkpoint':
@@ -701,12 +686,6 @@ class Config: # pylint: disable=too-many-instance-attributes
         self.ticket_ttl = self.config['ticket_ttl']
         self.computers = self.config['computers']
         self.student:re.Pattern = re.compile(self.config['student']) # pylint: disable=attribute-defined-outside-init
-        self.disabled = {login: re.compile(regexp)
-                         for login, regexp in self.config['disabled'].items()
-                         if regexp
-                        }
-        for course in CourseConfig.configs.values():
-            course.update_disabled()
         self.json = json.dumps(self.config)
     def save(self) -> None:
         """Save the configuration"""
