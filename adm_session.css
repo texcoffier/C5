@@ -113,8 +113,6 @@ FORM {
 .error {
     background: #F00;
     color: #FFF;
-    transform: scale(2,2);
-    transform-origin: right;
 }
 
 LABEL, INPUT, TEXTAREA, SELECT {

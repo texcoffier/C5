@@ -285,16 +285,7 @@ int main()                       {main declaration:0,1}
     elif label == 'Config':
         content = ["""
     <div style="height: 100%; display: grid">
-    <div>
-    <input id="start">→<input id="stop"> <div id="invalid_date">START&gt;END</div>
-    State: <select id="state">
-    <option>Draft</option>
-    <option>Ready</option>
-    <option>Grade</option>
-    <option>Done</option>
-    <option>Archive</option>
-    </select><br>
-    </div>
+    <div></div>
     """]
         content.append('<div style="align-self:stretch; overflow:scroll">')
         content.append('<table style="width:100%">')
@@ -303,13 +294,16 @@ int main()                       {main declaration:0,1}
                 content.append('<tr><td colspan="2"><h2>' + line + '</h2></tr>')
                 continue
             key, default_value, comment = line
-            if key in ('feedback', 'default_building', 'theme'):
+
+            if key in ('feedback', 'default_building', 'theme', 'state'):
                 if key == 'feedback':
                     choices = FEEDBACK_LEVEL.Items()
                 elif key == 'default_building':
                     choices = [[val, val] for val in BUILDINGS]
-                else:
+                elif key == 'theme':
                     choices = [[val, val] for val in THEMES.split(' ')]
+                else:
+                    choices = [[val, val] for val in "Draft Ready Grade Done Archive".split(' ')]
                 tag = ['<select id="', key, '">']
                 for i, name in choices:
                     tag.append('<option value="' + i + '">' + name + '</option>')

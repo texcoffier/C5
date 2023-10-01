@@ -202,9 +202,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def load(self):
         """Load course configuration file"""
-        self.config = {'start': "2000-01-01 00:00:00",
-                       'stop': "2100-01-01 00:00:00",
-                       'tt': '',
+        self.config = {'tt': '',
                        'expected_students': '',
                        'expected_students_required': 0,
                        'creator': 'nobody',
@@ -215,24 +213,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        'notation_max': '?',
                        'messages': [],
                        'active_teacher_room': {},
-                       # The session state:
-                       # ┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
-                       # ┃ State  ┃    Visible by      ┃    Usable by       ┃
-                       # ┡━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
-                       # ┃Draft   ┃creator admin       │creator admin       │
-                       # ┣━━━━━━━━╉────────────────────┼────────────────────┤
-                       # ┃Ready   ┃                    │                    │
-                       # ┃  before┃all                 │creator admin grader│
-                       # ┃  while ┃all                 │all if no checkpoint│
-                       # ┃  after ┃all except students │creator admin grader│
-                       # ┣━━━━━━━━╉────────────────────┼────────────────────┤
-                       # ┃Grade   ┃creator admin grader│creator admin grader│
-                       # ┣━━━━━━━━╉────────────────────┼────────────────────┤
-                       # ┃Done    ┃creator admin grader│creator admin grader│
-                       # ┣━━━━━━━━╉────────────────────┼────────────────────┤
-                       # ┃Archive ┃creator admin       │creator admin       │
-                       # ┗━━━━━━━━┹────────────────────┴────────────────────┘
-                       'state': 'Ready',
                       }
         for line in options.DEFAULT_COURSE_OPTIONS: # Defaults
             if len(line) == 3:

@@ -12,6 +12,25 @@ DEFAULT_COURSE_OPTIONS = [
 
     "Session options",
 
+    ['start'                ,'2000-01-01 00:00:00', "Start date of the session"],
+    ['stop'                 ,'2100-01-01 00:00:00', 'Stop date of the session <div id="invalid_date">START&gt;END</div>'],
+    ['state'                ,'Draft', """
+┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓<br>
+┃ State  ┃    Visible by      ┃    Usable by       ┃<br>
+┡━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩<br>
+┃Draft   ┃creator admin       │creator admin       │<br>
+┣━━━━━━━━╉────────────────────┼────────────────────┤<br>
+┃Ready   ┃                    │                    │<br>
+┃  before┃all                 │creator admin grader│<br>
+┃  while ┃all                 │all if no checkpoint│<br>
+┃  after ┃all except students │creator admin grader│<br>
+┣━━━━━━━━╉────────────────────┼────────────────────┤<br>
+┃Grade   ┃creator admin grader│creator admin grader│<br>
+┣━━━━━━━━╉────────────────────┼────────────────────┤<br>
+┃Done    ┃creator admin grader│creator admin grader│<br>
+┣━━━━━━━━╉────────────────────┼────────────────────┤<br>
+┃Archive ┃creator admin       │creator admin       │<br>
+┗━━━━━━━━┹────────────────────┴────────────────────┘"""],
     ['checkpoint'           ,0, "Requires students to be placed on the map (examination mode)"],
     ['allow_copy_paste'     ,1, "copy/paste allowed"],
     ['save_unlock'          ,0, "saving a question unlock next"],
