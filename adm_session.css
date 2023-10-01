@@ -161,6 +161,9 @@ DIV.rights, DIV.configs, DIV.state {
     display: inline-block;
     vertical-align: top;
 }
+#content TABLE TD:first-child TT {
+    opacity: 0.3
+}
 #content TABLE TR:hover {
     background: #FFE;
     transition: none;

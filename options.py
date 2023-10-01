@@ -93,10 +93,10 @@ DEFAULT_COURSE_OPTIONS = [
 
     "Options defined by the compiler used by the course",
 
-    ['compiler', '',        "«g++» «gcc» «racket»"],
-    ['compile_options', [], "«-Wall» «-pedantic» «-pthread» «-std=c++11» «-std=c++20»"],
-    ['ld_options', [],      "«-lm»"],
-    ['language', '',        "Language to use for syntaxic coloring: «cpp» «python» ..."],
+    ['compiler', '',        "Compiler to use (should not be changed):<br>«g++» «gcc» «racket»"],
+    ['compile_options', [], "Compile options:<br>«-Wall» «-pedantic» «-pthread» «-std=c++11» «-std=c++20»"],
+    ['ld_options', [],      "Libraries to link with:<br>«-lm»"],
+    ['language', '',        "Language to use for syntaxic coloring:<br> «cpp» «python» ..."],
     ['extension', '',       "Source code filename extension for ZIP and GIT: «cpp», «py»..."],
     ['filetree_in', [],     "Initialize file tree [['foo', 'content'], ['BAR/1', 'one']]"],
     ['filetree_out', [],    "File contents to get as ['foo', 'BAR/1']"],

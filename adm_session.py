@@ -339,7 +339,7 @@ int main()                       {main declaration:0,1}
                     tag = '<input style="width: 100%" id="' + key + '">'
                 comment = '<div style="float:right">' + comment + '</div>'
             content.append(
-                '<tr><td style="width: 30em">' + key + comment + '<td>' + tag + '</tr>')
+                '<tr><td style="width: 30em"><tt>' + key + '</tt>' + comment + '<td>' + tag + '</tr>')
         content.append('</table></div>')
         content = ''.join(content)
     else:
