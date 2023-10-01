@@ -298,11 +298,6 @@ int main()                       {main declaration:0,1}
         for building in BUILDINGS:
             buildings.append('<option>' + building + '</option>')
         buildings = ''.join(buildings)
-        feedback = ['<select id="feedback">']
-        for i, name in FEEDBACK_LEVEL.Items():
-            feedback.append('<option value="' + i + '">' + name + '</option>')
-        feedback.append('</select>')
-        feedback = ''.join(feedback)
         content = ["""
     <div style="height: 100%; display: grid">
     <div>
@@ -324,8 +319,7 @@ int main()                       {main declaration:0,1}
     <label><input type="checkbox" id="display_student_filter">Student filter</label>.
     <label><input type="checkbox" id="display_my_rooms">My rooms</label>.
     <label><input type="checkbox" id="display_session_name">Session name</label>.
-    <label>Building: <select id="default_building">""" + buildings  + """</select></label><br>
-    After the end, display to students: """ + feedback + """ if the grader indicated its work is done.
+    <label>Building: <select id="default_building">""" + buildings  + """</select></label>
     </div>
     """]
         content.append('<div style="align-self:stretch; overflow:scroll">')
@@ -335,7 +329,14 @@ int main()                       {main declaration:0,1}
                 content.append('<tr><td colspan="2"><h2>' + line + '</h2></tr>')
                 continue
             key, default_value, comment = line
-            if default_value in (0, 1):
+            if key == 'feedback':
+                tag = ['<select id="feedback">']
+                for i, name in FEEDBACK_LEVEL.Items():
+                    tag.append('<option value="' + i + '">' + name + '</option>')
+                tag.append('</select>')
+                tag = ''.join(tag)
+                comment = '<div style="float:right">' + comment + '</div>'
+            elif default_value in (0, 1):
                 tag = ('<label><input type="checkbox" id="' + key + '">'
                     + comment + '</label>')
                 comment = ''

@@ -15,6 +15,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['allow_copy_paste',     1, "copy/paste allowed"],
     ['save_unlock',          0, "saving a question unlock next"],
     ['automatic_compilation',1, "compilation is automatic"],
+    ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],
 
     "Student interface",
 

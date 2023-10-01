@@ -161,14 +161,16 @@ DIV.rights, DIV.configs, DIV.state {
     display: inline-block;
     vertical-align: top;
 }
+#content TABLE TR:hover {
+    background: #FFE;
+    transition: none;
+}
+#content TABLE TR TD:nth-child(2) *:hover {
+    background: #FF0;
+    transition: none;
+}
 LABEL {
     width: max-content;
-}
-LABEL:hover {
-    border: 1px solid black;
-}
-LABEL {
-    border: 1px solid #0000;
 }
 TEXTAREA, INPUT, SELECT {
     font-size: 100%;

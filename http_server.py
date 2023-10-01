@@ -226,11 +226,11 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             WHERE = {json.dumps(course.active_teacher_room.get(
                 login, utilities.State((False, '?', '?,0,0', 0, 0, 0, 'ip', 0, '', 0, 0))))};
             SERVER_TIME = {time.time()};
-            FEEDBACK = {feedback};
             GRADE = {json.dumps(the_grade)};
             COMMENTS = {json.dumps(comments)};
             GRADES = {json.dumps(grades)};
             COURSE_CONFIG = {json.dumps(course.config)};
+            COURSE_CONFIG['feedback'] = {feedback};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')
 
@@ -611,9 +611,6 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             feedback = f"«{course}» default building is «{value}»."
         else:
             feedback = f"«{course}» «{value}» not in {buildings}!"
-    elif action == 'feedback':
-        config.set_parameter('feedback', int(value))
-        feedback = f"«{course}» feedback={value}"
     elif action in DEFAULT_COURSE_OPTIONS_DICT:
         default_value, comment = DEFAULT_COURSE_OPTIONS_DICT[action]
         if isinstance(default_value, int):

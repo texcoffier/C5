@@ -195,7 +195,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         options['GRADING'] = GRADING                       # True if in grading mode
         options['ADMIN'] = ADMIN                           # True if administrator
         options['STOP'] = STOP                             # True if the session is stopped
-        options['FEEDBACK'] = FEEDBACK                     # Student feedback level 0(none)...5
 
         print("GUI: start")
         window.onerror = bind(self.onJSerror, self)
@@ -213,7 +212,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         except: # pylint: disable=bare-except
             self.shared_buffer = None
         self.worker.postMessage(['array', self.shared_buffer])
-        if GRADING or FEEDBACK >= 5:
+        if GRADING or self.options['feedback'] >= 5:
             # Will be updated after
             self.options['positions']['grading'] = [0, 1, 0, 75, '#FFF8']
         print("GUI: wait worker")
@@ -308,7 +307,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         else:
             self.layered.setAttribute('display_line_numbers', 'no')
         self.options['positions']['editor_title'] = self.options['positions']['editor']
-        if GRADING or FEEDBACK >= 5:
+        if GRADING or self.options['feedback'] >= 5:
             left, width, top, height, background = self.options['positions']['editor']
             self.options['positions']['comments'] = [
                 left + width, 100 - (left + width), top, height]
@@ -328,7 +327,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if key == 'editor':
                 key = 'layered'
                 e = self.layered
-                if GRADING or FEEDBACK >= 3:
+                if GRADING or self.options['feedback'] >= 3:
                     if self.options['display_line_numbers']:
                         padding = self.line_numbers.offsetWidth + 5
                     else:
@@ -346,7 +345,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 e.style.display = 'block'
             e.style.left = left + '%'
-            if key == 'layered' and (GRADING or FEEDBACK >= 3):
+            if key == 'layered' and (GRADING or self.options['feedback'] >= 3):
                 e.style.right = '0px'
                 self.comments.style.left = 100 * width / (100 - left) + '%'
                 self.comments.style.right = '0px'
@@ -363,7 +362,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 e.style.background = background
                 e.background = background
         self.save_history.onchange = bind(self.change_history, self)
-        if GRADING or FEEDBACK:
+        if GRADING or self.options['feedback']:
             self.save_button.style.display = 'none'
             if self.stop_button:
                 self.stop_button.style.display = 'none'
@@ -392,7 +391,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.line_numbers = document.createElement('DIV')
                 self.line_numbers.className = 'line_numbers'
                 self.layered.appendChild(self.line_numbers)
-                if GRADING or FEEDBACK >= 3:
+                if GRADING or self.options['feedback'] >= 3:
                     self.comments = document.createElement('DIV')
                     self.comments.className = 'comments'
                     self.layered.appendChild(self.comments)
@@ -443,7 +442,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.tag_button.className = 'tag_button'
             self.editor_title.firstChild.appendChild(self.tag_button)
 
-        if GRADING or FEEDBACK:
+        if GRADING or self.options['feedback']:
             self.save_history.style.display = 'none'
             self.tag_button.style.display = 'none'
 
@@ -516,7 +515,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if (not GRADING
                 and not self.options['allow_copy_paste']
                 and screen.height != max(window.innerHeight, window.outerHeight)
-                and not FEEDBACK
+                and not self.options['feedback']
            ):
             if self.fullscreen.style.display != 'block':
                 self.fullscreen.style.display = 'block'
@@ -716,7 +715,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if not self.line_numbers.childNodes[i]:
                 self.line_numbers.appendChild(document.createElement('DIV'))
                 self.line_numbers.childNodes[i].textContent = i+1
-            if GRADING or (FEEDBACK >= 3 and comments[i]):
+            if GRADING or (self.options['feedback'] >= 3 and comments[i]):
                 comment = self.comments.childNodes[i]
                 if not comment:
                     comment = document.createElement('TEXTAREA')
@@ -757,7 +756,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.line_numbers.childNodes[i].style.top = '-10em'
         self.overlay_show()
         self.line_numbers.style.height = self.overlay.offsetHeight + 'px'
-        if GRADING or FEEDBACK >= 3:
+        if GRADING or self.options['feedback'] >= 3:
             self.comments.style.height = self.overlay.offsetHeight + 'px'
 
     def record_now(self):
@@ -778,7 +777,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def record(self, data, send_now=False):
         """Append event to record to 'record_to_send'"""
-        if GRADING or FEEDBACK:
+        if GRADING or self.options['feedback']:
             return
         time = Math.floor(Date().getTime()/1000)
         if time != self.record_last_time:
@@ -1501,8 +1500,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             for level, label in FEEDBACK_LEVEL.Items():
                 content.append('<option value="' + level + '">' + label + '</option>')
             content.append('</select> </small>Σ=<tt id="grading_value"></tt></span>')
-        elif FEEDBACK >= 4 and GRADE:
-            if FEEDBACK == 4:
+        elif self.options['feedback'] >= 4 and GRADE:
+            if self.options['feedback'] == 4:
                 size = 60
             else:
                 size = 80
@@ -1660,7 +1659,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             for item in links:
                 content.append('<div>' + item + '</div>')
             content.append('</div>') # End links
-            if (GRADING or FEEDBACK) and ',' in WHERE[2]:
+            if (GRADING or self.options['feedback']) and ',' in WHERE[2]:
                 content.append(
                     '<div class="version">'
                     + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ')
@@ -1683,7 +1682,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 del localStorage[COURSE + '/' + self.current_question]
             if (self.current_question not in self.localstorage_checked
                     and not GRADING
-                    and not FEEDBACK
+                    and not self.options['feedback']
                     and old_version
                     and old_version.strip() != message.strip()):
                 def get_old_version():
@@ -1705,13 +1704,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
             need_update_grading_select = False
-            if what == 'question' and (GRADING or FEEDBACK) and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
+            if what == 'question' and (GRADING or self.options['feedback']) and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
                 self.add_grading()
                 if self.first_update:
                     self.first_update = False
-                    if FEEDBACK >= 3 and COMMENTS:
+                    if self.options['feedback'] >= 3 and COMMENTS:
                         self.update_comments(COMMENTS)
-                if FEEDBACK >= 5 and GRADES:
+                if self.options['feedback'] >= 5 and GRADES:
                     self.update_grading(GRADES)
                 need_update_grading_select = True
             span = document.createElement('DIV')
@@ -1825,7 +1824,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def onbeforeunload(self, event):
         """Prevent page closing"""
-        if self.options['close'] == '' or GRADING or FEEDBACK:
+        if self.options['close'] == '' or GRADING or self.options['feedback']:
             return None
         if not self.need_save():
             return None
