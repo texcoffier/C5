@@ -211,8 +211,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        'admins': '',
                        'graders': '',
                        'proctors': '',
-                       'save_unlock': 0,
-                       'highlight': '#FFF',
                        'notation': '',
                        'notation_max': '?',
                        'messages': [],

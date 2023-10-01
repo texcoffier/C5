@@ -283,13 +283,6 @@ int main()                       {main declaration:0,1}
 </div>
     <textarea id="notation"></textarea>"""
     elif label == 'Config':
-        colors = []
-        for color in ['#FFF', '#CCC',
-                    '#AFA', '#0F0', '#CCF', '#88F', '#FBB', '#F66',
-                    '#FF8', '#EE0', '#8FF', '#0EE', '#FAF', '#F5F']:
-            colors.append('<span style="background:' + color + '">'
-                + ' <input type="radio" name="highlight" id="' + color + '"> </span>')
-        colors = ''.join(colors)
         content = ["""
     <div style="height: 100%; display: grid">
     <div>
@@ -301,7 +294,6 @@ int main()                       {main declaration:0,1}
     <option>Done</option>
     <option>Archive</option>
     </select><br>
-    Color in the session list: """ + colors + """<br>
     </div>
     """]
         content.append('<div style="align-self:stretch; overflow:scroll">')
@@ -322,6 +314,15 @@ int main()                       {main declaration:0,1}
                 for i, name in choices:
                     tag.append('<option value="' + i + '">' + name + '</option>')
                 tag.append('</select>')
+                tag = ''.join(tag)
+                comment = '<div style="float:right">' + comment + '</div>'
+            elif key == 'highlight':
+                tag = []
+                for color in ['#FFF', '#CCC',
+                            '#AFA', '#0F0', '#CCF', '#88F', '#FBB', '#F66',
+                            '#FF8', '#EE0', '#8FF', '#0EE', '#FAF', '#F5F']:
+                    tag.append('<span style="background:' + color + '">'
+                        + ' <input type="radio" name="highlight" id="' + color + '"> </span>')
                 tag = ''.join(tag)
                 comment = '<div style="float:right">' + comment + '</div>'
             elif default_value in (0, 1):

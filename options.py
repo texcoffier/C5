@@ -19,6 +19,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],
     ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
+    ['highlight'            ,"#FFF", "Color in the student and teacher session list"],
 
     "Checkpoint placement interface",
 
