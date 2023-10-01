@@ -236,15 +236,11 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        # ┃Archive ┃creator admin       │creator admin       │
                        # ┗━━━━━━━━┹────────────────────┴────────────────────┘
                        'state': 'Ready',
-                       # Checkpoint configuration
-                       'display_student_filter': 0,
-                       'display_my_rooms': 1,
-                       'display_session_name': 0,
-                       'default_building': sorted(os.listdir('BUILDINGS'))[0],
                       }
         for line in options.DEFAULT_COURSE_OPTIONS: # Defaults
             if len(line) == 3:
                 self.config[line[0]] = line[1]
+        self.config['default_building'] = sorted(os.listdir('BUILDINGS'))[0]
         self.config.update(self.questions[0]['options']) # Course defaults
 
         try:

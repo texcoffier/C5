@@ -10,7 +10,7 @@ FEEDBACK_LEVEL = {
 
 DEFAULT_COURSE_OPTIONS = [
 
-    "Session option",
+    "Session options",
 
     ['checkpoint'           ,0, "Requires students to be placed on the map (examination mode)"],
     ['allow_copy_paste'     ,1, "copy/paste allowed"],
@@ -19,6 +19,13 @@ DEFAULT_COURSE_OPTIONS = [
     ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],
     ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
+
+    "Checkpoint placement interface",
+
+    ['display_student_filter', 0, "Display an INPUT field containing a list of student IDs to highlight"],
+    ['display_my_rooms'      , 1, "Add a toggle to display only the room I dragged student into"],
+    ['display_session_name'  , 0, "Display the session name"],
+    ['default_building'      ,'', "Preselected building name"],
 
     "Student interface",
 

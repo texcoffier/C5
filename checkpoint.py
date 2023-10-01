@@ -1026,7 +1026,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """
         version = self.lines[line][column]
         while version not in ('a', 'b'):
-            if not self.options['checkpoint']:
+            if not OPTIONS['checkpoint']:
                 version = 'a'
                 break
             version = prompt('Version A / B:')
@@ -1235,7 +1235,7 @@ def create_page(building_name):
         <span class="icon" onclick="search_student()">🔍</span>
         ''']
     content.append(
-        '<span class="course" id="DISPLAY_SESSION_NAME">'
+        '<span class="course" id="display_session_name">'
         + COURSE.split('=')[1].replace(RegExp('_', 'g'), ' ')
         + '</span>')
     content.append(
@@ -1249,13 +1249,13 @@ def create_page(building_name):
         )
     content.append('</select>')
     content.append(
-        '<label id="DISPLAY_MY_ROOMS">'
+        '<label id="display_my_rooms">'
         + '<input id="my_rooms" onchange="ROOM.scale = 0; scheduler.draw=true"'
         + '       type="checkbox">Seulement mes salles</label>')
     content.append(
-        '<label id="DISPLAY_STUDENT_FILTER" class="filter">Mettre en évidence les logins :<br>'
+        '<div><label id="display_student_filter" class="filter">Mettre en évidence les logins :<br>'
         + '<input onchange="filters(this)" onblur="filters(this)"'
-        + '       style="box-sizing: border-box; width:100%"></label>')
+        + '       style="box-sizing: border-box; width:100%"></label></div>')
     content.append('''
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
@@ -1271,9 +1271,9 @@ def create_page(building_name):
         ''')
     document.body.innerHTML = ''.join(content)
     document.body.onkeydown = key_event_handler
-    set_visibility('DISPLAY_STUDENT_FILTER')
-    set_visibility('DISPLAY_MY_ROOMS')
-    set_visibility('DISPLAY_SESSION_NAME')
+    set_visibility('display_student_filter')
+    set_visibility('display_my_rooms')
+    set_visibility('display_session_name')
 
 def send_alert():
     """Sent an on map alert message to all teachers"""
@@ -1535,8 +1535,8 @@ def debug():
 
 
 def set_visibility(attr):
-    """For DISPLAY_STUDENT_FILTER DISPLAY_MY_ROOMS DISPLAY_SESSION_NAME"""
-    document.getElementById(attr).style.display = window[attr] and 'initial' or 'none' # pylint: disable=consider-using-ternary
+    """For display_student_filter display_my_rooms display_session_name"""
+    document.getElementById(attr).style.display = window.OPTIONS[attr] and 'initial' or 'none' # pylint: disable=consider-using-ternary
 
 def reader(event): # pylint: disable=too-many-branches
     """Read the live journal"""
@@ -1566,15 +1566,12 @@ def reader(event): # pylint: disable=too-many-branches
         elif data[0] == "infos":
             student = STUDENT_DICT[data[1]].data
             student[2] = data[2]
-        elif data[0] == 'display_student_filter':
-            window.DISPLAY_STUDENT_FILTER = int(data[1])
-            set_visibility('DISPLAY_STUDENT_FILTER')
-        elif data[0] == 'display_my_rooms':
-            window.DISPLAY_MY_ROOMS = int(data[1])
-            set_visibility('DISPLAY_MY_ROOMS')
-        elif data[0] == 'display_session_name':
-            window.DISPLAY_SESSION_NAME = int(data[1])
-            set_visibility('DISPLAY_SESSION_NAME')
+        else:
+            window.OPTIONS[data[0]] = data[1]
+
+        set_visibility('display_student_filter')
+        set_visibility('display_my_rooms')
+        set_visibility('display_session_name')
 
     event.target.last_size = len(event.target.responseText)
 

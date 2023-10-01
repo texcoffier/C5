@@ -294,10 +294,6 @@ int main()                       {main declaration:0,1}
             colors.append('<span style="background:' + color + '">'
                 + ' <input type="radio" name="highlight" id="' + color + '"> </span>')
         colors = ''.join(colors)
-        buildings = []
-        for building in BUILDINGS:
-            buildings.append('<option>' + building + '</option>')
-        buildings = ''.join(buildings)
         content = ["""
     <div style="height: 100%; display: grid">
     <div>
@@ -312,11 +308,6 @@ int main()                       {main declaration:0,1}
     <br>
     <label>Syntaxic coloring of source code with:</label> <select>""" + themes + """</select><br>
     Color in the session list: """ + colors + """<br>
-    Checkpoint displays:
-    <label><input type="checkbox" id="display_student_filter">Student filter</label>.
-    <label><input type="checkbox" id="display_my_rooms">My rooms</label>.
-    <label><input type="checkbox" id="display_session_name">Session name</label>.
-    <label>Building: <select id="default_building">""" + buildings  + """</select></label>
     </div>
     """]
         content.append('<div style="align-self:stretch; overflow:scroll">')
@@ -326,9 +317,13 @@ int main()                       {main declaration:0,1}
                 content.append('<tr><td colspan="2"><h2>' + line + '</h2></tr>')
                 continue
             key, default_value, comment = line
-            if key == 'feedback':
-                tag = ['<select id="feedback">']
-                for i, name in FEEDBACK_LEVEL.Items():
+            if key in ('feedback', 'default_building'):
+                if key == 'feedback':
+                    choices = FEEDBACK_LEVEL.Items()
+                else:
+                    choices = [[val, val] for val in BUILDINGS]
+                tag = ['<select id="', key, '">']
+                for i, name in choices:
                     tag.append('<option value="' + i + '">' + name + '</option>')
                 tag.append('</select>')
                 tag = ''.join(tag)

@@ -1425,10 +1425,7 @@ async def checkpoint(request:Request) -> Response:
         COURSE = {json.dumps(course.course)};
         STUDENTS = {json.dumps(await course.get_students())};
         MESSAGES = {json.dumps(course.messages)};
-        DISPLAY_STUDENT_FILTER = {course.config['display_student_filter']};
-        DISPLAY_MY_ROOMS = {course.config['display_my_rooms']};
-        DISPLAY_SESSION_NAME = {course.config['display_session_name']};
-        DEFAULT_BUILDING = {json.dumps(course.config['default_building'])};
+        OPTIONS = {json.dumps(course.config)};
         </script>
         <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
         <script src="/checkpoint.js?ticket={session.ticket}"></script>
