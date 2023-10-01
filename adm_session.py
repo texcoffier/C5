@@ -283,10 +283,6 @@ int main()                       {main declaration:0,1}
 </div>
     <textarea id="notation"></textarea>"""
     elif label == 'Config':
-        themes = []
-        for theme in THEMES.split(' '):
-            themes.append('<option>' + theme + '</option>')
-        themes = ''.join(themes)
         colors = []
         for color in ['#FFF', '#CCC',
                     '#AFA', '#0F0', '#CCF', '#88F', '#FBB', '#F66',
@@ -304,9 +300,7 @@ int main()                       {main declaration:0,1}
     <option>Grade</option>
     <option>Done</option>
     <option>Archive</option>
-    </select>
-    <br>
-    <label>Syntaxic coloring of source code with:</label> <select>""" + themes + """</select><br>
+    </select><br>
     Color in the session list: """ + colors + """<br>
     </div>
     """]
@@ -317,11 +311,13 @@ int main()                       {main declaration:0,1}
                 content.append('<tr><td colspan="2"><h2>' + line + '</h2></tr>')
                 continue
             key, default_value, comment = line
-            if key in ('feedback', 'default_building'):
+            if key in ('feedback', 'default_building', 'theme'):
                 if key == 'feedback':
                     choices = FEEDBACK_LEVEL.Items()
-                else:
+                elif key == 'default_building':
                     choices = [[val, val] for val in BUILDINGS]
+                else:
+                    choices = [[val, val] for val in THEMES.split(' ')]
                 tag = ['<select id="', key, '">']
                 for i, name in choices:
                     tag.append('<option value="' + i + '">' + name + '</option>')

@@ -212,7 +212,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        'graders': '',
                        'proctors': '',
                        'save_unlock': 0,
-                       'theme': 'a11y-light',
                        'highlight': '#FFF',
                        'notation': '',
                        'notation_max': '?',

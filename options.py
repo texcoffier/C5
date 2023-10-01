@@ -41,6 +41,7 @@ DEFAULT_COURSE_OPTIONS = [
     }, "For each bloc : [Bloc X%, Width%, Y%, Heigth%, background color]"],
 
     ['coloring',             1, "source highlighting is done"],
+    ['theme',                'a11y-light', "Syntaxic coloring theme for source code"],
     ['display_local_save',   0, "display 'icon_local' to download the current source code"],
     ['display_home',         1, "display 'icon_home'"],
     ['display_local_git',    1, "display 'icon_git' to download a repository of all history"],
