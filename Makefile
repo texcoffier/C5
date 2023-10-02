@@ -99,8 +99,11 @@ pre-commit:
 
 # Update document from sources
 
-DOCUMENTATION/index.html:ccccc.py Makefile
+options.html:options.py utilities.py
+	./utilities.py options.html >options.html
+
+DOCUMENTATION/index.html:options.html Makefile
 	awk '/START_OPTIONS/ { D=1; print $$0; next; } \
-	     D==1 && /<\/pre>/ { system("sed -e \"s/&/\\&amp;/g\" -e \"s/</\\&lt;/g\" -e \"s/>/\\&gt;/g\" options.py"); D=0; } \
+	     D==1 && /<\/div END>/ { system("cat options.html"); D=0; } \
 		 D==0 { print($$0); }' <DOCUMENTATION/index.html >xxx.new
 	mv xxx.new $@

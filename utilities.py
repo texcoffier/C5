@@ -14,6 +14,7 @@ import ssl
 import time
 import glob
 import atexit
+import html
 import urllib.request
 import urllib.parse
 import asyncio
@@ -1180,6 +1181,25 @@ def main() -> None:
     """MAIN"""
     if '__create_start_script__' in sys.argv:
         create_start_script()
+        return
+    if 'options.html' in sys.argv:
+        print('<table>')
+        for line in options.DEFAULT_COURSE_OPTIONS:
+            if len(line) == 3:
+                if isinstance(line[1], str):
+                    value = '<tt>' + html.escape(repr(line[1])) + '</tt>'
+                elif isinstance(line[1], list):
+                    value = '<pre>[\n' + ''.join(f'  {html.escape(repr(i))},\n'
+                                            for i in line[1]) + ']</pre>'
+                elif isinstance(line[1], dict):
+                    value = '<pre>{\n' + ''.join(f'  {repr(key)}: {html.escape(repr(val))},\n'
+                                            for key, val in line[1].items()) + '}</pre>'
+                else:
+                    value = repr(line[1])
+                print(f'<tr><td>{line[0]}<td>{value}<td>{line[2]}</tr>')
+            else:
+                print(f'<tr><th style="background: #FFF" colspan="3">{html.escape(line)}</tr>')
+        print('</table>')
         return
     if len(sys.argv) < 2 or sys.argv[1] not in ACTIONS:
         print_help()

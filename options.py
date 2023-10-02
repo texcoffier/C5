@@ -38,7 +38,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],
     ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
-    ['highlight'            ,"#FFF", "Color in the student and teacher session list"],
+    ['highlight'            ,"#FFF", "Background color in the student and teacher session list"],
 
     "Checkpoint placement interface",
 
@@ -58,7 +58,7 @@ DEFAULT_COURSE_OPTIONS = [
         'time':        [80, 20,98,  2,'#0000'], # BottomRight: Debugger for admin
         'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
         'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
-    }, "For each bloc : [Bloc X%, Width%, Y%, Heigth%, background color]"],
+    }, "For each bloc :<br>[Bloc X%, Width%, Y%, Heigth%, background color]"],
 
     ['coloring',             1, "source highlighting is done"],
     ['theme',                'a11y-light', "Syntaxic coloring theme for source code"],
@@ -133,11 +133,12 @@ System calls allowable for g++/gcc:
       sched_yield set_robust_list set_tid_address tgkill open
 """],
 
-    # Acces tab
+    "Access tab",
+
     ['admins', '', 'Administrators with all the access rights'],
     ['graders', '', 'Teachers allowed to try the session, grade and place the students'],
     ['proctors', '', 'Can only place the students'],
     ['expected_students', '', 'The login list of expected students, the session is in bold in their session list.'],
-    ['expected_students_required', 0, 'Unexpected student do not see the session, but a teacher can send them the link to it'],
+    ['expected_students_required', 0, 'Unexpected students do not see the session, but a teacher can send them the link to it'],
     ['tt', '', 'The logins of student with ⅓ more time'],
 ]

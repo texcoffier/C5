@@ -292,11 +292,11 @@ int main()                       {main declaration:0,1}
         content.append('<table style="width:100%">')
         for line in DEFAULT_COURSE_OPTIONS:
             if len(line) != 3:
+                if line == "Access tab":
+                    break
                 content.append('<tr><td colspan="2"><h2>' + line + '</h2></tr>')
                 continue
             key, default_value, comment = line
-            if key in ('admins', 'graders', 'proctors', 'expected_students', 'expected_students_required', 'tt'):
-                continue
             if key in ('feedback', 'default_building', 'theme', 'state'):
                 if key == 'feedback':
                     choices = FEEDBACK_LEVEL.Items()

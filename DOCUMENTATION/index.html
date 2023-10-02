@@ -215,7 +215,7 @@
             revient à faire l'appel.</li>
         <li> On voit immédiatement les noms des surveillants associés aux salles.</li>
         <li> On voit les machines qui sont en panne.</li>
-        <li> On voit dans quelles salles il reste des machines inocupées.</li>
+        <li> On voit dans quelles salles il reste des machines inoccupées.</li>
         <li> Les surveillants peuvent s'échanger des messages d'alerte.</li>
         <li> Le surveillant peut voir l'historique du travail de l'étudiant,
             pendant et après la session.
@@ -256,7 +256,8 @@
     <ul>
         <li> Vous composez votre sujet dans un fichier <tt>nom_sujet.py</tt>,
             ce nom sera affiché aux étudiants,
-            il est conseillé de le préfixer par le code du cours.
+            il est conseillé de le préfixer par le code du cours
+            suivi de «_».
         <li>
             Chaque sujet contient un ensemble de questions s'enchaînant successivement.
     </ul>
@@ -272,6 +273,7 @@
             Si la question est aléatoire, on peut conserver dans l'instance
             de la question l'aléa choisi pour que les méthodes suivantes
             puissent l'utiliser pour l'affichage et les tests.
+            <b>Cette fonction est appelée une unique fois.</b>
         </li>
         <li> <tt>question(self)</tt> calcule le texte de la question au format HTML.
         </li>
@@ -337,24 +339,28 @@
     <ul>
         <li> Sur la page d'accueil de C5, vous cliquez sur <tt class="link">Edit</tt>.</li>
         <li> Vous pouvez alors régler tous les paramètres de la session.</li>
-        <li> Si vous voulez déposer une nouvelle version du sujet vous cliquez sur <tt class="button">Upload a new
-                source</tt></li>
-        <li> Si vous voulez modifier directement le code source, cliquez sur <tt class="button">Edit source with C5</tt>
+        <li> Si vous voulez déposer une nouvelle version du sujet vous choisissez
+            <tt class="button">Upload a new source</tt> dans le menu déroulant
+            «Actions» à droite des onglets.
+        </li>
+        <li> Si vous voulez modifier directement le code source, allez dans l'onglet «Source»
             et faites <tt class="key">Ctrl+S</tt> pour mettre en production.
         </li>
     </ul>
     <p>
-        Ensuite il ne reste qu'à recharger la page <tt class="link">Try</tt> pour voir la nouvelle version.
+        Ensuite il ne reste qu'à aller dans l'onglet «Try» pour voir la nouvelle version.
     </p>
 
 
     <h3>Ajouter des images dans un sujet.</h3>
     <p>
-        Une fois sur l'édition de votre session, vous cliquez sur <tt class="button">Upload a new media</tt>
-        cela vous affiche le code HTML à mettre dans la question pour afficher l'image.
-        Les images sont partagées entre les différentes sessions.
-        Par contre une fois terminée la session ayant enregistrée l'image,
-        elle n'est plus accessible par les autres sessions.
+        Dans le paramétrage de la session, choisissez <tt class="button">Upload a new media</tt>
+        dans le menu «Actions».
+        Cela vous affichera en haut de page
+        le code HTML à mettre dans la question pour afficher l'image.
+        Les images sont partagées entre les différentes sessions C5.
+        Par contre une fois que la session ayant enregistrée l'image est terminée,
+        l'image n'est plus accessible par les autres sessions.
         Les correcteurs ont bien entendu accès aux images même quand la session
         est terminée.
     </p>
@@ -425,119 +431,464 @@ def tester(self):
 def default_answer(self):
     self.sujet = self.version() # 'a' ou 'b'
     return ""</pre>
-        <li>
-            <pre START_OPTIONS DO_NOT_EDIT_HERE>
-self.worker.set_options({ # These options are synchronized between GUI and compiler/session
-    # ---------------------
-    # Frame screen position
-    # ---------------------
-    'positions' : { # X%, Width%, Y%, Heigth%, background color
-        'question':    [ 1, 29, 0, 30,'#EFEF'], # LeftTop    : The question
-        'tester':      [ 1, 29,30, 70,'#EFEF'], # LeftBottom : Goal checker
-        'editor':      [30, 40, 0,100,'#FFFF'], # Middle     : Source editor
-        'compiler':    [70, 30, 0, 30,'#EEFF'], # RightTop   : Compiler messages
-        'executor':    [70, 30,30, 70,'#EEFF'], # RightBottom: Execution messages
-        'time':        [80, 20,98,  2,'#0000'], # BottomRight: Debugger for admin
-        'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
-        'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
-    },
-    # --------------------------
-    # Titles, label and messages
-    # --------------------------
-    'forbiden': "Coller du texte copié venant d'ailleurs n'est pas autorisé.",
-    'close': "Voulez-vous vraiment quitter cette page ?",
-    'question_title': 'Question',
-    'editor_title': 'Code source',
-    'editor_indent': 'Indent(F8)',
-    'tester_title': 'Les buts que vous devez atteindre',
-    'compiler_title': 'Compilation',
-    'compiler_title_toggle': 'Automatique (F9)',
-    'compiler_title_button': 'Maintenant ! (F9)',
-    'executor_title_button': 'GO!(F9)',
-    'executor_title': 'Exécution',
-    'good': ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"],
-    'icon_home': '🏠',
-    'icon_save': '📩',
-    'icon_local': '💾', # Used by session and question local save.
-    'icon_git': '&lt;b style="font-size:50%"&gt;GIT&lt;/b&gt;',
-    'icon_tag': 'TAG',
-    'icon_stop': 'Terminer&lt;br&gt;Examen', # Only displayed if CHECKPOINT
-    'stop_confirm': "Vous voulez vraiment terminer l'examen maintenant ?",
-    'stop_done': "&lt;h1&gt;C'est fini.&lt;/h1&gt;",
-    'time_running': 'Fini dans',
-    'time_done': "Fini depuis",
-    'time_seconds': " secondes",
-    'time_days': " jours",
-    'time_d': " j ",
-    'time_m': " m ",
-    'time_h': " h ",
-    # ------------------------------------
-    # Default compiler and session options
-    # ------------------------------------
-    'allow_copy_paste': CP or GRADING or ADMIN, # True if copy/paste allowed
-    'save_unlock': SAVE_UNLOCK,                 # True if saving a question unlock next
-    'coloring': COLORING,                       # True if source highlighting is done
-    'display_local_save': 0,                    # True if question 'icon_local' displayed
-    'display_home': 1,                          # True if display 'icon_home'
-    'display_local_git': 1,                     # True if question 'icon_git' displayed
-    'display_local_zip': 1,                     # True if question 'icon_local' displayed
-    'display_timer': 1,                         # True if the timer is displayed
-    'display_compile_run': 1,                   # True if display the F9 button
-    'display_tag': 1,                           # True if display 'icon_tag'
-    'display_history': 1,                       # True if display version history
-    'display_indent': 1,                        # True if display the F8 button
-    'display_line_numbers': 0,                  # True if display line numbers
-    'automatic_compilation': True,              # True if compilation is automatic
-    # ------------------------------------
-    # Options defined by the compiler used
-    # ------------------------------------
-    'compiler': '',        # 'g++' 'gcc' 'racket'
-    'compile_options': [], # '-Wall' '-pedantic' '-pthread' '-std=c++11' '-std=c++20'
-    'ld_options': [],      # '-lm'
-    'language': '',        # Language to use for syntaxic coloring: 'cpp' 'python' ...
-    'extension': '',       # Source code filename extension for ZIP and GIT: 'cpp', 'py'...
-    'filetree_in': [],     # Initialize file tree [['foo', 'content'], ['BAR/1', 'one']]
-    'filetree_out': [],    # File contents to get as ['foo', 'BAR/1']
-    # System call always allowed for g++/gcc, no need to specify them:
-    #       clock_gettime close exit exit_group fstat futex lseek
-    #       mmap munmap newfstatat openat read write
-    # System calls allowable for g++/gcc:
-    #       access arch_prctl brk clock_nanosleep
-    #       clone clone3 execve getpid getrandom gettid madvise mprotect
-    #       pipe pread64 prlimit64 rseq rt_sigaction rt_sigprocmask
-    #       sched_yield set_robust_list set_tid_address tgkill open
-    'allowed': [],
-    # -------------------------------
-    # Unmodifiable session parameters
-    # -------------------------------
-    'COURSE': COURSE,                           # Course short name
-    'TICKET': TICKET,                           # Session ticket: ?ticket=TICKET
-    'LOGIN': LOGIN,                             # Login of the connected user
-    'SOCK': SOCK,                               # Websocked for remote compilation
-    'ANSWERS': ANSWERS,                         # All the questions/answers recorded
-    'WHERE': WHERE,                             # See 'active_teacher_room' declaration
-    'INFOS': INFOS,                             # Student identity
-    'CHECKPOINT': CHECKPOINT,                   # True if checkpoint
-    'GRADING': GRADING,                         # True if in grading mode
-    'SEQUENTIAL': SEQUENTIAL and not GRADING,   # True if questions are sequential
-    'ADMIN': ADMIN,                             # True if administrator
-    'STOP': STOP,                               # True if the session is stopped
-})
-</pre>
-            <p>
-                Il faut mettre seulement les options qui changent.
-                Les options restent les mêmes tant qu'elles ne sont pas modifiées.
-                La disposition de l'écran peut changer d'une question à l'autre.
-            </p>
-            <p>
-                Pour les options qui restent constantes pour toutes les questions,
-                vous pouvez les indiquer dans la variable globale <tt>COURSE_OPTIONS</tt> :
-            </p>
-            <tt>COURSE_OPTIONS = { 'display_local_save': True }</tt>
-        </li>
     </ul>
 
+    <h3>Tous les attributs de configuration.</h3>
 
+    <p>
+        Les colonnes contiennent le nom de l'attribut,
+        sa valeur par défaut et un texte d'explication.
+    </p>
+    <div START_OPTIONS DO_NOT_EDIT_HERE>
+        <table>
+            <tr>
+                <th style="background: #FFF" colspan="3">Session options
+            </tr>
+            <tr>
+                <td>start
+                <td><tt>&#x27;2000-01-01 00:00:00&#x27;</tt>
+                <td>Start date of the session
+            </tr>
+            <tr>
+                <td>stop
+                <td><tt>&#x27;2100-01-01 00:00:00&#x27;</tt>
+                <td>Stop date of the session <div id="invalid_date">START&gt;END</div>
+            </tr>
+            <tr>
+                <td>state
+                <td><tt>&#x27;Draft&#x27;</tt>
+                <td>
+                    <pre>┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
+┃ State  ┃    Visible by      ┃    Usable by       ┃
+┣━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
+┃Draft   ┃creator admin       │creator admin       │
+┣━━━━━━━━╉────────────────────┼────────────────────┤
+┃Ready   ┃                    │                    │
+┃  before┃all                 │creator admin grader│
+┃  while ┃all                 │all if no checkpoint│
+┃  after ┃all except students │creator admin grader│
+┣━━━━━━━━╉────────────────────┼────────────────────┤
+┃Grade   ┃creator admin grader│creator admin grader│
+┣━━━━━━━━╉────────────────────┼────────────────────┤
+┃Done    ┃creator admin grader│creator admin grader│
+┣━━━━━━━━╉────────────────────┼────────────────────┤
+┃Archive ┃creator admin       │creator admin       │
+┗━━━━━━━━┹────────────────────┴────────────────────┘</pre>
+            </tr>
+            <tr>
+                <td>checkpoint
+                <td>0
+                <td>Requires students to be placed on the map (examination mode)
+            </tr>
+            <tr>
+                <td>allow_copy_paste
+                <td>1
+                <td>Copy/paste allowed (if not allowed students must be in full screen mode)
+            </tr>
+            <tr>
+                <td>save_unlock
+                <td>0
+                <td>Saving a question unlock next
+            </tr>
+            <tr>
+                <td>automatic_compilation
+                <td>1
+                <td>Compilation is automatic
+            </tr>
+            <tr>
+                <td>feedback
+                <td>0
+                <td>Maximum level of student feedback allowed to teachers
+            </tr>
+            <tr>
+                <td>allow_ip_change
+                <td>0
+                <td>Allow IP change (bad Internet connection)
+            </tr>
+            <tr>
+                <td>sequential
+                <td>1
+                <td>Questions must be answered from first to last
+            </tr>
+            <tr>
+                <td>highlight
+                <td><tt>&#x27;#FFF&#x27;</tt>
+                <td>Background color in the student and teacher session list
+            </tr>
+            <tr>
+                <th style="background: #FFF" colspan="3">Checkpoint placement interface
+            </tr>
+            <tr>
+                <td>display_student_filter
+                <td>0
+                <td>Display an INPUT field containing a list of student IDs to highlight
+            </tr>
+            <tr>
+                <td>display_my_rooms
+                <td>1
+                <td>Add a toggle to display only the rooms I dragged student into
+            </tr>
+            <tr>
+                <td>display_session_name
+                <td>0
+                <td>Display the session name
+            </tr>
+            <tr>
+                <td>default_building
+                <td><tt>&#x27;&#x27;</tt>
+                <td>Preselected building name
+            </tr>
+            <tr>
+                <th style="background: #FFF" colspan="3">Student interface
+            </tr>
+            <tr>
+                <td>positions
+                <td>
+                    <pre>{
+  'question': [1, 29, 0, 30, &#x27;#EFEF&#x27;],
+  'tester': [1, 29, 30, 70, &#x27;#EFEF&#x27;],
+  'editor': [30, 40, 0, 100, &#x27;#FFFF&#x27;],
+  'compiler': [70, 30, 0, 30, &#x27;#EEFF&#x27;],
+  'executor': [70, 30, 30, 70, &#x27;#EEFF&#x27;],
+  'time': [80, 20, 98, 2, &#x27;#0000&#x27;],
+  'index': [0, 1, 0, 100, &#x27;#0000&#x27;],
+  'editor_title': [0, 0, 0, 0, &#x27;#FFFF&#x27;],
+}</pre>
+                <td>For each bloc :<br>[Bloc X%, Width%, Y%, Heigth%, background color]
+            </tr>
+            <tr>
+                <td>coloring
+                <td>1
+                <td>source highlighting is done
+            </tr>
+            <tr>
+                <td>theme
+                <td><tt>&#x27;a11y-light&#x27;</tt>
+                <td>Syntaxic coloring theme for source code
+            </tr>
+            <tr>
+                <td>display_local_save
+                <td>0
+                <td>display 'icon_local' to download the current source code
+            </tr>
+            <tr>
+                <td>display_home
+                <td>1
+                <td>display 'icon_home'
+            </tr>
+            <tr>
+                <td>display_local_git
+                <td>1
+                <td>display 'icon_git' to download a repository of all history
+            </tr>
+            <tr>
+                <td>display_local_zip
+                <td>1
+                <td>display 'icon_local' to download a repository of all questions
+            </tr>
+            <tr>
+                <td>display_timer
+                <td>1
+                <td>display the timer
+            </tr>
+            <tr>
+                <td>display_compile_run
+                <td>1
+                <td>display the F9 button
+            </tr>
+            <tr>
+                <td>display_tag
+                <td>1
+                <td>display 'icon_tag'
+            </tr>
+            <tr>
+                <td>display_history
+                <td>1
+                <td>display version history
+            </tr>
+            <tr>
+                <td>display_indent
+                <td>1
+                <td>display the F8 button
+            </tr>
+            <tr>
+                <td>display_line_numbers
+                <td>0
+                <td>display line numbers
+            </tr>
+            <tr>
+                <th style="background: #FFF" colspan="3">Popup messages
+            </tr>
+            <tr>
+                <td>forbiden
+                <td><tt>&quot;Coller du texte copié venant d&#x27;ailleurs n&#x27;est pas autorisé.&quot;</tt>
+                <td>Alert
+            </tr>
+            <tr>
+                <td>close
+                <td><tt>&#x27;Voulez-vous vraiment quitter cette page ?&#x27;</tt>
+                <td>Alert
+            </tr>
+            <tr>
+                <td>stop_confirm
+                <td><tt>&quot;Vous voulez vraiment terminer l&#x27;examen maintenant ?&quot;</tt>
+                <td>Alert
+            </tr>
+            <tr>
+                <td>stop_done
+                <td><tt>&quot;&lt;h1&gt;C&#x27;est fini.&lt;/h1&gt;&quot;</tt>
+                <td>Alert
+            </tr>
+            <tr>
+                <td>good
+                <td>
+                    <pre>[
+  &#x27;Bravo !&#x27;,
+  &#x27;Excellent !&#x27;,
+  &#x27;Super !&#x27;,
+  &#x27;Génial !&#x27;,
+  &#x27;Vous êtes trop fort !&#x27;,
+]</pre>
+                <td>Alert on success
+            </tr>
+            <tr>
+                <th style="background: #FFF" colspan="3">Bloc titles
+            </tr>
+            <tr>
+                <td>question_title
+                <td><tt>&#x27;Question&#x27;</tt>
+                <td>Bloc title
+            </tr>
+            <tr>
+                <td>tester_title
+                <td><tt>&#x27;Les buts que vous devez atteindre&#x27;</tt>
+                <td>Bloc title
+            </tr>
+            <tr>
+                <td>editor_title
+                <td><tt>&#x27;Code source&#x27;</tt>
+                <td>Bloc title
+            </tr>
+            <tr>
+                <td>compiler_title
+                <td><tt>&#x27;Compilation&#x27;</tt>
+                <td>Bloc title
+            </tr>
+            <tr>
+                <td>executor_title
+                <td><tt>&#x27;Exécution&#x27;</tt>
+                <td>Bloc title
+            </tr>
+            <tr>
+                <th style="background: #FFF" colspan="3">Labels of button and toggles
+            </tr>
+            <tr>
+                <td>editor_indent
+                <td><tt>&#x27;Indent(F8)&#x27;</tt>
+                <td>Button label
+            </tr>
+            <tr>
+                <td>compiler_title_toggle
+                <td><tt>&#x27;Automatique (F9)&#x27;</tt>
+                <td>Button label
+            </tr>
+            <tr>
+                <td>compiler_title_button
+                <td><tt>&#x27;Maintenant ! (F9)&#x27;</tt>
+                <td>Toggle label
+            </tr>
+            <tr>
+                <td>executor_title_button
+                <td><tt>&#x27;GO!(F9)&#x27;</tt>
+                <td>Button label
+            </tr>
+            <tr>
+                <td>icon_home
+                <td><tt>&#x27;🏠&#x27;</tt>
+                <td>Button label
+            </tr>
+            <tr>
+                <td>icon_save
+                <td><tt>&#x27;📩&#x27;</tt>
+                <td>Button label
+            </tr>
+            <tr>
+                <td>icon_local
+                <td><tt>&#x27;💾&#x27;</tt>
+                <td>Button label
+            </tr>
+            <tr>
+                <td>icon_git
+                <td><tt>&#x27;&lt;b style=&quot;font-size:50%&quot;&gt;GIT&lt;/b&gt;&#x27;</tt>
+                <td>Button label
+            </tr>
+            <tr>
+                <td>icon_tag
+                <td><tt>&#x27;TAG&#x27;</tt>
+                <td>Button label
+            </tr>
+            <tr>
+                <td>icon_stop
+                <td><tt>&#x27;Terminer&lt;br&gt;Examen&#x27;</tt>
+                <td>Button label displayed if checkpoint
+            </tr>
+            <tr>
+                <th style="background: #FFF" colspan="3">Time countdown
+            </tr>
+            <tr>
+                <td>time_running
+                <td><tt>&#x27;Fini dans&#x27;</tt>
+                <td>Time message
+            </tr>
+            <tr>
+                <td>time_done
+                <td><tt>&#x27;Fini depuis&#x27;</tt>
+                <td>Time message
+            </tr>
+            <tr>
+                <td>time_seconds
+                <td><tt>&#x27; secondes&#x27;</tt>
+                <td>Time message
+            </tr>
+            <tr>
+                <td>time_days
+                <td><tt>&#x27; jours&#x27;</tt>
+                <td>Time message
+            </tr>
+            <tr>
+                <td>time_d
+                <td><tt>&#x27; j &#x27;</tt>
+                <td>Time message
+            </tr>
+            <tr>
+                <td>time_m
+                <td><tt>&#x27; m &#x27;</tt>
+                <td>Time message
+            </tr>
+            <tr>
+                <td>time_h
+                <td><tt>&#x27; h &#x27;</tt>
+                <td>Time message
+            </tr>
+            <tr>
+                <th style="background: #FFF" colspan="3">Options defined by the compiler used by the course
+            </tr>
+            <tr>
+                <td>compiler
+                <td><tt>&#x27;&#x27;</tt>
+                <td>Compiler to use (should not be changed):<br>«g++» «gcc» «racket»
+            </tr>
+            <tr>
+                <td>compile_options
+                <td>
+                    <pre>[
+]</pre>
+                <td>Compile options:<br>«-Wall» «-pedantic» «-pthread» «-std=c++11» «-std=c++20»
+            </tr>
+            <tr>
+                <td>ld_options
+                <td>
+                    <pre>[
+]</pre>
+                <td>Libraries to link with:<br>«-lm»
+            </tr>
+            <tr>
+                <td>language
+                <td><tt>&#x27;&#x27;</tt>
+                <td>Language to use for syntaxic coloring:<br> «cpp» «python» ...
+            </tr>
+            <tr>
+                <td>extension
+                <td><tt>&#x27;&#x27;</tt>
+                <td>Source code filename extension for ZIP and GIT: «cpp», «py»...
+            </tr>
+            <tr>
+                <td>filetree_in
+                <td>
+                    <pre>[
+]</pre>
+                <td>Initialize file tree [['foo', 'content'], ['BAR/1', 'one']]
+            </tr>
+            <tr>
+                <td>filetree_out
+                <td>
+                    <pre>[
+]</pre>
+                <td>File contents to get as ['foo', 'BAR/1']
+            </tr>
+            <tr>
+                <td>allowed
+                <td>
+                    <pre>[
+]</pre>
+                <td>
+                    System call always allowed for g++/gcc, no need to specify them:
+                    clock_gettime close exit exit_group fstat futex lseek
+                    mmap munmap newfstatat openat read write
+                    <p>
+                        System calls allowable for g++/gcc:
+                        access arch_prctl brk clock_nanosleep
+                        clone clone3 execve getpid getrandom gettid madvise mprotect
+                        pipe pread64 prlimit64 rseq rt_sigaction rt_sigprocmask
+                        sched_yield set_robust_list set_tid_address tgkill open
+            </tr>
+            <tr>
+                <th style="background: #FFF" colspan="3">Access tab
+            </tr>
+            <tr>
+                <td>admins
+                <td><tt>&#x27;&#x27;</tt>
+                <td>Administrators with all the access rights
+            </tr>
+            <tr>
+                <td>graders
+                <td><tt>&#x27;&#x27;</tt>
+                <td>Teachers allowed to try the session, grade and place the students
+            </tr>
+            <tr>
+                <td>proctors
+                <td><tt>&#x27;&#x27;</tt>
+                <td>Can only place the students
+            </tr>
+            <tr>
+                <td>expected_students
+                <td><tt>&#x27;&#x27;</tt>
+                <td>The login list of expected students, the session is in bold in their session list.
+            </tr>
+            <tr>
+                <td>expected_students_required
+                <td>0
+                <td>Unexpected students do not see the session, but a teacher can send them the link to it
+            </tr>
+            <tr>
+                <td>tt
+                <td><tt>&#x27;&#x27;</tt>
+                <td>The logins of student with ⅓ more time
+            </tr>
+        </table>
+    </div END>
+    <p>
+        Voici comment paramétrer les attributs précédents :
+    </p>
+    <ul>
+        <li>
+            En interactif dans l'éditeur de session.
+        </li>
+        <li>
+            En indiquant en début du fichier contenant les questions :
+            <pre>COURSE_OPTIONS = { 'allow_copy_paste': 0 }</pre>
+            Les attributs indiquées ici sont écrasées par l'éditeur interactif
+            de session, mais elles servent à initialiser les valeurs
+            par défaut des attributs quand la session est créée.
+        </li>
+        <li>
+            En indiquant dans la méthode <tt>question</tt> les attributs
+            désirés pour cette question.
+            <pre>self.set_options({ 'allow_copy_paste': 0 }}</pre>
+            Les changements indiqués ici sont prioritaires sur
+            ceux de l'éditeurs de question.
+        </li>
+    </ul>
 
     <h3>Langages supportés</h3>
     <p>
@@ -673,7 +1024,7 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
     </p>
     <pre>Début dans XXX secondes.</pre>
     <p>
-        LA page se recharge à la fin du compte à rebour.
+        La page se recharge à la fin du compte à rebour.
     </p>
 
     <h3>Root C5.</h3>
@@ -832,103 +1183,65 @@ self.worker.set_options({ # These options are synchronized between GUI and compi
     <h3>Administrateur : éditeur de session.</h3>
     <img class="screenshot" src="screen-editor.svg">
     <p>
-        Il permet de définir les paramètres de la session en cours
-        et de surveiller son déroulement.
-    </p>
-    <p>
-        Colonne de gauche :
-    </p>
-    <ul>
-        <li> Le créateur de la session (non modifiable).</li>
-        <li> Les administrateurs pouvant modifier cette page.</li>
-        <li> Les personnes pouvant noter la session et la tester à l'avance.</li>
-        <li> Les surveillants qui placent les étudiants.</li>
-    </ul>
-    <p>
-        Partie centrale :
+        Il permet de définir tous les paramètres de la session en cours.
+        Les informations concernant la configuration sont sauvegardés
+        dès que l'on sort du champ qui a été modifié.
+        Un retour sur l'enregistrement est affiché en haut,
+        si valeur reste rouge c'est qu'elle n'a pas pu être enregistrée.
     </p>
     <ul>
-        <li> Dates de début et fin de session.</li>
-        <li> État de la session.</li>
-        <li> Des bascules permettant de configurer l'éditeur de source.</li>
-        <li> La couleur de la session pour les pages d'accueil</li>
-        <li> La configuration de la page de placement des étudiants,
-            et notamment le bâtiment à afficher par défaut.
+        <li> Le premier onglet «Config» permet de modifier les attributs
+            définis précédemment dans l'immense table.</li>
+        <li> Le deuxième onglet «Access» défini les droits d'accès.
+            <ul>
+                <li> Le créateur de la session (non modifiable).</li>
+                <li> Les administrateurs pouvant modifier cette page.</li>
+                <li> Les personnes pouvant noter la session et la tester à l'avance.</li>
+                <li> Les surveillants qui placent les étudiants.</li>
+                <li> La liste des étudiants attendus qui verront
+                    la session en gras dans la liste.
+                    On peut cacher la session aux étudiants non attendus.
+                </li>
+                <li>
+                    Les étudiants avec un tiers temps automatique.
+                </li>
+            </ul>
         </li>
-        <li> Le retour fait aux étudiants quand l'examen est terminé.
-            Ce retour est fait seulement si le correcteur est d'accord
-            pour la diffusion (quand il a fini de corriger).
-            L'administrateur peut débloquer tout les retours des
-            correcteurs d'un coup ou bien laisser les correcteurs
-            débloquer au fil des corrections.
+        <li> L'onglet «Source» permet d'éditer les question en interactif.
+            Mais les étudiants devront recharger la page s'ils ont commencés.
         </li>
-        <li> Les étudiants attendu pour la session.
-            La session sera affichée en gras dans leur liste de session.
-            Et si «hide session to other students» est coché
-            alors les autres étudiants ne la verront pas dans leur liste
-            mais pourront éventuellement la faire si l'enseignant
-            leur donne le lien direct.
+        <li> L'onglet «Try» permet d'essayer la session.
         </li>
-        <li> Les étudiants qui ont automatiquement un tiers-temps.</li>
-        <li> Indique sur combien la note finale comptera.
-            Ce n'est pas forcément la somme du max de tous les points
-            car il peut y avoir des bonus.
+        <li>
+            L'onglet «Place» permet de placer les étudiants.
         </li>
-        <li> Le barème de notation de la session en texte libre.
-            Les éléments de notations sont indiqués par <tt>{Une explication:0,0.5,1,1.5,2}</tt>
-            en en mettant un par ligne au maximum.
+        <li>
+            L'onglet «Chat» permet de lister tous les messages
+            de surveillance de la session.
+        </li>
+        <li>
+            L'onglet «Student» permet de lister les étudiants
+            qui se sont connectés sur la session.
+        </li>
+        <li>
+            L'onglet «Grading» permet de définir
+            Le barème de notation de la session en texte libre.
+            Ainsi que la note maximum obtenable.
             Le barème est sur l'ensemble des questions.
             Ne rien changer dans le barème une fois que la correction a commencé
             à part les typos.
         </li>
-
-
+        <li>
+            L'onglet «Export/Stat» analyse le travail de l'ensemble
+            des étudiants et des correcteurs afin d'en tirer des informations.
         </li>
     </ul>
     <p>
-        Partie droite, en haut des boutons pour :
+        A droite des onglets on trouve un menu permettant
+        de faire des actions.
     </p>
-    <ul>
-        <li> <tt class="button">Upload a new source</tt> :
-            permet de remplacer le fichier Python définissant la question.</li>
-        <li> <tt class="button">Upload new media</tt> :
-            une fois déposé cela affiche ce qu'il faut mettre dans l'énoncé
-            pour inclure l'image.</li>
-        <li> <tt class="button">Edit source with C5</tt> :
-            permet d'éditer intéractivement le fichier précédent,
-            en faisant <tt class="key">Ctrl+S</tt> cela le mettra en production.
-        </li>
-        <li> <tt class="button">Try the exercises</tt> :
-            Essaye le sujet.</li>
-        <li> <tt class="button">Place Student</tt> :
-            Accès à l'interface pour placer les étudiants sur le plan.</li>
-        <li> <tt class="button">See students results</tt> :
-            Affiche les détails de la session et permet
-            d'exporter le travail des étudiants.
-        </li>
-        <li> <tt class="button">Load full ZIP</tt> :
-            charge l'ensemble des fichiers de la session y compris les logs.</li>
-        <li> <tt class="button">Rename session</tt> :
-            renomme une session. <b>Personne ne doit être en train de travailler dessus.</b></li>
-        <li> <tt class="button">Delete <b>ALL</b></tt> :
-            détruit complètement la session et les logs.</li>
-            <li> <tt class="button">Delete <b>Students</b></tt> :
-                détruit complètement les logs étudiants.</li>
-        </ul>
-    <p>
-        Partie droite, au dessous des boutons :
-    </p>
-    <ul>
-        <li> Une zone de retour utilisateur modifiée quand un changement est fait.</li>
-        <li> Les messages qui ont été postés sur le plan par les surveillants.</li>
-        <li> Les étudiants avec éventuellement leur surveillant, leur note et
-            si le surveillant leur a accordé plus de temps.
-            Si on clique sur l'étudiant on voit son travail.
-        </li>
-    </ul>
 
-
-    <h3>Administrateur : analyse d'une session.</h3>
+    <h3>Administrateur : onglet «Export/Stat».</h3>
     <img class="screenshot" src="screen-course.svg">
     <p>
         Les administrateurs de session peuvent regarder le détail de la session.
