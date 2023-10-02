@@ -62,7 +62,8 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     for key in value:
                         content.append('    ' + JSON.stringify(key) + ':' + JSON.stringify(value[key]))
                     element.value = '{\n' + ',\n'.join(content) + '\n}'
-                element.rows = len(content) + 3
+                if attr not in ('admins', 'graders', 'proctors', 'expected_students', 'expected_students_required', 'tt'):
+                    element.rows = len(content) + 3
             elif element.tagName == 'INPUT':
                 if element.type in ('checkbox', 'radio'):
                     element.checked = value != 0
@@ -294,7 +295,8 @@ int main()                       {main declaration:0,1}
                 content.append('<tr><td colspan="2"><h2>' + line + '</h2></tr>')
                 continue
             key, default_value, comment = line
-
+            if key in ('admins', 'graders', 'proctors', 'expected_students', 'expected_students_required', 'tt'):
+                continue
             if key in ('feedback', 'default_building', 'theme', 'state'):
                 if key == 'feedback':
                     choices = FEEDBACK_LEVEL.Items()

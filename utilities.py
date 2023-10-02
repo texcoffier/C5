@@ -202,13 +202,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def load(self):
         """Load course configuration file"""
-        self.config = {'tt': '',
-                       'expected_students': '',
-                       'expected_students_required': 0,
-                       'creator': 'nobody',
-                       'admins': '',
-                       'graders': '',
-                       'proctors': '',
+        self.config = {'creator': 'nobody',
                        'notation': '',
                        'notation_max': '?',
                        'messages': [],

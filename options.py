@@ -15,22 +15,22 @@ DEFAULT_COURSE_OPTIONS = [
     ['start'                ,'2000-01-01 00:00:00', "Start date of the session"],
     ['stop'                 ,'2100-01-01 00:00:00', 'Stop date of the session <div id="invalid_date">START&gt;END</div>'],
     ['state'                ,'Draft', """
-┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓<br>
-┃ State  ┃    Visible by      ┃    Usable by       ┃<br>
-┡━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩<br>
-┃Draft   ┃creator admin       │creator admin       │<br>
-┣━━━━━━━━╉────────────────────┼────────────────────┤<br>
-┃Ready   ┃                    │                    │<br>
-┃  before┃all                 │creator admin grader│<br>
-┃  while ┃all                 │all if no checkpoint│<br>
-┃  after ┃all except students │creator admin grader│<br>
-┣━━━━━━━━╉────────────────────┼────────────────────┤<br>
-┃Grade   ┃creator admin grader│creator admin grader│<br>
-┣━━━━━━━━╉────────────────────┼────────────────────┤<br>
-┃Done    ┃creator admin grader│creator admin grader│<br>
-┣━━━━━━━━╉────────────────────┼────────────────────┤<br>
-┃Archive ┃creator admin       │creator admin       │<br>
-┗━━━━━━━━┹────────────────────┴────────────────────┘"""],
+<pre>┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
+┃ State  ┃    Visible by      ┃    Usable by       ┃
+┣━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
+┃Draft   ┃creator admin       │creator admin       │
+┣━━━━━━━━╉────────────────────┼────────────────────┤
+┃Ready   ┃                    │                    │
+┃  before┃all                 │creator admin grader│
+┃  while ┃all                 │all if no checkpoint│
+┃  after ┃all except students │creator admin grader│
+┣━━━━━━━━╉────────────────────┼────────────────────┤
+┃Grade   ┃creator admin grader│creator admin grader│
+┣━━━━━━━━╉────────────────────┼────────────────────┤
+┃Done    ┃creator admin grader│creator admin grader│
+┣━━━━━━━━╉────────────────────┼────────────────────┤
+┃Archive ┃creator admin       │creator admin       │
+┗━━━━━━━━┹────────────────────┴────────────────────┘</pre>"""],
     ['checkpoint'           ,0, "Requires students to be placed on the map (examination mode)"],
     ['allow_copy_paste'     ,1, "copy/paste allowed"],
     ['save_unlock'          ,0, "saving a question unlock next"],
@@ -43,7 +43,7 @@ DEFAULT_COURSE_OPTIONS = [
     "Checkpoint placement interface",
 
     ['display_student_filter', 0, "Display an INPUT field containing a list of student IDs to highlight"],
-    ['display_my_rooms'      , 1, "Add a toggle to display only the room I dragged student into"],
+    ['display_my_rooms'      , 1, "Add a toggle to display only the rooms I dragged student into"],
     ['display_session_name'  , 0, "Display the session name"],
     ['default_building'      ,'', "Preselected building name"],
 
@@ -131,5 +131,13 @@ System calls allowable for g++/gcc:
       clone clone3 execve getpid getrandom gettid madvise mprotect
       pipe pread64 prlimit64 rseq rt_sigaction rt_sigprocmask
       sched_yield set_robust_list set_tid_address tgkill open
-"""]
+"""],
+
+    # Acces tab
+    ['admins', '', 'Administrators with all the access rights'],
+    ['graders', '', 'Teachers allowed to try the session, grade and place the students'],
+    ['proctors', '', 'Can only place the students'],
+    ['expected_students', '', 'The login list of expected students, the session is in bold in their session list.'],
+    ['expected_students_required', 0, 'Unexpected student do not see the session, but a teacher can send them the link to it'],
+    ['tt', '', 'The logins of student with ⅓ more time'],
 ]
