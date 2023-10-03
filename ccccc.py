@@ -649,13 +649,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Extract the textContent of the DIV with the good \n"""
         def clear_text(state):
             if state.node.tagName == 'DIV':
-                if len(state.text) and state.text[-1] != '\n':
+                if len(state.text) and state.text[-1][-1] != '\n':
                     state.editor_lines.append(state.last)
                     state.text.append('\n')
                     state.last = None
                 for state.node in state.node.childNodes:
                     clear_text(state)
-                if len(state.text) and state.text[-1] != '\n':
+                if len(state.text) and state.text[-1][-1] != '\n':
                     state.editor_lines.append(state.last)
                     state.text.append('\n')
                     state.last = None

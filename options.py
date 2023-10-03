@@ -32,9 +32,9 @@ DEFAULT_COURSE_OPTIONS = [
 ┃Archive ┃creator admin       │creator admin       │
 ┗━━━━━━━━┹────────────────────┴────────────────────┘</pre>"""],
     ['checkpoint'           ,0, "Requires students to be placed on the map (examination mode)"],
-    ['allow_copy_paste'     ,1, "copy/paste allowed"],
-    ['save_unlock'          ,0, "saving a question unlock next"],
-    ['automatic_compilation',1, "compilation is automatic"],
+    ['allow_copy_paste'     ,1, "Copy/paste allowed (if not allowed students must be in full screen mode)"],
+    ['save_unlock'          ,0, "Saving a question unlock next"],
+    ['automatic_compilation',1, "Compilation is automatic"],
     ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],
     ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
