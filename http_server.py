@@ -1613,7 +1613,10 @@ async def checkpoint_spy(request:Request) -> Response:
                     elif item == 'Blur':
                         blur_start = seconds
                     elif item == 'Focus':
-                        blurs.append((blur_start, seconds - blur_start))
+                        try:
+                            blurs.append((blur_start, seconds - blur_start))
+                        except UnboundLocalError:
+                            pass # First Focus
                 await asyncio.sleep(0)
 
     except (IndexError, FileNotFoundError):
