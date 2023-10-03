@@ -118,7 +118,8 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     # do_grade_login
                     content.append(
                         '<tr><td><span style="width:' + 2*nr_blurs + 'px"></span>'
-                        + login
+                        + '<a target="_blank" href="/grade/' + COURSE + '/'
+                        + login + '?ticket=' + TICKET + '">' + login + '</a>'
                         + '<td>' + active + '</td>'
                         + '<td>' + teacher + '</td>'
                         + '<td>' + room + '</td>'
