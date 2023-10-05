@@ -577,6 +577,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             del CourseConfig.configs[config.dirname]
             return f"«{course}» moved to Trash directory. Now close this page!"
         CourseConfig.configs[config.dirname].config['active_teacher_room'] = {}
+        CourseConfig.configs[config.dirname].config['messages'] = []
         CourseConfig.configs[config.dirname].update()
         CourseConfig.configs[config.dirname].record_config()
         return f"«{course}» students moved to Trash. Now close this page!"
