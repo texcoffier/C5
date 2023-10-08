@@ -15,6 +15,7 @@ import time
 import glob
 import atexit
 import html
+import copy
 import urllib.request
 import urllib.parse
 import asyncio
@@ -212,6 +213,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         for line in options.DEFAULT_COURSE_OPTIONS: # Defaults
             if len(line) == 3:
                 self.config[line[0]] = line[1]
+        self.config = copy.deepcopy(self.config) # To be really safe
         self.config['default_building'] = sorted(os.listdir('BUILDINGS'))[0]
         self.config.update(self.questions[0]['options']) # Course defaults
 
