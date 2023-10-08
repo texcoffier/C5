@@ -466,28 +466,36 @@ async def adm_course(request:Request) -> Response:
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """)
 
+def fix_date(value):
+    value = re.split('[- :]+', value)
+    while len(value) < 6:
+        value.append(0)
+    value = [int(i or '0') for i in value]
+    value = '{:4d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}'.format(*value)
+    try:
+        time.strptime(value, '%Y-%m-%d %H:%M:%S')
+        return value
+    except ValueError:
+        return
+
 async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union[Response,str]: # pylint: disable=too-many-branches,too-many-statements
     """Configure a course"""
     course = config.course
     if value == 'now':
         value = time.strftime('%Y-%m-%d %H:%M:%S')
     if action == 'stop':
-        try:
-            if len(value) != 19:
-                value += ' '
-            time.strptime(value, '%Y-%m-%d %H:%M:%S')
-            config.set_parameter('stop', value)
-            feedback = f"«{course}» Stop date updated to «{value}»"
-        except ValueError:
+        fixed = fix_date(value)
+        if fixed:
+            config.set_parameter('stop', fixed)
+            feedback = f"«{course}» Stop date updated to «{fixed}»"
+        else:
             feedback = f"«{course}» Stop date invalid: «{value}»!"
     elif action == 'start':
-        try:
-            if len(value) != 19:
-                value += ' '
-            time.strptime(value, '%Y-%m-%d %H:%M:%S')
-            config.set_parameter('start', value)
-            feedback = f"«{course}» Start date updated to «{value}»"
-        except ValueError:
+        fixed = fix_date(value)
+        if fixed:
+            config.set_parameter('start', fixed)
+            feedback = f"«{course}» Start date updated to «{fixed}»"
+        else:
             feedback = f"«{course}» Start date invalid: «{value}»!"
     elif action == 'tt':
         config.set_parameter('tt', value)
@@ -578,6 +586,9 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             return f"«{course}» moved to Trash directory. Now close this page!"
         CourseConfig.configs[config.dirname].config['active_teacher_room'] = {}
         CourseConfig.configs[config.dirname].config['messages'] = []
+        CourseConfig.configs[config.dirname].config['tt'] = ''
+        CourseConfig.configs[config.dirname].config['expected_students'] = ''
+        CourseConfig.configs[config.dirname].config['state'] = 'Draft'
         CourseConfig.configs[config.dirname].update()
         CourseConfig.configs[config.dirname].record_config()
         return f"«{course}» students moved to Trash. Now close this page!"
