@@ -1559,7 +1559,7 @@ def reader(event): # pylint: disable=too-many-branches
         elif data[0] == "active_teacher_room":
             if STUDENT_DICT[data[2]]:
                 student = STUDENT_DICT[data[2]].data
-                if data[3] == 3: # Blur because nr blurs change
+                if data[3] == 4: # Blur because nr blurs change
                     student.blurred = True
                 elif data[3] == 9: # Focus because blur time change
                     student.blurred = False
