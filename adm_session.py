@@ -371,7 +371,7 @@ def init():
     <div id="Students">Students</div>
     <div id="Grading">Grading</div>
     <div id="Results">Export/Stats</div>
-    <select onchange="select_action(this)" style="vertical-align: top">
+    <select onchange="select_action(this)" style="vertical-align: top; float: right">
     <option>Actions</option>
     <option action="upload">Upload a new source</option>
     <option action="upload_media">Upload a new media</option>

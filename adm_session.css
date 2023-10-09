@@ -34,7 +34,6 @@ FORM {
     overflow: auto;
     font-size: 45%;
     font-weight: initial;
-    vertical-align: top;
     flex: 1;
 }
 
@@ -42,6 +41,7 @@ FORM {
     z-index: 2;
     position: absolute;
     top: 45px;
+    width: 100%;
 }
 
 #tabs > DIV {
