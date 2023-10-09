@@ -1557,16 +1557,16 @@ async def home(request:Request) -> Response:
 
     courses = sorted(CourseConfig.configs.items())
     data = []
-    for course_name, course in courses:
-        if (course.expected_students_required
-            and session.login not in course.expected_students):
+    for _course_name, course in courses:
+        expected = (session.login in course.expected_students
+                    or session.login in course.tt_list)
+        if course.expected_students_required and not expected:
             continue
         status = course.status(session.login)
         feedback = course.get_feedback(session.login)
         if status not in ('pending', 'running') and not feedback:
             continue
-        data.append((course.course, course.highlight,
-                     session.login in course.expected_students, feedback))
+        data.append((course.course, course.highlight, expected, feedback))
     return answer(f'''{session.header()}
 <script src="/home.js?ticket={session.ticket}"></script>
 <script>home({json.dumps(data)})</script>
