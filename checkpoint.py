@@ -77,6 +77,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     left_column = right_column = top_line = bottom_line = 0
     highlight_disk = None
     all_ips = {}
+    pointer_on_student_list = False # If True disable list update
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.ips = {}
@@ -958,6 +959,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.rooms_on_screen[room_name] = True
     def update_waiting_room(self):
         """Update HTML with the current waiting student for the rooms on screen"""
+        if self.pointer_on_student_list:
+            return
         content = []
         for student in self.waiting_students:
             if student.room == '':
@@ -1230,7 +1233,10 @@ def create_page(building_name):
         #time SPAN.cs { color: #00F ; }
         #time .blur_span { position: absolute; background: #FAA;  height: 100% ; top: 0px }
         </style>
-        <div id="top">
+        <div id="top"
+             onmouseenter="ROOM.pointer_on_student_list=true"
+             onmouseleave="ROOM.pointer_on_student_list=false"
+        >
         <span class="icon" onclick="send_alert()">🚨</span>
         <span class="icon" onclick="search_student()">🔍</span>
         ''']
