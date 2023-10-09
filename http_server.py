@@ -223,7 +223,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             ANSWERS = {json.dumps(last_answers)};
             ALL_SAVES = {json.dumps(all_saves)};
             WHERE = {json.dumps(course.active_teacher_room.get(
-                login, utilities.State((False, '?', '?,0,0', 0, 0, 0, 'ip', 0, '', 0, 0))))};
+                login, utilities.State((False, '?', '?,0,0,a', 0, 0, 0, 'ip', 0, '', 0, 0))))};
             SERVER_TIME = {time.time()};
             GRADE = {json.dumps(the_grade)};
             COMMENTS = {json.dumps(comments)};
@@ -264,6 +264,15 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                         return session.message('pending', course.start_timestamp)
                     if status == 'checkpoint':
                         return session.message('checkpoint')
+                version = request.match_info.get('version', None)
+                if version:
+                    place = course.active_teacher_room[login][2]
+                    changed = place.split(',')
+                    if len(changed) <= 3:
+                        changed = ['?', '0', '0', version]
+                    else:
+                        changed[3] = version
+                    course.active_teacher_room[login][2] = ','.join(changed)
                 return await editor(session, is_admin, course, session.login, feedback=feedback)
             if '=' in filename:
                 course = CourseConfig.get(utilities.get_course(filename))
@@ -1830,6 +1839,7 @@ async def change_session_ip(request:Request) -> Response:
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
+                web.get('/{filename}/V{version}', handle()),
                 web.get('/node_modules/{filename:.*}', handle('node_modules')),
                 web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
                 web.get('/adm/get/{filename:.*}', adm_get),

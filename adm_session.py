@@ -231,8 +231,10 @@ def select_tab(label):
     State.selected_tab = document.getElementById(label)
     State.selected_tab.className = "selected"
 
-    if label == "Try":
-        content = '<iframe src="=' + COURSE + '?ticket=' + TICKET + '"></iframe>'
+    if label == "Try A":
+        content = '<iframe src="=' + COURSE + '/Va?ticket=' + TICKET + '"></iframe>'
+    elif label == "Try B":
+        content = '<iframe src="=' + COURSE + '/Vb?ticket=' + TICKET + '"></iframe>'
     elif label == "Place":
         content =  '<iframe src="/checkpoint/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
     elif label == 'Edit':
@@ -362,7 +364,8 @@ def init():
     <div id="Config">Config</div>
     <div id="Access">Access</div>
     <div id="Edit">Source</div>
-    <div id="Try">Try</div>
+    <div id="Try A">Try A</div>
+    <div id="Try B">Try B</div>
     <div id="Place">Place</div>
     <div id="Chat">Chat</div>
     <div id="Students">Students</div>
