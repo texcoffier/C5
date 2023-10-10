@@ -78,6 +78,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     highlight_disk = None
     all_ips = {}
     pointer_on_student_list = False # If True disable list update
+    force_update_waiting_room = False
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.ips = {}
@@ -832,6 +833,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         else:
             self.highlight_disk = None
             record('/checkpoint/' + COURSE + '/' + self.moving['login'] + '/EJECT')
+            self.force_update_waiting_room = True
     def drag_stop_click_on_computer_menu(self):
         """Select a compulter malfunction"""
         if self.selected_item:
@@ -959,8 +961,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.rooms_on_screen[room_name] = True
     def update_waiting_room(self):
         """Update HTML with the current waiting student for the rooms on screen"""
-        if self.pointer_on_student_list:
+        if self.pointer_on_student_list and not self.force_update_waiting_room:
             return
+        self.force_update_waiting_room = False
         content = []
         for student in self.waiting_students:
             if student.room == '':
@@ -1051,13 +1054,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 record('/checkpoint/SPY/' + COURSE + '/' + Student.moving_student)
         document.body.onmousemove = document.body.ontouchmove = None
         window.onmouseup = document.body.ontouchend = None
-        del Student.moving_element.style.position
-        del Student.moving_element.style.background
-        del Student.moving_element.style.pointerEvents
         document.getElementById('top').style.background = TOP_INACTIVE
         Student.moving_student = None
         Student.moving_element = None
         if pos[0] == -1:
+            self.force_update_waiting_room = True
             scheduler.update_page = True
 
     def zoom_student(self, login):
