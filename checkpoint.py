@@ -1583,6 +1583,8 @@ def reader(event): # pylint: disable=too-many-branches
 
 def scheduler():
     """To not redraw needlessly"""
+    if Student.moving_student:
+        return
     if scheduler.update_page:
         update_page()
     elif scheduler.draw:
