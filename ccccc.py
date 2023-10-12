@@ -1216,7 +1216,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.insert_on_keyup = self.source[i:j]
         elif not self.options['allow_copy_paste'] and (
                 event.key == 'OS'
-                or event.key.startswith('F') and event.key != 'F11'
+                or len(event.key) > 1 and event.key.startswith('F') and event.key != 'F11'
                 or event.ctrlKey and event.key in ('b', 'h')
                 ):
             # Disables these keys to not lost focus
