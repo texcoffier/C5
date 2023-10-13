@@ -191,7 +191,7 @@ def onchange(event):
             target = target.parentNode
         else:
             if target.id in ('tt', 'expected_students'):
-                target.value = target.value.replace(RegExp('\\b1', 'g'), 'p')
+                target.value = target.value.toLowerCase().replace(RegExp('\\b1', 'g'), 'p')
             value = target.value
     target.className = 'wait_answer'
     post('/adm/session/' + COURSE + '/' + attr + '?ticket=' + TICKET, value, True)

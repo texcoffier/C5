@@ -578,7 +578,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     else:
                         self.record_now()
                 if delta < 0:
-                    timer.className = "done"
+                    if timer.className != 'done':
+                        timer.className = "done"
+                        stop_button = document.getElementById('stop_button')
+                        if stop_button:
+                            stop_button.style.display = 'none'
                     message = self.options['time_done']
                     delta = -delta
                 else:

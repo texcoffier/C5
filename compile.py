@@ -234,7 +234,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Used by the subclass"""
         title = '<h2>' + self.options['question_title']
         if not self.options['GRADING'] and self.options['checkpoint']:
-            title += (' <tt class="stop_button" onclick="ccccc.stop()">'
+            title += (' <tt id="stop_button" class="stop_button" onclick="ccccc.stop()">'
                 + self.options['icon_stop'] + '</tt>')
         if not self.options['GRADING'] and self.options['display_timer'] and not self.options['feedback']:
             title += ' <div class="timer"><span id="timer"></span>⏱</div>'
