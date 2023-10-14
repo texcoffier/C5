@@ -20,7 +20,7 @@ except: # pylint: disable=bare-except
 
 EXPLAIN = {0: "Sauvée", 1: "Validée", 2: "Compilée", 3: "Dernière seconde"}
 
-DEPRECATED = ('save_button', 'local_button', 'stop_button', 'reset_button')
+DEPRECATED = ('save_button', 'local_button', 'stop_button', 'reset_button', 'line_numbers')
 
 def get_xhr_data(event):
     """Evaluate the received javascript"""

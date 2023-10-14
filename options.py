@@ -71,7 +71,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['display_tag',          1, "display 'icon_tag'"],
     ['display_history',      1, "display version history"],
     ['display_indent',       1, "display the F8 button"],
-    ['display_line_numbers', 0, "display line numbers"],
+    ['display_line_numbers', 1, "display line numbers"],
 
     "Popup messages",
 
