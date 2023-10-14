@@ -283,7 +283,8 @@ int main()                       {main declaration:0,1}
 }
 // Malus                         {No comments:-1,0}
 </pre>
-<b>Indicate your session grading here:</b>
+<b>Indicate your session grading here</b>
+(Grading sum : <span id="grading_sum" style="background: #0F0"></span>):
 </div>
     <textarea id="notation"></textarea>"""
     elif label == 'Config':
@@ -393,5 +394,17 @@ def init():
     """)
     add(div)
     setTimeout(load_config, 10) # Wait CSS loading
+    setInterval(update_interface, 1000)
+
+def update_interface():
+    """Update grading"""
+    grading_sum = document.getElementById('grading_sum')
+    notation = document.getElementById("notation")
+    if grading_sum and notation:
+        total = 0
+        for _text1, _text2, grades in parse_notation(notation.value):
+            if len(grades):
+                total += Number(grades[-1])
+        grading_sum.innerHTML = total
 
 init()
