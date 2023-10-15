@@ -259,9 +259,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             '<a style="font-family:emoji;text-decoration:none" href="mailto:'
             + self.options['INFOS']['mail']
             + '?subject=' + self.options['COURSE']
-            + '&amp;body=Bonjour.%0A%0AVotre devoir corrigé : '
-            + self.options['url'].split('/grade/')[0] + '/=' + self.options['COURSE']
-            + '%0A%0ACordialement.'
+            # + '&amp;body=Bonjour.%0A%0AVotre devoir corrigé : '
+            # + self.options['url'].split('/grade/')[0] + '/=' + self.options['COURSE']
+            # + '%0A%0ACordialement.'
             + '">✉</a>'
             )
         # Keep <!-- --> explanation is in ccccc.py
