@@ -572,6 +572,14 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fill()
                 ctx.globalAlpha = 1
 
+        if self.moving:
+            ctx.strokeStyle = "#000000"
+            ctx.beginPath()
+            pos_x, pos_y, scalex, _scaley = self.xys(
+                self.moving['column'], self.moving['line'])
+            ctx.arc(pos_x, pos_y, 1*scalex, 0, 2*Math.PI)
+            ctx.stroke()
+
         ctx.lineCap = 'round'
         ctx.lineWidth = 2
         ctx.strokeStyle = "#000"
