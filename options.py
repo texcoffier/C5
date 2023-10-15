@@ -28,6 +28,8 @@ DEFAULT_COURSE_OPTIONS = [
 ┃Grade   ┃creator admin grader│creator admin grader│
 ┣━━━━━━━━╉────────────────────┼────────────────────┤
 ┃Done    ┃creator admin grader│creator admin grader│
+┃        ┃Students if allowed │                    │
+┃        ┃by admin and grader │                    │
 ┣━━━━━━━━╉────────────────────┼────────────────────┤
 ┃Archive ┃creator admin       │creator admin       │
 ┗━━━━━━━━┹────────────────────┴────────────────────┘</pre>"""],
