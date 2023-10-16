@@ -445,6 +445,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             return 0
         if self.status(login) != 'done':
             return 0
+        if self.state != 'Done':
+            return 0
         return min(self.feedback, active_teacher_room.feedback)
 
     def get_comments(self, login:str) -> str:
