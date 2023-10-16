@@ -606,10 +606,10 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         new_dirname = f'COMPILE_{config.compiler}/{value}'
         if '.' in value or '/' in value or '-' in value:
             return f"«{value}» invalid name because it contains «/», «.», «-»"
-        for extension in ('', '.cf', '.py', '.js'):
+        for extension in ('', '.cf', '.py', '.js', '.json'):
             if os.path.exists(f'{new_dirname}{extension}'):
                 return f"«{value}» exists!"
-        for extension in ('', '.cf', '.py', '.js'):
+        for extension in ('', '.cf', '.py', '.js', '.json'):
             if os.path.exists(config.dirname + extension):
                 os.rename(config.dirname + extension, f'{new_dirname}{extension}')
         del CourseConfig.configs[config.dirname] # Delete old

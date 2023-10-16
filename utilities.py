@@ -215,7 +215,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 self.config[line[0]] = line[1]
         self.config = copy.deepcopy(self.config) # To be really safe
         self.config['default_building'] = sorted(os.listdir('BUILDINGS'))[0]
-        self.config.update(self.questions[0]['options']) # Course defaults
+        if self.questions:
+            self.config.update(self.questions[0]['options']) # Course defaults
+        else:
+            print('******* No questions in', self.dirname)
 
         try:
             self.parse()
