@@ -210,7 +210,7 @@ DIV.executor > DIV:first-child
 .comments TEXTAREA.empty:focus {
     width: auto;
     height: auto;
-    resize: auto;
+    resize: both;
 }
 
 .comments TEXTAREA.filled, .comments TEXTAREA:focus {
