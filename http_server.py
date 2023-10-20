@@ -273,6 +273,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                     else:
                         changed[3] = version
                     course.active_teacher_room[login][2] = ','.join(changed)
+                    feedback = 0 # No feedback on try
                 return await editor(session, is_admin, course, session.login, feedback=feedback)
             if '=' in filename:
                 course = CourseConfig.get(utilities.get_course(filename))
