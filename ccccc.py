@@ -183,7 +183,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.options = options = COURSE_CONFIG
 
         # XXX to remove
-        options['allow_copy_paste'] = options.copy_paste or GRADING or ADMIN
+        options['allow_copy_paste'] = options.allow_copy_paste or GRADING or ADMIN
         options['COURSE'] = COURSE                         # Course short name
         options['TICKET'] = TICKET                         # Session ticket: ?ticket=TICKET
         options['LOGIN'] = LOGIN                           # Login of the connected user

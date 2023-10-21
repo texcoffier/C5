@@ -540,8 +540,8 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             feedback = f"«{course}» state updated to «{value}»"
         else:
             feedback = f"«{course}» state «{value}» does not exists!"
-    elif action == 'copy_paste':
-        config.set_parameter('copy_paste', int(value))
+    elif action == 'allow_copy_paste':
+        config.set_parameter('allow_copy_paste', int(value))
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
     elif action == 'allow_ip_change':
         config.set_parameter('allow_ip_change', int(value))
@@ -1214,7 +1214,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     bools = ''
     for attr, letter, tip in (
         ('coloring', '🎨', 'Syntaxic source code coloring'),
-        ('copy_paste', '✂', 'Copy/Paste allowed'),
+        ('allow_copy_paste', '✂', 'Copy/Paste allowed'),
         ('checkpoint', '🚦', 'Checkpoint required'),
         ('sequential', 'S', 'Sequential question access'),
         ('save_unlock', '🔓', 'Save unlock next question'),
