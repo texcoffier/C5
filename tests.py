@@ -93,6 +93,7 @@ class Tests: # pylint: disable=too-many-public-methods
     ticket = None
     def __init__(self, driver):
         self.driver = driver
+        driver.set_window_size(1024, 1024)
         for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction', 'COMPILE_JS/example'):
             course = utilities.CourseConfig(course_name)
             course.set_parameter('proctors', 'REGTESTS\n') # Marker for 'clean.py'
@@ -107,6 +108,7 @@ class Tests: # pylint: disable=too-many-public-methods
             course.set_parameter('checkpoint', '0')
             course.set_parameter('admins', '')
             course.set_parameter('feedback', 0)
+            course.set_parameter('state', "Ready")
 
         start = time.time()
         self.wait_start()
@@ -785,7 +787,7 @@ return sum ;
                 self.check('.question H2').click()
                 self.check_dialog('session a expiré', accept=True, required=True)
 
-    def test_dates(self, start, end, check):
+    def test_dates(self, start, end, check, state):
         """No feedback exam even if allowed"""
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
@@ -799,6 +801,7 @@ return sum ;
             self.check('#stop').send_keys(end)
             self.check('#start').click()
             self.check('#server_feedback', {'innerHTML': Contains('Stop date updated')})
+            self.check(f'#state OPTION[value="{state}"]').click()
         self.goto('=REMOTE=test')
         self.check('BODY', check)
 
@@ -811,9 +814,12 @@ return sum ;
         no_comments = Contains('COMMENTS = null')
         no_feedback = {'innerHTML': no_grades and no_grade and no_details and no_comments}
         nothing = { 'innerHTML': ~Contains('ccccc.js') }
-        self.test_dates('2099-01-01 01:00:50', '2100-01-01 01:00:50', nothing)
-        self.test_dates('2000-01-01 01:00:51', '2100-01-01 01:00:51', no_feedback)
-        self.test_dates('2000-01-01 01:00:52', '2001-01-01 01:00:52', nothing)
+        self.test_dates('2099-01-01 01:00:50', '2100-01-01 01:00:50', nothing, 'Grade')
+        self.test_dates('2000-01-01 01:00:51', '2100-01-01 01:00:51', nothing, 'Grade')
+        self.test_dates('2000-01-01 01:00:52', '2001-01-01 01:00:52', nothing, 'Grade')
+        self.test_dates('2099-01-01 01:00:50', '2100-01-01 01:00:50', nothing, 'Ready')
+        self.test_dates('2000-01-01 01:00:51', '2100-01-01 01:00:51', no_feedback, 'Ready')
+        self.test_dates('2000-01-01 01:00:52', '2001-01-01 01:00:52', nothing, 'Ready')
         cases = (
             (0, 5, {'innerHTML': Not(Contains('ccccc.js'))}),
             (5, 0, {'innerHTML': Not(Contains('ccccc.js'))}),
@@ -827,6 +833,7 @@ return sum ;
         for admin_feeback, grader_feedback, check in cases:
             with self.admin_rights():
                 self.goto('adm/session/REMOTE=test')
+                self.check('#state OPTION[value="Done"]').click()
                 self.check(f'#feedback OPTION[value="{admin_feeback}"]').click()
                 self.check('#start').click()
                 self.goto(f'grade/REMOTE=test/{student}')
@@ -835,7 +842,7 @@ return sum ;
                 self.check('.editor').click()
             self.goto('=REMOTE=test')
             self.check('BODY', check)
-        self.test_dates('2000-01-01 01:00:01', '2100-01-01 01:00:01', no_feedback)
+        self.test_dates('2000-01-01 01:00:01', '2001-01-01 01:00:01', nothing, 'Done')
 
     def test_exam(self): # pylint: disable=too-many-statements
         """Test an exam"""
