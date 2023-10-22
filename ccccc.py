@@ -1497,11 +1497,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
             ]
         content.append('</select>')
         if GRADING:
-            content.append('<span id="grading_sum"><small>Retour étudiant via C5:<br>')
-            content.append('<select id="grading_feedback" onchange="feedback_change(this)">')
-            for level, label in FEEDBACK_LEVEL.Items():
-                content.append('<option value="' + level + '">' + label + '</option>')
-            content.append('</select> </small>Σ=<tt id="grading_value"></tt></span>')
+            content.append('<span style="vertical-align: bottom" id="grading_sum">')
+            if self.options['grading_done']:
+                content.append('<label style="margin:0.2em;padding: 0.2em;width:15em;text-align:center;vertical-align:bottom" id="grading_feedback" onclick="grading_toggle(this)"></label> ')
+            else:
+                content.append('<small>Retour étudiant via C5:<br>')
+                content.append('<select id="grading_feedback" onchange="feedback_change(this)">')
+                for level, label in FEEDBACK_LEVEL.Items():
+                    content.append('<option value="' + level + '">' + label + '</option>')
+                content.append('</select> </small>')
+            content.append('Σ=<tt id="grading_value"></tt></span>')
         elif self.options['feedback'] >= 4 and GRADE:
             if self.options['feedback'] == 4:
                 size = 60
@@ -2228,7 +2233,22 @@ def feedback_change(element):
 
 def update_feedback(feedback):
     """Update the feedback from server answer"""
-    document.getElementById('grading_feedback').value = feedback
+    element = document.getElementById('grading_feedback')
+    if ccccc.options['grading_done']:
+        element.feedback = feedback
+        if feedback != 5:
+            element.innerHTML = "Cliquer ici pour indiquer que vous avez fini de corriger."
+        else:
+            element.innerHTML = "Les notes et commentaires sont peut-être affichées."
+    else:
+        element.value = feedback
+
+def grading_toggle(element):
+    """Grading done or not"""
+    if element.feedback != 5:
+        record('/record_feedback/' + COURSE + '/' + STUDENT + '/5')
+    else:
+        record('/record_feedback/' + COURSE + '/' + STUDENT + '/1')
 
 ccccc = CCCCC()
 G = Grapic(ccccc)

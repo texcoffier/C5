@@ -38,6 +38,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['save_unlock'          ,0, "Saving a question unlock next"],
     ['automatic_compilation',1, "Compilation is automatic"],
     ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],
+    ['grading_done'         ,1, "Graders indicate «grading done» in place of the grading level"],
     ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
     ['highlight'            ,"#FFF", "Background color in the student and teacher session list"],

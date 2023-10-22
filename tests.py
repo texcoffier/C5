@@ -108,6 +108,7 @@ class Tests: # pylint: disable=too-many-public-methods
             course.set_parameter('checkpoint', '0')
             course.set_parameter('admins', '')
             course.set_parameter('feedback', 0)
+            course.set_parameter('grading_done', 0)
             course.set_parameter('state', "Ready")
 
         start = time.time()
