@@ -149,7 +149,7 @@ TABLE TD { vertical-align: top; border: 1px solid #888; padding: 0px; white-spac
 BUTTON { width: 100% }
 E { font-family: emoji }
 TABLE#report TR:first-child, TABLE#TOMUSS TR:first-child { position: sticky; top: 0px; background: #FFFD; }
-TABLE TR:hover TD { background: #EEE }
+TABLE#report > TBODY > TR:hover > TD { background: #DDD }
 BUTTON.download { width: calc(100% - 2px); font-size: 150%; height: 1.5em; margin: 1px;}
 DIALOG { position: fixed; right: 0px; top: 0px; border: 4px solid #0F0 }
 DIALOG BUTTON { font-size: 200%; width: 2em }
@@ -167,7 +167,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 <table id="report" border>
     <tr><th>Login<th>Minutes<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Comments<th>Version<th>Graders<th>Time<br>in sec.<th>Keys
         <th>Mouse<th>Copy<th>Copy<br>Fail<th>Cut<th>Cut<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Blur<br>time<th>Time per question<br>
-        <E>🐌</E> : clipped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
+        <E>🐌</E> : clamped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
 """)
     cache = {}
     question_times = []
@@ -246,12 +246,11 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 
         text.append('<td>')
         for i, seconds in enumerate(stats['time_sum']):
+            more = ''
             if seconds > question_medians[i] * SNAIL:
                 seconds = question_medians[i] * SNAIL
                 if question_medians[i] != 10:
                     more = '<E>🐌</E>'
-            else:
-                more = ''
             text.append('<span style="width:' + (MAX_WIDTH*seconds)/max_time
                         + 'px" class="sec' + i % len(COLORS) + '">' + more + '</span>')
         text.append('<td>')
