@@ -103,7 +103,7 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             'blur_time': blur_time
            }
 
-WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'version', 'graders', 'time',
+WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'comments', 'version', 'graders', 'time',
         'key_stroke', 'mouse_click',
         'copy_ok', 'copy_bad', 'cut_ok', 'cut_bad', 'paste_ok', 'paste_bad', 'nr_blurs', 'blur_time'
        ]
@@ -165,7 +165,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 <dialog id="dialog"></dialog>
 <p>
 <table id="report" border>
-    <tr><th>Login<th>Minutes<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Version<th>Graders<th>Time<br>in sec.<th>Keys
+    <tr><th>Login<th>Minutes<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Comments<th>Version<th>Graders<th>Time<br>in sec.<th>Keys
         <th>Mouse<th>Copy<th>Copy<br>Fail<th>Cut<th>Cut<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Blur<br>time<th>Time per question<br>
         <E>🐌</E> : clipped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
 """)
@@ -177,6 +177,16 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         student = STUDENTS[login]
         cache[login] = analyse(student.http_server)
         cache[login]['status'] = student.status
+        comments = {}
+        for line in (student['comments'] or '').split('\n'):
+            if line:
+                _date, _who, question, version, line, comment = JSON.parse(line)
+                comments[question + version + line] = comment
+        nr_comments = 0
+        for comment in comments.Values():
+            if comment != '':
+                nr_comments += 1
+        cache[login]['comments'] = nr_comments
         version = cache[login]['version'] = STUDENT_DICT[login][2].split(',')[3]
         grading = parse_grading(student['grades'])
         grade = 0
