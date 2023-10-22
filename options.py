@@ -62,6 +62,7 @@ DEFAULT_COURSE_OPTIONS = [
         'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
     }, "For each bloc :<br>[Bloc X%, Width%, Y%, Heigth%, background color]"],
 
+    ['forget_input',         0, "Forget old input values on execution"],
     ['coloring',             1, "source highlighting is done"],
     ['theme',                'a11y-light', "Syntaxic coloring theme for source code"],
     ['display_local_save',   0, "display 'icon_local' to download the current source code"],
