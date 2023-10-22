@@ -1195,7 +1195,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.do_not_register_this_blur = True
             return
         elif event.key == 'F9':
-            if self.options['automatic_compilation'] == False: # pylint: disable=singleton-comparison
+            if self.options['automatic_compilation'] == 0: # pylint: disable=singleton-comparison
                 self.compilation_run()
             elif self.options['automatic_compilation']:
                 document.getElementById('automatic_compilation').className = 'unchecked'
@@ -1220,7 +1220,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.insert_on_keyup = self.source[i:j]
         elif not self.options['allow_copy_paste'] and (
                 event.key == 'OS'
-                or len(event.key) > 1 and event.key.startswith('F') and event.key != 'F11'
+                or len(event.key) > 1 and event.key.startswith('F') and event.key not in ('F8', 'F9', 'F11')
                 or event.ctrlKey and event.key in ('b', 'h')
                 ):
             # Disables these keys to not lost focus
