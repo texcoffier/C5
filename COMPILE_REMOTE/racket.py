@@ -4,10 +4,10 @@ Demonstration of Racket remote
 """
 
 COURSE_OPTIONS = {
-            'automatic_compilation': False,
+            'automatic_compilation': 0,
             'compiler': 'racket',
             'language': 'lisp',
-            'allow_copy_paste': True,
+            'allow_copy_paste': 1,
             'positions' : {
                 'question': [1, 28, 0, 30, '#EFE'],
                 'tester': [1, 28, 30, 70, '#EFE'],

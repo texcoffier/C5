@@ -13,6 +13,10 @@ for key, value in Session.default_options.items():
     options[key] = value
 try:
     for key, value in COURSE_OPTIONS.items():
+        if value == False:
+            value = 0
+        elif value == True:
+            value = 1
         options[key] = value
 except NameError:
     pass

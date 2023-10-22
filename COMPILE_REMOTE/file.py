@@ -1,7 +1,7 @@
 """Play with files"""
 
 COURSE_OPTIONS = {
-    'automatic_compilation': False,
+    'automatic_compilation': 0,
 }
 
 class Q1(Question): # pylint: disable=undefined-variable

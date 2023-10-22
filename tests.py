@@ -565,7 +565,7 @@ for(int i = 0 ; i < 10 ; i++ ) { cout << i << endl ; cin >> v ; sum += v ; }
 return sum ;
 }
 ''')
-        time.sleep(0.1)
+        time.sleep(0.2)
         self.check('.editor').send_keys(Keys.F9)
         for i in range(10):
             self.check(f'.executor DIV:nth-child({2*i+2})', {'textContent': Equal(str(i)+'\n')})
@@ -954,7 +954,7 @@ class Q1(Question):
         """Check session display"""
         with self.admin_rights():
             self.goto('adm/course/REMOTE=test')
-            self.check('BODY', {'innerHTML': Contains('TOMUSS')})
+            self.check('BODY', {'innerHTML': Contains('STUDENT_DICT =')})
 
     def screenshots(self):
         """Dump screen shots"""

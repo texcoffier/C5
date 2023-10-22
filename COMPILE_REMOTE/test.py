@@ -7,7 +7,7 @@ class QEnd(Question): # pylint: disable=undefined-variable
     """Question Finale"""
     def question(self):
         self.set_options({
-            'automatic_compilation': False,
+            'automatic_compilation': 0,
             'compile_options': ['-Wall', '-pedantic'],
             'allowed': ['brk'],
             'positions' : {

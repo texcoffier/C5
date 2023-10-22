@@ -4,7 +4,7 @@ Demonstration of the system
 """
 
 COURSE_OPTIONS = {
-            'automatic_compilation': False,
+            'automatic_compilation': 0,
             'compile_options': ['-Wall', '-pedantic'],
             'allowed': ['brk', 'clock_nanosleep'],
             # 'forget_input': True,
