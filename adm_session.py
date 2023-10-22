@@ -286,7 +286,7 @@ int main()                       {main declaration:0,1}
 <b>Indicate your session grading here</b>
 (Grading sum : <span id="grading_sum" style="background: #0F0"></span>):
 </div>
-    <textarea id="notation"></textarea>"""
+    <div><textarea id="notation"></textarea> <textarea id="notationB"></textarea></div>"""
     elif label == 'Config':
         content = ["""
     <div style="height: 100%; display: grid">
@@ -400,11 +400,19 @@ def update_interface():
     """Update grading"""
     grading_sum = document.getElementById('grading_sum')
     notation = document.getElementById("notation")
+    notationB = document.getElementById("notationB")
     if grading_sum and notation:
         total = 0
         for _text1, _text2, grades in parse_notation(notation.value):
             if len(grades):
                 total += Number(grades[-1])
-        grading_sum.innerHTML = total
+        total2 = 0
+        for _text1, _text2, grades in parse_notation(notationB.value):
+            if len(grades):
+                total2 += Number(grades[-1])
+        if total == total2 or total2 == 0:
+            grading_sum.innerHTML = total
+        else:
+            grading_sum.innerHTML = '<span style="background:#F88">' + total + '/' + total2 + '</span>'
 
 init()

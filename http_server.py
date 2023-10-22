@@ -187,7 +187,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
         if course:
             stop = course.get_stop(login)
     if grading or feedback >= 5:
-        notation = f"NOTATION = {json.dumps(course.notation)};"
+        notation = f"NOTATION = {json.dumps(course.get_notation(login))};"
         infos = await utilities.LDAP.infos(login)
         title = infos['sn'].upper() + ' ' + infos['fn'].title()
     else:
@@ -228,7 +228,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             GRADE = {json.dumps(the_grade)};
             COMMENTS = {json.dumps(comments)};
             GRADES = {json.dumps(grades)};
-            COURSE_CONFIG = {json.dumps(course.config)};
+            COURSE_CONFIG = {json.dumps(course.get_config())};
             COURSE_CONFIG['feedback'] = {feedback};
         </script>
         <script src="/ccccc.js?ticket={session.ticket}"></script>''')
@@ -470,8 +470,10 @@ async def adm_course(request:Request) -> Response:
         session.header() + f"""
             <script>
             STUDENTS = {json.dumps(students)};
+            STUDENT_DICT = {json.dumps(course.active_teacher_room)};
             COURSE = '{course.course}';
             NOTATION = {json.dumps(course.config['notation'])};
+            NOTATIONB = {json.dumps(course.config['notationB'])};
             </script>
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             """)
@@ -567,7 +569,10 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             feedback = f"«{course}» Questions are accessible only if the previous are corrects."
     elif action == 'notation':
         config.set_parameter('notation', value)
-        feedback = f"«{course}» Notation set to {value[:100]}"
+        feedback = f"«{course}» Notation version A set to {value[:100]}"
+    elif action == 'notationB':
+        config.set_parameter('notationB', value)
+        feedback = f"«{course}» Notation version B set to {value[:100]}"
     elif action == 'notation_max':
         config.set_parameter('notation_max', float(value))
         feedback = f"«{course}» Maximum grade set to {value[:100]}"

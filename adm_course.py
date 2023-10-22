@@ -103,7 +103,7 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             'blur_time': blur_time
            }
 
-WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'graders', 'time',
+WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'version', 'graders', 'time',
         'key_stroke', 'mouse_click',
         'copy_ok', 'copy_bad', 'cut_ok', 'cut_bad', 'paste_ok', 'paste_bad', 'nr_blurs', 'blur_time'
        ]
@@ -165,17 +165,19 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 <dialog id="dialog"></dialog>
 <p>
 <table id="report" border>
-    <tr><th>Login<th>Minutes<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Graders<th>Time<br>in sec.<th>Keys
+    <tr><th>Login<th>Minutes<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Version<th>Graders<th>Time<br>in sec.<th>Keys
         <th>Mouse<th>Copy<th>Copy<br>Fail<th>Cut<th>Cut<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Blur<br>time<th>Time per question<br>
         <E>🐌</E> : clipped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
 """)
     cache = {}
     question_times = []
+    nr_grades_max = {'a': 0, 'b': 0}
     for login in students:
         print(login)
         student = STUDENTS[login]
         cache[login] = analyse(student.http_server)
         cache[login]['status'] = student.status
+        version = cache[login]['version'] = STUDENT_DICT[login][2].split(',')[3]
         grading = parse_grading(student['grades'])
         grade = 0
         graders = []
@@ -186,6 +188,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
                 if grader not in graders:
                     graders.append(grader)
         nr_grades[login] = len(grading)
+        nr_grades_max[version] = max(nr_grades_max[version], len(grading))
         if len(grading) == 0 and student.status == 'done':
             ungraded.append(login)
             cache[login]['grades'] = ''
@@ -316,9 +319,8 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 
     by_teacher = {}
     partially_graded = []
-    nr_grades_max = max(*nr_grades.Values())
     for login, nrg in nr_grades.Items():
-        if nrg and nrg < nr_grades_max:
+        if nrg and nrg < nr_grades_max[cache[login]['version']]:
             partially_graded.append(login)
             for grader in cache[login]['graders'].split(' '):
                 if not by_teacher[grader]:
@@ -334,9 +336,8 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         text.append('</tr>')
 
     partially_graded = []
-    nr_grades_max = max(*nr_grades.Values())
     for login, nrg in nr_grades.Items():
-        if nrg and nrg < nr_grades_max - 1:
+        if nrg and nrg < nr_grades_max[cache[login]['version']] - 1:
             partially_graded.append(login)
     if partially_graded:
         text.append('<tr><th>Two or more grades are missing<td>')
@@ -355,66 +356,68 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 
     text.append('</table>')
 
-
-    notation = parse_notation(NOTATION)
-    text.append("""<h2>Importation du détail des notes dans TOMUSS</h2>
-    <ul>
-    <li> Passez une colonne TOMUSS dans le type «Notation»
-    <li> Cliquez sur le «Importer» à droite du bouton «Notation» (en rouge)
-    <li> Faite un copier/coller de la table suivante complète dans la zone blanche.
-    <li> Cliquer sur le bouton «Importer les détails de notation»
-    </ul>
-    <table id="TOMUSS"><tr><td>ID<td>Nom<td>Prénom""")
-    labels = {}
-    for infos in notation:
-        _text, grade_label, values = infos
-        if len(grade_label) == 0:
-            continue
-        while grade_label in labels:
-            grade_label += '+'
-        labels[grade_label] = True
-        step = 1
-        grade_max = float(values[0])
-        grade_min = float(values[0])
-        for value in values:
-            value = float(value)
-            if value > grade_max:
-                grade_max = value
-            elif value < grade_min:
-                grade_min = value
-            mod = Math.abs(value) % 1.
-            if mod and mod < step:
-                step = mod
-        if grade_min < 0 or 'bonus' in grade_label.lower():
-            what = '±'
-        else:
-            what = ''
-        if -grade_min > grade_max:
-            grade_max = -grade_min
-        text.append(
-            "<td>" + what + grade_max + '<td>' + html(grade_label)
-        )
-    text.append('</tr><tr><td><td><td>')
-    for _ in range(len(notation) - 1):
-        text.append('<td>Note<td>Commentaire')
-    text.append('</tr>')
-    for login in students:
-        student = STUDENTS[login]
-        if student.status != 'done':
-            continue
-        text.append('<tr><td>')
-        text.append(login)
-        text.append('<td><td>')
-        grading = parse_grading(student['grades'])
-        for i in range(len(notation) - 1):
-            text.append('<td>')
-            if grading[i]:
-                text.append(grading[i][0])
+    if NOTATIONB.strip() != '':
+        text.append("<h2>Importation du détail des notes dans TOMUSS impossible car 2 barèmes</h2>")
+    else:
+        notation = parse_notation(NOTATION)
+        text.append("""<h2>Importation du détail des notes dans TOMUSS</h2>
+        <ul>
+        <li> Passez une colonne TOMUSS dans le type «Notation»
+        <li> Cliquez sur le «Importer» à droite du bouton «Notation» (en rouge)
+        <li> Faite un copier/coller de la table suivante complète dans la zone blanche.
+        <li> Cliquer sur le bouton «Importer les détails de notation»
+        </ul>
+        <table id="TOMUSS"><tr><td>ID<td>Nom<td>Prénom""")
+        labels = {}
+        for infos in notation:
+            _text, grade_label, values = infos
+            if len(grade_label) == 0:
+                continue
+            while grade_label in labels:
+                grade_label += '+'
+            labels[grade_label] = True
+            step = 1
+            grade_max = float(values[0])
+            grade_min = float(values[0])
+            for value in values:
+                value = float(value)
+                if value > grade_max:
+                    grade_max = value
+                elif value < grade_min:
+                    grade_min = value
+                mod = Math.abs(value) % 1.
+                if mod and mod < step:
+                    step = mod
+            if grade_min < 0 or 'bonus' in grade_label.lower():
+                what = '±'
             else:
-                text.append('???')
-            text.append('<td>')
+                what = ''
+            if -grade_min > grade_max:
+                grade_max = -grade_min
+            text.append(
+                "<td>" + what + grade_max + '<td>' + html(grade_label)
+            )
+        text.append('</tr><tr><td><td><td>')
+        for _ in range(len(notation) - 1):
+            text.append('<td>Note<td>Commentaire')
         text.append('</tr>')
-    text.append('</table>')
+        for login in students:
+            student = STUDENTS[login]
+            if student.status != 'done':
+                continue
+            text.append('<tr><td>')
+            text.append(login)
+            text.append('<td><td>')
+            grading = parse_grading(student['grades'])
+            for i in range(len(notation) - 1):
+                text.append('<td>')
+                if grading[i]:
+                    text.append(grading[i][0])
+                else:
+                    text.append('???')
+                text.append('<td>')
+            text.append('</tr>')
+        text.append('</table>')
     document.body.innerHTML = text.join('') # pylint: disable=no-member
 
 

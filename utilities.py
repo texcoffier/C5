@@ -202,10 +202,20 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.to_send = [] # Data to send
         self.send_journal_running = False
 
+    def get_config(self):
+        """Config not leaking informations to students"""
+        config = dict(self.config)
+        del config['notation']
+        del config['notationB']
+        del config['messages']
+        del config['active_teacher_room']
+        return config
+
     def load(self):
         """Load course configuration file"""
         self.config = {'creator': 'nobody',
                        'notation': '',
+                       'notationB': '',
                        'notation_max': '?',
                        'messages': [],
                        'active_teacher_room': {},
@@ -310,6 +320,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.highlight = self.config['highlight']
         self.allow_ip_change = int(self.config['allow_ip_change'])
         self.notation = self.config['notation']
+        self.notationB = self.config['notationB']
         self.theme = self.config['theme']
         self.active_teacher_room = self.config['active_teacher_room']
         self.messages = self.config['messages']
@@ -451,6 +462,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if self.state != 'Done':
             return 0
         return min(self.feedback, active_teacher_room.feedback)
+
+    def get_notation(self, login:str) -> str:
+        """Return the notation for the student"""
+        version = self.active_teacher_room.get(login)[2].split(',')
+        if len(version) < 3:
+            return self.notation
+        version = version[3]
+        if version == 'b' and self.notationB:
+            return self.notationB
+        return self.notation
 
     def get_comments(self, login:str) -> str:
         """Get the comments"""

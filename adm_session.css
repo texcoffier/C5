@@ -145,11 +145,16 @@ P.title {
     font-weight: bold;
     margin-bottom: 0.1em;
 }
-TEXTAREA#notation {
-    width: 100%;
+TEXTAREA#notation, TEXTAREA#notationB {
+    width: 49%;
+    display: inline-block;
     margin-top: 0em;
     white-space: pre;
 }
+TEXTAREA#notationB {
+    float: right;
+}
+
 TEXTAREA#tt, TEXTAREA#expected_students {
     height: 4em;
     width: 95%;

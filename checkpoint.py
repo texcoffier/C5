@@ -823,9 +823,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if column != -1:
                 column, line = self.get_coord(self.event_x, self.event_y, True)
                 student = STUDENT_DICT[self.moving['login']]
-                student.line = line
-                student.column = column
-                student.update()
+                if student.grade == '':
+                    student.line = line
+                    student.column = column
+                    student.update()
                 document.getElementById('top').style.background = TOP_INACTIVE
             else:
                 document.getElementById('top').style.background = TOP_ACTIVE
@@ -834,7 +835,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Stop moving a student"""
         if column != -1:
             if self.moving['column'] != column or self.moving['line'] != line:
-                self.move_student_to(self.moving, column, line)
+                if STUDENT_DICT[self.moving['login']].grade == '':
+                    self.move_student_to(self.moving, column, line)
             elif not self.moved:
                 # Simple click
                 record('/checkpoint/SPY/' + COURSE + '/' + self.moving['login'])
