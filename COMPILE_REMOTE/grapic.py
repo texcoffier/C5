@@ -63,6 +63,7 @@ int main() {
         winDisplay();
         delay(20);
     }
+    fontSize(20);
     pressSpace();
     winQuit();
     return 0;
@@ -108,6 +109,7 @@ int main(int, char**)
     winClear();
     draw(dat);
     winDisplay();
+    color(255, 255, 255);
     pressSpace();
     winQuit();
     return 0;
@@ -189,6 +191,7 @@ int main(int, char** )
     winClear();
     draw(dat);
     winDisplay();
+    color(255, 255, 255);
     pressSpace();
     winQuit();
     return 0;

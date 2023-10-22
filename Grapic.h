@@ -175,11 +175,7 @@ void delay(int millisecs) {
 }
 void pressSpace() {
     char x[99];
-    color(0, 0, 0);
-    fontSize(40);
-    print(10, 50, "Press a key here");
-    color(255, 255, 255);
-    print(10, 100, "Press a key here");
+    print(10, 10, "Press a key");
     printf("\001\002WAITK\001");
     fflush(stdout);
     fgets(x, sizeof(x), stdin);
