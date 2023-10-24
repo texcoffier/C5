@@ -1436,10 +1436,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if element:
             element.innerHTML = grading_sum
             element = document.getElementById('grading_sum')
+            button = document.getElementById('grading_feedback')
             if self.nr_grades == nr_grades:
                 element.style.background = "#0F0"
+                if button:
+                    button.style.opacity = 1
+                    button.style.pointerEvents = 'all'
             else:
                 element.style.background = "#FF0"
+                if button and button.feedback != 5:
+                    button.style.opacity = 0.3
+                    button.style.pointerEvents = 'none'
 
     def get_comment(self, line_number):
         """Get the actual line comment"""
