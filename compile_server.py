@@ -451,9 +451,12 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
                 process.log(("BUG", action, data))
                 await websocket.send(json.dumps(['compiler', 'bug']))
     except: # pylint: disable=bare-except
-        process.log(("EXCEPTION", traceback.format_exc()))
+        if process.process:
+            process.log(("EXCEPTION", traceback.format_exc()))
+        else:
+            process.log(("EXCEPTION", 'Because killed'))
     finally:
-        process.log("STOP")
+        process.log(("STOP", len(PROCESSES), len(FREE_USERS)))
         process.cleanup(erase_executable=True)
         PROCESSES.remove(process)
         FREE_USERS.append(process.launcher)
