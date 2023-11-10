@@ -219,7 +219,8 @@ class Process: # pylint: disable=too-many-instance-attributes
             keep = b''
             if not line:
                 break
-            if line == b'\001':
+            if line == b'\001' and self.compiler == 'racket':
+                # cout << '\001' : freeze the server
                 keep = line
                 continue
             if b"\002WAIT" in line:
