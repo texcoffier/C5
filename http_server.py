@@ -1083,7 +1083,9 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     if not src_filename.endswith('.py'):
         return "Only «.py» file allowed!"
     if '/' in src_filename:
-        return f"«{src_filename}» invalid name (/)!"
+        return f"«{src_filename}» invalid name: contains «/»!"
+    if '-' in src_filename:
+        return f"«{src_filename}» invalid name: contains «-». Please, use «_»)!"
     if replace and replace != src_filename:
         return f"«{src_filename}» is not equal to «{replace}»!"
     compiler_py = 'compile_' + compiler.lower() + '.py'
