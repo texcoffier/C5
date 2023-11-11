@@ -831,6 +831,17 @@ return sum ;
             (5, 5, {'innerHTML': ~no_grades and ~no_grade and ~no_details and ~no_comments}),
             (0, 0, {'innerHTML': Not(Contains('ccccc.js'))}),
         )
+        with self.admin_rights():
+            self.goto(f'grade/REMOTE=test/{student}')
+            while len(self.driver.find_elements_by_css_selector(
+                '.grade_unselected:first-child')) == 0:
+                time.sleep(0.1)
+            for grade in self.driver.find_elements_by_css_selector(
+                '.grade_unselected:first-child'):
+                grade.click()
+            while len(self.driver.find_elements_by_css_selector(
+                '.grade_unselected:first-child')) != 0:
+                time.sleep(0.1)
         for admin_feeback, grader_feedback, check in cases:
             with self.admin_rights():
                 self.goto('adm/session/REMOTE=test')
