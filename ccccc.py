@@ -2179,7 +2179,9 @@ class Grapic: # pylint: disable=too-many-public-methods
         img_index = len(self.images)
         self.images.append(None)
         img = eval('new Image') # pylint: disable=eval-used
-        img.src = '/media/' + COURSE + '/' + url + window.location.search
+        if '/' not in url:
+            url = COURSE + '/' + url
+        img.src = '/media/' + url + window.location.search
         img.onload = onload
 
     def image_draw(self, image_id, x, y, w, h, angle, flip):
