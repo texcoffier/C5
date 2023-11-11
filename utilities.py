@@ -328,6 +328,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.feedback = self.config['feedback']
         self.expected_students = set(re.split('[ \n\r\t]+', self.config['expected_students']))
         self.expected_students_required = int(self.config['expected_students_required'])
+        self.media = [media.split('-', 1)[1] for media in glob.glob(f'{self.dirname}-*')]
 
     def number_of_active_students(self, last_seconds:int=600) -> int:
         """Compute the number of active students the last seconds"""

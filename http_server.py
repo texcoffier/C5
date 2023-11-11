@@ -1238,6 +1238,10 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
 
     # if session.login in course.teachers:
     status = course.status('')
+    medias = []
+    for media in course.media:
+        medias.append(f'<a target="_blank" href="/media/{course.course}/{media}?ticket={session.ticket}">{media}</a>')
+    medias = ' '.join(medias)
     content.append(f'''
     <tr>
     <td class="clipped course"><div>{course.course.split('=')[1]}</div>
@@ -1266,6 +1270,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     {tipped(course.config['admins'])}
     {tipped(course.config['graders'])}
     {tipped(course.config['proctors'])}
+    <td>{medias}
     </tr>''')
 
 def checkpoint_table(session:Session, courses:List[CourseConfig],
@@ -1284,7 +1289,7 @@ async def checkpoint_list(request:Request) -> Response:
     titles = '''<tr class="sticky2"><th>Session<th>Comp<br>iler
         <th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
         <th>Start date<th>Stop date<th>Options<th>Edit<th>Try<th>Waiting<br>Room
-        <th>Creator<th>Admins<th>Graders<th>Proctors</tr>'''
+        <th>Creator<th>Admins<th>Graders<th>Proctors<th>Media</tr>'''
     content = [
         session.header(),
         '''
