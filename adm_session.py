@@ -226,9 +226,12 @@ def load_full_zip():
 
 def select_tab(label):
     """Select the tab to display"""
+    new_tab = document.getElementById(label)
+    if not new_tab:
+        return # Action menu
     if State.selected_tab:
         State.selected_tab.className = ''
-    State.selected_tab = document.getElementById(label)
+    State.selected_tab = new_tab
     State.selected_tab.className = "selected"
 
     if label == "Try A":
