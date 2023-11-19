@@ -1161,6 +1161,8 @@ async def store_media(request:Request, course:CourseConfig) -> str:
     if media_name is None:
         return "You forgot to select a course file!"
     assert isinstance(filehandle, web.FileField)
+    if media_name.endswith('.py'):
+        return "Python files are not allowed as media!" # XXX
     with open(f'{course.dirname}-{media_name}' , "wb") as file:
         file.write(filehandle.file.read())
     return f"""<tt style="font-size:100%">'&lt;img src="/media/{course.course}/{media_name}'
