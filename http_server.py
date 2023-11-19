@@ -1273,7 +1273,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     {tipped(course.config['admins'])}
     {tipped(course.config['graders'])}
     {tipped(course.config['proctors'])}
-    <td>{medias}
+    {tipped(medias)}
     </tr>''')
 
 def checkpoint_table(session:Session, courses:List[CourseConfig],
