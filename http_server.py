@@ -1177,6 +1177,7 @@ async def upload_media(request:Request) -> Response:
     course = CourseConfig.get(f'COMPILE_{compiler.upper()}/{course_name}')
     if session.is_admin(course):
         error = await store_media(request, course)
+        course.update()
     else:
         error = "Not allowed to add media!"
 
