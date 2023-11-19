@@ -1247,7 +1247,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     medias = ' '.join(medias)
     content.append(f'''
     <tr>
-    <td class="clipped course"><div>{course.course.split('=')[1]}</div>
+    <td class="clipped course"><div>{course.course.split('=')[1]}</div></td>
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
     <td>{len(course.active_teacher_room) or ''}
     <td>{len(waiting) if course.checkpoint else ''}
