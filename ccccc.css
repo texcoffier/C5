@@ -279,7 +279,12 @@ DIV.overlay {
     background: #0000;
 }
 .executor INPUT {
-    width: calc(100% - 0.3em);
+    width: calc(100% - 1.4em);
+    font-size: 100%;
+}
+.executor BUTTON {
+    position: absolute;
+    right: 0px;
     font-size: 100%;
 }
 

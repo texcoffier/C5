@@ -6,6 +6,11 @@ Compiling and executing server
 from typing import Union, List, Tuple, Optional
 import json
 import asyncio
+# original_sleep = asyncio.sleep
+# async def sleep(seconds, **args):
+#     print("sleep", seconds, args, flush=True)
+#     return await original_sleep(seconds)
+# asyncio.sleep = sleep
 import os
 import sys
 import atexit
@@ -23,6 +28,7 @@ import shutil
 import websockets
 from websockets import WebSocketServerProtocol
 import utilities
+
 
 PROCESSES = []
 FREE_USERS = list(range(3000, 4000)) # Update Makefile if changed here
@@ -236,7 +242,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 self.input_done.clear()
                 self.waiting = "done"
             size += len(line)
-            if size > 10000000: # Maximum allowed output
+            if size > 20000000: # Maximum allowed output
                 self.kill()
                 break
             self.log(("RUN", line[:100]))

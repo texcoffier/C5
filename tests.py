@@ -382,11 +382,11 @@ class Tests: # pylint: disable=too-many-public-methods
 
         # Fill second input
         time.sleep(0.6)
-        self.check('.executor INPUT:nth-child(5)')
+        self.check('.executor INPUT:nth-child(7)')
         time.sleep(0.1)
-        self.check('.executor INPUT:nth-child(5)').send_keys('*')
-        self.check('.executor INPUT:nth-child(5)').send_keys(Keys.ENTER)
-        self.check('.executor INPUT:nth-child(5)', {'value': Equal('*')}, nbr=60)
+        self.check('.executor INPUT:nth-child(7)').send_keys('*')
+        self.check('.executor INPUT:nth-child(7)').send_keys(Keys.ENTER)
+        self.check('.executor INPUT:nth-child(7)', {'value': Equal('*')}, nbr=60)
         self.check('.executor', {'innerHTML': Contains('·············***************············')}, nbr=60)
 
         # Change first input
@@ -569,11 +569,11 @@ return sum ;
         time.sleep(0.2)
         self.check('.editor').send_keys(Keys.F9)
         for i in range(10):
-            self.check(f'.executor DIV:nth-child({2*i+2})', {'textContent': Equal(str(i)+'\n')})
+            self.check(f'.executor DIV:nth-child({4*i+2})', {'textContent': Equal(str(i)+'\n')})
             for _ in range(4):
                 time.sleep(0.1)
                 try:
-                    element = self.check(f'.executor INPUT:nth-child({2*i+3})')
+                    element = self.check(f'.executor INPUT:nth-child({4*i+3})')
                     element.click()
                     time.sleep(0.2)
                     element.send_keys('1')

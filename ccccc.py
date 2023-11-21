@@ -1552,6 +1552,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if GRADING:
             update_feedback(WHERE[10])
 
+    def clear_input(self, the_question, the_index):
+        """Clear student answers"""
+        answers = self.inputs[the_question]
+        while the_index in answers:
+            del answers[the_index]
+            the_index += 1
+        self.old_source = ''
+        self.unlock_worker()
+        self.compilation_run() # Force run even if deactivated
+
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
@@ -1622,12 +1632,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
                             stop_event(event)
                         G.canvas.onkeyup = onkeypress
                 elif value == '\002INPUT':
+                    if self.executor.lastChild.tagName != 'DIV' or self.executor.lastChild.style.float == 'left':
+                        self.executor.appendChild(document.createElement('BR'))
                     span = document.createElement('INPUT')
                     span.onkeypress = bind(self.oninput, self)
                     span.input_index = self.input_index
                     if not self.inputs[self.current_question]:
                         self.inputs[self.current_question] = {}
                     self.executor.appendChild(span)
+                    clear = document.createElement('BUTTON')
+                    clear.textContent = '×'
+                    clear.setAttribute('onclick',
+                        "ccccc.clear_input(" + self.current_question + ',' + self.input_index + ')')
+                    if not self.options.forget_input:
+                        self.executor.appendChild(clear)
+                    self.executor.appendChild(document.createElement('BR'))
                     if self.input_index in self.inputs[self.current_question]:
                         span.value = self.inputs[self.current_question][self.input_index]
                         self.send_input(span.value)
@@ -1679,7 +1698,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ')
                     + '</div>')
             content.append(value)
-            self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
+            if what in self: # pylint: disable=unsubscriptable-object
+                self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question
             self.compile_now = True
