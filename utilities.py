@@ -1018,6 +1018,7 @@ def print_help() -> None:
    * start : servers
    * stop : servers
    * restart : servers
+   * restart_compile_server : only compile_server.py
    * compile : create JS
    * create_start_script : create 'xxx-start-c5' on server
    * open : launch web browser (second argument may be js|python|cpp|remote)
@@ -1163,6 +1164,14 @@ With Firefox:
 ********************************************************************
         '
     """,
+    'restart_compile_server': fr"""#C5_LOGIN
+        set -e
+        echo RESTART compile_server
+        cd {C5_DIR} 2>/dev/null || true
+        pkill --oldest -f compile_server.py || true
+        ./compile_server.py >>compile_server.log 2>&1 &
+        tail -f compile_server.log
+        """,
     'start': fr"""#C5_LOGIN
         set -e
         echo START SERVERS

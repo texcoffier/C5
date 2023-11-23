@@ -42,6 +42,8 @@ ALLOWABLE = {'brk', 'access', 'arch_prctl',
              'mprotect', 'pread64', 'prlimit64',
              'rseq', 'rt_sigaction', 'rt_sigprocmask', 'sched_yield',
              'set_robust_list', 'set_tid_address', 'getpid', 'gettid', 'tgkill',
+             'getppid',
+             'wait4', # uwed by waipid
              'clock_nanosleep', 'pipe',
              'open'}
 
