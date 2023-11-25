@@ -1985,7 +1985,6 @@ server {
         <li> Bouton et icones à ajouter pour l'étudiant :
             <ul>
                 <li> Choix du thème de coloriage syntaxique.</li>
-                <li> Désactiver intéractivement la sauvegarde des INPUTs.</li>
                 <li> Détruire une sauvegarde.</li>
                 <li> Complétion avec <tt class="key">Ctrl+Espace</tt></li>
             </ul>
@@ -2065,6 +2064,10 @@ server {
             qui sera affichée à l'étudiant et permettra de garder
             des noms de sessions courts.
         </li>
+        <li>
+            L'éditeur interactif de sujet devrait avoir la colonne
+            d'index des questions à gauche.
+        </li>
     </ul>
     <p>Dette technique :</p>
     <ul>
@@ -2072,6 +2075,10 @@ server {
             Le protocole d'échange avec '\001' n'est pas fiable
             car il ne distingue pas les débuts et fins de message et
             donc rend impossible une lecture du pipe sans jamais une erreur.
+        </li>
+        <li>
+            Faire un seul répertoire par session qui contient .cf .py .js .json
+            les logs et les média.
         </li>
     </ul>
     <p>Fonctionnalités manquantes de la <b>page d'accueil</b> :</p>
@@ -2084,6 +2091,9 @@ server {
         <li> Déterminer la version du code qui a été corrigée (sans être commentée).
             De manière automatique ou bien explicitement.
         </li>
+        <li>
+            Afficher en HTML copiable dans un mail le code commenté de l'étudiant.
+        </li>
     </ul>
 
     <p>Page de <b>paramétrage de session</b> :</p>
@@ -2094,6 +2104,11 @@ server {
         <li> Option pour désactiver la toute première compilation quand
             la compilation automatique est désactivée.
             C'est complexe à faire.
+        </li>
+        <li> Liste des média.</li>
+        <li> Détruire un média.</li>
+        <li> Ajouter une session "partage de média" dont les média sont utilisables
+            directement sans indiquer le nom de la session.
         </li>
     </ul>
 

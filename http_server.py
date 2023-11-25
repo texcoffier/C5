@@ -150,7 +150,7 @@ def filter_last_answer(answers:List[Answer]) -> AnswerPerType:
     return last
 
 async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: disable=too-many-arguments,too-many-locals
-                 login:str, grading:bool=False, author:int=0, feedback:int=0) -> Response:
+                 login:str, grading:bool=False, author:str='', feedback:int=0) -> Response:
     """Return the editor page.
        'saved' : see 'get_answer' comment.
     """
@@ -215,6 +215,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             GRADING = {int(grading)};{notation}
             STUDENT = "{login}";
             COURSE = "{course.course}";
+            REAL_COURSE = "{author}";
             SOCK = "wss://{utilities.C5_WEBSOCKET}";
             ADMIN = {int(is_admin)};
             STOP = {stop};
@@ -343,19 +344,20 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
             if isinstance(item, list) and item[0] == 'save':
                 source = item[2]
         if source:
-            if not session.is_admin(session.edit):
+            edit = CourseConfig.get(utilities.get_course(post['real_course']))
+            if not session.is_admin(edit):
                 return answer('window.ccccc.record_not_done("Vous n\'avez pas le droit !")')
-            if session.edit is None:
+            if edit is None:
                 return answer('window.ccccc.record_not_done("Rechargez la page.")')
-            os.rename(session.edit.dirname + '.py', session.edit.dirname + '.py~')
-            os.rename(session.edit.dirname + '.js', session.edit.dirname + '.js~')
-            with open(session.edit.dirname + '.py', 'w', encoding="utf-8") as file:
+            os.rename(edit.dirname + '.py', edit.dirname + '.py~')
+            os.rename(edit.dirname + '.js', edit.dirname + '.js~')
+            with open(edit.dirname + '.py', 'w', encoding="utf-8") as file:
                 file.write(source)
-            with os.popen(f'make {session.edit.dirname + ".js"} 2>&1', 'r') as file:
+            with os.popen(f'make {edit.dirname + ".js"} 2>&1', 'r') as file:
                 errors = file.read()
             if 'ERROR' in errors:
-                os.rename(session.edit.dirname + '.py~', session.edit.dirname + '.py')
-                os.rename(session.edit.dirname + '.js~', session.edit.dirname + '.js')
+                os.rename(edit.dirname + '.py~', edit.dirname + '.py')
+                os.rename(edit.dirname + '.js~', edit.dirname + '.js')
             return answer(
                 f'window.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
 
@@ -1729,8 +1731,7 @@ async def adm_editor(request:Request) -> Response:
     is_admin = session.is_admin(course)
     if not is_admin:
         return answer("Vous n'êtes pas autorisé à modifier les questions.")
-    session.edit = course # XXX If server is restarted, this attribute is lost
-    return await editor(session, is_admin, course, session.login, author=1)
+    return await editor(session, is_admin, course, session.login, author=course.course)
 
 async def get_media(request:Request) -> Response:
     """Get a media file"""

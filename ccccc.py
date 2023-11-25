@@ -774,6 +774,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         do_post_data(
             {
                 'course': self.course,
+                'real_course': REAL_COURSE,
                 'line': encodeURIComponent(JSON.stringify(self.records_in_transit[0]) + '\n'),
             }, 'log?ticket=' + TICKET)
 
