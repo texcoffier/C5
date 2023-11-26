@@ -624,6 +624,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def compilation_run(self):
         """Run one compilation"""
+        self.memorize_inputs()
         self.compile_now = True
         self.scheduler()
 
@@ -1260,6 +1261,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Window focus"""
         if self.options['checkpoint']:
             self.record('Focus', send_now=True)
+    def memorize_inputs(self):
+        """Record all input values"""
+        inputs = self.executor.getElementsByTagName('INPUT')
+        for value in inputs:
+            if value == inputs[-1] and len(value.value) == 0:
+                continue
+            self.inputs[self.current_question][value.input_index] = value.value
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':
@@ -1267,11 +1275,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.options['forget_input']:
                 event.target.disabled = True
             else:
-                inputs = event.target.parentNode.getElementsByTagName('INPUT')
-                for value in inputs:
-                    if value == inputs[-1] and len(value.value) == 0:
-                        continue
-                    self.inputs[self.current_question][value.input_index] = value.value
+                self.memorize_inputs()
             if event.target.run_on_change:
                 self.old_source = ''
                 self.unlock_worker()
