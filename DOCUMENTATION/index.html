@@ -1985,7 +1985,7 @@ server {
         <li> Bouton et icones à ajouter pour l'étudiant :
             <ul>
                 <li> Choix du thème de coloriage syntaxique.</li>
-                <li> Détruire une sauvegarde.</li>
+                <li> Détruire une sauvegarde (ou détruire les sauvegardes non taggés).</li>
                 <li> Complétion avec <tt class="key">Ctrl+Espace</tt></li>
             </ul>
         </li>
@@ -2009,22 +2009,39 @@ server {
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
         </li>
         <li>
-            Ajouter des modes d'affichage à l'éditeur :
+            Insérer les commentaires des enseignants
+            dans le code source de l'étudiant.
+            <p>
+            Les avantages :
             <ul>
-                <li> Édition : le mode classique.</li>
-                <li> Retour : affiche le barème de notation à la place des questions,
-                    ainsi que les commentaires de l'enseignant si ces informations
-                    sont diffusées. Si c'est un enseignant, c'est éditable.</li>
-                <li> Correction : affiche la correction mis en parallèle
-                    avec le code de l'étudiant.</li>
-                <li> Édition sujet : permet d'avoir une unique fenêtre pour
-                    modifier le sujet de la session et l'essayer.</li>
-                <li> Guide de TP : le code source contient des consignes
-                    pour les surveillants de TP avec des exemples de codes.</li>
+                <li> Si l'étudiant continue de modifier son code,
+                    les commentaires restent aux bons endroits.
+                </li>
+                <li>
+                    L'enseignant à la maîtrise de la présentation
+                    de ses commentaires.
+                </li>
+                <li>
+                    La fenêtre d'exécution n'est pas polluée par les commentaires.
+                </li>
+                <li>
+                    Cette fonctionnalité peut être en fait la même que celle
+                    indiqué au dessus «Gestion des versions des sources des sujets.
+                    Même s'ils sont modifiés par plusieurs personnes.»
+                    Il conviendra donc de concevoir les 2 en même temps.
+                </li>
             </ul>
-            Le mode d'édition est indiqué dans l'URL afin de pouvoir
-            mettre des lien directs à partir de la page d'accueil de l'étudiant
-            quand le mode est disponible.
+            <p>
+            Les inconvénients :
+            <ul>
+                <li>
+                    L'enseignant modifie le code source de l'étudiant
+                    en pouvant éventuellement introduire des problèmes.
+                </li>
+                <li>
+                    Commentaires du système actuel sont impossibles à récupérer.
+                </li>
+            </ul>
         </li>
     </ul>
     <p>Fonctionnalités manquantes dans le <b>checkpoint</b> (placement) :</p>
