@@ -1647,6 +1647,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     self.executor.appendChild(span)
                     clear = document.createElement('BUTTON')
                     clear.textContent = '×'
+                    clear.tabIndex = -1
                     clear.setAttribute('onclick',
                         "ccccc.clear_input(" + self.current_question + ',' + self.input_index + ')')
                     if not self.options.forget_input:
