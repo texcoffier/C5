@@ -1038,25 +1038,21 @@ def question_source(config:CourseConfig, comment:str, where:str, user:str, # pyl
 
 async def adm_answers(request:Request) -> StreamResponse: # pylint: disable=too-many-locals
     """Get students answers"""
-    _session = await get_admin_login(request)
-    course = request.match_info['course']
-    assert '/.' not in course and course.endswith('.zip')
-    course = utilities.get_course(course[:-4])
-    config = CourseConfig(course)
+    _session, config = await get_teacher_login_and_course(request)
     fildes, filename = tempfile.mkstemp()
     extension, comment = config.get_language()[:2]
     try:
         with zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w") as zipper:
-            for user in sorted(os.listdir(course)):
+            for user in sorted(os.listdir(config.dirname)):
                 await asyncio.sleep(0)
-                answers, blurs = get_answers(course, user, compiled=True)
+                answers, blurs = get_answers(config.dirname, user, compiled=True)
                 infos = config.active_teacher_room.get(user)
                 building, pos_x, pos_y, version = ((infos.room or '?') + ',?,?,?').split(',')[:4]
                 version = version.upper()
                 where = f'Surveillant: {infos.teacher}, {building} {pos_x}×{pos_y}, Version: {version}'
                 if answers:
                     zipper.writestr(
-                        f'{course}/{user}#answers.{extension}',
+                        f'{config.dirname}/{user}#answers.{extension}',
                         ''.join(
                             question_source(config, comment, where, user,
                                             question, answers[question], blurs)
