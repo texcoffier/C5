@@ -178,6 +178,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     span_highlighted = None # Racket eval result line highlighted
     first_F11 = True
     first_update = True
+    record_now_lock = False # For debugging potential critical section
 
     def __init__(self):
         self.options = options = COURSE_CONFIG
@@ -504,6 +505,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Send a new job if free and update the screen"""
         if not self.allow_edit:
             return
+        if self.record_now_lock:
+            self.record(['BUG', 'record_now_lock', 'scheduler'])
         seconds = int(millisecs() / 1000)
         if (len(self.records_in_transit)
                 and seconds - self.records_in_transit[0][0] > 5
@@ -622,9 +625,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.options['automatic_compilation'] = True
             element.className = 'checked'
 
-    def compilation_run(self):
+    def compilation_run(self, memorize_input=True):
         """Run one compilation"""
-        self.memorize_inputs()
+        if memorize_input:
+            self.memorize_inputs()
         self.compile_now = True
         self.scheduler()
 
@@ -764,20 +768,26 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def record_now(self):
         """Record on the server"""
-        if len(self.record_to_send) == 0:
-            if len(self.records_in_transit) == 0:
-                return # Nothing to send
-        else:
-            self.records_in_transit.append(self.record_to_send)
-            self.record_to_send = []
-        self.record_last_time = 0
-        self.records_last_retry = int(millisecs() / 1000)
-        do_post_data(
-            {
-                'course': self.course,
-                'real_course': REAL_COURSE,
-                'line': encodeURIComponent(JSON.stringify(self.records_in_transit[0]) + '\n'),
-            }, 'log?ticket=' + TICKET)
+        if self.record_now_lock:
+            self.record(['BUG', 'record_now_lock', 'record_now'])
+        self.record_now_lock = True
+        try:
+            if len(self.record_to_send) == 0:
+                if len(self.records_in_transit) == 0:
+                    return # Nothing to send
+            else:
+                self.records_in_transit.append(self.record_to_send)
+                self.record_to_send = []
+            self.record_last_time = 0
+            self.records_last_retry = int(millisecs() / 1000)
+            do_post_data(
+                {
+                    'course': self.course,
+                    'real_course': REAL_COURSE,
+                    'line': encodeURIComponent(JSON.stringify(self.records_in_transit[0]) + '\n'),
+                }, 'log?ticket=' + TICKET)
+        finally:
+            self.record_now_lock = False
 
     def record(self, data, send_now=False):
         """Append event to record to 'record_to_send'"""
@@ -797,6 +807,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def record_done(self, recorded_timestamp, stop_timestamp, server_time):
         """The server saved the recorded value"""
+        if self.record_now_lock:
+            self.record(['BUG', 'record_now_lock', 'record_done'])
         if server_time:
             self.server_time_delta = int(millisecs()/1000 - server_time)
         self.stop_timestamp = stop_timestamp
@@ -820,14 +832,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         del localStorage[COURSE + '/' + current_question]
                     except: # pylint: disable=bare-except
                         pass
-            self.records_in_transit = self.records_in_transit[1:]
+            self.records_in_transit.splice(0, 1) # pylint:disable=no-member # Pop first item
         if len(self.records_in_transit):
             self.record_now()
 
     def record_not_done(self, message):
         """The server can't save the data"""
+        if self.record_now_lock:
+            self.record(['BUG', 'record_now_lock', 'record_not_done'])
         self.popup_message(message)
-        self.records_in_transit = []
+        self.records_in_transit.splice(0, 1) # pylint:disable=no-member # Pop first item
 
     def get_rect(self, element):
         """Get rectangle in self.layered coordinates"""
@@ -1565,7 +1579,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             the_index += 1
         self.old_source = ''
         self.unlock_worker()
-        self.compilation_run() # Force run even if deactivated
+        self.compilation_run(memorize_input=False) # Force run even if deactivated
 
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         """Interprete messages from the worker: update self.messages"""
@@ -1704,7 +1718,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ')
                     + '</div>')
             content.append(value)
-            if what in self: # pylint: disable=unsubscriptable-object
+            if what in self: # pylint: disable=unsupported-membership-test
                 self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question

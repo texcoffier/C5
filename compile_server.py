@@ -7,9 +7,11 @@ from typing import Union, List, Tuple, Optional
 import json
 import asyncio
 # original_sleep = asyncio.sleep
-# async def sleep(seconds, **args):
-#     print("sleep", seconds, args, flush=True)
-#     return await original_sleep(seconds)
+# async def sleep(seconds, loop=None, result=None):
+#     print("sleep", seconds, flush=True)
+#     if seconds == 0:
+#         seconds = 0.01
+#     return await original_sleep(seconds, result=result)
 # asyncio.sleep = sleep
 import os
 import sys
