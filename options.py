@@ -33,7 +33,7 @@ DEFAULT_COURSE_OPTIONS = [
 ┣━━━━━━━━╉────────────────────┼────────────────────┤
 ┃Archive ┃creator admin       │creator admin       │
 ┗━━━━━━━━┹────────────────────┴────────────────────┘</pre>"""],
-    ['checkpoint'           ,0, "Requires students to be placed on the map (examination mode)"],
+    ['checkpoint'           ,1, "Requires students to be placed on the map (examination mode)"],
     ['allow_copy_paste'     ,0, "Copy/paste allowed (if not allowed students must be in full screen mode)"],
     ['save_unlock'          ,0, "Saving a question unlock next"],
     ['automatic_compilation',1, "Compilation is automatic"],
