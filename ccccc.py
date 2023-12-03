@@ -1651,7 +1651,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                             stop_event(event)
                         G.canvas.onkeyup = onkeypress
                 elif value == '\002INPUT':
-                    if self.executor.lastChild.tagName != 'DIV' or self.executor.lastChild.style.float == 'left':
+                    if (self.executor.lastChild.tagName not in ('BR', 'DIV')
+                            or self.executor.lastChild.style.float == 'left'):
                         self.executor.appendChild(document.createElement('BR'))
                     span = document.createElement('INPUT')
                     span.onkeypress = bind(self.oninput, self)
