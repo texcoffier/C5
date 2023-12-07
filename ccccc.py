@@ -520,13 +520,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
            ):
             if self.fullscreen.style.display != 'block':
                 self.fullscreen.style.display = 'block'
-                self.record('FullScreenQuit')
+                self.record(['FullScreenQuit', screen.height, window.innerHeight, window.outerHeight])
                 if not self.first_F11:
                     self.record('Blur', send_now=True)
         else:
             if self.fullscreen.style.display != 'none':
                 self.fullscreen.style.display = 'none'
-                self.record('FullScreenEnter')
+                self.record(['FullScreenEnter', screen.height, window.innerHeight, window.outerHeight])
                 if self.first_F11:
                     self.first_F11 = False
                 else:
