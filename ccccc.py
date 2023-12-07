@@ -1550,6 +1550,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         content.append('</h2></div>')
 
         if GRADING or NOTATION:
+            if GRADING and self.options.display_global_grading:
+                content.append("Cocher les ")
+                content.append('<button onclick="ccccc.set_all_grades(0)">premières cases</button> ')
+                content.append('<button onclick="ccccc.set_all_grades(1)">premières cases sauf malus</button> ')
+                content.append('<button onclick="ccccc.set_all_grades(-1)">dernières cases</button>')
             content.append('<pre>')
             i = 0
             for text, grade_label, values in parse_notation(NOTATION):
@@ -1973,6 +1978,31 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.save()
         setTimeout("window.location = window.location.search", 200)
 
+    def record_grade(self, grade_id, value):
+        """Record one student grade"""
+        do_post_data(
+            {
+                'grade': grade_id,
+                'value': value,
+                'student': STUDENT,
+            }, 'record_grade/' + COURSE + '?ticket=' + TICKET)
+
+    def set_all_grades(self, index):
+        """Set all grades to the first value"""
+        i = 0
+        for _text, grade_label, values in parse_notation(NOTATION):
+            if len(grade_label) and values:
+                if index == 1:
+                    if min(values) >= 0:
+                        self.record_grade(i, values[0])
+                elif index == 0:
+                    self.record_grade(i, values[0])
+                elif index == -1:
+                    self.record_grade(i, values[-1])
+                else:
+                    bug_index;
+            i += 1
+
 class Plot:
     """Grapic state and utilities"""
     def __init__(self, ctx, height, bcolor):
@@ -2262,12 +2292,7 @@ def grade(event):
     grade_id = event.target.getAttribute('g')
     if grade_id is None:
         return
-    do_post_data(
-        {
-            'grade': grade_id,
-            'value': value,
-            'student': STUDENT,
-        }, 'record_grade/' + COURSE + '?ticket=' + TICKET)
+    ccccc.record_grade(grade_id, value)
 
 def version_change(select):
     """Change the displayed version"""

@@ -76,6 +76,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['display_history',      1, "display version history"],
     ['display_indent',       1, "display the F8 button"],
     ['display_line_numbers', 1, "display line numbers"],
+    ['display_global_grading',0, "display the buttons to set all grades to min or max"],
 
     "Popup messages",
 

@@ -534,20 +534,20 @@ SELECT {
     padding-right: 0.5em;
 }
 
-.grading BUTTON {
+.grading PRE BUTTON {
     font-size: 100%;
     border: 1px solid #FFF;
 }
-.grading BUTTON.grade_unselected {
+.grading PRE BUTTON.grade_unselected {
     background: #EEE;
 }
-.grading BUTTON.grade_selected {
+.grading PRE BUTTON.grade_selected {
     background: #0F0;
 }
-.grading BUTTON.grade_undefined {
+.grading PRE BUTTON.grade_undefined {
     background: #FF0;
 }
-.grading BUTTON:hover {
+.grading PRE BUTTON:hover {
     border: 1px solid #040;
 }
 .grading SPAN {
