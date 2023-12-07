@@ -305,7 +305,7 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
     session = await Session.get_or_fail(request, allow_ip_change=bool(course.allow_ip_change))
     if not course.running(session.login, session.client_ip):
         return answer('''window.ccccc.record_not_done(
-            "Ce que vous faites n'est plus enregistré car l'examen est terminé\")''')
+            "Ce que vous faites n'est plus enregistré car l'examen est terminé.<br>Faites Ctrl+W pour fermer l'onglet.<br>Si nécessaire faites F11 ou échappement pour quitter le plein écran.")''')
     data = urllib.parse.unquote(str(post['line']))
     # Must do sanity check on logged data
     try:
