@@ -79,6 +79,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     all_ips = {}
     pointer_on_student_list = False # If True disable list update
     force_update_waiting_room = False
+    drag_millisec_start = 0 # To compute static clic duration
+    student_clicked = None # The student that may be moved
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.ips = {}
@@ -769,7 +771,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def drag_start(self, event):
         """Start moving the map"""
         self.get_event(event)
-        column, line = self.get_coord(self.event_x, self.event_y)
         window.onmousemove = window.ontouchmove = bind(self.drag_move, self)
         window.onmouseup = window.ontouchend = bind(self.drag_stop, self)
         if event.touches:
@@ -781,21 +782,34 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.zooming_y = (self.event_y + event.touches[1].pageY) / 2
                 self.scale_start = self.scale
                 return
-        self.moved = False
+        self.student_clicked = None
+        column, line = self.get_coord(self.event_x, self.event_y)
         for student in self.students:
             if student.column == column and student.line == line:
-                self.moving = {'login': student.login,
-                               'column': student.column,
-                               'line': student.line}
-                return
+                self.student_clicked = {'login': student.login,
+                            'column': student.column,
+                            'line': student.line}
+                break
+        self.moved = False
         self.drag_x_start = self.drag_x_current = self.event_x
         self.drag_y_start = self.drag_y_current = self.event_y
+        self.drag_millisec_start = millisecs()
         self.moving = True
         scheduler.draw = True
     def drag_move(self, event):
         """Moving the map"""
         self.get_event(event)
         column, line = self.get_coord(self.event_x, self.event_y)
+        time_since_click = millisecs() - self.drag_millisec_start
+        if (self.moving == True # Student no moving
+            and not self.moved # Nothing yet moved
+            and not self.zooming
+            and time_since_click > 200 # Long clic
+            and distance2(self.drag_x_start, self.drag_y_start,
+                          self.event_x, self.event_y) > 5
+        ):
+            if self.student_clicked:
+                self.moving = self.student_clicked
         if self.zooming:
             if len(event.touches) == 2:
                 zooming = distance(self.event_x, self.event_y,
@@ -927,7 +941,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         document.getElementById('top').style.background = TOP_INACTIVE
         self.get_event(event)
         column, line = self.get_coord(self.event_x, self.event_y)
-        if self.moving != True: # pylint: disable=singleton-comparison
+        if self.moving != True or (not self.moved and self.student_clicked): # pylint: disable=singleton-comparison
+            self.moving = self.student_clicked
             column, line = self.get_coord(self.event_x, self.event_y, True)
             self.drag_stop_student(column, line)
         elif not self.moved:
