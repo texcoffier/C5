@@ -326,7 +326,7 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
         if parsed_data[-1] == 'Blur':
             course.set_parameter('active_teacher_room', infos.nr_blurs + 1, session.login, 4)
             infos.last_time = sum(i for i in parsed_data if isinstance(i, int))
-        if parsed_data[-1] == 'Focus':
+        if parsed_data[-1] == 'Focus' and infos.nr_blurs:
             duration = int(time.time() - last_time)
             course.set_parameter(
                 'active_teacher_room', infos.blur_time + duration, session.login, 9)
