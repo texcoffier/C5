@@ -1,16 +1,16 @@
-[TP01]                                        ARIANE RDC                             [TP06]
+[TP01]                                        ARIANE RDC                             [TP06]                  
 +-ww--ww--ww--ww-+                                                                   +-ww--ww--ww--ww-+
-|   sa  sa  sa   |[TP02]           [TP03]           [TP04]           [TP05]          |   as  as  as   |
-|   sb   c   c   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   c   c   bs   |
-|   sa  sb  sb   d   sa  sa  sa   |   as  as  as   d   sa  sa  sa   |   as  as  as   d   bs  bs  as   |
-|   sb   c   c   d   sb   c   c   |   c   c   bs   d   sb   c   c   |   c   c   bs   d   c   c   bs   |
-|   sa  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |   as  as  as   |
-|   sb   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |   c   c   bs   |
-|   sa  sb  sb   |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |   bs  bs  as   |
-|    c   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |   c   c   c    |
-|g  sb  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |g  as  as  bs   |
-|TP01            |    c   c   c   |   c   c   c    |    c   c   c   |   c   c   c    |TP06            |
-+------+-----+-dd+g  sb  sa  sa   |g  as  as  bs   |g  sb  sa  sa   |g  as  as  bs   +-dd+-----+------+
+|  as   sa  sa   |[TP02]           [TP03]           [TP04]           [TP05]          |   as  as   sa  |
+|   sb  sb  sb   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   bs  bs  bs   |
+|   sa  sa  sa   d  as   sa  sa   |   as  as   sa  d  as   sa  sa   |   as  as   sa  d   as  as  as   |
+|   sb  sb  sb   d   sb  sb  sb   |   bs  bs  bs   d   sb  sb  sb   |   bs  bs  bs   d   bs  bs  bs   |
+|   sa  sa  sa   |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |   as  as  as   |
+|   sb  sb  sb   |   sb  sb  sb   |   bs  bs  bs   |   sb  sb  sb   |   bs  bs  bs   |   bs  bs  bs   |
+|   sa  sa  sa   |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |   as  as  as   |
+|   sb  sb       |   sb  sb  sb   |   bs  bs  bs   |   sb  sb  sb   |   bs  bs  bs   |       bs  bs   |
+|g               |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |g               |
+|TP01            |       sb  sb   |       bs  bs   |   sb  sb       |   bs  bs       |TP06            |
++------+-----+-dd+g               |g               |g               |g               +-dd+-----+------+
 |      |     d   |TP02            |TP03            |TP04            |TP05            |   d     |      |
 |      |     d   +-dd-------------+-dd-+-------+---+----------+--dd-+-------------dd-+   d     |      |
 |      +-----+                         |       |              |                          +-----+      |
@@ -19,17 +19,17 @@
 +------+                                                                                 +------------+
 [TP11]                                        ARIANE PREMIER                         [TP16]          
 +-ww--ww--ww--ww-+                                                                   +-ww--ww--ww--ww-+
-|   sa  sa  sa   |[TP12]           [TP13]           [TP14]           [TP15]          |   as  as  as   |
-|   sb   c   c   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   c   c   bs   |
-|   sa  sb  sb   d   sa  sa  sa   |   as  as  as   d   sa  sa  sa   |   as  as  as   d   bs  bs  as   |
-|   sb   c   c   d   sb   c   c   |   c   c   bs   d   sb   c   c   |   c   c   bs   d   c   c   bs   |
-|   sa  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |   as  as  as   |
-|   sb   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |   c   c   bs   |
-|   sa  sb  sb   |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |   bs  bs  as   |
-|    c   c   c   |   sb   c   c   |   c   c   bs   |   sb   c   c   |   c   c   bs   |   c   c   c    |
-|g  sb  sa  sa   |   sa  sb  sb   |   bs  bs  as   |   sa  sb  sb   |   bs  bs  as   |g  as  as  bs   |
-|TP11            |    c   c   c   |   c   c   c    |    c   c   c   |   c   c   c    |TP16            |
-+------+-----+-dd+g  sb  sa  sa   |g  as  as  bs   |g  sb  sa  sa   |g  as  as  bs   +-dd+-----+------+
+|  as   sa  sa   |[TP12]           [TP13]           [TP14]           [TP15]          |   as  as   sa  |
+|   sb  sb  sb   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   bs  bs  bs   |
+|   sa  sa  sa   d  as   sa  sa   |   as  as   sa  d  as   sa  sa   |   as  as   sa  d   as  as  as   |
+|   sb  sb  sb   d   sb  sb  sb   |   bs  bs  bs   d   sb  sb  sb   |   bs  bs  bs   d   bs  bs  bs   |
+|   sa  sa  sa   |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |   as  as  as   |
+|   sb  sb  sb   |   sb  sb  sb   |   bs  bs  bs   |   sb  sb  sb   |   bs  bs  bs   |   bs  bs  bs   |
+|   sa  sa  sa   |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |   as  as  as   |
+|   sb  sb       |   sb  sb  sb   |   bs  bs  bs   |   sb  sb  sb   |   bs  bs  bs   |       bs  bs   |
+|g               |   sa  sa  sa   |   as  as  as   |   sa  sa  sa   |   as  as  as   |g               |
+|TP11            |       sb  sb   |       bs  bs   |   sb  sb       |   bs  bs       |TP16            |
++------+-----+-dd+g               |g               |g               |g               +-dd+-----+------+
 |      |     d   |TP12            |TP13            |TP14            |TP15            |   d     |      |
 |      |     d   +-dd-------------+-dd-+-----------+-------------dd-+-------------dd-+   d     |      |
 |      +-----+                                                                           +-----+      |
@@ -38,17 +38,17 @@
 +------------+                                                                           +------------+
 [TP21]                                        ARIANE DEUXIÈME                        [TP25]          
 +-ww--ww--ww--ww-+                                                                   +-ww--ww--ww--ww-+
-|   as  as  as   |[TP22]           [TP23]           [TP24]                           |   as  as  as   |
-|   bs  bs  bs   +-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   bs  bs  bs   |
-|   as  as  as   d   as  as  as   d   as  as  as   d   as  as  as   |                d   as  as  as   |
-|   bs  bs  bs   d   bs  bs  bs   d   bs  bs  bs   d   bs  bs  bs   |                d   bs  bs  bs   |
+|   as  as  as  s|[TP22]           [TP23]           [TP24]                           |   as  as  as   |
+|   bs  bs  bs  a+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+-ww--ww--ww--ww-+   bs  bs  bs   |
+|   as  as  as   d   as  as  as  sd   as  as  as  sd   as  as  as   |                d   as  as  as   |
+|   bs  bs  bs   d   bs  bs  bs  ad   bs  bs  bs  ad   bs  bs  bs   |                d   bs  bs  bs   |
 |   as  as  as   |   as  as  as   |   as  as  as   |   as  as  as   |                |   as  as  as   |
 |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |                |   bs  bs  bs   |
 |   as  as  as   |   as  as  as   |   as  as  as   |   as  as  as   |        +-----dd+   as  as  as   |
 |   bs  bs       |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |        d       |       bs  bs   |
 |g  as           |   as  as  as   |   as  as  as   |   as  as  as   |        d       |g      as       |
 |TP21            |   bs  bs  bs   |   bs  bs  bs   |   bs  bs  bs   |        +--+    |TP25            |
-+------+-----+-dd+g               |g               |g               |           |    +-dd+-----+------+
++------+-----+-dd+g               |g      as  as   |g               |           |    +-dd+-----+------+
 |      |     d   |TP22            |TP23            |TP24            |           |        d     |      |
 |      |     d   +-dd-------------+-dd-+-----------+-------------dd-+-----------+        d     |      |
 |      +-----+       |            |                 VIRTUA / LAB                         +-----+      |
