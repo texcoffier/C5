@@ -76,12 +76,12 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.launcher = launcher
         self.course = utilities.CourseConfig.get(utilities.get_course(course))
         self.feedback = self.course.get_feedback(login)
-        course = self.course.dirname
-        self.dir = f"{course}/{login}"
+        self.dir = f"{self.course.dir_log}/{login}"
+        self.home = f"{self.dir}/HOME"
         if not os.path.exists(self.dir):
-            if not os.path.exists(course):
-                os.mkdir(course)
-            os.mkdir(f"{course}/{login}")
+            if not os.path.exists(self.course.dir_log):
+                os.mkdir(self.course.dir_log)
+            os.mkdir(self.dir)
         try:
             os.link('sandbox/libsandbox.so', self.dir + '/libsandbox.so')
         except FileExistsError:
@@ -361,8 +361,6 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
-        self.dirname = f"{self.course.dirname}/{self.login}"
-        self.home = f"{self.dirname}/HOME"
         print(f"{time.strftime('%Y%m%d%H%M%S')} ./launcher "
               f"{self.conid} {self.allowed} {self.launcher} {self.home}",
               flush=True)

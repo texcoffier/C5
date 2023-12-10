@@ -182,16 +182,20 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
     configs:Dict[str,"CourseConfig"] = {}
     def __init__(self, course):
         if not os.path.exists(course + '.py'):
-            self.dirname = ''
             return
         self.course = course.replace('COMPILE_', '').replace('/', '=')
         self.compiler, self.session = self.course.split('=', 1)
-        self.filename = course + '.cf'
-        self.dirname = course
+        self.file_cf = course + '.cf'
+        self.file_js = course + '.js'
+        self.file_json = course + '.json'
+        self.file_py = course + '.py'
+        self.dir_log = course
+        self.dir_compiler = course.split('/')[0]
+        self.dir_session = course
         self.time = 0
         self.parse_position = 0
         try:
-            with open(self.dirname + '.json', 'r', encoding="ascii") as file:
+            with open(self.file_json, 'r', encoding="ascii") as file:
                 self.questions = json.loads(file.read())
         except FileNotFoundError:
             self.questions = []
@@ -228,15 +232,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if self.questions:
             self.config.update(self.questions[0]['options']) # Course defaults
         else:
-            print('******* No questions in', self.dirname)
+            print('******* No questions in', self.file_py)
 
         try:
             self.parse()
         except (IOError, FileNotFoundError):
-            if os.path.exists(self.filename.replace('.cf', '.js')):
+            if os.path.exists(self.file_js):
                 self.record_config()
         except SyntaxError:
-            print(f"Invalid configuration file: {self.filename}", flush=True)
+            print(f"Invalid configuration file: {self.file_cf}", flush=True)
             raise
         # Update old data structure
         if self.config['highlight'] == '0':
@@ -246,7 +250,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def parse(self):
         """Parse the end of the file"""
-        with open(self.filename, 'br') as file:
+        with open(self.file_cf, 'br') as file:
             self.time = time.time()
             file.seek(self.parse_position)
             config = self.config
@@ -280,19 +284,19 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             #     config.update(data)
             #     self.record_config()
             except: # pylint: disable=bare-except
-                print('Filename:', self.filename)
+                print('Filename:', self.file_cf)
                 print('Line:', binary_line, flush=True)
 
     def record_config(self):
         """Record the default start configuration"""
-        with open(self.filename, 'w', encoding='utf-8') as file:
+        with open(self.file_cf, 'w', encoding='utf-8') as file:
             for key, value in self.config.items():
                 if isinstance(value, dict):
                     for key2, value2 in value.items():
                         file.write(repr((key, key2, value2)) + '\n')
                 else:
                     file.write(repr((key, value)) + '\n')
-        self.parse_position = os.path.getsize(self.filename)
+        self.parse_position = os.path.getsize(self.file_cf)
         self.time = time.time()
 
     def update(self) -> None:
@@ -328,7 +332,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.feedback = self.config['feedback']
         self.expected_students = set(re.split('[ \n\r\t]+', self.config['expected_students']))
         self.expected_students_required = int(self.config['expected_students_required'])
-        self.media = [media.split('-', 1)[1] for media in glob.glob(f'{self.dirname}-*')]
+        self.media = [media.split('-', 1)[1] for media in glob.glob(f'{self.dir_session}-*')]
 
     def number_of_active_students(self, last_seconds:int=600) -> int:
         """Compute the number of active students the last seconds"""
@@ -351,7 +355,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 return
             self.config[parameter] = value
         self.update()
-        with open(self.filename, 'a', encoding='utf-8') as file:
+        with open(self.file_cf, 'a', encoding='utf-8') as file:
             timestamp = f' # {time.strftime("%Y-%m-%d %H:%M:%S")}\n'
             if key:
                 if index is None:
@@ -415,12 +419,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         else:
             to_log = None
         if to_log:
-            student_log(self.dirname, login, json.dumps(to_log) + '\n')
+            student_log(self.dir_log, login, json.dumps(to_log) + '\n')
         return active_teacher_room
 
     def status(self, login:str, client_ip:str=None) -> str: # pylint: disable=too-many-return-statements,too-many-statements,too-many-branches
         """Status of the course"""
-        if os.path.getmtime(self.filename) > self.time:
+        if os.path.getmtime(self.file_cf) > self.time:
             self.parse() # Load only the file end
             self.update()
         if self.state == 'Draft' and not self.is_admin(login):
@@ -476,27 +480,27 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def get_comments(self, login:str) -> str:
         """Get the comments"""
-        comment_file = f'{self.dirname}/{login}/comments.log'
+        comment_file = f'{self.dir_log}/{login}/comments.log'
         if os.path.exists(comment_file):
             with open(comment_file, "r", encoding='utf-8') as file:
                 return file.read()
         return ''
     def append_comment(self, login:str, comment:List) -> None:
         """Append a comment to the file"""
-        comment_file = f'{self.dirname}/{login}/comments.log'
+        comment_file = f'{self.dir_log}/{login}/comments.log'
         with open(comment_file, "a", encoding='utf-8') as file:
             file.write(json.dumps(comment) + '\n')
 
     def get_grades(self, login:str) -> str:
         """Get the grades"""
-        grade_file = f'{self.dirname}/{login}/grades.log'
+        grade_file = f'{self.dir_log}/{login}/grades.log'
         if os.path.exists(grade_file):
             with open(grade_file, "r", encoding='utf-8') as file:
                 return file.read()
         return ''
     def append_grade(self, login:str, grade:List) -> str:
         """Append a grade to the file"""
-        grade_file = f'{self.dirname}/{login}/grades.log'
+        grade_file = f'{self.dir_log}/{login}/grades.log'
         with open(grade_file, "a", encoding='utf-8') as file:
             file.write(json.dumps(grade) + '\n')
         grades = self.get_grades(login)

@@ -158,13 +158,13 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
     stop = 8000000000
     all_saves = collections.defaultdict(list)
     if author and is_admin:
-        with open(course.dirname + '.py', 'r', encoding='utf-8') as file:
+        with open(course.file_py, 'r', encoding='utf-8') as file:
             source = file.read()
         last_answers:Dict[int,Optional[Answer]] = {0: (source, 0, 0, '')}
         course = CourseConfig.get('COMPILE_PYTHON/editor')
     else:
         last_answers = {}
-        answers, _blurs = get_answers(course.dirname, login, compiled = grading or feedback)
+        answers, _blurs = get_answers(course.dir_log, login, compiled = grading or feedback)
         if grading or feedback:
             # The last save or ok or compiled or snapshot
             for key, value in answers.items():
@@ -251,7 +251,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
         else:
             if filename.startswith("="):
                 course = CourseConfig.get(utilities.get_course(filename[1:]))
-                if not course.dirname:
+                if not course.dir_log:
                     return session.message('unknown')
                 status = course.status(login, session.client_ip)
                 if status == 'draft':
@@ -278,7 +278,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                 return await editor(session, is_admin, course, session.login, feedback=feedback)
             if '=' in filename:
                 course = CourseConfig.get(utilities.get_course(filename))
-                filename = course.filename.replace('.cf', '.js')
+                filename = course.file_js
                 status = course.status(login, session.client_ip)
                 if status == 'draft':
                     return session.message('draft')
@@ -315,9 +315,9 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
         bad_json = 10
     if bad_json:
         utilities.student_log(
-            course.dirname, session.login, json.dumps([int(time.time()), ["HACK", data]]))
+            course.dir_log, session.login, json.dumps([int(time.time()), ["HACK", data]]))
     else:
-        utilities.student_log(course.dirname, session.login, data)
+        utilities.student_log(course.dir_log, session.login, data)
 
     if session.login in course.active_teacher_room:
         infos = course.active_teacher_room[session.login]
@@ -349,15 +349,15 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
                 return answer('window.ccccc.record_not_done("Vous n\'avez pas le droit !")')
             if edit is None:
                 return answer('window.ccccc.record_not_done("Rechargez la page.")')
-            os.rename(edit.dirname + '.py', edit.dirname + '.py~')
-            os.rename(edit.dirname + '.js', edit.dirname + '.js~')
-            with open(edit.dirname + '.py', 'w', encoding="utf-8") as file:
+            os.rename(edit.file_py, edit.file_py + '~')
+            os.rename(edit.file_js, edit.file_js + '~')
+            with open(edit.file_py, 'w', encoding="utf-8") as file:
                 file.write(source)
-            with os.popen(f'make {edit.dirname + ".js"} 2>&1', 'r') as file:
+            with os.popen(f'make {edit.file_js} 2>&1', 'r') as file:
                 errors = file.read()
             if 'ERROR' in errors:
-                os.rename(edit.dirname + '.py~', edit.dirname + '.py')
-                os.rename(edit.dirname + '.js~', edit.dirname + '.js')
+                os.rename(edit.file_py + '~', edit.file_py)
+                os.rename(edit.file_js + '~', edit.file_js)
             return answer(
                 f'window.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
 
@@ -372,7 +372,7 @@ async def record_grade(request:Request) -> Response:
         return answer("window.parent.ccccc.record_not_done(\"Vous n'êtes pas autorisé à noter.\")")
     post = await request.post()
     login = str(post['student'])
-    if not os.path.exists(f'{course.dirname}/{login}'):
+    if not os.path.exists(f'{course.dir_log}/{login}'):
         return answer("window.parent.ccccc.record_not_done(\"Aucun travail à noter.\")")
     if 'grade' in post:
         grades = course.append_grade(
@@ -389,7 +389,7 @@ async def record_comment(request:Request) -> Response:
         return answer("alert('Vous n'êtes pas autorisé à noter.')")
     post = await request.post()
     login = str(post['student'])
-    if not os.path.exists(f'{course.dirname}/{login}'):
+    if not os.path.exists(f'{course.dir_log}/{login}'):
         return answer("Aucun travail à commenter.")
     if 'comment' in post:
         course.append_comment(
@@ -447,21 +447,21 @@ async def adm_course(request:Request) -> Response:
     if not session.is_proctor(course):
         raise session.exception('not_proctor')
     students = {}
-    for user in sorted(os.listdir(course.dirname)):
+    for user in sorted(os.listdir(course.dir_log)):
         await asyncio.sleep(0)
         files:List[str] = []
         student:Dict[str,Any] = {'files': files}
         students[user] = student = {'files': files}
-        for filename in sorted(os.listdir(f'{course.dirname}/{user}')):
+        for filename in sorted(os.listdir(f'{course.dir_log}/{user}')):
             if '.' in filename:
                 # To not display executables
                 files.append(filename)
         try:
             student['status'] = course.status(user)
-            with open(f'{course.dirname}/{user}/http_server.log', encoding='utf-8') as file:
+            with open(f'{course.dir_log}/{user}/http_server.log', encoding='utf-8') as file:
                 student['http_server'] = file.read()
 
-            with open(f'{course.dirname}/{user}/grades.log', encoding='utf-8') as file:
+            with open(f'{course.dir_log}/{user}/grades.log', encoding='utf-8') as file:
                 student['grades'] = file.read()
 
             student['comments'] = course.get_comments(user)
@@ -585,42 +585,46 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
     elif action in ('delete', 'delete_students'):
         if not os.path.exists('Trash'):
             os.mkdir('Trash')
-        dirname, filename = config.dirname.split('/')
-        dirname = f"Trash/{dirname}"
+        dirname = f"Trash/{config.dir_compiler}"
         if not os.path.exists(dirname):
             os.mkdir(dirname)
         if action == 'delete':
-            extensions = ['', '.cf', '.py', '.js']
+            to_delete = (config.dir_log, config.file_cf, config.file_py,
+                         config.file_js, config.file_json)
         else:
-            extensions = ['']
+            to_delete = [config.dir_log]
         timestamp = time.strftime('%Y%m%d%H%M%S')
-        for extension in extensions:
-            if os.path.exists(config.dirname + extension):
-                os.rename(config.dirname + extension,
-                          f'{dirname}/{timestamp}-{filename}{extension}')
+        for path in to_delete:
+            if os.path.exists(path):
+                os.rename(path, f'{dirname}/{timestamp}-{path.replace("/", "_")}')
         if action == 'delete':
-            del CourseConfig.configs[config.dirname]
+            del CourseConfig.configs[config.dir_session]
             return f"«{course}» moved to Trash directory. Now close this page!"
-        CourseConfig.configs[config.dirname].config['active_teacher_room'] = {}
-        CourseConfig.configs[config.dirname].config['messages'] = []
-        CourseConfig.configs[config.dirname].config['tt'] = ''
-        CourseConfig.configs[config.dirname].config['expected_students'] = ''
-        CourseConfig.configs[config.dirname].config['state'] = 'Draft'
-        CourseConfig.configs[config.dirname].update()
-        CourseConfig.configs[config.dirname].record_config()
+        config.config['active_teacher_room'] = {}
+        config.config['messages'] = []
+        config.config['tt'] = ''
+        config.config['expected_students'] = ''
+        config.config['state'] = 'Draft'
+        config.update()
+        config.record_config()
         return f"«{course}» students moved to Trash. Now close this page!"
     elif action == 'rename':
         value = value.replace('.py', '')
         new_dirname = f'COMPILE_{config.compiler}/{value}'
         if '.' in value or '/' in value or '-' in value:
             return f"«{value}» invalid name because it contains «/», «.», «-»"
-        for extension in ('', '.cf', '.py', '.js', '.json'):
-            if os.path.exists(f'{new_dirname}{extension}'):
+        names = (config.dir_log, config.file_cf, config.file_py, config.file_js, config.file_json)
+        new_names = [
+            path.replace(config.dir_session, new_dirname)
+            for path in names
+            ]
+        for path in new_names:
+            if os.path.exists(path):
                 return f"«{value}» exists!"
-        for extension in ('', '.cf', '.py', '.js', '.json'):
-            if os.path.exists(config.dirname + extension):
-                os.rename(config.dirname + extension, f'{new_dirname}{extension}')
-        del CourseConfig.configs[config.dirname] # Delete old
+        for path, new_path in zip(names, new_names):
+            if os.path.exists(path):
+                os.rename(path, new_path)
+        del CourseConfig.configs[config.dir_session] # Delete old
         CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
         return f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!"
     elif action == 'display_student_filter':
@@ -783,7 +787,7 @@ async def adm_get(request:Request) -> StreamResponse:
             course = filename[:-4]
             if course.startswith('COMPILE_^'):
                 course = course.split('COMPILE_')[1]
-                courses = [config.dirname
+                courses = [config.dir_session
                            for config in CourseConfig.configs.values()
                            if session.is_admin(config) and re.match(course, config.session)
                            ]
@@ -820,7 +824,7 @@ async def my_zip(request:Request) -> StreamResponse: # pylint: disable=too-many-
         for config in configs:
             if config.checkpoint:
                 continue
-            answers, _blurs = get_answers(config.dirname, session.login)
+            answers, _blurs = get_answers(config.dir_log, session.login)
             if not answers:
                 continue
             makefile = config.get_makefile()
@@ -849,7 +853,7 @@ async def my_git(request:Request) -> StreamResponse: # pylint: disable=too-many-
     session = await Session.get_or_fail(request)
     course = CourseConfig.get(utilities.get_course(request.match_info['course']))
 
-    answers, _blurs = get_answers(course.dirname, session.login)
+    answers, _blurs = get_answers(course.dir_log, session.login)
     if not os.path.exists('GIT'):
         os.mkdir('GIT')
     root = f'GIT/{session.login}'
@@ -1043,16 +1047,16 @@ async def adm_answers(request:Request) -> StreamResponse: # pylint: disable=too-
     extension, comment = config.get_language()[:2]
     try:
         with zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w") as zipper:
-            for user in sorted(os.listdir(config.dirname)):
+            for user in sorted(os.listdir(config.dir_log)):
                 await asyncio.sleep(0)
-                answers, blurs = get_answers(config.dirname, user, compiled=True)
+                answers, blurs = get_answers(config.dir_log, user, compiled=True)
                 infos = config.active_teacher_room.get(user)
                 building, pos_x, pos_y, version = ((infos.room or '?') + ',?,?,?').split(',')[:4]
                 version = version.upper()
                 where = f'Surveillant: {infos.teacher}, {building} {pos_x}×{pos_y}, Version: {version}'
                 if answers:
                     zipper.writestr(
-                        f'{config.dirname}/{user}#answers.{extension}',
+                        f'{config.dir_log}/{user}#answers.{extension}',
                         ''.join(
                             question_source(config, comment, where, user,
                                             question, answers[question], blurs)
@@ -1161,7 +1165,7 @@ async def store_media(request:Request, course:CourseConfig) -> str:
     assert isinstance(filehandle, web.FileField)
     if media_name.endswith('.py'):
         return "Python files are not allowed as media!" # XXX
-    with open(f'{course.dirname}-{media_name}' , "wb") as file:
+    with open(f'{course.session_name}-{media_name}' , "wb") as file:
         file.write(filehandle.file.read())
     return f"""<tt style="font-size:100%">'&lt;img src="/media/{course.course}/{media_name}'
         + location.search + '"&gt;'</tt>"""
@@ -1541,7 +1545,7 @@ async def checkpoint_student(request:Request) -> Response:
         course.set_parameter('active_teacher_room', session.login, student, 1)
         course.set_parameter('active_teacher_room', room, student, 2)
         to_log = [seconds, ["checkpoint_move", session.login, room]]
-    utilities.student_log(course.dirname, student, json.dumps(to_log) + '\n')
+    utilities.student_log(course.dir_log, student, json.dumps(to_log) + '\n')
     if session.is_student() and not session.is_proctor(course):
         return utilities.js_message("C'est fini.")
     return await update_browser_data(course)
@@ -1555,7 +1559,7 @@ async def checkpoint_bonus(request:Request) -> Response:
         return utilities.js_message("not_proctor")
     seconds = int(time.time())
     course.set_parameter('active_teacher_room', int(bonus), student, 7)
-    utilities.student_log(course.dirname, student,
+    utilities.student_log(course.dir_log, student,
                           f'[{seconds},["time bonus",{bonus},"{session.login}"]]\n')
     return await update_browser_data(course)
 
@@ -1627,7 +1631,7 @@ async def checkpoint_spy(request:Request) -> Response:
     answers = []
     blurs = []
     try:
-        with open(f'{course.dirname}/{student}/compile_server.log', encoding='utf-8') as file:
+        with open(f'{course.dir_log}/{student}/compile_server.log', encoding='utf-8') as file:
             for line in file:
                 if "('COMPILE'," in line:
                     line = ast.literal_eval(line)
@@ -1637,7 +1641,7 @@ async def checkpoint_spy(request:Request) -> Response:
         pass
 
     try:
-        with open(f'{course.dirname}/{student}/http_server.log', encoding='utf-8') as file:
+        with open(f'{course.dir_log}/{student}/http_server.log', encoding='utf-8') as file:
             for line in file:
                 seconds = 0
                 for item in json.loads(line):
@@ -1735,7 +1739,7 @@ async def get_media(request:Request) -> Response:
     course = CourseConfig.get(utilities.get_course(request.match_info['course']))
     if not session.is_grader(course) and not course.status(session.login).startswith('running'):
         return answer('Not allowed', content_type='text/plain')
-    return File.get(f'{course.dirname}-{request.match_info["value"]}').answer()
+    return File.get(f'{course.dir_session}-{request.match_info["value"]}').answer()
 
 async def adm_building(request:Request) -> Response:
     """Get building editor"""
