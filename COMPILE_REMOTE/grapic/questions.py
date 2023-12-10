@@ -7,6 +7,8 @@ COURSE_OPTIONS = {
             'automatic_compilation': 0,
             'compile_options': ['-Wall', '-pedantic'],
             'allowed': ['brk', 'clock_nanosleep'],
+            'sequential': 0,
+            'state': 'Ready',
             # 'forget_input': True,
             'positions' : {
                 'question': [1, 28, 0, 30, '#EFE'],

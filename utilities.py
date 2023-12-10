@@ -181,15 +181,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
     """A course session"""
     configs:Dict[str,"CourseConfig"] = {}
     def __init__(self, course):
-        if not os.path.exists(course + '.py'):
+        if not os.path.exists(course):
             return
         self.course = course.replace('COMPILE_', '').replace('/', '=')
         self.compiler, self.session = self.course.split('=', 1)
-        self.file_cf = course + '.cf'
-        self.file_js = course + '.js'
-        self.file_json = course + '.json'
-        self.file_py = course + '.py'
-        self.dir_log = course
+        self.file_cf = course + '/session.cf'
+        self.file_js = course + '/questions.js'
+        self.file_json = course + '/questions.json'
+        self.file_py = course + '/questions.py'
+        self.dir_log = course + '/LOGS'
+        self.dir_media = course + '/MEDIA'
         self.dir_compiler = course.split('/')[0]
         self.dir_session = course
         self.time = 0
@@ -237,7 +238,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         try:
             self.parse()
         except (IOError, FileNotFoundError):
-            if os.path.exists(self.file_js):
+            if os.path.exists(self.file_py):
                 self.record_config()
         except SyntaxError:
             print(f"Invalid configuration file: {self.file_cf}", flush=True)
@@ -332,7 +333,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.feedback = self.config['feedback']
         self.expected_students = set(re.split('[ \n\r\t]+', self.config['expected_students']))
         self.expected_students_required = int(self.config['expected_students_required'])
-        self.media = [media.split('-', 1)[1] for media in glob.glob(f'{self.dir_session}-*')]
+        if os.path.exists(self.dir_media):
+            self.media = os.listdir(self.dir_media)
+        else:
+            self.media = []
 
     def number_of_active_students(self, last_seconds:int=600) -> int:
         """Compute the number of active students the last seconds"""
@@ -424,9 +428,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def status(self, login:str, client_ip:str=None) -> str: # pylint: disable=too-many-return-statements,too-many-statements,too-many-branches
         """Status of the course"""
-        if os.path.getmtime(self.file_cf) > self.time:
-            self.parse() # Load only the file end
-            self.update()
+        try:
+            if os.path.getmtime(self.file_cf) > self.time:
+                self.parse() # Load only the file end
+                self.update()
+        except FileNotFoundError:
+            pass
         if self.state == 'Draft' and not self.is_admin(login):
             return 'draft'
         if self.state != 'Ready' and not self.is_grader(login):
@@ -546,8 +553,30 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
     @classmethod
     def load_all_configs(cls) -> None:
         """Read all configuration from disk"""
+        # Update file layout
         for course in sorted(glob.glob('COMPILE_*/*.py')):
-            cls.get(course[:-3])
+            course = course[:-3]
+            session = course.split('/')[1]
+            tmp = 'XXX-' + session + '/'
+            os.mkdir(tmp)
+            for extension, name in (
+                ('.cf', 'session.cf'),
+                ('.py', 'questions.py'),
+                ('.js', 'questions.js'),
+                ('.json', 'questions.json'),
+                ('', 'LOGS'),
+            ):
+                if os.path.exists(course + extension):
+                    os.rename(course + extension, tmp + name)
+            for media in glob.glob(course + '-*'):
+                if not os.path.exists(tmp + 'MEDIA'):
+                    os.mkdir(tmp + '/MEDIA')
+                os.rename(media, tmp + 'MEDIA/' + media.split('-')[-1])
+            os.rename(tmp, course)
+
+        # Load configs
+        for course in sorted(glob.glob('COMPILE_*/*')):
+            cls.get(course)
 
     def is_admin(self, login:str) -> bool:
         """Is admin or creator"""

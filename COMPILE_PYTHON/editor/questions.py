@@ -8,6 +8,8 @@ if False: # pylint: disable=using-constant-test
 
 COURSE_OPTIONS = {
     'allow_copy_paste': True,
+    'state': 'Ready',
+    'checkpoint': False,
     'positions' : {
         'question': [1, 29, 0, 100, '#EFE'],
         'tester': [100, 29, 30, 70, '#EFE'],

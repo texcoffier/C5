@@ -304,7 +304,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 f'adding {last_allowed} to the process seccomp filter (allow)\n'
                 .encode('ascii'))
             self.process = await asyncio.create_subprocess_exec(
-                compiler, *compile_options, '-I', '../../..',
+                compiler, *compile_options, '-I', '../../../..',
                 self.conid + '.cpp', *ld_options, '-o', self.conid,
                 stderr=asyncio.subprocess.PIPE,
                 preexec_fn=set_compiler_limits,

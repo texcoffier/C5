@@ -10,6 +10,7 @@ import time
 import subprocess
 import traceback
 import contextlib
+import glob
 import selenium.webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.alert import Alert
@@ -139,6 +140,8 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_many_inputs,
                     self.test_feedback,
                     self.test_results,
+                    self.test_rename,
+                    self.test_zip,
                     ):
                 print('*'*99)
                 print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -276,7 +279,7 @@ class Tests: # pylint: disable=too-many-public-methods
         retry(get_errors, nbr=nbr)
         print()
         return get_errors.element
-    def check_alert(self, contains='', accept=True, required=True, nbr=20):
+    def check_alert(self, contains='', accept=True, required=True, nbr=20, keys=None):
         """Check if an alert is on screen and accept or cancel it"""
         def check():
             try:
@@ -284,6 +287,8 @@ class Tests: # pylint: disable=too-many-public-methods
                 alert = Alert(self.driver)
                 if contains in alert.text:
                     if accept:
+                        if keys:
+                            alert.send_keys(keys)
                         alert.accept()
                     else:
                         alert.dismiss()
@@ -937,10 +942,14 @@ return sum ;
             self.check('#stop').send_keys('2100-01-01 01:00:00')
             self.check('#start').click()
             time.sleep(0.1)
-    def test_source_edit(self):
-        """Test questionnary editor"""
-        with open('COMPILE_REMOTE/xxx.py', 'w', encoding='utf-8') as file:
+
+    def create_session_xxx(self):
+        """Create a fake session"""
+        if not os.path.exists('COMPILE_REMOTE/xxx'):
+            os.mkdir('COMPILE_REMOTE/xxx')
+        with open('COMPILE_REMOTE/xxx/questions.py', 'w', encoding='utf-8') as file:
             file.write('''
+COURSE_OPTIONS = {'state': 'Ready', 'checkpoint': False}
 class Q1(Question):
     def question(self):
         return "TheQuestion"
@@ -949,6 +958,19 @@ class Q1(Question):
     def default_answer(self):
         return "TheAnswer"
 ''')
+        os.system('make COMPILE_REMOTE/xxx/questions.js')
+
+    def delete_session_xxx(self):
+        """Delete fake session"""
+        for name in ('xxx', 'xxxx'):
+            if os.path.exists('COMPILE_REMOTE/' + name):
+                with self.admin_rights():
+                    self.goto(f'adm/session2/REMOTE={name}/delete/unused')
+                    self.check('BODY', {'innerHTML': Contains(f'«REMOTE={name}» moved to Trash directory')})
+
+    def test_source_edit(self):
+        """Test questionnary editor"""
+        self.create_session_xxx()
         with self.admin_rights():
             self.goto('adm/editor/REMOTE=xxx')
             self.check('.question', {'innerHTML': Contains('TheQuestion') & Contains('>TheAnswer<')})
@@ -959,14 +981,55 @@ class Q1(Question):
 ''')
             self.check('.question', {'innerHTML': Contains('AnotherQuestion')})
             self.control('s')
-            self.check_alert('COMPILE_REMOTE/xxx.py → COMPILE_REMOTE/xxx.js', accept=True, required=True)
+            self.check_alert('COMPILE_REMOTE/xxx/questions.py → COMPILE_REMOTE/xxx/questions.js', accept=True, required=True)
             self.control('w')
+        self.delete_session_xxx()
 
     def test_results(self):
         """Check session display"""
         with self.admin_rights():
             self.goto('adm/course/REMOTE=test')
             self.check('BODY', {'innerHTML': Contains('STUDENT_DICT =')})
+
+    def test_rename(self):
+        """Check session renaming"""
+        self.create_session_xxx()
+        self.load_page('=REMOTE=xxx')
+        self.check('.editor', {'innerHTML': Contains('TheAnswer')})
+        with self.admin_rights():
+            self.goto('adm/session/REMOTE=xxx')
+            retry(lambda: self.check('SELECT OPTION[action="rename_session"]').click(),
+                nbr=2)
+            self.check_alert(keys="xxxx")
+            self.check('BODY', {'innerHTML': Contains('«REMOTE=xxx» Renamed as «REMOTE=xxxx»')})
+        self.delete_session_xxx()
+
+    def test_zip(self):
+        """Load session ZIP"""
+        with self.admin_rights():
+            # Using self.goto() will lock selenium firefox driver
+            self.driver.execute_script(f"window.open('https://127.0.0.1:4201/adm/get/COMPILE_REMOTE/test.zip?ticket={self.ticket}')")
+            for _ in range(20):
+                time.sleep(0.1)
+                names = glob.glob(os.path.expanduser('~/*/test.zip'))
+                if names:
+                    break
+                names = glob.glob(os.path.expanduser('~/test.zip'))
+                if names:
+                    break
+            else:
+                raise ValueError('Downloaded file not found')
+            print('\t\t', names)
+            self.goto('x')
+            name = names[0]
+            while os.path.getsize(name) == 0:
+                time.sleep(0.1)
+            p = subprocess.run(['unzip', '-l', name], capture_output=True, check=True)
+            # for line in p.stdout.split(b'\n'):
+            #     print(line)
+            for value in (b'questions.py', b'questions.js', b'questions.json', b'session.cf'):
+                assert b'COMPILE_REMOTE/test/' + value in p.stdout
+            os.unlink(name)
 
     def screenshots(self):
         """Dump screen shots"""
@@ -1006,8 +1069,22 @@ try:
             Tests(selenium.webdriver.Chrome(options=OPTIONS))
 
         PROFILE = selenium.webdriver.FirefoxProfile()
-        PROFILE.accept_untrusted_certs = True
-        Tests(selenium.webdriver.Firefox(firefox_profile=PROFILE))
+        PROFILE.set_preference("browser.download.dir", "/path/to/download_directory")  # Set your download directory
+        PROFILE.set_preference("browser.download.folderList", 2)
+        PROFILE.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")  # Avoid the download panel
+
+        OPTIONS = selenium.webdriver.firefox.options.Options()
+        OPTIONS.accept_untrusted_certs = True
+        OPTIONS.set_preference("browser.download.panel.shown", False)
+        OPTIONS.set_preference("browser.download.manager.showWhenStarting", False)
+        OPTIONS.set_preference('browser.download.manager.showAlertOnComplete', False)
+        OPTIONS.set_preference("browser.download.manager.closeWhenDone", True)
+        OPTIONS.set_preference("browser.download.alwaysOpenPanel", False)
+        OPTIONS.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
+        OPTIONS.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/zip")
+        OPTIONS.profile = PROFILE
+
+        Tests(selenium.webdriver.Firefox(options=OPTIONS))
         if '1' in sys.argv or 'screenshots' in sys.argv:
             # Exit after one test
             EXIT_CODE = 0

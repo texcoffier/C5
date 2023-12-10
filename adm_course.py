@@ -427,7 +427,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
                 text.append('<td>')
             text.append('</tr>')
         text.append('</table>')
-    document.body.innerHTML = text.join('') # pylint: disable=no-member
+    document.getElementById('top').innerHTML = text.join('') # pylint: disable=no-member
 
 
 display()

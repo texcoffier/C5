@@ -5,6 +5,8 @@ Demonstration of the system
 
 millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 
+COURSE_OPTIONS = {'state': 'Ready'}
+
 class Q0(Question): # pylint: disable=undefined-variable
     """Question 0"""
     def question(self):

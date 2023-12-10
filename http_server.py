@@ -478,6 +478,7 @@ async def adm_course(request:Request) -> Response:
             NOTATIONB = {json.dumps(course.config['notationB'])};
             </script>
             <script src="/adm_course.js?ticket={session.ticket}"></script>
+            <div id="top"></div>
             """)
 
 def fix_date(value):
@@ -585,18 +586,13 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
     elif action in ('delete', 'delete_students'):
         if not os.path.exists('Trash'):
             os.mkdir('Trash')
-        dirname = f"Trash/{config.dir_compiler}"
-        if not os.path.exists(dirname):
-            os.mkdir(dirname)
         if action == 'delete':
-            to_delete = (config.dir_log, config.file_cf, config.file_py,
-                         config.file_js, config.file_json)
+            to_delete = config.dir_session
         else:
-            to_delete = [config.dir_log]
+            to_delete = config.dir_log
         timestamp = time.strftime('%Y%m%d%H%M%S')
-        for path in to_delete:
-            if os.path.exists(path):
-                os.rename(path, f'{dirname}/{timestamp}-{path.replace("/", "_")}')
+        if os.path.exists(to_delete):
+            os.rename(to_delete, f'Trash/{timestamp}-{to_delete.replace("/", "_")}')
         if action == 'delete':
             del CourseConfig.configs[config.dir_session]
             return f"«{course}» moved to Trash directory. Now close this page!"
@@ -611,19 +607,11 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
     elif action == 'rename':
         value = value.replace('.py', '')
         new_dirname = f'COMPILE_{config.compiler}/{value}'
-        if '.' in value or '/' in value or '-' in value:
-            return f"«{value}» invalid name because it contains «/», «.», «-»"
-        names = (config.dir_log, config.file_cf, config.file_py, config.file_js, config.file_json)
-        new_names = [
-            path.replace(config.dir_session, new_dirname)
-            for path in names
-            ]
-        for path in new_names:
-            if os.path.exists(path):
+        if '.' in value or '/' in value:
+            return f"«{value}» invalid name because it contains «/», «.»"
+        if os.path.exists(new_dirname):
                 return f"«{value}» exists!"
-        for path, new_path in zip(names, new_names):
-            if os.path.exists(path):
-                os.rename(path, new_path)
+        os.rename(config.dir_session, new_dirname)
         del CourseConfig.configs[config.dir_session] # Delete old
         CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
         return f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!"
@@ -792,13 +780,10 @@ async def adm_get(request:Request) -> StreamResponse:
                            if session.is_admin(config) and re.match(course, config.session)
                            ]
             else:
-                courses = [course]
-            args = ['zip', '-r', '-']
-            for course in courses:
-                args.extend((course, course + '.py', course + '.cf'))
+                courses = [course.replace('=', '/', 1)]
+            args = ['zip', '-r', '-', *courses]
             process = await asyncio.create_subprocess_exec(
                 *args,
-                *tuple(glob.glob(course + '-*')),
                 stdout=asyncio.subprocess.PIPE,
                 )
             assert process.stdout
@@ -1163,9 +1148,9 @@ async def store_media(request:Request, course:CourseConfig) -> str:
     if media_name is None:
         return "You forgot to select a course file!"
     assert isinstance(filehandle, web.FileField)
-    if media_name.endswith('.py'):
-        return "Python files are not allowed as media!" # XXX
-    with open(f'{course.session_name}-{media_name}' , "wb") as file:
+    if not os.path.exists(f'{course.session_name}/MEDIA'):
+        os.mkdir(f'{course.session_name}/MEDIA')
+    with open(f'{course.session_name}/MEDIA/{media_name}' , "wb") as file:
         file.write(filehandle.file.read())
     return f"""<tt style="font-size:100%">'&lt;img src="/media/{course.course}/{media_name}'
         + location.search + '"&gt;'</tt>"""
@@ -1739,7 +1724,7 @@ async def get_media(request:Request) -> Response:
     course = CourseConfig.get(utilities.get_course(request.match_info['course']))
     if not session.is_grader(course) and not course.status(session.login).startswith('running'):
         return answer('Not allowed', content_type='text/plain')
-    return File.get(f'{course.dir_session}-{request.match_info["value"]}').answer()
+    return File.get(f'{course.dir_session}/MEDIA/{request.match_info["value"]}').answer()
 
 async def adm_building(request:Request) -> Response:
     """Get building editor"""
@@ -1784,7 +1769,7 @@ async def js_errors(request:Request) -> Response:
         return session.message('not_root')
     date = int(request.match_info['date'])
     filenames = await asyncio.get_event_loop().run_in_executor(
-        None, glob.glob, 'COMPILE_*/*/*/http_server.log')
+        None, glob.glob, 'COMPILE_*/*/LOGS/*/http_server.log')
     stream = web.StreamResponse()
     stream.content_type = 'text/csv'
     await stream.prepare(request)
