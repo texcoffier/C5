@@ -1990,8 +1990,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def set_all_grades(self, index):
         """Set all grades to the first value"""
         i = 0
+        graded = {}
+        for button in self.grading.getElementsByTagName('BUTTON'):
+            if 'grade_selected' in button.className:
+                graded[button.getAttribute('g')] = True
+
         for _text, grade_label, values in parse_notation(NOTATION):
-            if len(grade_label) and values:
+            if i not in graded and len(grade_label) and values:
                 if index == 1:
                     if min(values) >= 0:
                         self.record_grade(i, values[0])
