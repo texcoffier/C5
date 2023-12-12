@@ -114,6 +114,17 @@ def nice_date(seconds):
             + ':' + two_digit(js_date.getMinutes())
            )
 
+def strptime(yyyymmddhhmmss):
+    """Parse start/stop date"""
+    js_date = Date(
+        yyyymmddhhmmss[:4],
+        yyyymmddhhmmss[5:7] - 1,
+        yyyymmddhhmmss[8:10],
+        yyyymmddhhmmss[11:13],
+        yyyymmddhhmmss[14:16],
+        yyyymmddhhmmss[17:18])
+    return js_date.getTime() / 1000.
+
 def max(*items): # pylint: disable=redefined-builtin)
     """Emulate Python max"""
     return Math.max.apply(None, items)

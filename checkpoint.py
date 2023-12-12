@@ -1013,7 +1013,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             login, date, message = infos
             content.append(
                 "<p>"
-                + '<button onclick="hide_messages(0,'+i+')">↑</button>'
+                + '<button onclick="hide_messages(0,'+i+')">×↑</button>'
                 + '<button onclick="hide_messages('+i+','+i+')">×</button> '
                 + nice_date(date)
                 + ' ' + login + ' <b>' + html(message) + '</b>')
@@ -1237,6 +1237,7 @@ def create_page(building_name):
                 transition: transform 0.5s; cursor: pointer;
                 margin-left: 0.5em; }
         .icon:hover { transform: scale(2, 2) }
+        #TTL { font-size: 70% ; display: inline-block }
         #messages { position: fixed ; right: 0px ; bottom: 0px ;
             max-width: 40vw;
             max-height: 100vh;
@@ -1265,6 +1266,7 @@ def create_page(building_name):
         >
         <span class="icon" onclick="send_alert()">🚨</span>
         <span class="icon" onclick="search_student()">🔍</span>
+        <span id="TTL"></span>
         ''']
     content.append(
         '<span class="course" id="display_session_name">'
@@ -1607,8 +1609,25 @@ def reader(event): # pylint: disable=too-many-branches
 
     event.target.last_size = len(event.target.responseText)
 
+def split_time(secs):
+    """61 → 1 m 01"""
+    if secs >= 60:
+        return Math.floor(secs/60) + 'm' + two_digit(secs%60)
+    return secs
+
 def scheduler():
     """To not redraw needlessly"""
+    secs = Math.floor(millisecs()/1000)
+    if OPTIONS['state'] == 'Ready' and OPTIONS['checkpoint'] and secs != scheduler.secs:
+        scheduler.secs = secs # To not recompute multiple time per seconds
+        now = nice_date(secs)
+        if now > OPTIONS['stop']:
+            message = "Examen<br>terminé"
+        elif now < OPTIONS['start']:
+            message = 'Début dans<br>' + split_time(strptime(OPTIONS['start']) - secs)
+        else:
+            message = 'Fin dans<br>' + split_time(strptime(OPTIONS['stop']) - secs)
+        document.getElementById('TTL').innerHTML = message
     if Student.moving_student:
         return
     if scheduler.update_page:
@@ -1618,7 +1637,6 @@ def scheduler():
         ROOM.draw(scheduler.draw_square_feedback)
     if scheduler.update_messages:
         ROOM.update_messages()
-
     scheduler.draw_square_feedback = False
     scheduler.update_page = False
     scheduler.update_messages = False
