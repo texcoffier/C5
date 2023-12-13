@@ -900,7 +900,7 @@ async def adm_get(request:Request) -> StreamResponse:
                            ]
             else:
                 courses = [course.replace('=', '/', 1)]
-            args = ['zip', '-r', '-', *courses]
+            args = ['zip', '-r', '-', *courses, '--exclude', '*/HOME/*', '*/libsandbox.so', '*/.git/*']
             process = await asyncio.create_subprocess_exec(
                 *args,
                 stdout=asyncio.subprocess.PIPE,
