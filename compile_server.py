@@ -137,7 +137,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 pass
             self.stdin_w = 0
 
-    def cleanup(self, erase_executable:bool=False, kill:bool=False) -> None:
+    def cleanup(self, erase_executable:bool=False, kill:bool=False, erase_sandbox:bool=False) -> None:
         """Close connection"""
         self.log('CLEANUP')
         if erase_executable:
@@ -149,6 +149,12 @@ class Process: # pylint: disable=too-many-instance-attributes
                 os.unlink(self.source_file)
             except FileNotFoundError:
                 pass
+        if erase_sandbox:
+            try:
+                os.unlink(self.dir + '/libsandbox.so')
+            except FileNotFoundError:
+                pass
+
         if self.compiler != 'racket' or erase_executable or kill:
             for task in self.tasks:
                 self.log("CANCEL")
@@ -466,7 +472,7 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
             process.log(("EXCEPTION", 'Because killed'))
     finally:
         process.log(("STOP", len(PROCESSES), len(FREE_USERS)))
-        process.cleanup(erase_executable=True)
+        process.cleanup(erase_executable=True, erase_sandbox=True)
         PROCESSES.remove(process)
         FREE_USERS.append(process.launcher)
 
