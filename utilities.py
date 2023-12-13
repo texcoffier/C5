@@ -214,6 +214,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         del config['notationB']
         del config['messages']
         del config['active_teacher_room']
+        del config['git_url']
         return config
 
     def load(self):
@@ -1211,6 +1212,7 @@ With Firefox:
         set -e
         echo START SERVERS
         cd {C5_DIR} 2>/dev/null || true
+        chmod 700 . # No access for students
         mkdir TICKETS 2>/dev/null || true
         make prepare
         if [ '' != '{C5_URL}' ]

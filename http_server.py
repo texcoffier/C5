@@ -481,6 +481,95 @@ async def adm_course(request:Request) -> Response:
             <div id="top"></div>
             """)
 
+async def git_pull(course, stream):
+    """GIT pull for a course."""
+    await stream.write(f'<h1>{course.course}</h1>'.encode('utf-8'))
+    git_url = course.config['git_url']
+    if not git_url:
+        await stream.write("Vous devez d'abord définir l'URL GIT".encode('utf-8'))
+        return
+    command = rf'''
+    cd {course.dir_session}
+    echo "
+*.cf
+*.js
+*.json
+.gitignore
+LOGS
+" >.gitignore
+    if [ ! -d .git ]
+    then
+        git init
+        mkdir XXX
+        mv questions.py MEDIA XXX 2>/dev/null
+        git pull {git_url}
+        mv XXX/questions.py .
+        if [ -d XXX/MEDIA ]
+            then
+            mkdir MEDIA 2>/dev/null
+            mv XXX/MEDIA/* MEDIA
+            rmdir XXX/MEDIA
+            fi
+        rmdir XXX
+        git status
+    else
+        git stash
+        git pull {git_url}
+        git stash pop
+        echo -n '<div style="background:#FF0">'
+        (
+        echo "############################# START ###########################"
+        echo "patch -u -p1 <<%END-OF_FILE%"
+        git diff --binary
+        echo "%END-OF_FILE%"
+        echo "git add questions.py MEDIA"
+        echo "git commit -m 'Modifications venant de C5'"
+        echo "git push"
+        echo "############################# STOP ###########################"
+        ) | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
+        echo "</div>"
+    fi
+    cd ../..
+    make {course.dir_session}/questions.js
+    '''
+
+    await stream.write(b'<pre>')
+    process = await asyncio.create_subprocess_exec(
+                'sh', '-c', command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                )
+    while True:
+        data = await process.stdout.read(64 * 1024)
+        if data:
+            await stream.write(data)
+        else:
+            break
+    await stream.write(b'</pre>')
+
+async def adm_git_pull(request:Request) -> Response:
+    """Course details page for administrators"""
+    session, config = await get_course_config(request)
+    course = request.match_info['course']
+    if course.startswith('^'):
+        configs = [
+            config
+            for config in CourseConfig.configs.values()
+            if re.match(course, config.session)
+        ]
+    else:
+        configs = [config]
+
+    stream = web.StreamResponse()
+    stream.content_type = 'text/html;charset=UTF-8'
+    await stream.prepare(request)
+    await stream.write(b'<title>GIT PULL</title>')
+
+    for config in configs:
+        if session.is_admin(config):
+            await git_pull(config, stream)
+    return stream
+
 def move_to_trash(path):
     """Move a file to the Trash"""
     if os.path.exists(path):
@@ -1881,6 +1970,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/session2/{course}/{action}/{value}', adm_config),
                 web.get('/adm/session2/{course}/{action}', adm_config),
                 web.get('/adm/course/{course}', adm_course),
+                web.get('/adm/git_pull/{course}', adm_git_pull),
                 web.get('/adm/media/{course}/{action}/{media}', adm_media),
                 web.get('/adm/editor/{course}', adm_editor),
                 web.get('/adm/js_errors/{date}', js_errors),

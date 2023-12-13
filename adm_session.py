@@ -214,6 +214,10 @@ def delete_students():
     if confirm('Really delete student logs?'):
         window.location = '/adm/session2/' + COURSE + '/delete_students?ticket=' + TICKET
 
+def git_pull():
+    """Pull source update from GIT"""
+    window.location = '/adm/git_pull/' + COURSE + '?ticket=' + TICKET
+
 def select_action(element):
     """Action on the select menu"""
     if element.selectedIndex > 0:
@@ -386,6 +390,7 @@ def init():
     <option action="delete_all">Delete <b>ALL</b></option>
     <option action="delete_students">Delete <b>Students</b></option>
     <option action="load_full_zip">Load full ZIP</option>
+    <option action="git_pull">GIT pull</option>
     </select>
     </div>
     <div id="content"></div>
