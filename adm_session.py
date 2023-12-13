@@ -242,6 +242,8 @@ def select_tab(label):
         content =  '<iframe src="/checkpoint/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
     elif label == 'Edit':
         content = '<iframe src="/adm/editor/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
+    if label == "Media":
+        content = '<iframe src="/adm/media/' + COURSE + '/list/*?ticket=' + TICKET + '"></iframe>'
     elif label == 'Results':
         content = '<iframe src="/adm/course/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
     elif label == 'Chat':
@@ -368,6 +370,7 @@ def init():
     <div id="Config">Config</div>
     <div id="Access">Access</div>
     <div id="Edit">Source</div>
+    <div id="Media">Media</div>
     <div id="Try A">Try A</div>
     <div id="Try B">Try B</div>
     <div id="Place">Place</div>

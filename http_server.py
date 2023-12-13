@@ -481,6 +481,38 @@ async def adm_course(request:Request) -> Response:
             <div id="top"></div>
             """)
 
+def move_to_trash(path):
+    """Move a file to the Trash"""
+    if os.path.exists(path):
+        timestamp = time.strftime('%Y%m%d%H%M%S')
+        os.rename(path, f'Trash/{timestamp}-{path.replace("/", "_")}')
+
+async def adm_media(request:Request) -> Response:
+    """Display session media"""
+    session, course = await get_teacher_login_and_course(request)
+    if not session.is_proctor(course):
+        raise session.exception('not_proctor')
+    action = request.match_info['action']
+    media = request.match_info['media']
+    medias = []
+    for media_name in tuple(course.media):
+        if media == media_name:
+            if action == 'delete':
+                move_to_trash(f'{course.dir_media}/{media_name}')
+                course.media.remove(media_name)
+                continue
+        medias.append(f'''
+        <div style="background: #FFF; display: inline-block;">
+        {media_name}
+        <button onclick="window.location = 'https://{utilities.C5_URL}/adm/media/{course.course}/delete/{media_name}?ticket={session.ticket}'"
+                style="float: right; font-family: emoji"
+        >🗑</button>
+        <br>
+        <img src="/media/{course.course}/{media_name}?ticket={session.ticket}"
+             style="vertical-align: bottom"
+        ></div>''')
+    return answer(session.header() + ''.join(medias))
+
 def fix_date(value):
     value = re.split('[- :]+', value)
     while len(value) < 6:
@@ -590,9 +622,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             to_delete = config.dir_session
         else:
             to_delete = config.dir_log
-        timestamp = time.strftime('%Y%m%d%H%M%S')
-        if os.path.exists(to_delete):
-            os.rename(to_delete, f'Trash/{timestamp}-{to_delete.replace("/", "_")}')
+        move_to_trash(to_delete)
         if action == 'delete':
             del CourseConfig.configs[config.dir_session]
             return f"«{course}» moved to Trash directory. Now close this page!"
@@ -1148,9 +1178,9 @@ async def store_media(request:Request, course:CourseConfig) -> str:
     if media_name is None:
         return "You forgot to select a course file!"
     assert isinstance(filehandle, web.FileField)
-    if not os.path.exists(f'{course.session_name}/MEDIA'):
-        os.mkdir(f'{course.session_name}/MEDIA')
-    with open(f'{course.session_name}/MEDIA/{media_name}' , "wb") as file:
+    if not os.path.exists(course.dir_media):
+        os.mkdir(course.dir_media)
+    with open(f'{course.dir_media}/{media_name}' , "wb") as file:
         file.write(filehandle.file.read())
     return f"""<tt style="font-size:100%">'&lt;img src="/media/{course.course}/{media_name}'
         + location.search + '"&gt;'</tt>"""
@@ -1724,7 +1754,7 @@ async def get_media(request:Request) -> Response:
     course = CourseConfig.get(utilities.get_course(request.match_info['course']))
     if not session.is_grader(course) and not course.status(session.login).startswith('running'):
         return answer('Not allowed', content_type='text/plain')
-    return File.get(f'{course.dir_session}/MEDIA/{request.match_info["value"]}').answer()
+    return File.get(f'{course.dir_media}/{request.match_info["value"]}').answer()
 
 async def adm_building(request:Request) -> Response:
     """Get building editor"""
@@ -1851,6 +1881,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/session2/{course}/{action}/{value}', adm_config),
                 web.get('/adm/session2/{course}/{action}', adm_config),
                 web.get('/adm/course/{course}', adm_course),
+                web.get('/adm/media/{course}/{action}/{media}', adm_media),
                 web.get('/adm/editor/{course}', adm_editor),
                 web.get('/adm/js_errors/{date}', js_errors),
                 web.get('/adm/building/{building}', adm_building),

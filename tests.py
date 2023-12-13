@@ -11,6 +11,7 @@ import subprocess
 import traceback
 import contextlib
 import glob
+import requests
 import selenium.webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.alert import Alert
@@ -142,6 +143,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_results,
                     self.test_rename,
                     self.test_zip,
+                    self.test_media,
                     ):
                 print('*'*99)
                 print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -1030,6 +1032,33 @@ class Q1(Question):
             for value in (b'questions.py', b'questions.js', b'questions.json', b'session.cf'):
                 assert b'COMPILE_REMOTE/test/' + value in p.stdout
             os.unlink(name)
+
+    def test_media(self):
+        """Media: Uploading Listing Removing"""
+        save_ticket = self.ticket
+        response = requests.get('https://127.0.0.1:4201/', verify = False)
+        self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
+        with self.admin_rights():
+            with open('COMPILE_REMOTE/grapic/MEDIA/chien.png', 'rb') as file:
+                content = file.read()
+            response = requests.post(
+                f"https://127.0.0.1:4201/upload_media/REMOTE/grapic?ticket={self.ticket}",
+                data={'filename': 'xxx-test.png'},
+                files={'course': ('xxx-test.png', content, 'text/plain')},
+                verify=False
+            )
+            assert 'src="/media/REMOTE=grapic/xxx-test.png' in response.text
+        self.ticket = save_ticket
+        with self.admin_rights():
+            self.goto('adm/session/REMOTE=grapic')
+            self.check('#Media').click()
+            self.driver.switch_to.frame(0)
+            retry(lambda: len(self.driver.find_elements_by_css_selector('BUTTON')) != 2)
+            for i in self.driver.find_elements_by_css_selector('BUTTON'):
+                if 'grapic/delete/xxx-test.png' in i.get_attribute('outerHTML'):
+                    i.click()
+            retry(lambda: len(self.driver.find_elements_by_css_selector('BUTTON')) != 1)
+            self.driver.switch_to.default_content()
 
     def screenshots(self):
         """Dump screen shots"""
