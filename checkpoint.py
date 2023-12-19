@@ -1617,6 +1617,9 @@ def split_time(secs):
 
 def scheduler():
     """To not redraw needlessly"""
+    if document.getElementById('buildings').value != ROOM.building:
+        ROOM.change(document.getElementById('buildings').value)
+        scheduler.update_page = True
     secs = Math.floor(millisecs()/1000)
     if OPTIONS['state'] == 'Ready' and OPTIONS['checkpoint'] and secs != scheduler.secs:
         scheduler.secs = secs # To not recompute multiple time per seconds
