@@ -1642,8 +1642,8 @@ def scheduler():
     scheduler.update_messages = False
     scheduler.draw = ROOM.highlight_disk
 
-create_page(window.DEFAULT_BUILDING or "Nautibus")
-ROOM = Room(window.DEFAULT_BUILDING or "Nautibus")
+create_page(OPTIONS.default_building or "Nautibus")
+ROOM = Room(document.getElementById('buildings').value)
 scheduler.update_page = True
 
 XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
