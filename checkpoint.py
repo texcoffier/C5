@@ -1574,7 +1574,12 @@ def set_visibility(attr):
 
 def reader(event): # pylint: disable=too-many-branches
     """Read the live journal"""
-    chunk = event.target.responseText.substr(event.target.last_size or 0)
+    length = len(event.target.responseText)
+    while True: # Because it is a critical section
+        chunk = event.target.responseText.substr(event.target.last_size or 0)
+        if length == len(event.target.responseText):
+            break
+    event.target.last_size = length
     for expression in chunk.split('\n'):
         if expression == '':
             continue
@@ -1603,11 +1608,9 @@ def reader(event): # pylint: disable=too-many-branches
         else:
             window.OPTIONS[data[0]] = data[1]
 
-        set_visibility('display_student_filter')
-        set_visibility('display_my_rooms')
-        set_visibility('display_session_name')
-
-    event.target.last_size = len(event.target.responseText)
+    set_visibility('display_student_filter')
+    set_visibility('display_my_rooms')
+    set_visibility('display_session_name')
 
 def split_time(secs):
     """61 → 1 m 01"""
