@@ -892,6 +892,10 @@ async def adm_get(request:Request) -> StreamResponse:
             stream.content_type = 'application/zip'
             await stream.prepare(request)
             course = filename[:-4]
+            exclude = ['*/' + name + '*'
+                       for name in request.match_info.get('exclude', '').split(' ')
+                       if name and not name.startswith('-')
+                      ]
             if course.startswith('COMPILE_^'):
                 course = course.split('COMPILE_')[1]
                 courses = [config.dir_session
@@ -900,7 +904,8 @@ async def adm_get(request:Request) -> StreamResponse:
                            ]
             else:
                 courses = [course.replace('=', '/', 1)]
-            args = ['zip', '-r', '-', *courses, '--exclude', '*/HOME/*', '*/libsandbox.so', '*/.git/*']
+            args = ['zip', '-r', '-', *courses,
+                    '--exclude', '*/HOME/*', '*/libsandbox.so', '*/.git/*', *exclude]
             process = await asyncio.create_subprocess_exec(
                 *args,
                 stdout=asyncio.subprocess.PIPE,
@@ -1964,6 +1969,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/node_modules/{filename:.*}', handle('node_modules')),
                 web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
                 web.get('/adm/get/{filename:.*}', adm_get),
+                web.get('/adm/get_exclude/{exclude}/{filename:.*}', adm_get),
                 web.get('/adm/answers/{course:.*}', adm_answers),
                 web.get('/adm/root', adm_root),
                 web.get('/adm/session/{course}', adm_session), # Edit page

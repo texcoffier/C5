@@ -224,6 +224,11 @@ def select_action(element):
         eval(element.options[element.selectedIndex].getAttribute('action'))(element.parentNode)
     element.selectedIndex = 0
 
+def load_min_zip():
+    """Get all the session files"""
+    window.location = ("/adm/get_exclude/LOGS session.cf questions.js questions.json/COMPILE_"
+        + COURSE.replace('=', '/') + '.zip?ticket=' + TICKET)
+
 def load_full_zip():
     """Get all the session files"""
     window.location = "/adm/get/COMPILE_" + COURSE.replace('=', '/') + '.zip?ticket=' + TICKET
@@ -389,7 +394,8 @@ def init():
     <option action="rename_session">Rename session</option>
     <option action="delete_all">Delete <b>ALL</b></option>
     <option action="delete_students">Delete <b>Students</b></option>
-    <option action="load_full_zip">Load full ZIP</option>
+    <option action="load_min_zip">Load ZIP question+media</option>
+    <option action="load_full_zip">Load ZIP question+media+logs</option>
     <option action="git_pull">GIT pull</option>
     </select>
     </div>
