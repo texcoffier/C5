@@ -107,8 +107,11 @@ class Process: # pylint: disable=too-many-instance-attributes
         """Kill all the processes of the process group"""
         self.log(("BeforeProcessKill", self.launcher))
         if self.compiler == 'racket':
-            self.process.kill()
-            self.log("RacketKilled")
+            try:
+                self.process.kill()
+                self.log("RacketKilled")
+            except ProcessLookupError:
+                self.log("RacketDoesNotExists")
             self.process = None
             return
         try:
