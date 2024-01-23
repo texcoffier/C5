@@ -60,6 +60,7 @@
         (show (compile-and-run (read-line))))
     (display "\001\002RACKETFini !\001")
     (flush-output)
+    (collect-garbage 'major)
     (daemon)
 )
 
