@@ -1240,7 +1240,6 @@ With Firefox:
         """,
     'load': "./load_testing.py",
     'compile': fr"""#C5_LOGIN
-        set -e
         echo START SERVERS
         cd {C5_DIR} 2>/dev/null || true
         mkdir TICKETS 2>/dev/null || true
