@@ -16,6 +16,7 @@ import glob
 import atexit
 import html
 import copy
+import traceback
 import urllib.request
 import urllib.parse
 import asyncio
@@ -288,6 +289,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             except: # pylint: disable=bare-except
                 print('Filename:', self.file_cf)
                 print('Line:', binary_line, flush=True)
+                traceback.print_exc()
 
     def record_config(self):
         """Record the default start configuration"""

@@ -242,7 +242,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
             session = None # Not authenticated
         else:
             session = await Session.get_or_fail(request)
-            login = await session.get_login(str(request.url).split('?', 1)[0])
+            login = session.login
         filename = request.match_info['filename']
         course = None
         if not session:
