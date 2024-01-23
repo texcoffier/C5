@@ -1252,7 +1252,7 @@ With Firefox:
         ./utilities.py __create_start_script__
         """,
 }
-ACTIONS['restart'] = ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
+ACTIONS['restart'] = ACTIONS['compile'] + '\n' + ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
 
 def main() -> None:
     """MAIN"""
