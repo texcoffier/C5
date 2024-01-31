@@ -1604,6 +1604,7 @@ async def checkpoint_hosts(request:Request) -> Response:
         COURSE = '=IPS';
         STUDENTS = [];
         MESSAGES = [];
+        OPTIONS = {json.dumps({"default_building": ""})};
         IPS = {json.dumps(ips)};
         </script>
         <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>

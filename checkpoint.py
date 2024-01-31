@@ -1652,10 +1652,11 @@ create_page(OPTIONS.default_building or "Nautibus")
 ROOM = Room(document.getElementById('buildings').value)
 scheduler.update_page = True
 
-XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
-XHR.addEventListener('readystatechange', reader)
-XHR.addEventListener('error', bind(window.location.reload, window.location))
-XHR.open("GET", '/journal/' + COURSE + '?ticket=' + TICKET)
-XHR.send()
+if COURSE != "=IPS":
+    XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
+    XHR.addEventListener('readystatechange', reader)
+    XHR.addEventListener('error', bind(window.location.reload, window.location))
+    XHR.open("GET", '/journal/' + COURSE + '?ticket=' + TICKET)
+    XHR.send()
 
 setInterval(scheduler, 20)
