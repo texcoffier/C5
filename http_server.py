@@ -856,6 +856,7 @@ async def adm_c5(request:Request) -> Response: # pylint: disable=too-many-branch
             session = Session.load_ticket_file(ticket)
             if session.too_old():
                 nr_deleted += 1
+                await asyncio.sleep(0)
         more = f"{nr_deleted} tickets deleted."
     elif action == 'eval':
         try:
