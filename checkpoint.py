@@ -85,9 +85,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.menu = document.getElementById('top')
         self.ips = {}
         for room_name in CONFIG.ips_per_room:
-            for client_ip in CONFIG.ips_per_room[room_name].split(' '):
-                if client_ip != '':
-                    self.ips[client_ip] = room_name
+            for hostname in CONFIG.ips_per_room[room_name].split(' '):
+                if hostname != '':
+                    self.ips[hostname] = room_name
         self.change(building)
         window.onblur = mouse_leave
         window.onfocus = mouse_enter
@@ -992,7 +992,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         content = []
         for student in self.waiting_students:
             if student.room == '':
-                room = self.ips[student.client_ip]
+                room = self.ips[student.hostname]
                 style = ''
                 if room and self.building in BUILDINGS:
                     building, room_name = room.split(',')
@@ -1126,7 +1126,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.checkpoint_time = data[1][3]
         self.blur = data[1][4]
         self.nr_questions_done = data[1][5] or 0
-        self.client_ip = data[1][6]
+        self.hostname = data[1][6]
         self.bonus_time = data[1][7]
         self.grade = data[1][8]
         self.blur_time = data[1][9]
@@ -1139,11 +1139,11 @@ class Student: # pylint: disable=too-many-instance-attributes
 
     def is_good_room(self, room_name):
         """Use IP to compute if the student is in the good room"""
-        if self.client_ip not in ROOM.ips: # Unknown IP
+        if self.hostname not in ROOM.ips: # Unknown IP
             return True
         if ROOM.building not in BUILDINGS: # Virtual room
             return True
-        return ROOM.ips[self.client_ip] == ROOM.building + ',' + room_name
+        return ROOM.ips[self.hostname] == ROOM.building + ',' + room_name
 
     def update(self):
         """Compute some values for placed students"""

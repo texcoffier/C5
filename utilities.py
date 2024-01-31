@@ -161,7 +161,7 @@ class State(list): # pylint: disable=too-many-instance-attributes
     """State of the student"""
     slots = [ # The order is fundamental: do not change it
         'active', 'teacher', 'room', 'last_time', 'nr_blurs', 'nr_answers',
-        'client_ip', 'bonus_time', 'grade', 'blur_time', 'feedback']
+        'hostname', 'bonus_time', 'grade', 'blur_time', 'feedback']
     slot_index = {key: i for i, key in enumerate(slots)}
 
     def __setattr__(self, attr, value):
@@ -171,12 +171,6 @@ class State(list): # pylint: disable=too-many-instance-attributes
     def __getattr__(self, attr):
         """Get from the list"""
         return self[self.slot_index[attr]]
-
-    async def list(self):
-        """For JavaScript checkpoint"""
-        return (*self[:6],
-                (await DNS.infos(self.client_ip))['name'],
-                *self[7:])
 
 class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """A course session"""
@@ -399,37 +393,37 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if login in self.tt_list:
             return self.stop_tt_timestamp + bonus_time
         return self.stop_timestamp + bonus_time
-    def update_checkpoint(self, login:str, client_ip:Optional[str], now:int) -> Optional[Tuple]:
+    def update_checkpoint(self, login:str, hostname:Optional[str], now:int) -> Optional[Tuple]:
         """Update active_teacher_room"""
         if not login:
             return None
         active_teacher_room = self.active_teacher_room.get(login, None)
         if active_teacher_room is None:
-            if not client_ip:
+            if not hostname:
                 # There is an http_server.log but nothing in session.cf
-                client_ip = 'broken_cf_file'
+                hostname = 'broken_cf_file'
             # Add to the checkpoint room
-            active_teacher_room = State((0, '', '', now, 0, 0, client_ip, 0, '', 0, 1))
+            active_teacher_room = State((0, '', '', now, 0, 0, hostname, 0, '', 0, 1))
             self.set_parameter('active_teacher_room', active_teacher_room, login)
-            to_log = [now, ["checkpoint_in", client_ip]]
-        elif client_ip and client_ip != active_teacher_room.client_ip:
+            to_log = [now, ["checkpoint_in", hostname]]
+        elif hostname and hostname != active_teacher_room.hostname:
             # Student IP changed
             if self.checkpoint and not self.allow_ip_change:
                 # Undo checkpointing
-                self.set_parameter('active_teacher_room', client_ip, login, 6)
+                self.set_parameter('active_teacher_room', hostname, login, 6)
                 self.set_parameter('active_teacher_room', 0, login, 0)
-                to_log = [now, ["checkpoint_ip_change_eject", client_ip]]
+                to_log = [now, ["checkpoint_ip_change_eject", hostname]]
             else:
                 # No checkpoint: so allows the room change
-                self.set_parameter('active_teacher_room', client_ip, login, 6)
-                to_log = [now, ["checkpoint_ip_change", client_ip]]
+                self.set_parameter('active_teacher_room', hostname, login, 6)
+                to_log = [now, ["checkpoint_ip_change", hostname]]
         else:
             to_log = None
         if to_log:
             student_log(self.dir_log, login, json.dumps(to_log) + '\n')
         return active_teacher_room
 
-    def status(self, login:str, client_ip:str=None) -> str: # pylint: disable=too-many-return-statements,too-many-statements,too-many-branches
+    def status(self, login:str, hostname:str=None) -> str: # pylint: disable=too-many-return-statements,too-many-statements,too-many-branches
         """Status of the course"""
         try:
             if os.path.getmtime(self.file_cf) > self.time:
@@ -448,8 +442,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             if now < self.stop_timestamp:
                 return 'running'
             return 'done'
-        if client_ip:
-            active_teacher_room = self.update_checkpoint(login, client_ip, now)
+        if hostname:
+            active_teacher_room = self.update_checkpoint(login, hostname, now)
             if not active_teacher_room:
                 raise ValueError('Bug')
             if self.checkpoint and not active_teacher_room.active:
@@ -526,9 +520,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.set_parameter('active_teacher_room', new_value, login, 8)
         return grades
 
-    def running(self, login:str, client_ip:str=None) -> bool:
+    def running(self, login:str, hostname:str=None) -> bool:
         """If the session running for the user"""
-        return self.status(login, client_ip).startswith('running') or not CONFIG.is_student(login)
+        return self.status(login, hostname).startswith('running') or not CONFIG.is_student(login)
 
     async def get_students(self) -> List[List[Any]]:
         """Get all the students"""
@@ -539,7 +533,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 infos = await LDAP.infos(student)
             else:
                 infos = {'fn': 'FN' + student, 'sn': 'SN'+student}
-            students.append([student, await active_teacher_room.list(), infos])
+            students.append([student, active_teacher_room, infos])
         return students
 
     @classmethod
@@ -771,9 +765,10 @@ class Session:
     session_cache:Dict[str,"Session"] = {}
     edit:Optional[CourseConfig] = None # XXX Lost on server reboot
     def __init__(self, ticket, client_ip, browser, # pylint: disable=too-many-arguments
-                 login=None, creation_time=None, infos=None):
+                 login=None, creation_time=None, infos=None, hostname=None):
         self.ticket = ticket
         self.client_ip = client_ip
+        self.hostname = hostname
         self.browser = browser
         self.login = login
         self.infos = infos
@@ -807,14 +802,15 @@ class Session:
             else:
                 raise web.HTTPFound(
                     service + f'?ticket={int(time.time())}{len(self.session_cache)}')
-
+        self.hostname = (await DNS.infos(self.client_ip))['name']
         return self.login
     def record(self) -> None:
         """Record the ticket for the compile server"""
         with open(f'TICKETS/{self.ticket}', 'w', encoding='utf-8') as file:
             file.write(str(self))
     def __str__(self):
-        return repr((self.client_ip, self.browser, self.login, self.creation_time, self.infos))
+        return repr((self.client_ip, self.browser, self.login, self.creation_time,
+                     self.infos, self.hostname))
     def too_old(self) -> bool:
         """Return True if the ticket is too old"""
         if time.time() - self.creation_time > CONFIG.ticket_ttl:

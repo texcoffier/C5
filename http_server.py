@@ -253,7 +253,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                 course = CourseConfig.get(utilities.get_course(filename[1:]))
                 if not course.dir_log:
                     return session.message('unknown')
-                status = course.status(login, session.client_ip)
+                status = course.status(login, session.hostname)
                 if status == 'draft':
                     return session.message('draft')
                 is_admin = session.is_grader(course)
@@ -279,7 +279,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
             if '=' in filename:
                 course = CourseConfig.get(utilities.get_course(filename))
                 filename = course.file_js
-                status = course.status(login, session.client_ip)
+                status = course.status(login, session.hostname)
                 if status == 'draft':
                     return session.message('draft')
                 if not session.is_grader(course) and not status.startswith('running'):
@@ -303,7 +303,7 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
     post = await request.post()
     course = CourseConfig.get(utilities.get_course(str(post['course'])))
     session = await Session.get_or_fail(request, allow_ip_change=bool(course.allow_ip_change))
-    if not course.running(session.login, session.client_ip):
+    if not course.running(session.login, session.hostname):
         return answer('''window.ccccc.record_not_done(
             "Ce que vous faites n'est plus enregistré car l'examen est terminé.<br>Faites Ctrl+W pour fermer l'onglet.<br>Si nécessaire faites F11 ou échappement pour quitter le plein écran.")''')
     data = urllib.parse.unquote(str(post['line']))
@@ -1597,7 +1597,7 @@ async def checkpoint_hosts(request:Request) -> Response:
             if len(where) < 3:
                 continue
             if where[0] in buildings:
-                ips[','.join(where[:3])][infos.client_ip.lower()] += 1
+                ips[','.join(where[:3])][infos.hostname] += 1
     return answer(
         session.header() + f'''
         <script>
