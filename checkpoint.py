@@ -701,7 +701,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillText(room['teachers'], x_pos, y_pos)
     def draw_ips(self, ctx):
         """Display used IP in room"""
-        ctx.font = self.scale/2 + "px sans-serif"
+        ctx.font = self.scale/3 + "px sans-serif"
         for room, ips in self.all_ips.Items():
             if room not in self.rooms:
                 continue
@@ -710,6 +710,23 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 top += 0.5
                 x_pos, y_pos, _x_size, _y_size = self.xys(left, top)
                 ctx.fillText(line, x_pos, y_pos)
+        for ip, places_nr in IP_TO_PLACE.Items():
+            if len(places_nr[0]) != 1:
+                continue
+            building_x_y = places_nr[0][0].split(',')
+            if building_x_y[0] != self.building:
+                continue
+            ip = ip.split('.')[0]
+            x_pos, y_pos, x_size, y_size = self.xys(building_x_y[1], building_x_y[2])
+            x_pos -= x_size/2
+            y_pos -= 0.25 * y_size
+            ctx.fillStyle = "#FFF"
+            ctx.globalAlpha = 0.7
+            ctx.fillRect(x_pos, y_pos, ctx.measureText(ip).width, y_size * 0.8)
+            ctx.globalAlpha = 1
+            ctx.fillStyle = "#000"
+            ctx.fillText(ip, x_pos, y_pos + y_size/2)
+
     def draw(self, square_feedback=False):
         """Display on canvas"""
         start = Date().getTime()
@@ -1648,11 +1665,57 @@ def scheduler():
     scheduler.update_messages = False
     scheduler.draw = ROOM.highlight_disk
 
+IP_TO_PLACE = {}
+
+def clean_up_bad_placements():
+    """Remove error of placement in IPS"""
+    # Search the most probable placement for an IP
+    # IP_TO_PLACE = { ip: [ [place_list], nr ] }
+    # It is a list in case of equality
+    for key, values in IPS.Items():
+        for ip, nr in values.Items():
+            if ip.replace(RegExp("[0-9.]", 'g'), '') == '':
+                continue # An IP
+            if ip in IP_TO_PLACE:
+                if nr > IP_TO_PLACE[ip][1]:
+                    IP_TO_PLACE[ip] = [[key], nr]
+                elif nr == IP_TO_PLACE[ip][1]:
+                    IP_TO_PLACE[ip][0].append(key)
+            else:
+                IP_TO_PLACE[ip] = [[key], nr]
+
+    # Remove placement errors
+    for key, values in IPS.Items():
+        # Keep most probables IP on this place
+        nr_max = max(*[
+            nr
+            for ip, nr in values.Items()
+            if ip in IP_TO_PLACE and key in IP_TO_PLACE[ip][0]
+        ]) # Max number of occurrences of probable IPs
+        new_values = {}
+        for ip, nr in values.Items():
+            if ip in IP_TO_PLACE and key in IP_TO_PLACE[ip][0]:
+                if nr == nr_max:
+                    new_values[ip] = nr
+                else:
+                    # The IP will not be used on the place
+                    # Remove it from possibles
+                    IP_TO_PLACE[ip][0] = [i
+                                            for i in IP_TO_PLACE[ip][0]
+                                            if i != key]
+        if len(new_values) > 1:
+            print(key, values, new_values)
+            for ip in new_values:
+                print(ip, JSON.stringify(IP_TO_PLACE[ip]))
+        IPS[key] = new_values
+
 create_page(OPTIONS.default_building or "Nautibus")
 ROOM = Room(document.getElementById('buildings').value)
 scheduler.update_page = True
 
-if COURSE != "=IPS":
+if COURSE == "=IPS":
+    clean_up_bad_placements()
+else:
     XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
     XHR.addEventListener('readystatechange', reader)
     XHR.addEventListener('error', bind(window.location.reload, window.location))
