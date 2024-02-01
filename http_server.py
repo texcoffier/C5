@@ -1498,9 +1498,7 @@ async def checkpoint_list(request:Request) -> Response:
         lambda course: course.state == 'Archive' and session.is_admin(course),
         content, done)
     hide_header()
-    content.append('</table>')
-    if session.is_author():
-        content.append('''
+    content.append(r'''</table>
         <script>
         function edit(t)
         {
@@ -1508,14 +1506,16 @@ async def checkpoint_list(request:Request) -> Response:
             var s = document.createElement('SCRIPT');
             window.open('/adm/session/^' + encodeURIComponent(t.value).replace(/\\./g, '%2E') + '?ticket=' + TICKET);
         }
-        function update(t)
+        function update(value)
         {
-             var e = RegExp('^' + t.value);
+             var path = location.toString().replace(/\/\*\/[-a-zA-Z0-9_]*/, '/*/' + value);
+             window.history.replaceState('_a_', '', path);
+             var e = RegExp('^' + value);
              var tr = document.getElementsByTagName('TR');
              for(var i in tr)
                 if ( tr[i].cells && tr[i].cells[0] && tr[i].cells[13] ) {
                     var found = e.exec(tr[i].cells[0].textContent);
-                    if ( t.value === '' || t.value === '^' )
+                    if ( value === '' || value === '^' )
                         found = false;
                     if ( tr[i].cells[12].textContent.indexOf(LOGIN) == -1
                          && tr[i].cells[13].textContent.indexOf(LOGIN) == -1
@@ -1523,26 +1523,21 @@ async def checkpoint_list(request:Request) -> Response:
                          && CONFIG.masters.indexOf(LOGIN) == -1
                        )
                         found = false;
-                    if ( t.value === '' || t.value === '^' )
-                        if ( t.id == 'edit' )
-                            found = true;
-                    if ( (t.id == 'edit' && tr[i].cells[0].tagName == 'TH')
-                         || found )
-                        if ( t.id == 'edit' )
-                            tr[i].style.display = "table-row";
-                        else
-                            tr[i].style.opacity = 0.3;
+                    if ( value === '' || value === '^' )
+                        found = true;
+                    if ( tr[i].cells[0].tagName == 'TH' || found )
+                        tr[i].style.display = "table-row";
                     else
-                        if ( t.id == 'edit' )
-                            tr[i].style.display = "none";
-                        else
-                            tr[i].style.opacity = 1;
+                        tr[i].style.display = "none";
                     }
         }
         </script>
+    ''')
+    if session.is_author():
+        content.append('''
         <p>Edit all the session with a name (without the compiler)
         starting with this regular expression:
-        <input id="edit" onkeyup="update(this)"><button onclick="edit()">Edit</button>''')
+        <input id="edit" onkeyup="update(this.value)"><button onclick="edit()">Edit</button>''')
         content.append("<p>Download a Python file to add a new session for the compiler: ")
         for compiler in COMPILERS:
             content.append(f'''
@@ -1554,6 +1549,19 @@ async def checkpoint_list(request:Request) -> Response:
             <span>{compiler}</span>
             </label>
             </form>''')
+    content.append(
+        r'''
+        <script>
+        // If no filter after /* then add it
+        if(location.toString().indexOf('/*/') == -1)
+            window.history.replaceState('_a_', '', location.toString().replace('/*', '/*/'));
+        var filter = location.pathname.toString().replace(/.*\//, '');
+        update(filter);
+        var input = document.getElementById('edit');
+        if(input)
+            input.value = filter;
+        </script>
+        ''')
     if session.is_mapper():
         content.append('<p>Edit building map:<p>')
         for building in sorted(utilities.get_buildings()):
@@ -1983,6 +1991,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/config/reload', config_reload),
                 web.get('/course_config/{course}', course_config),
                 web.get('/checkpoint/*', checkpoint_list),
+                web.get('/checkpoint/*/{filter:.*}', checkpoint_list),
                 web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
                 web.get('/checkpoint/{course}', checkpoint),
                 web.get('/checkpoint/SPY/{course}/{student}', checkpoint_spy),
