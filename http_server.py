@@ -744,7 +744,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         config.set_parameter('display_my_rooms', int(value))
         feedback = f"«{course}» «{'do not' if value == '0' else ''} display «My rooms»."
     elif action == 'default_building':
-        buildings = os.listdir('BUILDINGS')
+        buildings = set(utilities.get_buildings())
         if value in buildings:
             config.set_parameter('default_building', value)
             feedback = f"«{course}» default building is «{value}»."
@@ -1556,7 +1556,7 @@ async def checkpoint_list(request:Request) -> Response:
             </form>''')
     if session.is_mapper():
         content.append('<p>Edit building map:<p>')
-        for building in sorted(os.listdir('BUILDINGS')):
+        for building in sorted(utilities.get_buildings()):
             content.append(f'''
             <button onclick="window.location=\'/adm/building/{building}?ticket={session.ticket}\'"
             >{building}</button>''')
@@ -1587,7 +1587,7 @@ async def checkpoint_hosts(request:Request) -> Response:
     session = await Session.get_or_fail(request)
     if session.is_student():
         raise session.exception('not_teacher')
-    buildings = os.listdir('BUILDINGS')
+    buildings = utilities.get_buildings()
     ips:Dict[str,Dict[str,int]] = collections.defaultdict(lambda: collections.defaultdict(int))
     for course in utilities.CourseConfig.configs.values():
         if not course.checkpoint:
@@ -1704,12 +1704,8 @@ async def home(request:Request) -> Response:
 async def checkpoint_buildings(request:Request) -> Response:
     """Building list"""
     _session = await Session.get(request)
-    buildings = {}
-    for filename in os.listdir('BUILDINGS'):
-        with open('BUILDINGS/' + filename, encoding='utf-8') as file:
-            buildings[filename] = file.read()
     return answer(
-        f'BUILDINGS = {json.dumps(buildings)};',
+        f'BUILDINGS = {json.dumps(utilities.get_buildings())};',
         content_type='application/javascript')
 
 async def computer(request:Request) -> Response:
@@ -1879,6 +1875,7 @@ async def adm_building_store(request:Request) -> Response:
     post = await request.post()
     with open(f'BUILDINGS/{building}', 'w', encoding="utf-8") as file:
         file.write(str(post['map']).replace('\r', ''))
+    utilities.get_buildings.time = 0 # Erase building cache
     return answer(f'«{building}» map recorded.')
 
 async def write_lines(stream, lines):

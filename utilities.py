@@ -153,6 +153,16 @@ def student_log(course_name:str, login:str, data:str) -> None:
     with open(f'{course_name}/{login}/http_server.log', "a", encoding='utf-8') as file:
         file.write(data)
 
+def get_buildings() -> Dict[str,str]:
+    """Building list"""
+    if time.time() - get_buildings.time > 300:
+        get_buildings.cache = {}
+        for filename in os.listdir('BUILDINGS'):
+            with open('BUILDINGS/' + filename, encoding='utf-8') as file:
+                get_buildings.cache[filename] = file.read()
+    return get_buildings.cache
+get_buildings.time = 0
+
 # Active : examination is running
 # Inactive & Room=='' : wait access to examination
 # Inactive & Room!='' : examination done
@@ -348,14 +358,18 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         """Set one of the parameters"""
         if key:
             if index is None:
+                if self.config[parameter].get(key, None) == value:
+                    return
                 self.config[parameter][key] = value
             else:
+                if self.config[parameter][key][index] == value:
+                    return
                 self.config[parameter][key][index] = value
         else:
             if self.config[parameter] == value:
                 return
             self.config[parameter] = value
-        self.update()
+            self.update() # Only update for top config changes
         with open(self.file_cf, 'a', encoding='utf-8') as file:
             timestamp = f' # {time.strftime("%Y-%m-%d %H:%M:%S")}\n'
             if key:
@@ -402,8 +416,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             if not hostname:
                 # There is an http_server.log but nothing in session.cf
                 hostname = 'broken_cf_file'
+            if self.checkpoint:
+                place = ''
+            else:
+                place = CONFIG.host_to_place.get(hostname, '')
             # Add to the checkpoint room
-            active_teacher_room = State((0, '', '', now, 0, 0, hostname, 0, '', 0, 1))
+            active_teacher_room = State((0, '', place, now, 0, 0, hostname, 0, '', 0, 1))
             self.set_parameter('active_teacher_room', active_teacher_room, login)
             to_log = [now, ["checkpoint_in", hostname]]
         elif hostname and hostname != active_teacher_room.hostname:
@@ -416,6 +434,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             else:
                 # No checkpoint: so allows the room change
                 self.set_parameter('active_teacher_room', hostname, login, 6)
+                self.set_parameter('active_teacher_room', CONFIG.host_to_place.get(hostname, ''), login, 2)
                 to_log = [now, ["checkpoint_ip_change", hostname]]
         else:
             to_log = None
@@ -647,6 +666,7 @@ class Config: # pylint: disable=too-many-instance-attributes
     roots:List[str] = []
     ticket_ttl = 86400
     computers:List[Tuple[str, int, int, str, int]] = []
+    host_to_place:Dict[str,str] = {} # hostname → building,x,y,a/b
     json = ''
     def __init__(self):
         self.config = {
@@ -710,6 +730,24 @@ class Config: # pylint: disable=too-many-instance-attributes
         self.computers = self.config['computers']
         self.student:re.Pattern = re.compile(self.config['student']) # pylint: disable=attribute-defined-outside-init
         self.json = json.dumps(self.config)
+        for room, hosts in self.config['ips_per_room'].items():
+            building = room.split(',')[0]
+            buildings = get_buildings()
+            if building not in buildings:
+                print(f"{building} from 'ips_per_room' not in BUILDINGS directory")
+                continue
+            map_rows = buildings[building].split('\n')
+            for host in re.split(' +', hosts):
+                host, pos_x, pos_y = (host + ',,').split(',')[:3]
+                if pos_y:
+                    pos_x = int(pos_x)
+                    pos_y = int(pos_y)
+                    subject = 'a'
+                    if (pos_y < len(map_rows)
+                        and pos_x < len(map_rows[pos_y])
+                        and map_rows[pos_y][pos_x] == 'b'):
+                        subject = 'b'
+                    self.host_to_place[host] = f'{building},{pos_x},{pos_y},{subject}'
     def save(self) -> None:
         """Save the configuration"""
         with open('c5.cf', 'w', encoding='utf-8') as file:
