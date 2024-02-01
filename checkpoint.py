@@ -84,10 +84,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.ips = {}
+        self.positions = {}
         for room_name in CONFIG.ips_per_room:
             for hostname in CONFIG.ips_per_room[room_name].split(' '):
                 if hostname != '':
-                    self.ips[hostname] = room_name
+                    host, pos_x, pos_y = (hostname + ',,').split(',')[:3]
+                    self.ips[host] = room_name
+                    self.positions[host] = [pos_x, pos_y]
         self.change(building)
         window.onblur = mouse_leave
         window.onfocus = mouse_enter
@@ -710,13 +713,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 top += 0.5
                 x_pos, y_pos, _x_size, _y_size = self.xys(left, top)
                 ctx.fillText(line, x_pos, y_pos)
-        for ip, places_nr in IP_TO_PLACE.Items():
+        for full_ip, places_nr in IP_TO_PLACE.Items():
             if len(places_nr[0]) != 1:
                 continue
             building_x_y = places_nr[0][0].split(',')
             if building_x_y[0] != self.building:
                 continue
-            ip = ip.split('.')[0]
+            ip = full_ip.split('.')[0]
             x_pos, y_pos, x_size, y_size = self.xys(building_x_y[1], building_x_y[2])
             x_pos -= x_size/2
             y_pos -= 0.25 * y_size
@@ -724,7 +727,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.globalAlpha = 0.7
             ctx.fillRect(x_pos, y_pos, ctx.measureText(ip).width, y_size * 0.8)
             ctx.globalAlpha = 1
-            ctx.fillStyle = "#000"
+            if self.positions[full_ip] == [building_x_y[1], building_x_y[2]]:
+                ctx.fillStyle = "#080"
+            else:
+                ctx.fillStyle = "#000"
             ctx.fillText(ip, x_pos, y_pos + y_size/2)
 
     def draw(self, square_feedback=False):
@@ -1703,11 +1709,24 @@ def clean_up_bad_placements():
                     IP_TO_PLACE[ip][0] = [i
                                             for i in IP_TO_PLACE[ip][0]
                                             if i != key]
-        if len(new_values) > 1:
-            print(key, values, new_values)
-            for ip in new_values:
-                print(ip, JSON.stringify(IP_TO_PLACE[ip]))
+        #if len(new_values) > 1:
+        #    print(key, values, new_values)
+        #    for ip in new_values:
+        #        print(ip, JSON.stringify(IP_TO_PLACE[ip]))
         IPS[key] = new_values
+
+    # Display enhanced version
+    lines = []
+    for room, hosts in CONFIG.ips_per_room.Items():
+        lines.append(room)
+        for host in hosts.split(' '):
+            if host in IP_TO_PLACE:
+                if len(IP_TO_PLACE[host][0]) == 1: # Not ambiguous
+                    _building, pos_x, pos_y = IP_TO_PLACE[host][0][0].split(',')
+                    host += ',' +  pos_x + ',' + pos_y
+            lines.append(' ' + host)
+        lines.append('\n')
+    print(''.join(lines))
 
 create_page(OPTIONS.default_building or "Nautibus")
 ROOM = Room(document.getElementById('buildings').value)

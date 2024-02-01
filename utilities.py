@@ -656,7 +656,7 @@ class Config: # pylint: disable=too-many-instance-attributes
             'mappers': self.mappers,
             'ticket_ttl': self.ticket_ttl,
             'computers': [],
-            'ips_per_room': {"Nautibus,TP3": "b710l0301.univ-lyon1.fr b710l0302.univ-lyon1.fr"},
+            'ips_per_room': {"Nautibus,TP3": "b710l0301.univ-lyon1.fr,20,10 b710l0302.univ-lyon1.fr,22,10"},
             'student': '[0-9][0-9]$',
             'messages': {
                 'unknown': "Cette session n'existe pas",
