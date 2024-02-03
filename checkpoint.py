@@ -81,6 +81,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     force_update_waiting_room = False
     drag_millisec_start = 0 # To compute static clic duration
     student_clicked = None # The student that may be moved
+    ctrl = False # Control key pressed
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.ips = {}
@@ -121,6 +122,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         return [-1, -1]
     def get_event(self, event):
         """Get event coordinates"""
+        self.ctrl = event.ctrlKey
         if event.touches:
             if len(event.touches):
                 self.event_x = event.touches[0].pageX
@@ -705,6 +707,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def draw_ips(self, ctx):
         """Display used IP in room"""
         ctx.font = self.scale/3 + "px sans-serif"
+        if self.ctrl:
+            ctx.fillStyle = "#080"
+            for room, hosts in CONFIG.ips_per_room.Items():
+                if room.split(',')[0] == self.building:
+                    for host in hosts.split(RegExp(' +')):
+                        place = host.split(',')
+                        if len(place) == 3:
+                            x_pos, y_pos, _x_size, _y_size = self.xys(place[1], place[2])
+                            ctx.fillText(place[0].split('.')[0], x_pos, y_pos)
+            return
         for room, ips in self.all_ips.Items():
             if room not in self.rooms:
                 continue
@@ -713,6 +725,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 top += 0.5
                 x_pos, y_pos, _x_size, _y_size = self.xys(left, top)
                 ctx.fillText(line, x_pos, y_pos)
+        ctx.fillStyle = "#F00"
+        for y, line in enumerate(self.lines):
+            for x, char in enumerate(line):
+                if char == 'a' or char =='b':
+                    x_pos, y_pos, _x_size, _y_size = self.xys(x, y)
+                    ctx.fillText(x + ',' + y, x_pos, y_pos)
         for full_ip, places_nr in IP_TO_PLACE.Items():
             if len(places_nr[0]) != 1:
                 continue
