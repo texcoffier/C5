@@ -1291,6 +1291,11 @@ With Firefox:
         cd {C5_DIR}
         ./utilities.py __cleanup_session_cf__
         """,
+    'create_stats': fr"""#C5_LOGIN
+        echo CREATES STATS
+        cd {C5_DIR}
+        ./utilities.py __create_stats__
+        """,
 }
 ACTIONS['restart'] = ACTIONS['compile'] + '\n' + ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
 
@@ -1314,7 +1319,11 @@ def main() -> None:
                 print('BUG ', course.file_cf)
                 os.rename(course.file_cf + '~', course.file_cf)
         return
-
+    if '__create_stats__' in sys.argv:
+        import create_stats
+        CourseConfig.load_all_configs()
+        create_stats.compile_stats(CourseConfig.configs)
+        return
 
     if 'options.html' in sys.argv:
         print('<table>')

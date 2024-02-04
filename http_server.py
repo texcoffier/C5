@@ -1969,6 +1969,20 @@ async def change_session_ip(request:Request) -> Response:
     session.client_ip += '*'
     return answer('done')
 
+async def full_stats(request:Request) -> Response:
+    """All session stats"""
+    session = await Session.get_or_fail(request) # await get_author_login(request)
+    with open('xxx-full-stats.js', 'r', encoding='utf-8') as file:
+        data = file.read()
+    return answer(f'''<!DOCTYPE html>
+    <title>STATS</title>
+    <script>STATS = {data}</script>
+    <link REL="icon" href="/favicon.ico?ticket={session.ticket}">
+    <div id="header"></div>
+    <div id="top"></div>
+    <script src="/stats.js?ticket={session.ticket}"></script>
+    ''')
+
 APP = web.Application()
 APP.add_routes([web.get('/', home),
                 web.get('/{filename}', handle()),
@@ -2008,6 +2022,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/git/{course}', my_git),
                 web.get('/media/{course}/{value}', get_media),
                 web.get('/debug/change_session_ip', change_session_ip),
+                web.get('/stats/{param}', full_stats),
                 web.post('/upload_course/{compiler}/{course}', upload_course),
                 web.post('/upload_media/{compiler}/{course}', upload_media),
                 web.post('/log', log),
