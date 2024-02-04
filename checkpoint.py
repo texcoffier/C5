@@ -848,7 +848,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if (self.moving == True # Student no moving
             and not self.moved # Nothing yet moved
             and not self.zooming
-            and time_since_click > 200 # Long clic
+            and time_since_click > 150 # Long clic
             and distance2(self.drag_x_start, self.drag_y_start,
                           self.event_x, self.event_y) > 5
         ):
