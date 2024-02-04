@@ -199,6 +199,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.prepare_ips()
         except: # pylint: disable=bare-except
             self.all_ips = {}
+        self.force_update_waiting_room = True
     def prepare_draw(self):
         """Compile information to draw quickly the map"""
         self.walls = []
@@ -706,6 +707,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillText(room['teachers'], x_pos, y_pos)
     def draw_ips(self, ctx):
         """Display used IP in room"""
+        if COURSE != "=IPS":
+            return
         ctx.font = self.scale/3 + "px sans-serif"
         if self.ctrl:
             ctx.fillStyle = "#080"
@@ -1023,7 +1026,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             left, top, width, height = room['position'][:4]
             right, bottom, _x_size, _y_size = self.xys(left + width, top + height)
             left, top, _x_size, _y_size = self.xys(left, top)
-            if left > 0 and top > 0 and right < self.width and bottom < self.height:
+            if left > -5 and top > -5 and right < self.width + 5 and bottom < self.height + 5:
                 self.rooms_on_screen[room_name] = True
     def update_waiting_room(self):
         """Update HTML with the current waiting student for the rooms on screen"""
@@ -1676,6 +1679,21 @@ def scheduler():
             message = 'Fin dans<br>' + split_time(strptime(OPTIONS['stop']) - secs)
         document.getElementById('TTL').innerHTML = message
     if Student.moving_student:
+        hostname = STUDENT_DICT[Student.moving_student].hostname
+        if hostname in ROOM.positions:
+            col, row = ROOM.positions[hostname]
+            x_pos, y_pos, x_size, y_size = ROOM.xys(col, row)
+            ctx = document.getElementById('canvas').getContext("2d")
+            ctx.globalAlpha = 1
+            ctx.lineWidth = x_size / 10
+            if millisecs() % 1000 > 500:
+                ctx.strokeStyle = "#000"
+            else:
+                ctx.strokeStyle = "#FF0"
+            ctx.beginPath()
+            ctx.arc(x_pos, y_pos + 0.15*y_size, x_size/1.8, 0, Math.PI*2, True)
+            ctx.closePath()
+            ctx.stroke()
         return
     if scheduler.update_page:
         update_page()
