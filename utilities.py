@@ -1097,6 +1097,8 @@ def print_help() -> None:
    * cp : copy local files to production ones
    * diff : compare local files to production ones
    * getall : copy production course (but not logs) locally
+   * cleanup_session_cf : removes any modification history from 'session.cf' files
+                          to do between semesters to speedup C5 startup time.
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py -e dns_server.py -e infos_server.py | grep -v grep")
@@ -1284,6 +1286,11 @@ With Firefox:
         cd {C5_DIR}
         ./utilities.py __create_start_script__
         """,
+    'cleanup_session_cf': fr"""#C5_LOGIN
+        echo 'CLEAN UP SESSION CF (remove history)'
+        cd {C5_DIR}
+        ./utilities.py __cleanup_session_cf__
+        """,
 }
 ACTIONS['restart'] = ACTIONS['compile'] + '\n' + ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
 
@@ -1292,6 +1299,23 @@ def main() -> None:
     if '__create_start_script__' in sys.argv:
         create_start_script()
         return
+    if '__cleanup_session_cf__' in sys.argv:
+        CourseConfig.load_all_configs()
+        for course in CourseConfig.configs.values():
+            try:
+                os.rename(course.file_cf, course.file_cf + '~')
+                course.record_config()
+                CourseConfig(course.dir_session)
+                print('CLEANED ', course.file_cf,
+                    os.path.getsize(course.file_cf + '~') // 1024, 'KB →',
+                    os.path.getsize(course.file_cf) // 1024, 'KB')
+            except: # pylint: disable=bare-except
+                # Revert changes
+                print('BUG ', course.file_cf)
+                os.rename(course.file_cf + '~', course.file_cf)
+        return
+
+
     if 'options.html' in sys.argv:
         print('<table>')
         for line in options.DEFAULT_COURSE_OPTIONS:
