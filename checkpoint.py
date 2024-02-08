@@ -1177,7 +1177,11 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.feedback = data[1][10]
         self.firstname = data[2]['fn']
         self.surname = data[2]['sn']
-        self.sort_key = self.surname + '\001' + self.firstname + '\001' + self.login
+        if self.hostname in ROOM.ips:
+            unknown_room = 0
+        else:
+            unknown_room = 1
+        self.sort_key = unknown_room + self.surname + '\001' + self.firstname + '\001' + self.login
         STUDENT_DICT[self.login] = self
         self.update()
 
@@ -1228,7 +1232,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         return filters.logins[self.login]
 
 def cmp_student_name(student_a, student_b):
-    """Compare 2 students names"""
+    """Compare 2 students keys (static PC, name, surname)"""
     if student_a.sort_key > student_b.sort_key:
         return 1
     return -1
