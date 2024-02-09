@@ -30,6 +30,49 @@ def filters(element):
 
 filters.logins = {}
 
+def highlight_buttons(value):
+    for child in document.getElementById("checkpoint_time_buttons").childNodes:
+        if child.getAttribute('value') == value or value == '':
+            child.style.background = '#8F8'
+        else:
+            child.style.background = '#DDD'
+
+def update_checkpoint_time(element, keep=False):
+    """Set a nice time_span"""
+    timestamp = strptime(element.value + ':00')
+    element.style.background = ''
+    if isNaN(timestamp):
+        ROOM.time_span = [0, 1e99]
+        if element.value != '':
+            element.style.background = '#FDD'
+        highlight_buttons('')
+        update_page()
+        return
+
+    if not keep:
+        after = 1e99
+        before = 0
+        for student in STUDENTS:
+            if student[1][2].split(',')[0] == ROOM.building:
+                t = student[1][3]
+                if t > timestamp and t < after:
+                    after = t
+                if t < timestamp and t > before:
+                    before = t
+        if timestamp - before < after - timestamp:
+            timestamp = before
+        else:
+            timestamp = after
+    ROOM.time_span = [timestamp - 12*3600, timestamp + 12 * 3600]
+    element.value = nice_date(timestamp)
+    highlight_buttons(element.value)
+    update_page()
+
+def button_checkpoint_time(element):
+    checkpoint_time = document.getElementById('checkpoint_time')
+    checkpoint_time.value = element.getAttribute('value')
+    update_checkpoint_time(checkpoint_time, True)
+
 def seconds():
     """Number of second as Unix"""
     return int(Date().getTime() / 1000)
@@ -82,6 +125,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     drag_millisec_start = 0 # To compute static clic duration
     student_clicked = None # The student that may be moved
     ctrl = False # Control key pressed
+    time_span = [0, 1e50]
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.ips = {}
@@ -1162,12 +1206,20 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.teacher = data[1][1]
         self.room = data[1][2]
         room = self.room.split(',')
-        if len(room) >= 3:
-            self.building = room[0]
-            self.column = int(room[1])
-            self.line = int(room[2])
-            self.version = room[3]
         self.checkpoint_time = data[1][3]
+        # Show placed students only if
+        #  * It is an exam session
+        #  * or it is in a time span
+        #    The default time span is NOW
+        if (OPTIONS.checkpoint
+            or self.checkpoint_time >= ROOM.time_span[0]
+               and self.checkpoint_time <= ROOM.time_span[1]
+           ):
+            if len(room) >= 3:
+                self.building = room[0]
+                self.column = int(room[1])
+                self.line = int(room[2])
+                self.version = room[3]
         self.blur = data[1][4]
         self.nr_questions_done = data[1][5] or 0
         self.hostname = data[1][6]
@@ -1338,6 +1390,30 @@ def create_page(building_name):
         '<div><label id="display_student_filter" class="filter">Mettre en évidence les logins :<br>'
         + '<input onchange="filters(this)" onblur="filters(this)"'
         + '       style="box-sizing: border-box; width:100%"></label></div>')
+    if not OPTIONS.checkpoint:
+        now = Date()
+        now.setHours(12)
+        now.setMinutes(0)
+        content.append(
+            '<div><label id="display_checkpoint_time" class="filter">Filtrer par jour de dernière interaction :<br>'
+            + '<input id="checkpoint_time" onchange="update_checkpoint_time(this)" onblur="update_checkpoint_time(this)"'
+            + '       value="' + nice_date(now.getTime()/1000) + '"'
+            + '       style="box-sizing: border-box; width:100%"></label>')
+        buttons = []
+        content.append('<div id="checkpoint_time_buttons" style="display:flex;width:100%">')
+        background = 'background:#8F8'
+        for label in ["Auj.<br>", "Hier<br>", "A.H.<br>", "<br>", "<br>", "<br>", "<br>"]:
+            buttons.append("""<button
+             style="padding:0;flex:1;font-size: 70%;""" + background
+             + '" value="' + nice_date(now.getTime()/1000)
+             + '" onclick="button_checkpoint_time(this)">'
+             + label + now.toString().split(' ')[0] + '</button>')
+            now.setTime(now.getTime() - 86400 * 1000)
+            background = ''
+        buttons = buttons[::-1]
+        content.append(''.join(buttons))
+        content.append('</div></div>')
+
     content.append('''
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>

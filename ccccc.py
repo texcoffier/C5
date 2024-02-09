@@ -1906,7 +1906,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         window.onkeydown = bind(self.onkeydown, self)
         window.onkeyup = bind(self.onkeyup, self)
         window.onkeypress = bind(self.onkeypress, self)
-        window.onbeforeunload = bind(self.onbeforeunload, self)
+        if navigator.vendor != "Google Inc.":
+            window.onbeforeunload = bind(self.onbeforeunload, self)
         window.onblur = bind(self.onblur, self)
         window.onfocus = bind(self.onfocus, self)
         def do_coloring():
