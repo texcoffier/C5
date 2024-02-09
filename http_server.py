@@ -1204,18 +1204,21 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     if not os.path.exists(compiler_py):
         return f"«{src_filename}» use a not defined compiler: «{compiler_py}»!"
 
-    dst_filename = f'COMPILE_{compiler}/{replace or src_filename}'
-    if not replace and os.path.exists(dst_filename):
-        return f"«{dst_filename}» file exists!"
+    dst_dirname = f'COMPILE_{compiler}/{replace or src_filename}'[:-3]
+    if os.path.exists(dst_dirname):
+        if not replace:
+            return f"«{dst_dirname}» file exists!"
+    else:
+        os.mkdir(dst_dirname)
 
     # All seems fine
 
     assert isinstance(filehandle, web.FileField)
-    with open(dst_filename, "wb") as file:
+    with open(dst_dirname + '/questions.py', "wb") as file:
         file.write(filehandle.file.read())
 
     process = await asyncio.create_subprocess_exec(
-        "make", dst_filename[:-3] + '.js',
+        "make", dst_dirname + '/questions.js',
         stderr=asyncio.subprocess.PIPE
         )
     outputs = await process.stderr.read()
@@ -1225,13 +1228,13 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
         errors = ''
     await process.wait()
     if replace:
-        return f"{errors}«{src_filename}» replace «{dst_filename}» file"
+        return f"{errors}«{src_filename}» replace «{dst_dirname}» file"
 
-    config = CourseConfig.get(dst_filename[:-3])
+    config = CourseConfig.get(dst_dirname)
     config.set_parameter('creator', session.login)
     config.set_parameter('stop', '2000-01-01 00:00:01')
     config.set_parameter('state', 'Draft')
-    return f"{errors}Course «{src_filename}» added into «{dst_filename}» file"
+    return f"{errors}Course «{dst_dirname}» added"
 
 async def upload_course(request:Request) -> Response:
     """Add a new course"""
