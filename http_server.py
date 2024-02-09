@@ -1542,6 +1542,7 @@ async def checkpoint_list(request:Request) -> Response:
         for compiler in COMPILERS:
             content.append(f'''
             <form method="POST" enctype="multipart/form-data"
+                  target="_blank"
                   action="/upload_course/{compiler}/_new_?ticket={session.ticket}">
             <label>
             <input type="file" name="course" accept="text/x-python"
@@ -1566,7 +1567,7 @@ async def checkpoint_list(request:Request) -> Response:
         content.append('<p>Edit building map:<p>')
         for building in sorted(utilities.get_buildings()):
             content.append(f'''
-            <button onclick="window.location=\'/adm/building/{building}?ticket={session.ticket}\'"
+            <button onclick="window.open(\'/adm/building/{building}?ticket={session.ticket}\')"
             >{building}</button>''')
 
     return answer(''.join(content))
