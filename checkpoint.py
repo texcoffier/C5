@@ -1194,6 +1194,13 @@ def hide_messages(first, last):
         MESSAGES_TO_HIDE[i] = 1
     ROOM.update_messages()
 
+def highlight_student(element):
+    """Display its place"""
+    if element and not Student.moving_student:
+        Student.highlight_student = element.getAttribute('login')
+    else:
+        Student.highlight_student = None
+
 STUDENT_DICT = {}
 
 class Student: # pylint: disable=too-many-instance-attributes
@@ -1267,6 +1274,8 @@ class Student: # pylint: disable=too-many-instance-attributes
             style += ';background: #FF0'
         return ''.join([
             '<div class="name" onmousedown="ROOM.start_move_student(event)"',
+            ' onmouseenter="highlight_student(this)"',
+            ' onmouseleave="highlight_student()"',
             ' style="', style, '"',
             ' ontouchstart="ROOM.start_move_student(event)" login="',
             self.login, '">',
@@ -1282,6 +1291,9 @@ class Student: # pylint: disable=too-many-instance-attributes
     def filtered(self):
         """THe student must be highlighted"""
         return filters.logins[self.login]
+
+    def __str__(self):
+        return self.surname + ' ' + self.firstname
 
 def cmp_student_name(student_a, student_b):
     """Compare 2 students keys (static PC, name, surname)"""
@@ -1548,6 +1560,13 @@ def key_event_handler(event):
     if event.key == 'f' and event.ctrlKey:
         search_student()
         event.preventDefault()
+    if event.key == ' ' and Student.highlight_student:
+        student = STUDENT_DICT[Student.highlight_student]
+        hostname = student.hostname
+        if hostname in ROOM.positions:
+            col, row = ROOM.positions[hostname]
+            ROOM.move_student_to(student, col, row)
+            ROOM.force_update_waiting_room = True
 
 def spy_cursor(source):
     """Set the cursor position and content in the time scrollbar"""
@@ -1758,8 +1777,9 @@ def scheduler():
         else:
             message = 'Fin dans<br>' + split_time(strptime(OPTIONS['stop']) - secs)
         document.getElementById('TTL').innerHTML = message
-    if Student.moving_student:
-        hostname = STUDENT_DICT[Student.moving_student].hostname
+    if Student.moving_student or Student.highlight_student:
+        ROOM.draw(scheduler.draw_square_feedback)
+        hostname = STUDENT_DICT[Student.moving_student or Student.highlight_student].hostname
         if hostname in ROOM.positions:
             col, row = ROOM.positions[hostname]
             x_pos, y_pos, x_size, y_size = ROOM.xys(col, row)
@@ -1774,6 +1794,22 @@ def scheduler():
             ctx.arc(x_pos, y_pos + 0.15*y_size, x_size/1.8, 0, Math.PI*2, True)
             ctx.closePath()
             ctx.stroke()
+            if not Student.moving_student:
+                ctx.save()
+                ctx.font = "20px sans-serif"
+                ctx.fillStyle = "#00F"
+                ctx.strokeStyle = "#FFF"
+                ctx.lineWidth = 4
+                label = "Appuyez sur Espace pour placer"
+                x_coord = x_pos + x_size / 1.8
+                y_coord = y_pos + 0.15 * y_size
+                ctx.strokeText(label, x_coord, y_coord)
+                ctx.fillText(label, x_coord, y_coord)
+                label = STUDENT_DICT[Student.highlight_student].__str__()
+                y_coord += 25
+                ctx.strokeText(label, x_coord, y_coord)
+                ctx.fillText(label, x_coord, y_coord)
+                ctx.restore()
         return
     if scheduler.update_page:
         update_page()
