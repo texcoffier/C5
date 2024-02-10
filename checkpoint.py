@@ -286,9 +286,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 if column == length:
                     break
                 name = chars[start+1:column]
-                self.rooms[name] = {'label': [start-1, line],
-                                    'position': self.get_room_by_name(name)[:4]
-                                   }
+                position = self.get_room_by_name(name)
+                if position:
+                    self.rooms[name] = {'label': [start-1, line],
+                                        'position': position[:4]
+                                       }
+                else:
+                    alert("Can't find room named «" + name + "»")
                 chars = chars[:start] + replace + chars[column+1:]
             self.lines[line] = chars
     def put_students_in_rooms(self):
@@ -633,16 +637,17 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.stroke()
 
         ctx.lineCap = 'round'
-        ctx.lineWidth = 2
+        ctx.lineWidth = self.scale / 20
         ctx.strokeStyle = "#000"
         for coords in self.walls:
             line(*coords)
 
+        ctx.lineWidth = self.scale / 4
         ctx.strokeStyle = "#4ffff6"
         for coords in self.windows:
             line(*coords)
 
-        ctx.strokeStyle = "#ff0"
+        ctx.strokeStyle = "#ee0"
         for coords in self.doors:
             line(*coords)
 
