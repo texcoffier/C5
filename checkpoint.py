@@ -341,29 +341,45 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             position += height
     def get_room(self, column, line):
         """Get room position : col_min, lin_min, width, height, center_x, center_y"""
-        col_end = column
-        while self.lines[line][col_end] not in ROOM_BORDER:
-            col_end += 1
-            if not self.lines[line][col_end]:
-                return [0, 0, 0, 0, 0, 0]
-        col_start = column
-        while self.lines[line][col_start] not in ROOM_BORDER:
-            col_start -= 1
-            if not self.lines[line][col_start]:
-                return [0, 0, 0, 0, 0, 0]
+        if not self.lines[line] or not self.lines[line][column]: # XXX Called outside the map
+            return [0, 0, 0, 0, 0, 0]
+        done = []
+        for orig_line in self.lines:
+            done.append([])
+            for _char in orig_line:
+                done[-1].append(False)
+        col_start = line_start = 1000
+        col_end = line_end = 0
+        todo = [[line, column]]
+        while len(todo):
+            new_todo = []
+            for lin, col in todo:
+                if done[lin][col]:
+                    continue
+                done[lin][col] = True
+                if not self.lines[lin] or not self.lines[lin][col]:
+                    return [0, 0, 0, 0, 0, 0]
+                if self.lines[lin][col] in ROOM_BORDER:
+                    continue
+                if col < col_start:
+                    col_start = col
+                if col > col_end:
+                    col_end = col
+                if lin < line_start:
+                    line_start = lin
+                if lin > line_end:
+                    line_end = lin
+                for dy in [-1, 0, 1]:
+                    for dx in [-1, 0, 1]:
+                        new_todo.append([lin+dy, col+dx])
+            todo = new_todo
+
+        line_start -= 1
+        line_end += 1
+        col_start -= 1
+        col_end += 1
         room_width = col_end - col_start
         center_x = self.columns_x[2*col_start + room_width]
-
-        line_end = line
-        while self.lines[line_end][column] not in ROOM_BORDER:
-            line_end += 1
-            if not self.lines[line_end]:
-                return [0, 0, 0, 0, 0, 0]
-        line_start = line
-        while self.lines[line_start][column] not in ROOM_BORDER:
-            line_start -= 1
-            if not self.lines[line_start]:
-                return [0, 0, 0, 0, 0, 0]
         room_height = line_end - line_start
         center_y = self.lines_y[2*line_start + room_height]
         return col_start, line_start, room_width, room_height, center_x, center_y
