@@ -4,7 +4,10 @@
 
 (define (compile-and-run filename)
     (
-        (parameterize ([sandbox-eval-limits '(1 4)]) ; seconds and megabytes
+        (parameterize (
+                        [sandbox-eval-limits '(1 4)] ; seconds and megabytes
+                        [sandbox-output (current-output-port)]
+                      )
             (make-evaluator
                 'racket
                 '(define (error-handler exn) exn)
@@ -16,9 +19,12 @@
                                             (eval ast)
                                         )
                                 ])
+                                (display "\001\002RACKET")
+                                (display ast)
+                                (display "\n")
                                 (if (exn:fail? result)
-                                    (cons ast (cons result 'error))
-                                    (cons ast (cons result (repl source)))
+                                    (list (display result) (display "\001"))
+                                    (list (display result) (display "\001") (cons result (repl source)))
                                 )
                             )
                         )
@@ -31,33 +37,11 @@
     )
 )
 
-(define (show a-list)
-   (if (null? a-list)
-       '()
-       (list
-            (display "\001\002RACKET")
-            (write (car a-list))
-            (display "\n")
-            (if (equal? 'error (cdr (cdr a-list)))
-                (list
-                    (display (car (cdr a-list)))
-                    (display "\001")
-                    )
-                (list
-                    (write (car (cdr a-list)))
-                    (display "\001")
-                    (show (cdr (cdr a-list)))
-                    )
-                )
-            )
-   )
-)
-
 (define (error-handler exn) (display "\001\002RACKET") (display exn) (display "\001"))
 
 (define (daemon)
     (with-handlers ([exn:fail? error-handler])
-        (show (compile-and-run (read-line))))
+        (compile-and-run (read-line)))
     (display "\001\002RACKETFini !\001")
     (flush-output)
     (collect-garbage 'major)
