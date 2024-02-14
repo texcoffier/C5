@@ -1651,7 +1651,7 @@ def spy_concat(sources):
         div_source.appendChild(lines)
         code = document.createElement('PRE')
         code.textContent = source[3]
-        code.style.marginLeft = "1em"
+        code.style.marginLeft = "2em"
         hljs.highlightElement(code)
         div_source.appendChild(code)
 
