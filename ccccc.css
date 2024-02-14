@@ -396,6 +396,9 @@ H2 {
     padding-left: 0.5em;
     padding-right: 0.5em;
     margin-right: 0.5em;
+}
+
+.timer {
     float: right;
 }
 
