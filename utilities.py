@@ -806,7 +806,6 @@ CONFIG = Config()
 class Session:
     """Session management"""
     session_cache:Dict[str,"Session"] = {}
-    edit:Optional[CourseConfig] = None # XXX Lost on server reboot
     def __init__(self, ticket, client_ip, browser, # pylint: disable=too-many-arguments
                  login=None, creation_time=None, infos=None, hostname=None):
         self.ticket = ticket
