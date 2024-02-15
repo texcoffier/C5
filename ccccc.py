@@ -179,6 +179,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     first_F11 = True
     first_update = True
     record_now_lock = False # For debugging potential critical section
+    dialog_on_screen = False
 
     def __init__(self):
         self.options = options = COURSE_CONFIG
@@ -235,6 +236,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def popup_message(self, txt, cancel='', ok='OK', callback=None, add_input=False): # pylint: disable=no-self-use
         """For Alert and Prompt"""
+        if self.dialog_on_screen:
+            return
+        self.dialog_on_screen = True
         popup = document.createElement('DIALOG')
         if callback and add_input:
             txt += '<br><input id="popup_input">'
@@ -246,6 +250,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         def close(event):
             """Close the dialog"""
+            self.dialog_on_screen = False
             document.body.removeChild(popup)
             stop_event(event)
 
@@ -1303,7 +1308,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if box in self.do_not_clear:
             return
         self.do_not_clear[box] = True
-        self[box].innerHTML = '' # pylint: disable=unsubscriptable-object
+        if self[box]:
+            self[box].innerHTML = '' # pylint: disable=unsubscriptable-object
 
     def onerror(self, event): # pylint: disable=no-self-use
         """When the worker die?"""
