@@ -989,6 +989,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         if (text_clean in cleanup(self.source)
             or text_clean in cleanup(self.question.innerText)
+            or text_clean in cleanup(self.tester.innerText)
             or text_clean == self.copied):
             self.record('PasteOk')
             self.insert_text(event, text)
