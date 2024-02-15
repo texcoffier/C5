@@ -257,6 +257,11 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def parse(self):
         """Parse the end of the file"""
+        if os.path.getsize(self.file_cf) < self.parse_position:
+            # The file was rewrote. Read it from scratch
+            self.__init__(self.course)
+            return
+
         with open(self.file_cf, 'br') as file:
             self.time = time.time()
             file.seek(self.parse_position)
