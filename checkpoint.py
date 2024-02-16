@@ -629,6 +629,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.lineTo(x_end, y_end)
             ctx.stroke()
 
+        if LOGIN in CONFIG.roots:
+            ctx.strokeStyle = "#DDD"
+            for room in self.rooms:
+                coord_x, coord_y, width, height = self.rooms[room].position
+                line(coord_x, coord_y, coord_x + width, coord_y + height)
+                line(coord_x + width, coord_y, coord_x, coord_y + height)
+
         if self.highlight_disk:
             age = millisecs() - self.highlight_disk[2]
             max_age = 10000
