@@ -1413,7 +1413,7 @@ def create_page(building_name):
         + COURSE.split('=')[1].replace(RegExp('_', 'g'), ' ')
         + '</span>')
     content.append(
-        '''<select style="width:100%" id="buildings"
+        '''<select style="width:100%;margin-top:0.7em" id="buildings"
                onchange="ROOM.change(this.value); scheduler.update_page = true;">''')
     content.append(
         ''.join(['<option'
