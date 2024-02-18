@@ -1214,6 +1214,9 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     # All seems fine
 
     assert isinstance(filehandle, web.FileField)
+
+    if os.path.exists(dst_dirname + '/questions.py'):
+        os.rename(dst_dirname + '/questions.py', dst_dirname + '/questions.py~')
     with open(dst_dirname + '/questions.py', "wb") as file:
         file.write(filehandle.file.read())
 
@@ -1227,14 +1230,26 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     else:
         errors = ''
     await process.wait()
+    if errors:
+        if os.path.exists(dst_dirname + '/questions.py~'):
+            os.rename(dst_dirname + '/questions.py~', dst_dirname + '/questions.py')
+            process = await asyncio.create_subprocess_exec(
+                "make", dst_dirname + '/questions.js')
+            await process.wait()
+        else:
+            for filename in os.listdir(dst_dirname):
+                os.unlink(dst_dirname + '/' + filename)
+            os.rmdir(dst_dirname)
+        return errors
+
     if replace:
-        return f"{errors}«{src_filename}» replace «{dst_dirname}» file"
+        return f"«{src_filename}» replace «{dst_dirname}/questions.py» file"
 
     config = CourseConfig.get(dst_dirname)
     config.set_parameter('creator', session.login)
-    config.set_parameter('stop', '2000-01-01 00:00:01')
+    config.set_parameter('stop', '2100-01-01 00:00:01')
     config.set_parameter('state', 'Draft')
-    return f"{errors}Course «{dst_dirname}» added"
+    return f"Course «{dst_dirname}» added"
 
 async def upload_course(request:Request) -> Response:
     """Add a new course"""
