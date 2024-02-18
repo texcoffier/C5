@@ -1023,7 +1023,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Zoom on room
             (_col_start, _line_start, room_width, room_height, center_x, center_y
             ) = self.get_room(column, line)
-            if room_width == 0 or room_height == 0:
+            if room_width < 0 or room_height < 0:
                 return
             nr_frame = 10
             def linear(start, end, i):
