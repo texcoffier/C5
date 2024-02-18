@@ -660,12 +660,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.stroke()
 
         ctx.lineCap = 'round'
-        ctx.lineWidth = self.scale / 20
-        ctx.strokeStyle = "#000"
+        ctx.lineWidth = self.scale / 4
+        ctx.strokeStyle = "#999"
         for coords in self.walls:
             line(*coords)
 
-        ctx.lineWidth = self.scale / 4
         ctx.strokeStyle = "#4ffff6"
         for coords in self.windows:
             line(*coords)
