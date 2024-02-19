@@ -12,10 +12,13 @@ import traceback
 import contextlib
 import glob
 import requests
+import urllib3
 import selenium.webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.alert import Alert
 import utilities
+
+urllib3.disable_warnings()
 
 def retry(test, required=True, nbr=30):
     """Retry if test failure"""
@@ -48,6 +51,8 @@ class Contains(Test):
     def __init__(self, text):
         self.text = text
     def run(self, value):
+        # if self.text not in value:
+        #     print("\n=====", self.text)
         return self.text in value
     def __repr__(self):
         return f'Contains({repr(self.text)})'
@@ -144,6 +149,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_rename,
                     self.test_zip,
                     self.test_media,
+                    self.test_git,
                     ):
                 print('*'*99)
                 print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -614,7 +620,7 @@ return sum ;
         self.check('.tag_button').click()
         self.check('#popup_input').send_keys('A')
         self.check('#popup_ok').click()
-        self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('<option timestamp="1">Vers')})
+        self.check('.save_history', {'innerHTML': Contains('>A<') & Contains('<option timestamp="1">Vers')})
 
         # Change the answer and then change the question without saving
         time.sleep(0.1)
@@ -634,7 +640,7 @@ return sum ;
         self.check('#popup_input').send_keys('B')
         self.check('#popup_input').send_keys(Keys.ENTER)
         self.check('.save_history', {'length': Equal('3')}, nbr=200)
-        self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('>B<') and Contains('<option timestamp="1">Vers')})
+        self.check('.save_history', {'innerHTML': Contains('>A<') & Contains('>B<') & Contains('<option timestamp="1">Vers')})
 
         # Goto in the past (A) and change question: no saving done
         retry(lambda: self.check('.save_history OPTION:nth-child(2)').click(), nbr=2)
@@ -660,8 +666,8 @@ return sum ;
         self.check('#popup_input').send_keys(Keys.ENTER)
         time.sleep(0.1)
         self.check('.save_history', {'length': Equal('4')})
-        self.check('.save_history', {'innerHTML': Contains('>A<') and Contains('>B<')
-            and Contains('>C<') and Contains('<option timestamp="1">Vers')})
+        self.check('.save_history', {'innerHTML': Contains('>A<') & Contains('>B<')
+            & Contains('>C<') & Contains('<option timestamp="1">Vers')})
 
         # Navigate in history and change question
         retry(lambda: self.check('.save_history OPTION:nth-child(4)').click(), nbr=2)
@@ -1059,6 +1065,206 @@ class Q1(Question):
                     i.click()
             retry(lambda: len(self.driver.find_elements_by_css_selector('BUTTON')) != 1)
             self.driver.switch_to.default_content()
+
+    def test_git(self):
+        """GIT"""
+        def upload(src, name="_new_"):
+            return requests.post(
+                f"https://127.0.0.1:4201/upload_course/REMOTE/{name}?ticket={self.ticket}",
+                data={'filename': 'xxx.py'},
+                files={'course': ('xxx.py', src, 'text/plain')},
+                verify=False)
+        def get_state():
+            files = [
+                "COMPILE_REMOTE/xxx/" + i
+                for i in "questions.py questions.json session.cf questions.js".split(' ')
+            ]
+            with subprocess.Popen(['cat', *files],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.DEVNULL) as process:
+                return process.stdout.read()
+
+        response = requests.get('https://127.0.0.1:4201/', verify = False)
+        save_ticket = self.ticket
+        self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
+        with self.admin_rights():
+            self.goto('checkpoint/*')
+
+            print("\tUpload bad source")
+            response = upload("class Q1(Question):\n pass\n")
+            assert 'background:#FAA">ERROR' in response.text
+            assert not os.path.exists('COMPILE_REMOTE/xxx')
+
+            print("\tUpload good source")
+            response = upload("class Q1(Question):\n    pass\n")
+            assert '<td class="clipped course"><div>xxx' in response.text
+            good_content = get_state()
+
+            print("\tUpload good source but no replace")
+            response = upload("class Q2(Question):\n    pass\n")
+            assert 'background:#FAA;">«COMPILE_REMOTE/xxx» file exists!' in response.text
+            assert get_state() == good_content
+
+            print("\tReplace a non existing session")
+            response = upload("class Q1(Question):\n    pass\n", "xxxxx")
+            assert '500 Internal Server Error' in response.text
+
+            print("\tReplace good source by a bad one")
+            response = upload("cl ass Q1(Question):\n    pass\n", "xxx")
+            assert 'background:#FAA">ERROR: Unexpected token' in response.text
+            if get_state() != good_content:
+                for a, b in zip(get_state().split(b'\n'), good_content.split(b'\n')):
+                    print(a)
+                    if a != b:
+                        print(b)
+                        break
+                bug
+        self.ticket = save_ticket
+
+        print("\tCreate a local repository")
+        os.system("""
+        (
+        rm -rf XXX
+        cp -a COMPILE_REMOTE/xxx XXX
+        cd XXX
+        git init
+        git add questions.py
+        git commit -a -m "First commit"
+        ) >/dev/null
+        """)
+
+        with self.admin_rights():
+            print("\tC5 pull with identical directories")
+            self.goto('adm/session/REMOTE=xxx')
+            self.check('#git_url').click()
+            self.control('a')
+            self.check('#git_url').send_keys(f"file://{os.getcwd()}/XXX")
+            self.check('#start').click()
+            self.check('OPTION[action="git_pull"]').click()
+            self.check('BODY',
+                {'innerHTML':
+                    Contains('nothing to commit, working tree clean')
+                    & Contains("questions.js' is up to date.")
+                }
+            )
+
+            print("\tC5 pull good changes")
+            os.system("""
+                    (
+                    cd XXX
+                    echo '# Change 1' >>questions.py
+                    git commit -a -m "Change 1"
+                    ) >/dev/null
+                    """)
+            self.goto('adm/session/REMOTE=xxx')
+            self.check('OPTION[action="git_pull"]').click()
+            self.check('BODY',
+                {'innerHTML':
+                    Contains("No local changes to save")
+                    & Contains("questions.py | 1 +")
+                    & Contains("No stash entries")
+                    & Contains("questions.js OK")
+                    & Contains("questions.json OK")
+                }
+            )
+
+            print("\tC5 pull no change on C5 change")
+            with open('COMPILE_REMOTE/xxx/questions.py', 'a', encoding='utf-8') as file:
+                file.write("# Change C5\n")
+            self.goto('adm/session/REMOTE=xxx')
+            self.check('OPTION[action="git_pull"]').click()
+            self.check('BODY',
+                {'innerHTML':
+                    Contains("Saved working directory and index state WIP on master")
+                    & Contains("Already up to date")
+                    & Contains("# START #")
+                    & Contains("+# Change C5")
+                    & Contains("# STOP #")
+                    & Contains("questions.js OK")
+                    & Contains("questions.json OK")
+                }
+            )
+
+            print("\tC5 pull resynchronize")
+            os.system("""
+                    (
+                    cd XXX
+                    echo '# Change C5' >>questions.py
+                    git commit -a -m "Change 2"
+                    ) >/dev/null
+                    """)
+            self.goto('adm/session/REMOTE=xxx')
+            self.check('OPTION[action="git_pull"]').click()
+            self.check('BODY',
+                {'innerHTML':
+                    Contains("Saved working directory and index state WIP on master")
+                    & Contains("questions.py | 1 +")
+                    & Contains("nothing to commit, working tree clean")
+                    & Contains("questions.js OK")
+                    & Contains("questions.json OK")
+                }
+            )
+
+            print("\tC5 pull changes on both sides")
+            os.system("""
+                    (
+                    cd XXX
+                    sed -i 's/Q1/Q42/' questions.py
+                    git commit -a -m "Change 3"
+                    ) >/dev/null
+                    """)
+            with open('COMPILE_REMOTE/xxx/questions.py', 'a', encoding='utf-8') as file:
+                file.write("# Change C5 conflict\n")
+            self.goto('adm/session/REMOTE=xxx')
+            self.check('OPTION[action="git_pull"]').click()
+            self.check('BODY',
+                {'innerHTML':
+                    Contains("Saved working directory and index state WIP on master")
+                    & Contains("Auto-merging questions.py")
+                    & Contains("no changes added to commit")
+                    & Contains("# START #")
+                    & Contains("+# Change C5 conflict")
+                    & Contains("# STOP #")
+                    & Contains("questions.js OK")
+                    & Contains("questions.json OK")
+                }
+            )
+
+            with open('COMPILE_REMOTE/xxx/questions.py', 'r', encoding='utf-8') as file:
+                content = file.read()
+            assert '# Change C5 conflict' in content
+            assert 'Q42' in content
+
+            print("\tC5 pull bad Python")
+            os.system("""
+                    (
+                    cd XXX
+                    sed -i 's/Question/BadQuestion/' questions.py
+                    git commit -a -m "Change 4"
+                    ) >/dev/null
+                    """)
+            self.goto('adm/session/REMOTE=xxx')
+            self.check('OPTION[action="git_pull"]').click()
+            self.check('BODY',
+                {'innerHTML':
+                    Contains("Saved working directory and index state WIP on master")
+                    & Contains("Auto-merging questions.py")
+                    & Contains("questions.py | 2 +-\n")
+                    & Contains("1 file changed, 1 insertion(+), 1 deletion(-)")
+                    & Contains("# START #")
+                    & Contains("\n+# Change C5 conflict")
+                    & Contains("# STOP #")
+                    & Contains("questions.js OK")
+                    & Contains("questions.json FAIL")
+                }
+            )
+
+            with open('COMPILE_REMOTE/xxx/questions.js', 'r', encoding='utf-8') as file:
+                content = file.read()
+            assert 'Q42' in content
+            assert 'a_not_existing_variable' not in content
+
+        self.delete_session_xxx()
 
     def screenshots(self):
         """Dump screen shots"""

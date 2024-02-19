@@ -2,27 +2,7 @@
 PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 
 %.js:%.py compatibility.py options.py compile.py question.py compile_[!s]*.py
-	@echo '$*.py → $*.js'
-	@case $* in \
-	COMPILE*) \
-		COMPILER=$$(echo $* | sed -e 's,/.*,,' | tr '[A-Z]' '[a-z]') ; \
-		FILES="compatibility.py options.py compile.py question.py $$COMPILER.py $*.py" ; \
-		SESSION=$$(echo ; echo 'if not Compile.worker: Session([' ; \
-		grep '^class.*(Question)' $*.py | sed -r 's/.*class *(.*)\(Question\).*/\1(),/' ;\
-		echo '])') ; \
-		Q=1 ; \
-		[ -d $* ] && chmod 700 $* ; \
-		;; \
-	*) \
-		FILES="compatibility.py options.py $*.py" ;\
-		Q=0 \
-		;; \
-	esac ; \
-	cat $$FILES > $*.py.xxx ; \
-	echo "$$SESSION" >> $*.py.xxx ; \
-	$(PYTOJS) $*.py.xxx >$*.js && \
-	([ $$Q = 1 ] && (cat options.py compile.py $$COMPILER.py question_before.py $*.py question_after.py | tee xxx.py | python3 >$*.json) || true) && \
-	rm $*.py.xxx
+	@./py2js $* || true
 
 default:all
 	@./utilities.py open # Open page on browser

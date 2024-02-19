@@ -1,0 +1,80 @@
+#!/bin/sh
+# Argument 1 : the python file to compile WITHOUT .py EXTENSION
+
+PY=$1.py
+JS=$1.js
+JSON=$1.json
+
+if [ -e $JS ]
+then
+    mv $JS $JS~
+fi
+if [ -e $JSON ]
+then
+    mv $JSON $JSON~
+fi
+
+restore() {
+    if [ -e $JS~ ]
+    then
+        mv $JS~ $JS
+    fi
+    if [ -e $JSON~ ]
+    then
+        mv $JSON~ $JSON
+    fi
+    rm $PY.xxx
+}
+
+case $1 in
+	COMPILE*)
+		COMPILER=$(echo $1 | sed -e 's,/.*,,' | tr '[A-Z]' '[a-z]')
+		FILES="compatibility.py options.py compile.py question.py $COMPILER.py $PY"
+		SESSION=$(
+			echo
+			echo 'if not Compile.worker: Session(['
+		    grep '^class.*(Question)' $PY | sed -r 's/.*class *(.*)\(Question\).*/\1(),/'
+			echo '])'
+			)
+		[ -d $1 ] && chmod 700 $1
+		;;
+	*)
+		COMPILER=
+		FILES="compatibility.py options.py $PY"
+		;;
+esac
+
+if cat $FILES > $PY.xxx
+then
+    :
+else
+    restore
+    exit 1
+fi
+
+echo "$SESSION" >> $PY.xxx
+
+if nodejs RapydScript/bin/rapydscript --prettify --bare $PY.xxx >$JS
+then
+    echo "$PY → $JS OK"
+else
+    echo "$PY → $JS FAIL"
+    restore
+    exit 1
+fi
+
+if [ "$COMPILER" != "" ]
+then
+	if cat options.py compile.py $COMPILER.py question_before.py $PY question_after.py |
+		tee xxx.py |
+		python3 >$JSON
+    then
+        echo "$PY → $JSON OK"
+    else
+        echo "$PY → $JSON FAIL"
+        restore
+        exit 1
+    fi
+fi
+
+rm $PY.xxx

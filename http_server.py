@@ -350,14 +350,12 @@ async def log(request:Request) -> Response: # pylint: disable=too-many-branches
             if edit is None:
                 return answer('window.ccccc.record_not_done("Rechargez la page.")')
             os.rename(edit.file_py, edit.file_py + '~')
-            os.rename(edit.file_js, edit.file_js + '~')
             with open(edit.file_py, 'w', encoding="utf-8") as file:
                 file.write(source)
             with os.popen(f'make {edit.file_js} 2>&1', 'r') as file:
                 errors = file.read()
-            if 'ERROR' in errors:
+            if 'ERROR' in errors or 'FAIL' in errors:
                 os.rename(edit.file_py + '~', edit.file_py)
-                os.rename(edit.file_js + '~', edit.file_js)
             return answer(
                 f'window.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
 
@@ -494,6 +492,7 @@ async def git_pull(course, stream):
 *.cf
 *.js
 *.json
+*~
 .gitignore
 LOGS
 " >.gitignore
@@ -511,23 +510,26 @@ LOGS
             rmdir XXX/MEDIA
             fi
         rmdir XXX
-        git status
+        git status # The status should be clean
     else
         git stash
         git pull {git_url}
         git stash pop
-        echo -n '<div style="background:#FF0">'
-        (
-        echo "############################# START ###########################"
-        echo "patch -u -p1 <<%END-OF_FILE%"
-        git diff --binary
-        echo "%END-OF_FILE%"
-        echo "git add questions.py MEDIA"
-        echo "git commit -m 'Modifications venant de C5'"
-        echo "git push"
-        echo "############################# STOP ###########################"
-        ) | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
-        echo "</div>"
+        if ! git diff --exit-code --quiet
+        then
+            echo -n '<div style="background:#FF0">'
+            (
+            echo "############################# START ###########################"
+            echo "patch -u -p1 <<%END-OF_FILE%"
+            git diff --binary
+            echo "%END-OF_FILE%"
+            echo "git add questions.py MEDIA"
+            echo "git commit -m 'Modifications venant de C5'"
+            echo "git push"
+            echo "############################# STOP ###########################"
+            ) | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
+            echo "</div>"
+        fi
     fi
     cd ../..
     make {course.dir_session}/questions.js
@@ -1196,8 +1198,6 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
         return "Only «.py» file allowed!"
     if '/' in src_filename:
         return f"«{src_filename}» invalid name: contains «/»!"
-    if '-' in src_filename:
-        return f"«{src_filename}» invalid name: contains «-». Please, use «_»)!"
     if replace and replace != src_filename:
         return f"«{src_filename}» is not equal to «{replace}»!"
     compiler_py = 'compile_' + compiler.lower() + '.py'
@@ -1233,9 +1233,6 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     if errors:
         if os.path.exists(dst_dirname + '/questions.py~'):
             os.rename(dst_dirname + '/questions.py~', dst_dirname + '/questions.py')
-            process = await asyncio.create_subprocess_exec(
-                "make", dst_dirname + '/questions.js')
-            await process.wait()
         else:
             for filename in os.listdir(dst_dirname):
                 os.unlink(dst_dirname + '/' + filename)
@@ -1274,6 +1271,8 @@ async def upload_course(request:Request) -> Response:
     if '!' in error:
         style = 'background:#FAA;'
     else:
+        # Create session.cf
+        CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace[:-3]}')
         style = ''
     return answer('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
         + '<div style="height:100%;' + style + '">'
