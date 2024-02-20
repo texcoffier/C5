@@ -601,7 +601,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def is_admin(self, login:str) -> bool:
         """Is admin or creator"""
-        return login in self.admins or login == self.creator
+        return login in self.admins or login == self.creator or CONFIG.is_admin(login)
 
     def is_grader(self, login:str) -> bool:
         """Is grader or admin or creator"""
