@@ -1272,7 +1272,7 @@ With Firefox:
         echo STOP SERVERS
         for I in http_server compile_server infos_server dns_server
         do
-            pkill --oldest -f python3\ ./$I
+            pkill --oldest -f python3\ ./\$I
         done
         """,
     'open': f"""
