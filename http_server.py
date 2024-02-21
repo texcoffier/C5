@@ -1525,7 +1525,7 @@ async def checkpoint_list(request:Request) -> Response:
         }
         function update(value)
         {
-             var path = location.toString().replace(/\/\*\/[-a-zA-Z0-9_]*/, '/*/' + value);
+             var path = location.toString().replace(/\/\*\/[^?]*/, '/*/' + value);
              window.history.replaceState('_a_', '', path);
              var e = RegExp('^' + value);
              var tr = document.getElementsByTagName('TR');
