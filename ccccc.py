@@ -1680,7 +1680,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     if not self.options.forget_input:
                         self.executor.appendChild(clear)
                     self.executor.appendChild(document.createElement('BR'))
-                    if self.input_index in self.inputs[self.current_question]:
+                    if not self.options.forget_input and self.input_index in self.inputs[self.current_question]:
                         span.value = self.inputs[self.current_question][self.input_index]
                         self.send_input(span.value)
                         span.run_on_change = True
