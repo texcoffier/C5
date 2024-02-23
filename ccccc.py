@@ -520,7 +520,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record_now()
         if (not GRADING
                 and not self.options['allow_copy_paste']
-                and screen.height != max(window.innerHeight, window.outerHeight)
+                and max(window.innerHeight, window.outerHeight) + 8 < screen.height
                 and not self.options['feedback']
            ):
             if self.fullscreen.style.display != 'block':
