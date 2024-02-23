@@ -1415,12 +1415,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.unlock_worker()
                 self.worker.postMessage(['goto', self.current_question + 1])
 
+    def do_stop(self):
+        """Really stop the session"""
+        record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
+        document.body.innerHTML = self.options['stop_done']
+
     def stop(self):
         """The student stop its session"""
         self.save()
-        if confirm(self.options['stop_confirm']): # Let some time to execute the save
-            record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
-            document.body.innerHTML = self.options['stop_done']
+        self.popup_message(
+            self.options['stop_confirm'], 'Non !', "Oui, et je quitte silencieusement la salle", self.do_stop)
 
     def update_comments(self, comments):
         """Fill comments"""

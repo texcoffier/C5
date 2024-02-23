@@ -42,7 +42,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
     ['highlight'            ,"#FFF", "Background color in the student and teacher session list"],
-    ['git_url'              ,'', "The GIT url to fetch updates. <b>You must only commit 'questions.js' and 'MEDIA/*' nothing else.</b>"],
+    ['git_url'              ,'', "The GIT url to fetch updates. <b>You must only commit 'questions.py' and 'MEDIA/*' nothing else.</b>"],
 
     "Checkpoint placement interface",
 
