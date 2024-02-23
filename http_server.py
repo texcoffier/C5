@@ -404,10 +404,23 @@ async def load_student_infos() -> None:
         for login in config.active_teacher_room:
             await utilities.LDAP.infos(login)
 
+async def simulate_active_student() -> None:
+    """Send a student activity to checkpoints page every seconds"""
+    course = CourseConfig.get('COMPILE_REMOTE/grapic')
+    student = next(iter(course.active_teacher_room))
+    while True:
+        await asyncio.sleep(1)
+        course.to_send.append(('active_teacher_room', 3, student, time.time()))
+        if not course.send_journal_running:
+            course.send_journal_running = True
+            asyncio.ensure_future(course.send_journal())
+
 async def startup(app:web.Application) -> None:
     """For student names and computer names"""
     if utilities.C5_VALIDATE:
         app['load_student_infos'] = asyncio.create_task(load_student_infos())
+    if False:
+        app['simulate_active_student'] = asyncio.create_task(simulate_active_student())
     print("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
 
 async def get_author_login(request:Request) -> Session:

@@ -1754,6 +1754,7 @@ def reader(event): # pylint: disable=too-many-branches
     for expression in chunk.split('\n'):
         if expression == '':
             continue
+        print(expression)
         data = JSON.parse(expression)
         if data[0] == 'messages':
             for message in data[1][len(MESSAGES):]:
