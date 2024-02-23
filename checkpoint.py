@@ -666,6 +666,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         for coords in self.walls:
             line(*coords)
 
+        ctx.lineCap = 'butt'
         ctx.strokeStyle = "#4ffff6"
         for coords in self.windows:
             line(*coords)
