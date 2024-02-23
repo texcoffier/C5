@@ -432,4 +432,11 @@ def update_interface():
         else:
             grading_sum.innerHTML = '<span style="background:#F88">' + total + '/' + total2 + '</span>'
 
+    required = document.getElementById("expected_students_required")
+    expected_students = document.getElementById("expected_students")
+    if required and expected_students:
+        if required.checked and expected_students.value.trim() == '':
+            required.parentNode.style.background = "#F00"
+        else:
+            required.parentNode.style.background = "#FFF"
 init()
