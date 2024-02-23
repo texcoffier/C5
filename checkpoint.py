@@ -244,6 +244,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         except: # pylint: disable=bare-except
             self.all_ips = {}
         self.force_update_waiting_room = True
+        scheduler.update_messages = True
     def prepare_draw(self):
         """Compile information to draw quickly the map"""
         self.walls = []
@@ -1134,7 +1135,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 + ' ' + login + ' <b>' + html(message) + '</b>')
         messages = document.getElementById('messages')
         messages.innerHTML = ' '.join(content)
-        messages.scrollTop = messages.offsetHeight
+        messages.scrollTop = 1000000 # messages.offsetHeight does not works
     def start_move_student(self, event):
         """Move student bloc"""
         self.get_event(event)
@@ -1504,7 +1505,6 @@ def update_page():
     ROOM.draw()
     ROOM.compute_rooms_on_screen()
     ROOM.update_waiting_room()
-    ROOM.update_messages()
     student = window.location.hash
     if student and len(student) > 1:
         ROOM.zoom_student(student[1:])
@@ -1754,7 +1754,6 @@ def reader(event): # pylint: disable=too-many-branches
         if expression == '':
             continue
         data = JSON.parse(expression)
-        print(data)
         if data[0] == 'messages':
             for message in data[1][len(MESSAGES):]:
                 MESSAGES.append(message)
@@ -1839,15 +1838,15 @@ def scheduler():
                 ctx.restore()
         return
     if scheduler.update_page:
+        scheduler.update_page = False
         update_page()
     elif scheduler.draw:
         scheduler.draw = False
         ROOM.draw(scheduler.draw_square_feedback)
     if scheduler.update_messages:
+        scheduler.update_messages = False
         ROOM.update_messages()
     scheduler.draw_square_feedback = False
-    scheduler.update_page = False
-    scheduler.update_messages = False
     scheduler.draw = ROOM.highlight_disk
 
 IP_TO_PLACE = {}
