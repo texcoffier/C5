@@ -565,3 +565,16 @@ SELECT {
     background: #FFFD;
 }
 
+.completion {
+    position: absolute;
+    background: #EEE;
+    font-family: sans-serif;
+    font-size: 70%;
+    z-index: 1000;
+    pointer-events: none;   
+}
+
+.active_completion {
+    color: #FFF;
+    background: #000;
+}

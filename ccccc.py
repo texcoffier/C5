@@ -22,6 +22,10 @@ EXPLAIN = {0: "Sauvée", 1: "Validée", 2: "Compilée", 3: "Dernière seconde"}
 
 DEPRECATED = ('save_button', 'local_button', 'stop_button', 'reset_button', 'line_numbers')
 
+NAME_CHARS = '[a-zA-Z_0-9]'
+NAME = RegExp(NAME_CHARS)
+NAME_FIRST = RegExp('[a-zA-Z_]')
+
 def get_xhr_data(event):
     """Evaluate the received javascript"""
     if event.target.readyState == 4:
@@ -180,6 +184,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
     first_update = True
     record_now_lock = False # For debugging potential critical section
     dialog_on_screen = False
+    hide_completion_chooser = 0
+    to_complete = ''
 
     def __init__(self):
         self.options = options = COURSE_CONFIG
@@ -1179,6 +1185,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def update_cursor_position(self):
         """Queue cursor update position"""
         self.do_update_cursor_position = "update_cursor_position"
+        if self.hide_completion_chooser <= 0:
+            self.completion.style.display = 'none'
+        self.hide_completion_chooser -= 1
 
     def save_cursor(self):
         """Save the cursor position"""
@@ -1193,6 +1202,53 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.save_cursor()
         self.worker.postMessage(['indent', self.source.strip()])
 
+    def try_completion(self):
+        """Check possible completion"""
+        i = self.cursor_position - 1
+        while i > 0 and NAME.exec(self.source[i]):
+            i -= 1
+        if self.cursor_position - i == 1:
+            return # Nothing
+        if not NAME_FIRST.exec(self.source[i+1]):
+            return # Do not start by an allowed letter
+        self.to_complete = self.source[i+1:self.cursor_position]
+        matches = self.source.matchAll(RegExp('\\b' + self.to_complete + NAME_CHARS + '+\\b', 'g'))
+        uniqs = []
+        while True:
+            i = matches.next().value
+            if not i:
+                break
+            i = i[0]
+            if i in uniqs:
+                continue
+            uniqs.append(i)
+        uniqs.sort()
+        if len(uniqs) == 0:
+            return
+        if len(uniqs) == 1:
+            found = uniqs[0]
+            if len(self.to_complete) != len(found):
+                document.execCommand('insertText', False, found[len(self.to_complete):])
+            return
+        html = ['']
+        for i in uniqs:
+            html.append('<option>' + i + '</option>')
+        self.completion.innerHTML = ''.join(html)
+
+        box = document.createRange()
+        line, column = self.get_line_column(self.cursor_position)
+        line_elm = self.editor_lines[line-1]
+        box.selectNode(line_elm)
+        box.setStart(line_elm, column-1)
+        box.setEnd(line_elm, column)
+        rect = self.get_rect(box)
+        self.completion.style.left = rect['left'] + rect['width'] + self.layered.offsetLeft + self.editor.offsetLeft + 'px'
+        self.completion.style.top = rect['top'] + rect['height'] + self.layered.offsetTop + self.editor.offsetTop - self.layered.scrollTop + 'px'
+        self.completion.style.display = 'block'
+        self.completion.firstChild.className = 'active_completion'
+        self.active_completion = 0
+        self.hide_completion_chooser = 2
+
     def onkeydown(self, event): # pylint: disable=too-many-branches
         """Key down"""
         if not self.allow_edit:
@@ -1204,6 +1260,26 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9'):
             return
         self.record(event.key or 'null')
+        if self.hide_completion_chooser >= 0 and event.target is self.editor:
+            if event.key == 'ArrowUp':
+                direction = -1
+            elif event.key == 'ArrowDown':
+                direction = 1
+            elif event.key == 'Enter':
+                document.execCommand('insertText', False,
+                    self.completion.childNodes[self.active_completion].innerHTML[len(self.to_complete):])
+                stop_event(event)
+                return
+            else:
+                direction = 0
+            if direction:
+                self.hide_completion_chooser += 1
+                self.completion.childNodes[self.active_completion].className = ''
+                self.active_completion += direction + len(self.completion.childNodes)
+                self.active_completion = self.active_completion % len(self.completion.childNodes)
+                self.completion.childNodes[self.active_completion].className = 'active_completion'
+                stop_event(event)
+                return
         if event.target is self.editor and event.key not in (
                 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'):
             self.clear_highlight_errors()
@@ -1216,6 +1292,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             stop_event(event)
         elif event.key == 'f' and event.ctrlKey:
             self.do_not_register_this_blur = True
+            return
+        elif event.key == ' ' and event.ctrlKey:
+            self.try_completion()
             return
         elif event.key == 'F9':
             if self.options['automatic_compilation'] == 0: # pylint: disable=singleton-comparison
@@ -1936,6 +2015,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # Get grades
             do_post_data({'student': STUDENT}, 'record_grade/' + COURSE + '?ticket=' + TICKET)
             do_post_data({'student': STUDENT}, 'record_comment/' + COURSE + '?ticket=' + TICKET)
+        self.completion = document.createElement('DATALIST')
+        document.getElementsByTagName('BODY')[0].appendChild(self.completion)
+        self.completion.className = 'completion'
+        self.completion.style.display = 'none'
         self.update_gui()
 
     def add_comment(self, event):
