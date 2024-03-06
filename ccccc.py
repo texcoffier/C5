@@ -772,6 +772,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.overlay.appendChild(marker)
         for i in range(i+1, len(self.line_numbers.childNodes)):
             self.line_numbers.childNodes[i].style.top = '-10em'
+
+        if GRADING:
+            default_answer = {}
+            sep = RegExp('[ \t]', 'g')
+            for line in self.question_original[self.current_question].split('\n'):
+                default_answer[line.replace(sep, '')] = True
+            for number, line in zip(self.line_numbers.childNodes, self.source.split('\n')):
+                if default_answer[line.replace(sep, '')]:
+                    number.style.background = ""
+                else:
+                    number.style.background = "#0F0"
+
         self.overlay_show()
         self.line_numbers.style.height = self.overlay.offsetHeight + 'px'
         if GRADING or self.options['feedback'] >= 3:
