@@ -289,18 +289,24 @@ def select_tab(label):
     <p>
     Example of grading definition for the «hello world» C program.<br>
     The grading part is right aligned and green with one button for each grade.
+    <p>
+    If the <b>exact text</b> found left to the '▶'
+    is found in the student source code,<br>
+    then '▶' is blue and clickable to scroll the source code to the first matching line.
+    </p>
     <pre>
 #include &lt;stdio.h&gt;               {stdio.h:0,1}
-int main()                       {main declaration:0,1}
+int main()▶                      {main declaration:0,1}
 {                                {bloc:0,1}
    printf("Hello World\\n");      {printf:0,0.5,1,1.5,2}
 }
 // Malus                         {No comments:-1,0}
 </pre>
-<b>Indicate your session grading here</b>
+<b>Indicate your session gradings here,</b>
+A subject and B subject if they are different.
 (Grading sum : <span id="grading_sum" style="background: #0F0"></span>):
 </div>
-    <div><textarea id="notation"></textarea> <textarea id="notationB"></textarea></div>"""
+    <div style="display: flex"><textarea id="notation" style="flex:1"></textarea> <textarea id="notationB" style="flex:1"></textarea></div>"""
     elif label == 'Config':
         content = ["""
     <div style="height: 100%; display: grid">

@@ -209,7 +209,10 @@ class Tests: # pylint: disable=too-many-public-methods
             self.clean_up_root()
     def select_all(self, path='.editor'):
         """Select the full editor content"""
-        self.move_cursor(path, 10, 10)
+        if path == '.editor':
+            self.check('.editor').click()
+        else:
+            self.move_cursor(path, 10, 10)
         self.control('a')
         self.control('c')
     def control(self, char):
@@ -343,12 +346,16 @@ class Tests: # pylint: disable=too-many-public-methods
 
     def move_cursor(self, path, relative_x=0, relative_y=0):
         """Set the cursor at the position and click"""
+        if path == '.editor':
+            path = '.layered'
         element = self.driver.find_elements_by_css_selector(path)[0]
         self.move_to_element(element)
         action = selenium.webdriver.ActionChains(self.driver)
         action.move_to_element_with_offset(element, relative_x, relative_y)
         action.click()
         action.perform()
+        if path == '.layered':
+            return self.driver.find_elements_by_css_selector('.editor')[0]
         return element
     def test_f9(self):
         """Check if F9 launch compilation"""
@@ -445,11 +452,11 @@ class Tests: # pylint: disable=too-many-public-methods
         time.sleep(0.2) # For Firefox
         self.move_cursor('.editor', 4, 4)
         self.check('.editor').send_keys('§')
-        self.check('.editor', {'innerHTML': Contains('§§<br>')})
+        self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
         self.control('s')
         self.wait_save()
         self.load_page('=JS=introduction')
-        self.check('.editor', {'innerHTML': Contains('§§<br>')})
+        self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
         self.move_cursor('.editor', 30, 5)
         for _ in range(6):
             self.check('.editor').send_keys(Keys.BACKSPACE)
@@ -459,6 +466,8 @@ class Tests: # pylint: disable=too-many-public-methods
     def test_copy_paste_allowed(self):
         """Test a working copy paste"""
         self.load_page('=JS=introduction')
+        self.move_cursor('.editor')
+        self.check('.editor').click()
         self.select_all()
         self.control('v')
         self.control('v')
@@ -531,6 +540,7 @@ class Tests: # pylint: disable=too-many-public-methods
             os.unlink(to_keep)
     def test_editor(self):
         """Test editor line insert"""
+        # Previous tests must run before this one.
         self.load_page('=JS=introduction')
         self.check(question(3)).click() # Returns to the first question
         #for line in sys.stdin:
@@ -539,23 +549,23 @@ class Tests: # pylint: disable=too-many-public-methods
         #    except:
         #        pass
         editor = self.move_cursor('.editor')
-        for _ in range(10):
-            editor.send_keys(Keys.ARROW_UP)
-        editor.send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains('\n\n<span class="hljs-comment">// Lisez')})
+        editor.click()
+        self.control(Keys.HOME)
+        editor.send_keys('A') # First line
+        self.check('.overlay', {'innerHTML': Contains('A\n<span class="hljs-comment">// Lisez')})
         self.control('z')
         self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez')})
-        editor.send_keys(Keys.ARROW_DOWN)
-        editor.send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains('\n\n<span class="hljs-comment">// Lisez')})
+        editor.send_keys(Keys.ARROW_DOWN) # Second line
+        editor.send_keys('B')
+        self.check('.overlay', {'innerHTML': Contains('\nB<span class="hljs-comment">// Lisez')})
         self.control('z')
-        editor.send_keys(Keys.ARROW_RIGHT)
-        editor.send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains('\n/\n/ <span class="hljs-title class_">Lisez')})
+        editor.send_keys(Keys.ARROW_RIGHT) # Second line second char
+        editor.send_keys('C')
+        self.check('.overlay', {'innerHTML': Contains('\n/C/ <span class="hljs-title class_">Lisez')})
         self.control('z')
-        editor.send_keys(Keys.END)
-        editor.send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauch e.</span>\n\n')})
+        editor.send_keys(Keys.END) # Second line second char
+        editor.send_keys('D')
+        self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauch e.D</span>\n\n')})
         self.control('z')
         self.control(Keys.END)
         editor.send_keys('/')

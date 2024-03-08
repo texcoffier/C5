@@ -187,6 +187,9 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             if comment != '':
                 nr_comments += 1
         cache[login]['comments'] = nr_comments
+        if not STUDENT_DICT[login]:
+            print(login, "In LOGS but not in session.cf")
+            continue
         version = cache[login]['version'] = STUDENT_DICT[login][2].split(',')[3]
         grading = parse_grading(student['grades'])
         grade = 0

@@ -349,6 +349,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 else:
                     self.overlay.style.right = '0px'
                     self.editor.style.right = '0px'
+                self.editor.style.paddingBottom = 0.9*self.layered.offsetHeight + 'px'
             if not e:
                 continue
             if left >= 100 or top >= 100:
@@ -760,6 +761,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.line_numbers.childNodes[i].style.top = rect['top'] + 'px'
             if rect['height'] and rect['height'] < line_height:
                 line_height = rect['height']
+                self.line_height = line_height
                 continue
             if rect['height'] < line_height * 1.8:
                 continue
@@ -786,6 +788,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         self.overlay_show()
         self.line_numbers.style.height = self.overlay.offsetHeight + 'px'
+        # self.editor.style.height = self.overlay.offsetHeight + self.layered.offsetHeight + 'px'
         if GRADING or self.options['feedback'] >= 3:
             self.comments.style.height = self.overlay.offsetHeight + 'px'
 
@@ -1661,12 +1664,31 @@ class CCCCC: # pylint: disable=too-many-public-methods
             content.append('<pre>')
             i = 0
             for text, grade_label, values in parse_notation(NOTATION):
-                content.append(html(text))
+                for line in text.split('\r\n'):
+                    content.append(html(line.trimEnd()))
+                    line = line.trim()
+                    if line[-1] == '▶':
+                        line = line[:-1]
+                        if len(self.source.split(line)) == 2:
+                            content[-1] = content[-1].replace('▶',
+                                '<span onclick="ccccc.goto_source_line(decodeURIComponent('
+                                + "'"
+                                + encodeURIComponent(line).replace(RegExp("'", "g"), "\\'")
+                                + """'))" style="cursor: pointer;">▶</span>""")
+                    content.append('\n')
+                content.pop()
                 if len(grade_label):
-                    content.append('<span>' + html(grade_label))
+                    grade_label = html(grade_label)
+                    if '>▶<' in content[-1]:
+                        grade_label += '▶'
+                        content.append(content.pop().split(">")[0] + '>')
+                    else:
+                        content.append('<span>')
+                    content.append(grade_label)
                     for choice in values:
                         content.append('<button g="' + i + '">' + choice + '</button>')
                     content.append('</span>')
+                #content.append('\n')
                 i += 1
             content.append('</pre>')
             self.nr_grades = i - 1
@@ -1915,6 +1937,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.worker.postMessage(['goto', index])
         else:
             self.record(['allow_edit', 'goto_question'])
+
+    def goto_source_line(self, target_line):
+        """Scroll the indicated source line to the window top"""
+        for i, line in enumerate(self.source.split('\n')):
+            if line.indexOf(target_line) != -1:
+                self.layered.scrollTo({'top': i * (self.line_height+0.25), 'behavior': 'smooth'})
+                break
 
     def set_editor_content(self, message): # pylint: disable=too-many-branches,too-many-statements
         """Set the editor content (question change or reset)"""
