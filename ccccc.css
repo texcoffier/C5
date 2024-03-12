@@ -179,6 +179,7 @@ DIV.executor > DIV:first-child
     overflow: hidden;
     padding-left: 0px;
     padding-right: 0px;
+    cursor: pointer;
 }
 .line_numbers DIV {
     position: absolute;

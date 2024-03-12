@@ -401,6 +401,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.layered.appendChild(self.overlay)
                 self.line_numbers = document.createElement('DIV')
                 self.line_numbers.className = 'line_numbers'
+                def toggle_diff():
+                    self.options['diff'] = not self.options['diff']
+                    if self.options['diff']:
+                        self.do_coloring = 'diff_enabled'
+                    else:
+                        for number in self.line_numbers.childNodes:
+                            number.style.background = ''
+                self.line_numbers.onclick = toggle_diff
                 self.layered.appendChild(self.line_numbers)
                 if GRADING or self.options['feedback'] >= 3:
                     self.comments = document.createElement('DIV')
@@ -775,7 +783,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         for i in range(i+1, len(self.line_numbers.childNodes)):
             self.line_numbers.childNodes[i].style.top = '-10em'
 
-        if GRADING:
+        if self.options['diff']:
             default_answer = {}
             sep = RegExp('[ \t]', 'g')
             for line in self.question_original[self.current_question].split('\n'):
