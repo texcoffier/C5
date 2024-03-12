@@ -22,6 +22,7 @@
                                 (display "\001\002RACKET")
                                 (display ast)
                                 (display "\n")
+                                (flush-output)
                                 (if (exn:fail? result)
                                     (list (display result) (display "\001"))
                                     (list (display result) (display "\001") (cons result (repl source)))

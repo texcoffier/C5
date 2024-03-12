@@ -230,10 +230,15 @@ class Process: # pylint: disable=too-many-instance-attributes
                 line = keep
                 do_not_read = False
             else:
-                line = keep + await self.stdout.read(10000000)
+                to_add = await self.stdout.read(10000000)
+                if to_add:
+                    line = keep + to_add
+                else:
+                    if keep:
+                        line = keep + b'\n\001\002RACKETFini !\001'
+                    else:
+                        break # Never here
             keep = b''
-            if not line:
-                break
             if self.compiler == 'racket' and (line == b'\001' or b'\001' not in line):
                 # cout << '\001' : freeze the server
                 keep = line
