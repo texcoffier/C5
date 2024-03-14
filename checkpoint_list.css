@@ -1,0 +1,136 @@
+BODY {
+    font-family: sans-serif
+}
+
+TABLE {
+    border-spacing: 0px;
+    border: 1px solid #AAA
+}
+
+TABLE TD,
+TABLE TH {
+    border: 1px solid #AAA;
+    padding: 2px
+}
+
+TABLE TD.course DIV {
+    width: 13em;
+}
+
+TABLE TD.compiler DIV {
+    width: 3em;
+}
+
+TABLE TD.clipped DIV {
+    overflow: hidden;
+    white-space: nowrap
+}
+
+TABLE TR:hover TD.clipped:first-child DIV,
+TABLE TD.clipped:hover DIV {
+    background: #FF0;
+    overflow: visible;
+    position: absolute;
+    width: auto;
+    padding-right: 1em
+}
+
+TR:hover TD {
+    border-bottom: 3px solid #000;
+    padding-bottom: 0px;
+    border-top: 3px solid #000;
+    padding-top: 0px;
+}
+
+TD {
+    vertical-align: top
+}
+
+TD.names DIV {
+    width: 6em;
+}
+
+TD.tipped DIV {
+    white-space: nowrap;
+    overflow: hidden;
+    z-index: 1
+}
+
+TD.tipped:hover DIV {
+    background: #FFE;
+    overflow: visible;
+    position: absolute;
+    white-space: normal;
+    margin-left: 3em;
+    border: 1px solid #880;
+    margin-top: -1em;
+    width: 10em;
+    padding: 0.5em;
+}
+
+TD.tipped:hover {
+    background: #FF0
+}
+
+TH.header {
+    background: #55F;
+    color: #FFF
+}
+
+TH {
+    background: #EEF
+}
+
+A {
+    text-decoration: none
+}
+
+FORM {
+    display: inline-block
+}
+
+FORM INPUT {
+    display: none
+}
+
+FORM SPAN {
+    border: 1px outset #888;
+    border-radius: 0.5em;
+    background: #EEE;
+    padding: 0.2em
+}
+
+FORM SPAN:hover {
+    border: 1px inset #888;
+    background: #DDD
+}
+
+SPAN VAR {
+    display: none;
+    background: #FFE;
+    border: 1px solid #880;
+    position: absolute;
+    z-index: 1
+}
+
+SPAN:hover VAR {
+    display: block
+}
+
+SPAN:hover {
+    background: #FF0
+}
+
+BUTTON {
+    font-size: 100%
+}
+
+.sticky {
+    position: sticky;
+    top: 0px;
+}
+
+.sticky2 {
+    position: sticky;
+    top: 1.6em;
+}

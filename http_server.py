@@ -1437,48 +1437,10 @@ async def checkpoint_list(request:Request) -> Response:
         <th>Creator<th>Admins<th>Graders<th>Proctors<th>Media</tr>'''
     content = [
         session.header(),
-        '''
+        f'''
+        <script src="/checkpoint_list.js?ticket={session.ticket}"></script>
+        <link rel="stylesheet" href="/checkpoint_list.css?ticket={session.ticket}">
         <title>SESSIONS</title>
-        <style>
-        BODY { font-family: sans-serif }
-        TABLE { border-spacing: 0px; border: 1px solid #AAA }
-        TABLE TD, TABLE TH { border: 1px solid #AAA ; padding: 2px }
-        TABLE TD.course DIV { width: 13em; }
-        TABLE TD.compiler DIV { width: 3em; }
-        TABLE TD.clipped DIV { overflow: hidden; white-space: nowrap }
-        TABLE TR:hover TD.clipped:first-child DIV,
-        TABLE TD.clipped:hover DIV
-                 { background: #FF0; overflow: visible; position: absolute;
-                                         width: auto; padding-right: 1em }
-        TR:hover TD {
-            border-bottom: 3px solid #000 ;
-            padding-bottom: 0px;
-            border-top: 3px solid #000 ;
-            padding-top: 0px;
-            }
-        TD { vertical-align: top }
-        TD.names DIV { width: 6em ; }
-        TD.tipped DIV { white-space: nowrap; overflow: hidden; z-index: 1 }
-        TD.tipped:hover DIV { background: #FFE ; overflow: visible; position: absolute;
-                              white-space: normal; margin-left: 3em; border: 1px solid #880;
-                              margin-top: -1em; width: 10em; padding: 0.5em; }
-        TD.tipped:hover { background: #FF0 }
-        TH.header { background: #55F; color: #FFF }
-        TH { background: #EEF }
-        A { text-decoration: none }
-        FORM { display: inline-block }
-        FORM INPUT { display: none }
-        FORM SPAN { border: 1px outset #888; border-radius: 0.5em;
-                    background: #EEE; padding: 0.2em }
-        FORM SPAN:hover { border: 1px inset #888; background: #DDD }
-        SPAN VAR { display: none; background: #FFE;  border: 1px solid #880;
-                   position: absolute; z-index: 1}
-        SPAN:hover VAR { display: block }
-        SPAN:hover { background: #FF0 }
-        BUTTON { font-size: 100% }
-        .sticky { position: sticky; top: 0px; }
-        .sticky2 { position: sticky; top: 1.6em; }
-        </style>
         <table>''']
     def hide_header():
         if '<th>' in content[-1]:
@@ -1528,41 +1490,7 @@ async def checkpoint_list(request:Request) -> Response:
         lambda course: course.state == 'Archive' and session.is_admin(course),
         content, done)
     hide_header()
-    content.append(r'''</table>
-        <script>
-        function edit(t)
-        {
-            var t = document.getElementById('edit');
-            var s = document.createElement('SCRIPT');
-            window.open('/adm/session/^' + encodeURIComponent(t.value).replace(/\\./g, '%2E') + '?ticket=' + TICKET);
-        }
-        function update(value)
-        {
-             var path = location.toString().replace(/\/\*\/[^?]*/, '/*/' + value);
-             window.history.replaceState('_a_', '', path);
-             var e = RegExp('^' + value);
-             var tr = document.getElementsByTagName('TR');
-             for(var i in tr)
-                if ( tr[i].cells && tr[i].cells[0] && tr[i].cells[13] ) {
-                    var found = e.exec(tr[i].cells[0].textContent);
-                    if ( value === '' || value === '^' )
-                        found = false;
-                    if ( tr[i].cells[12].textContent.indexOf(LOGIN) == -1
-                         && tr[i].cells[13].textContent.indexOf(LOGIN) == -1
-                         && CONFIG.roots.indexOf(LOGIN) == -1
-                         && CONFIG.masters.indexOf(LOGIN) == -1
-                       )
-                        found = false;
-                    if ( value === '' || value === '^' )
-                        found = true;
-                    if ( tr[i].cells[0].tagName == 'TH' || found )
-                        tr[i].style.display = "table-row";
-                    else
-                        tr[i].style.display = "none";
-                    }
-        }
-        </script>
-    ''')
+    content.append('</table>')
     if session.is_author():
         content.append('''
         <p>Edit all the session with a name (without the compiler)
