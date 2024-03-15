@@ -1441,6 +1441,7 @@ async def checkpoint_list(request:Request) -> Response:
         <script src="/checkpoint_list.js?ticket={session.ticket}"></script>
         <link rel="stylesheet" href="/checkpoint_list.css?ticket={session.ticket}">
         <title>SESSIONS</title>
+        <select id="filters"></select> ← filter only what matters to you.
         <table>''']
     def hide_header():
         if '<th>' in content[-1]:
@@ -1508,19 +1509,7 @@ async def checkpoint_list(request:Request) -> Response:
             <span>{compiler}</span>
             </label>
             </form>''')
-    content.append(
-        r'''
-        <script>
-        // If no filter after /* then add it
-        if(location.toString().indexOf('/*/') == -1)
-            window.history.replaceState('_a_', '', location.toString().replace('/*', '/*/'));
-        var filter = location.pathname.toString().replace(/.*\//, '');
-        update(filter);
-        var input = document.getElementById('edit');
-        if(input)
-            input.value = filter;
-        </script>
-        ''')
+    content.append('<script>init_interface();</script>')
     if session.is_mapper():
         content.append('<p>Edit building map:<p>')
         for building in sorted(utilities.get_buildings()):

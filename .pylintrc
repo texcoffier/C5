@@ -6,7 +6,7 @@ additional-builtins=MORE,COURSE,TICKET,LOGIN,STUDENTS,STUDENT_DICT,CONFIG,MESSAG
 # compatibility.py
 	update_page,html,bind,hljs,record,nice_date,two_digit,parse_grading,millisecs,is_int,parse_notation,post,strptime,
 # Javascript functions
-	confirm,prompt,alert,Math,setInterval,setTimeout,setTimeout,encodeURIComponent,isNaN,importScripts,
+	confirm,prompt,alert,Math,setInterval,setTimeout,setTimeout,encodeURIComponent,decodeURIComponent,isNaN,importScripts,
 # Javascript classes
 	Math,JSON,RegExp,Date,Number,Object,Array,String,
 # Javascript objects
