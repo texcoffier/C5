@@ -649,9 +649,11 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         else:
             feedback = f"«{course}» Start date invalid: «{value}»!"
     elif action == 'tt':
+        value = value.lower()
         config.set_parameter('tt', value)
         feedback = f"«{course}» TT list updated with «{value}»"
     elif action == 'expected_students':
+        value = value.lower()
         config.set_parameter('expected_students', value)
         feedback = f"«{course}» Expected student list updated with «{value}»"
     elif action == 'expected_students_required':
@@ -661,12 +663,15 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         else:
             feedback = f"«{course}» Restricted to expected students."
     elif action == 'admins':
+        value = value.lower()
         config.set_parameter('admins', value)
         feedback = f"«{course}» Admins list updated with «{value}»"
     elif action == 'graders':
+        value = value.lower()
         config.set_parameter('graders', value)
         feedback = f"«{course}» Graders list updated with «{value}»"
     elif action == 'proctors':
+        value = value.lower()
         config.set_parameter('proctors', value)
         feedback = f"«{course}» Proctors list updated with «{value}»"
     elif action == 'theme':
