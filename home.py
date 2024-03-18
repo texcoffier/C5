@@ -12,10 +12,16 @@ def home(sessions):
     A:hover SPAN { opacity: 1 }
     A { text-decoration: none }
     A:hover { text-decoration: underline }
-    UL { margin-top: 0px ; margin-bottom: 0px; overflow: hidden; transition: 0.3s height }
+    TABLE { margin-top: 0px ; margin-bottom: 0px; overflow: hidden;
+            border-spacing: 0px;
+            transition: 0.3s height; table-layout: fixed }
     P { margin: 0.1em }
     P.root:before { content: '▶'; display: inline-block; transition: 0.3s transform }
     P.root.open:before { transform: rotate(90deg) }
+    TABLE TD:nth-child(2) { padding-left: 1em ; padding-right: 1em }
+    TABLE TR:hover TD { text-decoration: underline }
+    TABLE TD:first-child { text-align: right }
+    TABLE.close TD { display: none; }
 </style>
 <h1>C5 de  ''', LOGIN, '''</h1>
 <p>
@@ -27,20 +33,29 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
 ''']
     tree = {}
     roots = []
-    for course, highlight, expected, feedback, title in sessions:
+    now = millisecs() / 1000
+    now_text = nice_date(now)
+    for course, highlight, expected, feedback, title, start_timestamp in sessions:
         keys = course.split('=')[1].split('_')
         if len(keys) == 1:
             root = ' Autres'
         else:
             root = keys[0]
-        text = ('<a href="/=' + course + '?ticket=' + TICKET
-                + '" style="background:' + highlight + '"><span>'
-                + course.replace('=','</span> ')
-                + '</a>')
+        text = course.split('=')
+        text = '<span style="opacity: 0.3">' + text[0] + '</span> ' + text[1]
+        style = "background:" + highlight
         if expected:
-            text = '<b>' + text + '</b>'
+            style = ';font-weight: bold'
+        text = ('<tr onclick="location = \'/=' + course + '?ticket=' + TICKET
+                + '\'" style="' + style + '"><td>' + text + '<td>')
         if title != '':
-            text += '   «' + html(title) + '»'
+            text += html(title)
+        text += '<td>'
+        if now < start_timestamp:
+            date = nice_date(start_timestamp)
+            text += " début de session à " + date[11:]
+            if date[:10] != now_text[:10]:
+                text += " le " + date[:10]
         if feedback:
             text += ' Examen terminé : ' + [
                 None,
@@ -73,12 +88,12 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
         content.append('">')
         content.append(root)
         content.append('</p>')
-        content.append('<ul id="')
+        content.append('<table id="')
         content.append(root)
         content.append('">')
         for item in tree[root]:
-            content.append('<li>' + item)
-        content.append('</ul>')
+            content.append(item)
+        content.append('</table>')
 
     document.body.innerHTML += ''.join(content)
 
@@ -101,10 +116,10 @@ def update_style():
     """Update open/close from local storage"""
     opens = JSON.parse(localStorage['opens'] or '[]')
 
-    for ul_elm in document.getElementsByTagName('UL'):
+    for ul_elm in document.getElementsByTagName('TABLE'):
         if ul_elm.id in opens:
-            ul_elm.style.height = HEIGHTS[ul_elm.id] + 'px'
             ul_elm.previousSibling.className = 'root open'
+            ul_elm.className = 'open'
         else:
-            ul_elm.style.height = '0px'
-            ul_elm.previousSibling.className = 'root'
+            ul_elm.previousSibling.className = 'root close'
+            ul_elm.className = 'close'

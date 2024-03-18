@@ -1665,7 +1665,7 @@ async def home(request:Request) -> Response:
             continue
         if now < course.hide_before_seconds:
             continue # Too soon to display
-        data.append((course.course, course.highlight, expected, feedback, course.title))
+        data.append((course.course, course.highlight, expected, feedback, course.title, course.start_timestamp))
     return answer(f'''{session.header()}
 <script src="/home.js?ticket={session.ticket}"></script>
 <script>home({json.dumps(data)})</script>
