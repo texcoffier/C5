@@ -776,6 +776,8 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             if value == 'on':
                 value = 1
             value = int(value)
+        if isinstance(default_value, float):
+            value = float(value)
         elif isinstance(default_value, (list, dict)):
             value = json.loads(value)
         config.set_parameter(action, value)
@@ -1644,6 +1646,7 @@ async def home(request:Request) -> Response:
     # Student
     CourseConfig.load_all_configs()
 
+    now = time.time()
     courses = sorted(CourseConfig.configs.items())
     data = []
     for _course_name, course in courses:
@@ -1655,6 +1658,8 @@ async def home(request:Request) -> Response:
         feedback = course.get_feedback(session.login)
         if status not in ('pending', 'running') and not feedback:
             continue
+        if now < course.hide_before_seconds:
+            continue # Too soon to display
         data.append((course.course, course.highlight, expected, feedback))
     return answer(f'''{session.header()}
 <script src="/home.js?ticket={session.ticket}"></script>

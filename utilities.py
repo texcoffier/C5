@@ -349,6 +349,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             self.media = os.listdir(self.dir_media)
         else:
             self.media = []
+        self.hide_before_seconds = self.start_timestamp - 3600 * self.config['hide_before']
 
     def number_of_active_students(self, last_seconds:int=600) -> int:
         """Compute the number of active students the last seconds"""

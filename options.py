@@ -41,7 +41,6 @@ DEFAULT_COURSE_OPTIONS = [
     ['grading_done'         ,1, "Graders indicate «grading done» in place of the grading level"],
     ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
-    ['highlight'            ,"#FFF", "Background color in the student and teacher session list"],
     ['git_url'              ,'', "The GIT url to fetch updates. <b>You must only commit 'questions.py' and 'MEDIA/*' nothing else.</b>"],
 
     "Checkpoint placement interface",
@@ -51,7 +50,13 @@ DEFAULT_COURSE_OPTIONS = [
     ['display_session_name'  , 0, "Display the session name"],
     ['default_building'      ,'', "Preselected building name"],
 
-    "Student interface",
+    "Student session list",
+
+    ['highlight'            ,"#FFF", "Background color in the student and teacher session list"],
+    ['hide_before'          ,24*15., """The session will be visible in the list if it starts
+    in less than the number of indicated hours. 15 days = 360 hours, 6 minutes = 0.1 hours"""],
+
+    "Student interface for the editor",
 
     ['positions', {
         'question':    [ 1, 29, 0, 30,'#EFEF'], # LeftTop    : The question
