@@ -1166,7 +1166,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if not OPTIONS['checkpoint']:
                 version = 'a'
                 break
-            version = prompt('Version A / B:')
+            version = prompt(
+                "Cette popup apparaît car l'étudiant\n"
+                + "n'a pas été posé sur un sujet A ou B\n"
+                + "comme vous deviez le faire.\n\n"
+                + "Indiquez s'il fait la version A ou B :")
             if version:
                 version = version.lower()
             else:
