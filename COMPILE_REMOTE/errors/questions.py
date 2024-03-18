@@ -241,7 +241,14 @@ int main()
 """,
 ]
 
-# COURSE_OPTIONS = { 'automatic_compilation': False }
+# Do not copy this for an examination session.
+# It is for an always open session.
+COURSE_OPTIONS = {
+    'title': 'Entraînez-vous à corriger les erreurs de compilation C++',
+    'state': 'Ready',
+    'checkpoint': 0,
+    'allow_copy_paste': 1,
+}
 
 def create(source):
     """Create a fix error question"""

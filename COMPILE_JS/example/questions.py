@@ -3,6 +3,16 @@
 Demonstration of the system
 """
 
+# Do not copy this for an examination session.
+# It is for an always open session.
+COURSE_OPTIONS = {
+    'title': 'Un exemple minimaliste session',
+    'state': 'Ready',
+    'checkpoint': 0,
+    'allow_copy_paste': 1,
+    'expected_students_required': 1 # Do not display to student
+}
+
 class Q0(Question): # pylint: disable=undefined-variable
     """Question 0"""
     def question(self):

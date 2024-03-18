@@ -3,24 +3,33 @@
 Demonstration of the system
 """
 
+# Do not copy this for an examination session.
+# It is for an always open session.
+COURSE_OPTIONS = {
+    'title': 'Démonstrateur de compilation C sur le serveur',
+    'state': 'Ready',
+    'checkpoint': 0,
+    'allow_copy_paste': 1,
+    'expected_students_required': 1, # Do not display to student
+    'automatic_compilation': 0,
+    'compile_options': ['-Wall', '-pedantic'],
+    'allowed': ['brk'],
+    'positions' : {
+        'question': [1, 28, 0, 30, '#EFE'],
+        'tester': [1, 28, 30, 70, '#EFE'],
+        'editor': [30, 40, 0, 100, '#FFF'],
+        'compiler': [70, 30, 0, 30, '#EEF'],
+        'executor': [70, 30, 30, 70, '#EEF'],
+        'time': [80, 20, 98, 2, '#0000'],
+        'index': [0, 1, 0, 100, '#0000'],
+        'line_numbers': [29, 1, 0, 100, '#EEE'],
+        }
+}
+
+
 class QEnd(Question): # pylint: disable=undefined-variable
     """Question Finale"""
     def question(self):
-        self.set_options({
-            'automatic_compilation': 0,
-            'compile_options': ['-Wall', '-pedantic'],
-            'allowed': ['brk'],
-            'positions' : {
-                'question': [1, 28, 0, 30, '#EFE'],
-                'tester': [1, 28, 30, 70, '#EFE'],
-                'editor': [30, 40, 0, 100, '#FFF'],
-                'compiler': [70, 30, 0, 30, '#EEF'],
-                'executor': [70, 30, 30, 70, '#EEF'],
-                'time': [80, 20, 98, 2, '#0000'],
-                'index': [0, 1, 0, 100, '#0000'],
-                'line_numbers': [29, 1, 0, 100, '#EEE'],
-                }
-            })
         return """Plus de questions.
         <p>Test de coloriage syntaxique dans la question :
         <pre style="margin:0px;padding:0px"><code class="language-cpp">#define a A
@@ -65,5 +74,3 @@ int main() {
     return 0;
 }
 """
-
-# Session([QEnd()]) # pylint: disable=undefined-variable

@@ -3,6 +3,15 @@
 Demonstration of the system
 """
 
+# Do not copy this for an examination session.
+# It is for an always open session.
+COURSE_OPTIONS = {
+    'title': 'Démonstrateur de requêtes SQL',
+    'state': 'Ready',
+    'checkpoint': 0,
+    'allow_copy_paste': 1,
+}
+
 class QEnd(Question): # pylint: disable=undefined-variable
     """Question Finale"""
     def question(self):

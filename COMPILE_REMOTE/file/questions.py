@@ -1,7 +1,14 @@
 """Play with files"""
 
+# Do not copy this for an examination session.
+# It is for an always open session.
 COURSE_OPTIONS = {
     'automatic_compilation': 0,
+    'title': 'Démonstrateur de lecture et écriture dans des fichiers en C++',
+    'state': 'Ready',
+    'checkpoint': 0,
+    'allow_copy_paste': 1,
+    'expected_students_required': 1 # Do not display to student
 }
 
 class Q1(Question): # pylint: disable=undefined-variable

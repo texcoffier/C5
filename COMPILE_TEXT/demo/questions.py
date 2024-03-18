@@ -12,8 +12,9 @@ COURSE_OPTIONS = {'positions' : {
     },
     'state': 'Ready',
     'checkpoint': 0,
+    'expected_students_required': 1, # Do not display to student
+    'title': "Démonstrateur de saisir de texte libre"
     }
-
 
 class Q1(Question):
     """42"""

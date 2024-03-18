@@ -1,3 +1,15 @@
+# pylint: disable=no-self-use,missing-function-docstring,invalid-name
+"""
+For regression tests
+"""
+
+# Do not copy this for an examination session.
+# It is for an always open session.
+COURSE_OPTIONS = {
+    'title': "Démonstration de l'exécution Python interne au navigateur web",
+    'expected_students_required': 1 # Do not display to student
+}
+
 class First(Question):
     def question(self):
         return "Faites afficher «2» au lieu de «1»."
@@ -33,7 +45,7 @@ for caractere in "Une phrase"
     if caractere == ' ':
         nr_espaces += 1
 print("Il y a", nr_espaces, "espaces.")
-"""    
+"""
     def tester(self):
         if self.worker.execution_result == 'Il y a 1 espaces.\n':
             self.next_question()

@@ -27,7 +27,7 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
 ''']
     tree = {}
     roots = []
-    for course, highlight, expected, feedback in sessions:
+    for course, highlight, expected, feedback, title in sessions:
         keys = course.split('=')[1].split('_')
         if len(keys) == 1:
             root = ' Autres'
@@ -39,6 +39,8 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
                 + '</a>')
         if expected:
             text = '<b>' + text + '</b>'
+        if title != '':
+            text += '   «' + html(title) + '»'
         if feedback:
             text += ' Examen terminé : ' + [
                 None,

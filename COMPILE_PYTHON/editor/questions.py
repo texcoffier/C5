@@ -7,9 +7,11 @@ if False: # pylint: disable=using-constant-test
     PREAMBLE = PREAMBLE
 
 COURSE_OPTIONS = {
-    'allow_copy_paste': True,
+    'title': "Session utilisée uniquement pour éditer les questionnaires",
+    'allow_copy_paste': 0,
     'state': 'Ready',
-    'checkpoint': False,
+    'checkpoint': 0,
+    'expected_students_required': 1, # Do not display to student
     'positions' : {
         'question': [1, 29, 0, 100, '#EFE'],
         'tester': [100, 29, 30, 70, '#EFE'],

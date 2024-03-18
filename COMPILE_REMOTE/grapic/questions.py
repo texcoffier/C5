@@ -3,13 +3,17 @@
 Demonstration of the system
 """
 
+# Do not copy this for an examination session.
+# It is for an always open session.
 COURSE_OPTIONS = {
+            'title': 'Les exemples de la bilbiothèque GRAPIC',
             'automatic_compilation': 0,
             'compile_options': ['-Wall', '-pedantic'],
             'allowed': ['brk', 'clock_nanosleep'],
             'sequential': 0,
             'state': 'Ready',
-            # 'forget_input': True,
+            'checkpoint': 0,
+            'allow_copy_paste': 1,
             'positions' : {
                 'question': [1, 28, 0, 30, '#EFE'],
                 'tester': [1, 28, 30, 70, '#EFE'],

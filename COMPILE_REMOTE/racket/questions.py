@@ -3,11 +3,16 @@
 Demonstration of Racket remote
 """
 
+# Do not copy this for an examination session.
+# It is for an always open session.
 COURSE_OPTIONS = {
+            'title': 'Testez vos programmes Racket',
             'automatic_compilation': 0,
             'compiler': 'racket',
             'language': 'lisp',
             'allow_copy_paste': 1,
+            'checkpoint': 0,
+            'state': 'Ready',
             'positions' : {
                 'question': [1, 28, 0, 30, '#EFE'],
                 'tester': [1, 28, 30, 70, '#EFE'],

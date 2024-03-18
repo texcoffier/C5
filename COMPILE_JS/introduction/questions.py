@@ -5,7 +5,14 @@ Demonstration of the system
 
 millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable,invalid-name
 
-COURSE_OPTIONS = {'state': 'Ready'}
+# Do not copy this for an examination session.
+# It is for an always open session.
+COURSE_OPTIONS = {
+    'title': '3 exercices Javascript',
+    'state': 'Ready',
+    'checkpoint': 0,
+    'allow_copy_paste': 1,
+}
 
 class Q0(Question): # pylint: disable=undefined-variable
     """Question 0"""
@@ -157,5 +164,3 @@ class QEnd(Question): # pylint: disable=undefined-variable
         self.display('FINI !')
     def default_answer(self):
         return ""
-
-# Session([Q0(), Q1(), Q2(), Q3(), QEnd()]) # pylint: disable=undefined-variable

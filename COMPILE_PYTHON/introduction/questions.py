@@ -6,6 +6,15 @@ Demonstration of the system
 Question = Question # pylint: disable=undefined-variable,self-assigning-variable
 millisecs = millisecs # pylint: disable=undefined-variable,self-assigning-variable
 
+# Do not copy this for an examination session.
+# It is for an always open session.
+COURSE_OPTIONS = {
+    'title': "Micro cours Python",
+    'state': 'Ready',
+    'checkpoint': 0,
+    'allow_copy_paste': 1,
+}
+
 def canonise(txt):
     return txt.lower().replace(' ', '')
 

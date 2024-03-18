@@ -1376,6 +1376,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
         ('sequential', 'S', 'Sequential question access'),
         ('save_unlock', '🔓', 'Save unlock next question'),
         ('allow_ip_change', 'IP', 'Allow IP change'),
+        ('expected_students_required', '🪪', 'Only expected students'),
     ):
         value = course.config.get(attr, 0)
         if str(value).isdigit():
@@ -1392,9 +1393,13 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     for media in course.media:
         medias.append(f'<a target="_blank" href="/media/{course.course}/{media}?ticket={session.ticket}">{media}</a>')
     medias = ' '.join(medias)
+    if course.title:
+        title = f' «{course.title}»'
+    else:
+        title = ''
     content.append(f'''
     <tr>
-    <td class="clipped course"><div>{course.course.split('=')[1]}</div></td>
+    <td class="clipped course"><div>{course.course.split('=')[1]}{title}</div></td>
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
     <td>{len(course.active_teacher_room) or ''}
     <td>{len(waiting) if course.checkpoint else ''}
@@ -1660,7 +1665,7 @@ async def home(request:Request) -> Response:
             continue
         if now < course.hide_before_seconds:
             continue # Too soon to display
-        data.append((course.course, course.highlight, expected, feedback))
+        data.append((course.course, course.highlight, expected, feedback, course.title))
     return answer(f'''{session.header()}
 <script src="/home.js?ticket={session.ticket}"></script>
 <script>home({json.dumps(data)})</script>

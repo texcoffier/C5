@@ -55,6 +55,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['highlight'            ,"#FFF", "Background color in the student and teacher session list"],
     ['hide_before'          ,24*15., """The session will be visible in the list if it starts
     in less than the number of indicated hours. 15 days = 360 hours, 6 minutes = 0.1 hours"""],
+    ['title'                ,''    , "Session title"],
 
     "Student interface for the editor",
 

@@ -3,7 +3,14 @@
 Demonstration of the system
 """
 
+# Do not copy this for an examination session.
+# It is for an always open session.
 COURSE_OPTIONS = {
+    'title': 'Démonstrateur de compilation C interne au navigateur web',
+    'state': 'Ready',
+    'checkpoint': 0,
+    'allow_copy_paste': 1,
+    'expected_students_required': 1, # Do not display to student
     'positions': {
         'question': [1, 29, 0, 30, '#EFE'],
         'tester': [1, 29, 30, 70, '#EFE'],
