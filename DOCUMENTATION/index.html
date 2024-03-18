@@ -447,6 +447,15 @@ def tester(self):
 def default_answer(self):
     self.sujet = self.version() # 'a' ou 'b'
     return ""</pre>
+    <li>
+        <tt>self.worker.files</tt> est un dictionnaire
+        dont les clefs sont les chemins des fichiers (comme «A/toto.txt»)
+        générés par l'exécution du code et la valeur le contenu du fichier.
+        Il faut indiquer les chemins des fichiers qui doivent être récupérés
+        dans le paramètre <tt>filetree_out</tt> de la configuration.
+        Les fichiers générés ne peuvent pas dépasser 1Mo.
+        Un exemple d'utilisation est dans <tt>COMPILE_REMOTE/file/questions.py</tt>.
+    </li>
     </ul>
 
     <h3>Tous les attributs de configuration.</h3>
