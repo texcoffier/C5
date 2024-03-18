@@ -1397,6 +1397,10 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
         title = f' «{course.title}»'
     else:
         title = ''
+    if session.is_grader(course):
+        run = 'Try'
+    else:
+        run = 'Take'
     content.append(f'''
     <tr>
     <td class="clipped course"><div>{course.course.split('=')[1]}{title}</div></td>
@@ -1413,7 +1417,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
         if session.is_admin(course) else ''
     }
     <td> {
-        f'<a target="_blank" href="/={course.course}?ticket={session.ticket}">Try</a>'
+        f'<a target="_blank" href="/={course.course}?ticket={session.ticket}">{run}</a>'
         if status.startswith('running') or session.is_grader(course)
         else ''
     }
