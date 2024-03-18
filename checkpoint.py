@@ -706,65 +706,54 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def draw_help(self, ctx): # pylint: disable=too-many-statements
         """Display documentation"""
         size = self.scale * 1.5
+        indent = 2 * self.scale
         ctx.font = size + "px sans-serif"
         ctx.fillStyle = "#000"
         line_top = self.top - 2.7 * size * 2
-        line = line_top
-        column = self.left + 11 * size * 2
-        ctx.fillText("Couleurs des noms d'étudiants : ", column, line)
-        line += size
-        column += self.scale
-        ctx.fillStyle = "#888"
-        ctx.fillText("Avec un autre enseignant.", column, line)
-        line += size
-        ctx.fillStyle = "#000"
-        ctx.fillText("Travaille avec vous.", column, line)
-        line += size
-        ctx.fillStyle = "#00F"
-        ctx.fillText("N'a rien fait depuis " + BOLD_TIME_ACTIVE/60 + " minutes.", column, line)
-        line += size
-        ctx.fillStyle = "#080"
-        ctx.fillText("Examen terminé avant la fin.", column, line)
-        line += size
-        ctx.fillStyle = "#800"
-        ctx.fillText("Dans la mauvaise salle.", column, line)
 
-        line = line_top
-        column = self.left + 20 * size * 2
-        ctx.fillStyle = "#000"
-        ctx.fillText("Concernant les ordinateurs :", column, line)
-        column += self.scale
-        line += size
-        ctx.fillText("Plus il est rouge, plus il y a des pannes.", column, line)
-        line += size
-        ctx.fillText("Cliquez dessus pour indiquer une panne.", column, line)
-        line += size
+        def draw_messages(column, texts):
+            line = line_top
+            first = True
+            max_width = 0
+            for text in texts:
+                if text.startswith('#'):
+                    ctx.fillStyle = text[:4]
+                    text = text[4:]
+                ctx.fillText(text, column, line)
+                width = ctx.measureText(text).width
+                if width > max_width:
+                    max_width = width
+                if first:
+                    column += indent
+                    first = False
+                line += size
+            return max_width + size/2
 
-        line = line_top
-        column = self.left + 32 * size * 2
-        ctx.fillText("Le carré jaune des étudiants :", column, line)
-        column += self.scale
-        line += size
-        ctx.fillText("Tirez-le pour déplacer l'étudiant.", column, line)
-        line += size
-        ctx.fillText("Tirez-le tout à gauche pour le remettre en salle d'attente.", column, line)
-        line += size
-        ctx.fillText("Il passe en violet quand la fenêtre perd le focus.", column, line)
-        line += size
-        ctx.fillText("Il se remplit de rouge à chaque perte de focus.", column, line)
-        line += size
-        ctx.fillText("Il se remplit de vert pour chaque bonne réponse.", column, line)
+        column = self.left
+        column += draw_messages(column, [
+            "Navigation sur le plan :",
+            "Utilisez la molette pour zoomer.",
+            "Tirez le fond d'écran pour le déplacer.",
+            "Cliquez sur le sol d'un salle pour zoomer."])
+        column += draw_messages(column, [
+            "Le carré jaune des étudiants :",
+            "Tirez-le pour déplacer l'étudiant.",
+            "Tirez-le tout à gauche pour le remettre en salle d'attente.",
+            "Il passe en violet quand la fenêtre perd le focus.",
+            "Il se remplit de rouge à chaque perte de focus.",
+            "Il se remplit de vert pour chaque bonne réponse."])
+        column += draw_messages(column, [
+            "Couleurs des noms d'étudiants : ",
+            "#888 Avec un autre enseignant.",
+            "#000 Travaille avec vous.",
+            "#00F N'a rien fait depuis " + BOLD_TIME_ACTIVE/60 + " minutes.",
+            "#080 Examen terminé avant la fin.",
+            "#800 Dans la mauvaise salle."])
+        column += draw_messages(column, [
+            "#000 Concernant les ordinateurs :",
+            "Plus il est rouge, plus il y a des pannes.",
+            "Cliquez dessus pour indiquer une panne."])
 
-        line = line_top
-        column = self.left + 0 * size * 2
-        ctx.fillText("Navigation sur le plan :", column, line)
-        column += self.scale
-        line += size
-        ctx.fillText("Utilisez la molette pour zoomer.", column, line)
-        line += size
-        ctx.fillText("Tirez le fond d'écran pour le déplacer.", column, line)
-        line += size
-        ctx.fillText("Cliquez sur le sol d'un salle pour zoomer.", column, line)
     def draw_teachers(self, ctx):
         """Display teacher names in front of rooms"""
         ctx.fillStyle = "#000"
