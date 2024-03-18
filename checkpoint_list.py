@@ -66,6 +66,7 @@ def update(value):
     session_filter = RegExp('^' + value)
     rows = document.getElementsByTagName('TR')
     header = None
+    nr_actives = 0
     for row in rows:
         if row.className == 'sticky':
             change_header_visibility(header, one_visible)
@@ -90,7 +91,10 @@ def update(value):
                 one_visible = True
             else:
                 row.style.display = "none"
+            if row.cells[4].textContent != '':
+                nr_actives += Number(row.cells[4].textContent)
     change_header_visibility(header, one_visible)
+    document.getElementById('nr_actives').innerHTML = nr_actives
 
 def my_sessions():
     sessions = []

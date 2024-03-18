@@ -1354,19 +1354,17 @@ def tipped(logins_spaced:str) -> str:
 def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> None:
     """A line in the checkpoint table"""
     waiting = []
-    working = []
     with_me = []
     done = []
     for student, active_teacher_room in course.active_teacher_room.items():
         if active_teacher_room.teacher == session.login:
             with_me.append(student)
-        if active_teacher_room.active:
-            working.append(student)
-        else:
+        if not active_teacher_room.active:
+            # Student is not working
             if active_teacher_room.room:
-                done.append(student)
+                done.append(student) # Exam closed
             else:
-                waiting.append(student)
+                waiting.append(student) # Not yet placed
 
     bools = ''
     for attr, letter, tip in (
@@ -1447,6 +1445,7 @@ async def checkpoint_list(request:Request) -> Response:
         <link rel="stylesheet" href="/checkpoint_list.css?ticket={session.ticket}">
         <title>SESSIONS</title>
         <select id="filters"></select> ← filter only what matters to you.
+        <div style="float: right"><span id="nr_actives"></span> users active</div>
         <table>''']
     def hide_header():
         if '<th>' in content[-1]:
