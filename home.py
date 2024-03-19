@@ -21,7 +21,11 @@ def home(sessions):
     TABLE TD:nth-child(2) { padding-left: 1em ; padding-right: 1em }
     TABLE TR:hover TD { text-decoration: underline }
     TABLE TD:first-child { text-align: right }
-    TABLE.close TD { display: none; }
+    TABLE TD { padding: 0px }
+    TABLE P { margin: 0px; height: 1.1em; transition: 0.3s height }
+    TABLE.close P { height: 0px;}
+    TABLE TR { cursor: pointer; transition: 0.3s opacity; }
+    TABLE.close TR { opacity: 0 }
 </style>
 <h1>C5 de  ''', LOGIN, '''</h1>
 <p>
@@ -47,10 +51,10 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
         if expected:
             style = ';font-weight: bold'
         text = ('<tr onclick="location = \'/=' + course + '?ticket=' + TICKET
-                + '\'" style="' + style + '"><td>' + text + '<td>')
+                + '\'" style="' + style + '"><td><p>' + text + '<td><p>')
         if title != '':
             text += html(title)
-        text += '<td>'
+        text += '<td><p>'
         if now < start_timestamp:
             date = nice_date(start_timestamp)
             text += " début de session à " + date[11:]
