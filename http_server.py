@@ -1411,7 +1411,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     <td>{len(with_me) or ''}
     <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
     <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
-    <td style="background:{course.config['highlight']}">{bools}
+    <td style="white-space: nowrap" style="background:{course.config['highlight']}">{bools}
     <td> {
         f'<a target="_blank" href="/adm/session/{course.course}?ticket={session.ticket}">Edit</a>'
         if session.is_admin(course) else ''

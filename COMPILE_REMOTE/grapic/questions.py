@@ -6,7 +6,7 @@ Demonstration of the system
 # Do not copy this for an examination session.
 # It is for an always open session.
 COURSE_OPTIONS = {
-            'title': 'Les exemples de la bilbiothèque GRAPIC',
+            'title': 'Les exemples de la bibliothèque GRAPIC',
             'automatic_compilation': 0,
             'compile_options': ['-Wall', '-pedantic'],
             'allowed': ['brk', 'clock_nanosleep'],
