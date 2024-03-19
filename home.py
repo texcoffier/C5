@@ -39,7 +39,7 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
     roots = []
     now = millisecs() / 1000
     now_text = nice_date(now)
-    for course, highlight, expected, feedback, title, start_timestamp, stop_timestamp in sessions:
+    for course, highlight, expected, feedback, title, start_timestamp, stop_timestamp, tt in sessions:
         keys = course.split('=')[1].split('_')
         if len(keys) == 1:
             root = ' Autres'
@@ -57,7 +57,7 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
         text += '<td><p>'
         if now < start_timestamp:
             date = nice_date(start_timestamp)
-            text += " début de session à " + date[11:]
+            text += " début à " + date[11:]
             if date[:10] != now_text[:10]:
                 text += " le " + date[:10]
             minutes = (stop_timestamp - start_timestamp)/60
@@ -65,6 +65,8 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
                 text += " durée " + minutes + ' minutes'
             else:
                 text += " → " + nice_date(stop_timestamp)
+            if tt:
+                text += ' +⅓ temps'
         if feedback:
             text += ' Examen terminé : ' + [
                 None,
