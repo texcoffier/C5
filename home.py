@@ -14,15 +14,15 @@ def home(sessions):
     A:hover { text-decoration: underline }
     TABLE { margin-top: 0px ; margin-bottom: 0px; overflow: hidden;
             border-spacing: 0px;
-            transition: 0.3s height; table-layout: fixed }
+            table-layout: fixed }
     P { margin: 0.1em }
     P.root:before { content: '▶'; display: inline-block; transition: 0.3s transform }
     P.root.open:before { transform: rotate(90deg) }
-    TABLE TD:nth-child(2) { padding-left: 1em ; padding-right: 1em }
+    TABLE TD:nth-child(2), TABLE TD:nth-child(3) { padding-left: 0.5em ; padding-right: 0.5em }
     TABLE TR:hover TD { text-decoration: underline }
-    TABLE TD:first-child { text-align: right }
-    TABLE TD { padding: 0px }
-    TABLE P { margin: 0px; height: 1.1em; transition: 0.3s height }
+    TABLE TD:first-child { text-align: right; }
+    TABLE TD { padding: 0px; overflow: hidden }
+    TABLE P { white-space: nowrap; margin: 0px; max-width: 45vw; height: 1.1em; transition: 0.3s height }
     TABLE.close P { height: 0px;}
     TABLE TR { cursor: pointer; transition: 0.3s opacity; }
     TABLE.close TR { opacity: 0 }
@@ -39,7 +39,7 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
     roots = []
     now = millisecs() / 1000
     now_text = nice_date(now)
-    for course, highlight, expected, feedback, title, start_timestamp in sessions:
+    for course, highlight, expected, feedback, title, start_timestamp, stop_timestamp in sessions:
         keys = course.split('=')[1].split('_')
         if len(keys) == 1:
             root = ' Autres'
@@ -60,6 +60,11 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
             text += " début de session à " + date[11:]
             if date[:10] != now_text[:10]:
                 text += " le " + date[:10]
+            minutes = (stop_timestamp - start_timestamp)/60
+            if minutes <= 4*60:
+                text += " durée " + minutes + ' minutes'
+            else:
+                text += " → " + nice_date(stop_timestamp)
         if feedback:
             text += ' Examen terminé : ' + [
                 None,
