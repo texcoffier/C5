@@ -294,6 +294,10 @@ def select_tab(label):
     is found in the student source code,<br>
     then '▶' is blue and clickable to scroll the source code to the first matching line.
     </p>
+    <p>
+    If the grading part is «{printf:SomeKey:1,2,3}» then «SomeKey» will be
+    hidden to the grader but used to compute the competence export table
+    for TOMUSS.
     <pre>
 #include &lt;stdio.h&gt;               {stdio.h:0,1}
 int main()▶                      {main declaration:0,1}

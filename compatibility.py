@@ -90,11 +90,9 @@ def parse_notation(notation):
                 text += '{'
             text += item
             continue
-        content.append(
-            [text,
-                options[0].replace(RegExp(':[-0-9,.]+$'), ''), # grade label
-                options[0].replace(RegExp('.*:'), '').split(',') # values
-            ])
+        grade_label = options[0].replace(RegExp(':[-0-9,.]+$'), '')
+        grade_values = options[0].replace(RegExp('.*:'), '').split(',')
+        content.append([text, grade_label, grade_values])
         text = options[1:].join('}')
     content.append([text, '', []])
     return content

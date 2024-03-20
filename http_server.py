@@ -1447,7 +1447,7 @@ async def checkpoint_list(request:Request) -> Response:
     session = await Session.get_or_fail(request)
     titles = '''<tr class="sticky2"><th>Session<th>Comp<br>iler
         <th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
-        <th>Start date<th>Stop date<th>Options<th>Edit<th>Try<th>Waiting<br>Room
+        <th>Start date<th>Stop date<th>Options<th>Edit<th>👁<th>Waiting<br>Room
         <th>Creator<th>Admins<th>Graders<th>Proctors<th>Media</tr>'''
     content = [
         session.header(),

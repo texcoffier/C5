@@ -1686,7 +1686,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     content.append('\n')
                 content.pop()
                 if len(grade_label):
-                    grade_label = html(grade_label)
+                    # Remove competence key at the end of the grade label
+                    grade_label = html(grade_label.replace(RegExp(':[a-z0-9+]*$'), ''))
                     if '>▶<' in content[-1]:
                         grade_label += '▶'
                         content.append(content.pop().split(">")[0] + '>')
