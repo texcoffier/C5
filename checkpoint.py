@@ -1199,6 +1199,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def zoom_student(self, login):
         "Zoom on this student"
         student = STUDENT_DICT[login]
+        if not student.building:
+            return
         if student.building != self.building:
             self.change(student.building)
             scheduler.update_page = True
@@ -1535,18 +1537,16 @@ def get_login(student):
     student = canonize(student)
     size = len(student)
     for login, verify in STUDENT_DICT.Items():
-        if not verify.building:
-            continue
         if (canonize(verify.firstname) == student
                 or canonize(verify.surname) == student
                 or canonize(login) == student
            ):
-            possibles.append([login, verify.surname, verify.firstname])
+            possibles.append([login, verify.surname, verify.firstname, verify.building])
         if (canonize(verify.firstname)[:size] == student # pylint: disable=consider-using-in
                 or canonize(verify.surname)[:size] == student
                 or canonize(login)[:size] == student
            ):
-            possibles2.append([login, verify.surname, verify.firstname])
+            possibles2.append([login, verify.surname, verify.firstname, verify.building])
     if len(possibles) == 0:
         if len(possibles2) == 0:
             return None
@@ -1555,6 +1555,7 @@ def get_login(student):
         return possibles[0][0]
     choices = '\n'.join([
         str(i) + ' → ' + choice[0] + ' ' + choice[1] + ' ' + choice[2]
+            + ' (' + (choice[3] or 'non placé') + ')'
         for i, choice in enumerate(possibles)])
     i = prompt(choices)
     if i:
