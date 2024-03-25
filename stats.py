@@ -31,8 +31,26 @@ def get_labels(x_min, x_max):
 def get_data(element):
     element.innerHTML = '\n'.join([
         str(xx) + ' ' + str(yy) + ' ' + color + ' ' + radius.toFixed(1)
-        + ' ' + str(opacity) + ' ' + student + ' ' + session
-        for xx, yy, color, radius, opacity, student, session in COORDS])
+        + ' ' + str(opacity) + ' ' + key
+        for xx, yy, color, radius, opacity, key in COORDS])
+
+def set_button(values):
+    default_values = {
+        'selector_merge': 'first_interaction > 0  && work_time > 0 && student.match(/.*[0-9][0-9].*/)',
+        'selector_average': 'true',
+        'x': '0',
+        'y': '0',
+        'red': '0',
+        'green': '0',
+        'blue': '0',
+        'circle_radius': '10',
+        'opacity': '0.3',
+        'bins': '0',
+        'merge': "key",
+        'group': "key",
+    }
+    for key, default_value in default_values.Items():
+        document.getElementById(key).value = values[key] or default_value
 
 def stats_init():
     for session_name, stats in STATS.Items():
@@ -43,11 +61,13 @@ def stats_init():
                     d.setTime(1000 * timestamp)
                     values['Year'] = d.getFullYear()
                     values['Hour'] = d.getHours()
+                    values['Date'] = d.getDate()
                     values['MinuteDay'] = d.getHours()*24 + d.getMinutes()
                     values['Month'] = d.getMonth()
                     values['WeekDay'] = d.getDay()
             values['session'] = session_name
             values['student'] = student
+            values['key'] = session_name + '/' + student
 
     for _session_name, stats in STATS.Items():
         for _student, values in stats.Items():
@@ -56,6 +76,7 @@ def stats_init():
 
     document.getElementById('header').innerHTML = '''
     <style>
+    BODY { font-family: sans-serif }
     #header > DIV { display:flex }
     #header > DIV > INPUT { flex:1 }
     TABLE.average TD:nth-child(2), TABLE.average TD:nth-child(3) { text-align: right }
@@ -64,20 +85,34 @@ def stats_init():
     TD { vertical-align: top }
 
     </style>
+    A disk is the resume about one student for one session but may contains several time slots ('session' attribute).<br>
+    «key=session+'/'+student» is the initial disk key → merge key → average key<br>
+    Click on a disk to list the values for the selected disk.<br>
+    The left table is about all the disks displayed : number of times the attribute was defined and its average.<br>
+    Examples : <button onclick="set_button({
+        'x': 'first_interaction', 'y': 'work_time'})">X:time Y=worktime</button>
+        <button onclick="set_button({
+        'x': 'work_time', 'y': 'grade'})">X:worktime Y=grade</button>
     <div>
-    Filter :
-    <input id="selector"
-           value="session.startsWith('COMPILE_REMOTE/LIFAPI') && session != 'COMPILE_PYTHON/editor' && student.indexOf('.') == -1">
+    Merge the disks if the expression is true:
+    <input id="selector_merge"
+           value="key.startsWith('COMPILE_REMOTE/LIFAPI') && student.indexOf('.') == -1">
     </div>
-    <div>X : <input id="x" value="nr_MouseDown"></div>
-    <div>Y : <input id="y" value="nr_keypress + nr_deadkey"></div>
-    <div>Red : <input id="red" value="nr_CopyRejected + nr_PasteRejected > 0"></div>
-    <div>Green : <input id="green" value="nr_tag > 0"></div>
-    <div>Blue : <input id="blue" value="the_time_bonus > 0"></div>
-    <div>Radius : <input id="circle_radius" value="1 + 2*Math.sqrt(nr_save)"></div>
-    <div>Opacity : <input id="opacity" value="0.5"></div>
-    <div>#Bins : <input id="bins" value="0"></div>
-    <div>Group name : <input id="group" value="0"></div>
+    <div>Merge the disks with the same value: <input id="merge" value="key"></div>
+    <div>
+    Average the disks if the expression is true:
+    <input id="selector_average"
+           value="true">
+    </div>
+    <div>Average the disks with the same value: <input id="group" value="key"></div>
+    <div>X coordinate of the disk: <input id="x" value="nr_MouseDown"></div>
+    <div>Y coordinate of the disk: <input id="y" value="nr_keypress + nr_deadkey"></div>
+    <div>Red value (0…1) for the disk color: <input id="red" value="nr_CopyRejected + nr_PasteRejected > 0"></div>
+    <div>Green value (0…1) for the disk color: <input id="green" value="nr_tag > 0"></div>
+    <div>Blue value (0…1) for the disk color: <input id="blue" value="the_time_bonus > 0"></div>
+    <div>Radius of the disk in pixel: <input id="circle_radius" value="1 + 2*Math.sqrt(nr_save)"></div>
+    <div>Opacity (0…1) of the disk: <input id="opacity" value="0.5"></div>
+    <div>Number of bins on the X axis. One curve per group name: <input id="bins" value="0"></div>
     '''
     try:
         params = str(window.location).split(RegExp('[/?]'))[-2]
@@ -104,7 +139,7 @@ def update_sums(sums, values):
 def get_bounding_box(coords):
     x_min = y_min = 1e100
     x_max = y_max = radius_max = 0
-    for xx, yy, _color, radius, _opacity, _student, _session in coords:
+    for xx, yy, _color, radius, _opacity, _key in coords:
         if xx > x_max:
             x_max = xx
         if xx < x_min:
@@ -139,32 +174,33 @@ def get_ctx(sums):
     + '<td><div id="details"></div><br>'
     # + 'X = ' + x_min + ' → ' + x_max + '<br>'
     # + 'Y = ' + y_min + ' → ' + y_max + '<br>'
-    + '<b>Click on circle to see student ID</b><br>'
-    + '<pre onclick="get_data(this)">Click here to get data</pre></tr></tr>')
+    + '<b>Click on a disk to see details</b><br>'
+    + '<pre onclick="get_data(this)">Click here to get all disks raw data</pre></tr></tr>')
     canvas = document.getElementById('canvas')
     canvas.onclick = identify
     ctx = canvas.getContext('2d')
     ctx.strokeStyle = '#000'
     ctx.lineWidth = 1
+    ctx.font = '10px sans-serif'
     return ctx
 
-def get_color(session_name, student, values):
-    color = ''
-    if window.red(session_name, student, values):
-        color += 'F'
-    else:
-        color += '0'
-    if window.green(session_name, student, values):
-        color += 'F'
-    else:
-        color += '0'
-    if window.blue(session_name, student, values):
-        color += 'F'
-    else:
-        color += '0'
-    return color
+def value2color(values, attr):
+    value = Math.floor(Number(window[attr](values) * 255))
+    if isNaN(value) or value < 0:
+        value = 0
+    elif value > 255:
+        value = 255
+    value = value.toString(16)
+    if len(value) == 1:
+        value = '0' + value
+    return value
 
-def get_averages(sums):
+def get_color(values):
+    return (value2color(values, 'red')
+          + value2color(values, 'green')
+          + value2color(values, 'blue'))
+
+def get_averages(sums, get_sum=False):
     averages = {}
     for key, values in sums.Items():
         if isNaN(values[0]):
@@ -178,17 +214,19 @@ def get_averages(sums):
             else:
                 averages[key] = '?'
             continue
-        averages[key] = sum(values) / len(values)
-        averages['NrAveraged'] = max(len(values), averages['NrAveraged'] or 0)
+        if get_sum:
+            if values[0] > 1000000000:
+                # It is a time
+                averages[key] = sum(values) / len(values)
+            else:
+                averages[key] = sum(values)
+            averages['NrMerged'] = max(len(values), averages['NrMerged'] or 0)
+        else:
+            averages[key] = sum(values) / len(values)
+            averages['NrAveraged'] = max(len(values), averages['NrAveraged'] or 0)
     return averages
 
-def get_all_averages(students):
-    sums = {}
-    for _student, values in students.Items():
-        update_sums(sums, values)
-    return get_averages(sums)
-
-def mouse_in_disc(ctx, details, event_x, event_y, x_canvas, y_canvas, radius, session, student, stats):
+def mouse_in_disc(ctx, details, event_x, event_y, x_canvas, y_canvas, radius, key, stats):
     if event_x:
         # ctx.fillRect(event_x, event_y, 10, 10)
         d = ((event_x - x_canvas)**2 + (event_y - y_canvas)**2) ** 0.5
@@ -197,45 +235,62 @@ def mouse_in_disc(ctx, details, event_x, event_y, x_canvas, y_canvas, radius, se
             ctx.globalAlpha = 1
             ctx.lineWidth = 2
             ctx.strokeStyle = '#FFF'
-            ctx.strokeText(student, x_canvas, y_canvas)
+            ctx.strokeText(key, x_canvas, y_canvas)
             ctx.fillStyle = '#000'
-            ctx.fillText(student, x_canvas, y_canvas)
+            ctx.fillText(key, x_canvas, y_canvas)
             ctx.restore()
-            details.append([session, student, stats])
+            details.append([key, stats])
 
 def display_details(details):
     if len(details):
         html = []
-        for session, student, item in details:
-            s = '<p><b>' + session + '<br>' + student + '</b><ul>'
+        for key, item in details:
+            s = '<p><b>' + key + '</b><ul>'
             for k, v in item.Items():
                 s += '<li>' + k + ' : ' + v
             s += '</ul>'
             html.append(s)
         document.getElementById('details').innerHTML = ''.join(html)
 
+def get_label(txt, digits):
+    if txt < 1000000000:
+        return txt.toFixed(digits)
+    d = Date()
+    d.setTime(1000 * txt)
+    return d.getFullYear() % 100 + '-' + two_digit(d.getMonth()+1)
+
 def draw_verticals(ctx, xx_real, x_min, x_max, delta, digits):
     while xx_real < x_max:
         xx = 1024 * (xx_real - x_min) / (x_max - x_min + 1e-9)
+        ctx.beginPath()
         ctx.moveTo(xx, 0)
         ctx.lineTo(xx, 1024)
         ctx.stroke()
-        ctx.fillText(xx_real.toFixed(digits), xx, 1024)
+
+        label = get_label(xx_real, digits)
+        width = ctx.measureText(label).width
+        ctx.fillText(label, xx - width/2, 1023)
+
         xx_real += delta
 
 def draw_horizontals(ctx, xx_real, y_min, y_max, delta, digits):
     while xx_real < y_max:
         xx = 1024 - 1024 * (xx_real - y_min) / (y_max - y_min + 1e-9)
+        ctx.beginPath()
         ctx.moveTo(0, xx)
         ctx.lineTo(1024, xx)
         ctx.stroke()
-        ctx.fillText(xx_real.toFixed(digits), 0, xx)
+
+        label = get_label(xx_real, digits)
+        height = ctx.measureText(label).fontBoundingBoxAscent
+        ctx.fillText(label, 0, xx + height/2 - 1)
+
         xx_real += delta
 
 def stats_update(event_x, event_y):
     need_update = False
     params = {}
-    for variable in ['selector', 'x', 'y', 'red', 'green', 'blue', 'circle_radius', 'opacity', 'bins', 'group']:
+    for variable in ['selector_merge', 'selector_average', 'x', 'y', 'red', 'green', 'blue', 'circle_radius', 'opacity', 'bins', 'merge', 'group']:
         value = document.getElementById(variable).value
         params[variable] = value
         if value != stats_init[variable]:
@@ -245,7 +300,7 @@ def stats_update(event_x, event_y):
             value = value.replace(RegExp('\\b(' + attribute + ')\\b', 'g') , '(values.$1||0)')
         try:
             if variable != 'bins':
-                window[variable] = eval('function _(session, student, values) { return ' + value + ';}; _')
+                window[variable] = eval('function _(values) { return ' + value + ';}; _')
             else:
                 window[variable] = params[variable]
         except:
@@ -259,49 +314,56 @@ def stats_update(event_x, event_y):
     window.history.replaceState('_a_', '', '/'.join(path))
     COORDS.splice(0, COORDS.length) # Clean
 
-    stats_for = {} # Trimmed STATS
-    groups = {} # As STATS but the first level is 'group" not 'session'
+    merged = {}
     for session_name, stats in STATS.Items():
-        stats_for[session_name] = {}
-        for student, values in stats.Items():
-            if window.selector(session_name, student, values):
-                group = window.group(session_name, student, values)
-                if group not in groups:
-                    groups[group] = {}
-                groups[group][student] = values
-                stats_for[session_name][student] = values
+        for key, values in stats.Items():
+            if window.selector_merge(values):
+                group = window.merge(values)
+                if group not in merged:
+                    merged[group] = {}
+                update_sums(merged[group], values)
+    for group, value in merged.Items():
+        merged[group] = get_averages(value, True)
+
+    stats_for = {}
+    for session_name, values in merged.Items():
+        if window.selector_average(values):
+            group = window.group(values)
+            if group not in stats_for:
+                stats_for[group] = {}
+            update_sums(stats_for[group], values)
+    for group, values in stats_for.Items():
+        stats_for[group] = get_averages(values)
 
     if window.bins > 0:
         x_min = 1e50
         x_max = 0
-        for session_name, stats in stats_for.Items():
-            for student, values in stats.Items():
-                xx = window.x(session_name, student, values)
-                if xx < x_min:
-                    x_min = xx
-                if xx > x_max:
-                    x_max = xx
+        for key, stats in stats_for.Items():
+            xx = window.x(values)
+            if xx < x_min:
+                x_min = xx
+            if xx > x_max:
+                x_max = xx
         x_max += 0.001 # To not lost the max value
-        if len(groups) > 1:
-            stats_for = groups
         all_lines = []
-        for session_name, stats in stats_for.Items():
+        for key, stats in stats_for.Items():
             all_sums = []
             for i in range(window.bins):
                 all_sums.append({})
             for student, values in stats.Items():
-                xx = window.x(session_name, student, values)
+                xx = window.x(values)
                 i = int(window.bins * (xx - x_min) / (x_max - x_min))
                 update_sums(all_sums[i], values)
             coords = []
             for i, sums in enumerate(all_sums):
                 averages = get_averages(sums)
+                # XXX trop param
                 coords.append([0,
-                            window.y('', '', averages),
-                            get_color('', '', averages),
-                            window.circle_radius('', '', averages),
-                            window.opacity('', '', averages),
-                            'group:' + session_name,
+                            window.y(averages),
+                            get_color(averages),
+                            window.circle_radius(averages),
+                            window.opacity(averages),
+                            'group:' + key,
                             (x_min + i/window.bins*(x_max-x_min)) +
                             '→' + (x_min + (i+1)/window.bins*(x_max-x_min)),
                             averages])
@@ -320,7 +382,7 @@ def stats_update(event_x, event_y):
         for line in all_lines:
             i = 0
             coords = []
-            for xx, yy, color, radius, opacity, student, session, averages in line:
+            for xx, yy, color, radius, opacity, key, averages in line:
                 x_canvas = (i + 0.5) * 1024 / window.bins
                 y_canvas = 1024 - 1024 * (yy - y_min) / (y_max - y_min + 1e-9)
                 coords.append([x_canvas, y_canvas])
@@ -331,7 +393,8 @@ def stats_update(event_x, event_y):
                 ctx.stroke()
                 ctx.fill()
                 i += 1
-                mouse_in_disc(ctx, details, event_x, event_y, x_canvas, y_canvas, radius, session, student, averages)
+                mouse_in_disc(ctx, details, event_x, event_y, x_canvas, y_canvas, radius, key, averages)
+            ctx.beginPath()
             ctx.moveTo(*coords[0])
             for x_canvas, y_canvas in coords[1:]:
                 ctx.lineTo(x_canvas, y_canvas)
@@ -339,26 +402,17 @@ def stats_update(event_x, event_y):
         display_details(details)
         return
 
-    if len(groups) > 1:
-        averaged = {}
-        stats_for = {'session?': averaged}
-        for group, students in groups.Items():
-            averaged[group] = get_all_averages(students)
-
     sums = {}
-    for session_name, stats in stats_for.Items():
-        for student, values in stats.Items():
-            update_sums(sums, values)
-            color = get_color(session_name, student, values)
-            try:
-                COORDS.append([window.x(session_name, student, values),
-                                window.y(session_name, student, values),
-                                color,
-                                window.circle_radius(session_name, student, values),
-                                window.opacity(session_name, student, values),
-                                student, session_name])
-            except:
-                pass
+    for key, values in stats_for.Items():
+        try:
+            COORDS.append([window.x(values),
+                           window.y(values),
+                           get_color(values),
+                           window.circle_radius(values),
+                           window.opacity(values),
+                           key])
+        except:
+            pass
     x_min, x_max, y_min, y_max = get_bounding_box(COORDS)
     ctx = get_ctx(sums)
 
@@ -370,7 +424,7 @@ def stats_update(event_x, event_y):
 
     details = []
     ctx.strokeStyle = '#000'
-    for xx, yy, color, radius, opacity, student, session in COORDS:
+    for xx, yy, color, radius, opacity, key in COORDS:
         x_canvas =        1024 * (xx - x_min) / (x_max - x_min + 1e-9)
         y_canvas = 1024 - 1024 * (yy - y_min) / (y_max - y_min + 1e-9)
         ctx.globalAlpha = opacity
@@ -380,7 +434,7 @@ def stats_update(event_x, event_y):
         ctx.stroke()
         ctx.fill()
         mouse_in_disc(ctx, details, event_x, event_y, x_canvas, y_canvas,
-                      radius, session, student, stats_for[session][student])
+                      radius, key, stats_for[key])
     display_details(details)
 
 stats_init()

@@ -79,7 +79,7 @@ class Stat:
     MediaPlayPause = MediaTrackNext = MediaTrackPrevious = MediaStop = MediaPlay = \
     AudioVolumeDown = AudioVolumeUp = AudioVolumeMute = Pause = \
     LaunchApplication2 = LaunchCalculator = Standby = WakeUp = Help = \
-    BrowserSearch = ScrollLock = Clear = Close = forget
+    BrowserSearch = ScrollLock = Clear = Close = Cancel = forget
 
     # Deprecated
     checkpoint = checkpoint_in
@@ -104,7 +104,7 @@ class Stat:
                     if len(value) == 1:
                         self.Enter()
                     else:
-                        if len(value) > 1 and value.startswith(('^', '¨', '—', '.', '´', '"', '~', '`', 'ft ', 'N ', "'")):
+                        if len(value) > 1 and value.startswith(('^', 'ˆ', '¨', '—', '.', '´', '"', '~', '`', 'ft ', 'N ', "'")):
                             continue # Compose key failure
                         getattr(self, value)()
                     continue
@@ -112,7 +112,7 @@ class Stat:
                     if isinstance(value[0], str):
                         getattr(self, value[0].replace(' ', '_').replace('-', '_'))(value)
                     else:
-                        print(line_txt)
+                        print('\n', line_txt, end='')
                     continue
             self.work_time += timestamp - self.last_interaction
             self.last_interaction = timestamp
@@ -150,9 +150,13 @@ class Stat:
         self.question_dict = dict(self.question_dict)
         self.allow_edit_dict = dict(self.allow_edit_dict)
         self.nr_sessions = len(self.sessions)
-        self.sessions_last = self.sessions[-1]
-        self.sessions_average = sum(self.sessions) / len(self.sessions)
-        self.sessions_median = self.sessions[len(self.sessions) // 2]
+        if self.nr_sessions:
+            self.sessions_last = self.sessions[-1]
+            self.sessions_average = sum(self.sessions) / len(self.sessions)
+            self.sessions_median = self.sessions[len(self.sessions) // 2]
+        else:
+            self.sessions_last = self.sessions_average = self.sessions_median = -1
+
         if self.grade:
             self.grade = sum(int(i) for i in self.grade) / len(self.grade)
         else:
@@ -165,8 +169,8 @@ def compile_stats(courses) -> None:
     for session in courses.values():
         resume_file = f'{session.dir_session}/session.stats'
         if (os.path.exists(resume_file)
-            and os.path.getmtime(resume_file) > os.path.getmtime(session.file_cf )):
-            print(f'{session.dir_session} is yet up to date')
+            and os.path.getmtime(resume_file) > os.path.getmtime(session.file_cf) - 86400):
+            print(f'{session.dir_session} is yet up to date (may be 1 day late)')
             with open(resume_file, 'r', encoding='utf-8') as file:
                 full[session.dir_session] = eval(file.read())
             continue
@@ -177,10 +181,11 @@ def compile_stats(courses) -> None:
         for student in os.listdir(session.dir_log):
             print(student, end=' ', flush=True)
             stat = students[student]
-            with open(session.dir_log + '/' + student + '/http_server.log', 'r',
-                      encoding='utf-8') as file:
-                for line in file:
-                    stat.parse(line)
+            if os.path.exists(session.dir_log + '/' + student + '/http_server.log'):
+                with open(session.dir_log + '/' + student + '/http_server.log', 'r',
+                        encoding='utf-8') as file:
+                    for line in file:
+                        stat.parse(line)
             if os.path.exists(session.dir_log + '/' + student + '/compile_server.log'):
                 with open(session.dir_log + '/' + student + '/compile_server.log', 'r',
                         encoding='utf-8') as file:
@@ -198,3 +203,4 @@ def compile_stats(courses) -> None:
         print()
     with open('xxx-full-stats.js', 'w', encoding='utf-8') as file:
         file.write(f'{json.dumps(full)}')
+    print(f"xxx-full-stats.js : {os.path.getsize('xxx-full-stats.js')} bytes")

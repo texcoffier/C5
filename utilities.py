@@ -1107,6 +1107,7 @@ def print_help() -> None:
    * getall : copy production course (but not logs) locally
    * cleanup_session_cf : removes any modification history from 'session.cf' files
                           to do between semesters to speedup C5 startup time.
+   * create_stats : compute stats file per session
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py -e dns_server.py -e infos_server.py | grep -v grep")

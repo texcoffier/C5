@@ -256,7 +256,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 self.input_done.clear()
                 self.waiting = "done"
             size += len(line)
-            if size > 20000000: # Maximum allowed output
+            if size > 200000000: # Maximum allowed output
                 self.kill()
                 break
             self.log(("RUN", line[:100]))
