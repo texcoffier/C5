@@ -1526,7 +1526,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """The student stop its session"""
         self.save()
         self.popup_message(
-            self.options['stop_confirm'], 'Non !', "Oui, et je quitte silencieusement la salle", self.do_stop)
+            self.options['stop_confirm'], 'Non !', "Oui, et je quitte silencieusement la salle",
+            bind(self.do_stop, self))
 
     def update_comments(self, comments):
         """Fill comments"""
