@@ -433,15 +433,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             to_log = [now, ["checkpoint_in", hostname]]
         elif hostname and hostname != active_teacher_room.hostname:
             # Student IP changed
+            self.set_parameter('active_teacher_room', hostname, login, 6)
             if self.checkpoint and not self.allow_ip_change:
                 # Undo checkpointing
-                self.set_parameter('active_teacher_room', hostname, login, 6)
                 self.set_parameter('active_teacher_room', 0, login, 0)
                 to_log = [now, ["checkpoint_ip_change_eject", hostname]]
             else:
-                # No checkpoint: so allows the room change
-                self.set_parameter('active_teacher_room', hostname, login, 6)
-                self.set_parameter('active_teacher_room', CONFIG.host_to_place.get(hostname, ''), login, 2)
+                if not self.checkpoint:
+                    # Automaticaly place if no checkpoint
+                    self.set_parameter('active_teacher_room', CONFIG.host_to_place.get(hostname, ''), login, 2)
                 to_log = [now, ["checkpoint_ip_change", hostname]]
         else:
             to_log = None
