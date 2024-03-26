@@ -868,6 +868,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
         self.top += (pos_y - self.top) * (1 - new_scale/self.scale)
         self.scale = new_scale
+        self.compute_rooms_on_screen()
+        self.update_waiting_room()
         scheduler.draw = True
     def zoom(self, event):
         """Zooming on the map"""
