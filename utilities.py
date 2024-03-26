@@ -917,6 +917,8 @@ class Session:
             session = cls.load_ticket_file(ticket)
             if not session.check(request, client_ip, browser, allow_ip_change=allow_ip_change):
                 return None
+            if not session.hostname:
+                session.hostname = (await DNS.infos(client_ip))['name']
         else:
             session = Session(ticket, client_ip, browser)
             if ticket:
