@@ -104,7 +104,7 @@ def my_sessions():
             continue
         for i in range(12, 16):
             if row.cells[i] and LOGIN in row.cells[i].textContent:
-                sessions.append(row.cells[0].textContent)
+                sessions.append(row.cells[0].textContent.split(' «')[0])
                 break
     return '(' + '|'.join(sessions) + ')'
 
