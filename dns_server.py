@@ -28,7 +28,7 @@ def analyse():
         else:
             name = addr
         print("Name:", name, file=sys.stderr)
-        sys.stdout.write(json.dumps([addr, {'name': name.lower()}]) + '\n')
+        sys.stdout.write(json.dumps([addr, {'name': name.lower(), 'time': int(start)}]) + '\n')
         sys.stdout.flush()
         print(f"Done in {time.time() - start:6.3f} seconds\n", file=sys.stderr)
     sys.exit(0) # stdin closed

@@ -54,14 +54,15 @@ while True:
                     or 'givenName' not in infos[0][1]
                     or 'sn' not in infos[0][1]):
                 pointed = (login + '.').split('.')
-                sys.stdout.write(json.dumps([login, {'fn': pointed[0], 'sn': pointed[1]}]) + '\n')
+                sys.stdout.write(json.dumps([login, {'fn': pointed[0], 'sn': pointed[1], 'time': int(time.time())}]) + '\n')
                 sys.stdout.flush()
             else:
                 infos = infos[0][1]
                 infos = {
                     'fn': infos['givenName'][0].decode(C5_LDAP_ENCODING, errors='replace').title(),
                     'sn': infos['sn'][0].decode(C5_LDAP_ENCODING, errors='replace').upper(),
-                    'mail': infos['mail'][0].decode(C5_LDAP_ENCODING, errors='replace')
+                    'mail': infos['mail'][0].decode(C5_LDAP_ENCODING, errors='replace'),
+                    'time': int(time.time())
                     }
                 sys.stdout.write(json.dumps([login, infos]) + '\n')
                 sys.stdout.flush()

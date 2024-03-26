@@ -127,18 +127,18 @@ class Process: # pylint: disable=invalid-name
                     await asyncio.sleep(0.1)
         if not self.process.stdin:
             raise ValueError('Bug')
-        if key in self.cache:
-            return self.cache[key]
         while not self.process:
             await asyncio.sleep(0.1)
-        self.process.stdin.write(key.encode('utf-8') + b'\n')
-        if '/' not in key and os.path.exists(self.cache_dir + key):
-            with open(self.cache_dir + key, 'r', encoding='ascii') as file:
-                infos = json.loads(file.read())
-            self.cache[key] = infos # Will be updated when the answer is received
-            return infos
+        if key not in self.cache:
+            # Get data from cache file if it is possible
+            if '/' not in key and os.path.exists(self.cache_dir + key):
+                with open(self.cache_dir + key, 'r', encoding='ascii') as file:
+                    self.cache[key] = json.loads(file.read())
+        if key not in self.cache or time.time() > self.cache[key].get('time', 0) + 86400:
+            # Ask to update the cache
+            self.process.stdin.write(key.encode('utf-8') + b'\n')
         while key not in self.cache:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.1) # Wait the reader task
         return self.cache[key]
 
 LDAP = Process('./infos_server.py', 'LDAP')
