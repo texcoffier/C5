@@ -297,7 +297,7 @@ def select_tab(label):
     <p>
     If the grading part is «{printf:SomeKey:1,2,3}» then «SomeKey» will be
     hidden to the grader but used to compute the competence export table
-    for TOMUSS.
+    for TOMUSS. <b>If it is a competence the value will not be used to compute the grade</b>.
     <pre>
 #include &lt;stdio.h&gt;               {stdio.h:0,1}
 int main()▶                      {main declaration:0,1}

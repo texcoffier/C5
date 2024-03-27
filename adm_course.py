@@ -131,6 +131,7 @@ def show(what):
 
 def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Create the admin home page"""
+    notation = parse_notation(NOTATION)
     document.title = "👁" + COURSE.split('=')[1]
     students = []
     for student in STUDENTS:
@@ -195,6 +196,8 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         grade = 0
         graders = []
         for question in grading:
+            if ':' in notation[question][1]:
+                continue # It'a a competence
             grade += Number(grading[question][0])
             if len(grading[question][0]):
                 grader = grading[question][1].split('\n')[1]
@@ -371,7 +374,6 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
     if NOTATIONB.strip() != '':
         text.append("<h2>Importation du détail des notes dans TOMUSS impossible car 2 barèmes</h2>")
     else:
-        notation = parse_notation(NOTATION)
         text.append("""<h2>Importation du détail des notes dans TOMUSS</h2>
         <ul>
         <li> Passez une colonne TOMUSS dans le type «Notation»
@@ -385,6 +387,8 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             _text, grade_label, values = infos
             if len(grade_label) == 0:
                 continue
+            if ':' in grade_label:
+                continue # It's a competence
             while grade_label in labels:
                 grade_label += '+'
             labels[grade_label] = True
