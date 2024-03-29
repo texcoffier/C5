@@ -488,6 +488,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         <button onclick="document.body.requestFullscreen({navigationUI:'hide'})"
         >plein écran</button>
         pour commencer à travailler.
+        <p style="font-size:80%">
+        Si cet encart ne disparaît pas après avoir cliqué sur le bouton :<br>
+        quittez complètement ce navigateur Web et lancez Firefox.
+        </p>
         """
         self.top.appendChild(self.fullscreen)
 
