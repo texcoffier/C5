@@ -1558,21 +1558,43 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         grading = parse_grading(self.grading_history)
         grading_sum = 0
+        competences = []
         nr_grades = 0
+        nr_real_grade = 0
         for button in buttons.getElementsByTagName('BUTTON'):
             g = button.getAttribute('g')
+            if button.nextSibling is None:
+                span = button.parentNode
+                span.className = span.className.replace(RegExp(' grade_undefined', 'g'), '')
+                if g not in grading or grading[g][0] == '':
+                    span.className += ' grade_undefined'
             if g not in grading or grading[g][0] == '':
                 button.className = 'grade_unselected grade_undefined'
             elif button.innerText == grading[g][0]:
                 button.title = grading[g][1]
                 button.className = 'grade_selected'
-                grading_sum += Number(grading[g][0])
+                value = Number(grading[g][0])
+                if int(button.getAttribute('c')):
+                    if value != 0:
+                        competences.append(value)
+                else:
+                    grading_sum += value
+                    nr_real_grade += 1
                 nr_grades += 1
             else:
                 button.className = 'grade_unselected'
         element = document.getElementById('grading_value')
         if element:
+            if nr_real_grade:
+                element.parentNode.style.display = 'initial'
             element.innerHTML = grading_sum
+            element2 = document.getElementById('competence_value')
+            if len(competences):
+                element2.parentNode.style.display = 'initial'
+                element2.innerHTML = (sum(competences)/len(competences)).toFixed(1)
+            else:
+                element2.innerHTML = '?'
+
             element = document.getElementById('grading_sum')
             button = document.getElementById('grading_feedback')
             if self.nr_grades == nr_grades:
@@ -1651,7 +1673,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 for level, label in FEEDBACK_LEVEL.Items():
                     content.append('<option value="' + level + '">' + label + '</option>')
                 content.append('</select> </small>')
-            content.append('Σ=<tt id="grading_value"></tt></span>')
+            content.append('<var style="display:none">Σ=<tt id="grading_value"></tt></var><br><var style="display:none">C=<tt id="competence_value"></tt></var></span>')
         elif self.options['feedback'] >= 4 and GRADE:
             if self.options['feedback'] == 4:
                 size = 60
@@ -1677,6 +1699,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             content.append('<pre>')
             i = 0
             for text, grade_label, values in parse_notation(NOTATION):
+                if ':' in grade_label:
+                    span = ' class="competence"'
+                else:
+                    span = ''
                 for line in text.split('\r\n'):
                     content.append(html(line.trimEnd()))
                     line = line.trim()
@@ -1684,23 +1710,28 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         line = line[:-1]
                         if len(self.source.split(line)) == 2:
                             content[-1] = content[-1].replace('▶',
-                                '<span onclick="ccccc.goto_source_line(decodeURIComponent('
+                                '<span' + span
+                                + ' onclick="ccccc.goto_source_line(decodeURIComponent('
                                 + "'"
                                 + encodeURIComponent(line).replace(RegExp("'", "g"), "\\'")
                                 + """'))" style="cursor: pointer;">▶</span>""")
                     content.append('\n')
                 content.pop()
                 if len(grade_label):
+                    competence = ':' in grade_label and 1 or 0
                     # Remove competence key at the end of the grade label
                     grade_label = html(grade_label.replace(RegExp(':[a-z0-9+]*$'), ''))
                     if '>▶<' in content[-1]:
                         grade_label += '▶'
                         content.append(content.pop().split(">")[0] + '>')
                     else:
-                        content.append('<span>')
+                        content.append('<span' + span + '>')
                     content.append(grade_label)
                     for choice in values:
-                        content.append('<button g="' + i + '">' + choice + '</button>')
+                        content.append('<button g="' + i + '" v="'
+                                       + choice + '" c="'
+                                       + competence
+                                       + '">' + choice + '</button>')
                     content.append('</span>')
                 #content.append('\n')
                 i += 1

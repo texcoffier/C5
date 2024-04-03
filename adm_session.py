@@ -295,7 +295,7 @@ def select_tab(label):
     then '▶' is blue and clickable to scroll the source code to the first matching line.
     </p>
     <p>
-    If the grading part is «{printf:SomeKey:1,2,3}» then «SomeKey» will be
+    If the grading part is «{printf:SomeKey:0,1,2,3}» then «SomeKey» will be
     hidden to the grader but used to compute the competence export table
     for TOMUSS. <b>If it is a competence the value will not be used to compute the grade</b>.
     <pre>

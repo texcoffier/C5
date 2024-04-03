@@ -70,6 +70,9 @@ DIV.grading {
 
 #grading_feedback {
     width: 15em;
+    font-size: 85%;
+    line-height: 1em;
+    float: left;
 }
 
 #grading_sum SMALL {
@@ -78,7 +81,8 @@ DIV.grading {
 }
 #grading_sum {
     margin-top: -0.2em;
-    line-height: 0.5em;
+    font-size: 90%;
+    width: 18em;
 }
 
 DIV.editor {
@@ -548,7 +552,7 @@ SELECT {
 .grading PRE BUTTON.grade_selected {
     background: #0F0;
 }
-.grading PRE BUTTON.grade_undefined {
+.grading PRE SPAN.grade_undefined {
     background: #FF0;
 }
 .grading PRE BUTTON:hover {
@@ -559,6 +563,34 @@ SELECT {
     position: absolute;
     right: 0.2em; /* Some space for firefox scrollbar */
     color: #00F;
+}
+.grading PRE SPAN.competence BUTTON[v="0"] {
+    --color: #EB707F;
+}
+.grading PRE SPAN.competence BUTTON[v="1"] {
+    --color: #EEE592;
+}
+.grading PRE SPAN.competence BUTTON[v="2"] {
+    --color: #BAE291;
+}
+.grading PRE SPAN.competence BUTTON[v="3"] {
+    --color: #84A661;
+}
+.grading PRE SPAN.competence BUTTON[v="4"] {
+    --color: #3E601B;
+}
+
+.grading PRE SPAN.competence BUTTON {
+    background: var(--color);
+    color: transparent;
+    width: 1.3em;
+    height: 1.3em;
+}
+
+.grading PRE SPAN.competence BUTTON.grade_selected {
+    background: linear-gradient(45deg, transparent 45%, black 45%, black 55%, transparent 55%),
+    linear-gradient(135deg, transparent 45%, black 45%, black 55%, transparent 55%),
+    var(--color);
 }
 
 .grading #grading_sum {

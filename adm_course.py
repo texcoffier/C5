@@ -437,7 +437,11 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 
     notation = parse_notation(NOTATION)
     text.append("""<h2>Compétences</h2>
-    <table id="TOMUSS_competence"><tr><td>ID<td>Compétence</tr>""")
+                   <table id="TOMUSS_competence"><tr><td>ID<td>Compétence</tr>""")
+    all_competences = {}
+    for i in range(len(notation) - 1):
+        if ':' in notation[i][1]:
+            all_competences[notation[i][1].split(':')[-1]] = True
     for login in students:
         student = STUDENTS[login]
         if student.status != 'done':
@@ -451,13 +455,17 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             if ':' not in notation[i][1]:
                 continue
             code = notation[i][1].split(':')[-1]
-            if grading[i]:
+            if grading[i] and grading[i][0] != '':
                 if code not in competences:
                     competences[code] = []
                 competences[code].append(float(grading[i][0]))
         competences_list = []
-        for key, values in competences.Items():
-            competences_list.append(key + 'o' + Math.round(sum(values) / len(values)))
+        for key in all_competences:
+            values = competences[key]
+            if values:
+                competences_list.append(key + 'o' + (Math.round(sum(values) / len(values)) + 1))
+            else:
+                competences_list.append(key + 'o0')
         competences_list.sort()
         text.append(' '.join(competences_list))
         text.append('</tr>')
