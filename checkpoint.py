@@ -1099,7 +1099,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.force_update_waiting_room = False
         content = []
         for student in self.waiting_students:
-            if student.room == '':
+            if student.room == '' or student.room.startswith('?'):
                 room = self.ips[student.hostname]
                 style = ''
                 if room and self.building in BUILDINGS:
