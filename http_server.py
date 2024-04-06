@@ -1889,7 +1889,7 @@ async def js_errors(request:Request) -> Response:
                 line = json.loads(line)
                 if line[0] < date:
                     continue
-                compilator, session, student, _  = filename.split('/')
+                compilator, session, _logs, student, _  = filename.split('/')
                 for item in line[1:]:
                     if isinstance(item, list):
                         if item[0] == 'JS':
