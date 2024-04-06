@@ -64,6 +64,10 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     element.value = '{\n' + ',\n'.join(content) + '\n}'
                 if attr not in ('admins', 'graders', 'proctors', 'expected_students', 'expected_students_required', 'tt'):
                     element.rows = len(content) + 3
+                if attr == 'expected_students':
+                        document.getElementById("nr_expected_students").innerHTML = count_words('expected_students')
+                if attr == 'tt':
+                    document.getElementById("nr_tt").innerHTML = count_words('tt')
             elif element.tagName == 'INPUT':
                 if element.type in ('checkbox', 'radio'):
                     element.checked = value != 0
@@ -274,10 +278,10 @@ def select_tab(label):
     <tr><th>Proctors
         <td><textarea id="proctors"></textarea>
     </tr>
-    <tr><th>Students (<label><input type="checkbox" id="expected_students_required">hide to others</label>)
+    <tr><th><span id="nr_expected_students"></span> Students (<label><input type="checkbox" id="expected_students_required">hide to others</label>)
         <td><textarea id="expected_students"></textarea>
     </tr>
-    <tr><th>Students with ⅓ more time to answer
+    <tr><th><span id="nr_tt"></span> Students with ⅓ more time to answer
         <td><textarea id="tt"></textarea>
     </tr>
     </table>"""
@@ -422,6 +426,12 @@ def init():
     add(div)
     setTimeout(load_config, 10) # Wait CSS loading
     setInterval(update_interface, 1000)
+
+def count_words(element_id):
+    text = document.getElementById(element_id).value.strip()
+    if len(text) == 0:
+        return ''
+    return len(text.split(RegExp('[ \t\n\r]+')))
 
 def update_interface():
     """Update grading"""
