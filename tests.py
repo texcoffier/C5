@@ -116,6 +116,8 @@ class Tests: # pylint: disable=too-many-public-methods
             course.set_parameter('admins', '')
             course.set_parameter('feedback', 0)
             course.set_parameter('grading_done', 0)
+            course.set_parameter('expected_students_required', 0)
+            course.set_parameter('hide_before', 360)
             course.set_parameter('state', "Ready")
 
         start = time.time()
@@ -144,7 +146,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_exam,
                     self.test_source_edit,
                     self.test_many_inputs,
-                    self.test_feedback,
+                    self.test_feedback, # Need test_ip_change_grader
                     self.test_results,
                     self.test_rename,
                     self.test_zip,
@@ -904,9 +906,21 @@ return sum ;
             self.check('#stop').click()
             self.control('a')
             self.check('#stop').send_keys('2050-01-01 01:00:00')
+            self.check('#hide_before').click()
+        self.ticket = None
+        self.wait_start()
+        self.check('BODY', {'innerHTML': Not(Contains('/=REMOTE=test'))})
+
+        with self.admin_rights():
+            self.goto('adm/session/REMOTE=test')
+            self.check('#hide_before').click()
+            self.control('a')
+            self.check('#hide_before').send_keys('1000000000')
+            self.check('#start').click()
         self.ticket = None
         self.wait_start()
         self.check('BODY', {'innerHTML': Contains('/=REMOTE=test')})
+
         self.goto('=REMOTE=test')
         self.check('BODY', {'textContent': Contains("Donnez votre nom à l'enseignant")})
 
