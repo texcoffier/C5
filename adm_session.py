@@ -431,7 +431,17 @@ def count_words(element_id):
     text = document.getElementById(element_id).value.strip()
     if len(text) == 0:
         return ''
-    return len(text.split(RegExp('[ \t\n\r]+')))
+    words = text.split(RegExp('[ \t\n\r]+'))
+
+    uniq = {}
+    for word in words:
+        uniq[word] = True
+    message = str(len(uniq))
+    if len(uniq) != len(words):
+        message = ('<tt style="background:#F88; font-size:200%">'
+                   + (len(words) - len(uniq)) + ' duplicate student</tt><br>'
+                   + message)
+    return message
 
 def update_interface():
     """Update grading"""
