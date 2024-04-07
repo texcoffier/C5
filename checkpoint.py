@@ -995,16 +995,29 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if column != -1 and self.lines[line][column] == 'g':
             room = self.rooms[self.get_room_name(column, line)]
             if len(room.students) == 0:
-                alert('Aucun étudiant à noter dans cette salle')
-            else:
-                logins = []
-                for student in room.students:
-                    logins.append(student.login)
-                if confirm("Ouvrir " + len(logins) + ' onglets pour noter '
-                    + ' '.join(logins)):
-                    for login in logins:
-                        window.open('/grade/' + COURSE + '/' + login
-                            + '?ticket=' + TICKET)
+                alert('Aucun étudiant dans cette salle')
+                return True
+            logins = []
+            mails = []
+            for student in room.students:
+                logins.append(student.login)
+                mails.append(student.mail or (student.login + '@?.?'))
+            div = document.getElementById('spy')
+            div.innerHTML = (
+                '<div class="spytop">'
+                + '<button class="closepopup" onclick="spy_close()">×</button> '
+                + '<button id="open_tabs">Ouvrir ' + len(logins)
+                + ' onglets</button> pour noter :<ol><li>'
+                + '<li>'.join(mails)
+                + '</ol>'
+                + '</div>'
+            )
+            div.style.display = 'block'
+            def open_tabs():
+                for login in logins:
+                    window.open('/grade/' + COURSE + '/' + login
+                        + '?ticket=' + TICKET)
+            document.getElementById('open_tabs').onclick = open_tabs            
             return True
         return False
     def drag_stop_click_on_room(self, event, column, line):
@@ -1262,6 +1275,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.feedback = data[1][10]
         self.firstname = data[2]['fn']
         self.surname = data[2]['sn']
+        self.mail = data[2]['mail']
         if self.hostname in ROOM.ips:
             unknown_room = 0
         else:
@@ -1695,6 +1709,7 @@ def spy(sources, login, infos, blurs):
     content = [
         '<div class="spytop">',
         '<button class="closepopup" onclick="spy_close()">×</button> ',
+        '<a style="font-family:emoji;text-decoration:none" href="mailto:', student.mail or login + '@?.?', '">✉️</a>',
         login, ' ', infos.fn, ' ', infos.sn, ', ', state,
         ', <input onchange="set_time_bonus(this,\'' + login,
         '\')" value="', student.bonus_time/60, '">minutes bonus, ',
