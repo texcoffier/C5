@@ -1164,16 +1164,9 @@ System calls allowable for g++/gcc:
         sur la touche escape.
     </p>
     <p>
-        Le bouton «Noter l'étudiant» permet de noter le source de l'étudiant :
+        Le bouton «Noter l'étudiant» permet de noter
+        et commenter le source de l'étudiant.
     </p>
-    <ul>
-        <li> Le source ayant passé les tests de régression.</li>
-        <li> Le source sauvegardé par l'étudiant.</li>
-        <li> Le source compilé avec <tt>compile_remote</tt>.</li>
-        <li> Si aucun des précédents : le source qui était sur
-            l'écran 5 secondes avant la fin de l'examen.
-        </li>
-    </ul>
 
     <h3>Correcteur : notes, commentaires et retours.</h3>
     <img src="screen-grade.svg" class="screenshot">
@@ -1194,10 +1187,15 @@ System calls allowable for g++/gcc:
         et même le modifier temporairement pour voir ce que cela donne.
     </p>
     <p>
-        Le correcteur peut décider de corriger autre chose que la
-        dernière version sauvegardée par l'étudiant :
+        Lors de la correction le correcteur est automatiquement
+        positionné sur la <b>dernière version connue</b> du code source.
+        Le correcteur peut décider de corriger autre chose que
+        cette dernière version connue en choisissant dans un menu déroulant.
+        La dernière version connue est la plus récente
+        parmi les suivantes :
     </p>
     <ul>
+        <li> La dernière version enregistrée par l'étudiant.</li>
         <li> La dernière compilation faite, mais seulement
             si c'est un session avec le compilateur REMOTE.</li>
         <li> La version qui a passé les tests de régression la première fois,
@@ -1346,8 +1344,15 @@ System calls allowable for g++/gcc:
             Il faut autoriser l'affichage des popups.
         </li>
         <li>
-            Une fois sur la page de correction, cocher les différents éléments du barème
-            et saisir les commentaires dans les cases à droite du code source.
+            Une fois sur la page de correction :
+            <ul>
+                <li> Choisir la version que l'on veut corriger.
+                    Par défaut c'est la dernière, ce n'est donc pas
+                    obligatoirement celle que l'étudiant a explicitement sauvé.
+                </li>
+                <li> cocher les différents éléments du barème.
+                <li> saisir les commentaires dans les cases à droite du code source.
+            </ul>
         </li>
         <li>
             Quand le barème est complètement rempli «Retour étudiant via C5» passe en vert.
