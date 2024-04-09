@@ -1525,6 +1525,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Really stop the session"""
         record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
         document.body.innerHTML = self.options['stop_done']
+        document.exitFullscreen()
 
     def stop(self):
         """The student stop its session"""
