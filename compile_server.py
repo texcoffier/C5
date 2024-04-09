@@ -27,6 +27,8 @@ import fcntl
 import termios
 import pathlib
 import shutil
+import gc
+import collections
 import websockets
 from websockets import WebSocketServerProtocol
 import utilities
@@ -425,6 +427,24 @@ async def bad_session(websocket:WebSocketServerProtocol) -> None:
     await websocket.send(json.dumps(['stop', 'Session expired']))
     await asyncio.sleep(10)
 
+OBJECTS = {}
+
+def search_leak():
+    print('New objects from the first call')
+    gc.collect()
+    numbers = collections.defaultdict(int)
+    for obj in gc.get_objects():
+        numbers[type(obj)] += 1
+    if OBJECTS:
+        for k, nr in numbers.items():
+            diff = nr - OBJECTS.get(k, 0)
+            if diff:
+                print(f'{k} {diff}')
+    else:
+        OBJECTS.clear()
+        OBJECTS.update(numbers)
+    print(flush=True)
+
 async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: disable=too-many-branches
     """Analyse the requests from one websocket connection"""
     print(time.strftime('%Y%m%d%H%M%S'), path, flush=True)
@@ -483,6 +503,7 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
         process.cleanup(erase_executable=True, erase_sandbox=True)
         PROCESSES.remove(process)
         FREE_USERS.append(process.launcher)
+    # search_leak()
 
 async def main() -> None:
     """Answer compilation requests"""
