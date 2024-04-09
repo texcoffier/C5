@@ -988,6 +988,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.selected_computer = select
                 scheduler.draw = True
                 self.moving = False
+            elif self.selected_computer:
+                self.selected_computer = None
+                scheduler.draw = True
+                self.moving = False
             return True
         return False
     def drag_stop_click_on_grade(self, column, line):
