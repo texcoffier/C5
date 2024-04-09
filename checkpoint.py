@@ -1808,8 +1808,8 @@ def scheduler():
     secs = Math.floor(millisecs()/1000)
     if OPTIONS['state'] == 'Ready' and OPTIONS['checkpoint'] and secs != scheduler.secs:
         scheduler.secs = secs # To not recompute multiple time per seconds
-        now = nice_date(secs)
-        if now > OPTIONS['stop']:
+        now = nice_date(secs) + ':00'
+        if now >= OPTIONS['stop']:
             message = "Examen<br>terminé"
         elif now < OPTIONS['start']:
             message = 'Début dans<br>' + split_time(strptime(OPTIONS['start']) - secs)
