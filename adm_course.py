@@ -28,6 +28,7 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
         http_server = ''
     blur_start = 0
     thinking_time = 0
+    key_strokes = {}
     for line in http_server.split('\n'):
         if len(line) == 0:
             continue
@@ -59,6 +60,11 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
                     nr_blurs += 1
                     blur_start = current_time
                 else:
+                    if len(cell) == 1:
+                        if not start_time:
+                            start_time = current_time
+                        minutes = int((current_time - start_time) / 60)
+                        key_strokes[minutes] = (key_strokes[minutes] or 0) + 1
                     key_stroke += 1
                 continue
             elif is_int(cell):
@@ -100,7 +106,8 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             'nr_blurs': nr_blurs,
             'time_sum': time_sum,
             'time_bonus': time_bonus / 60,
-            'blur_time': blur_time
+            'blur_time': blur_time,
+            'key_strokes': key_strokes
            }
 
 WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'comments', 'version', 'graders', 'time',
@@ -178,6 +185,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         student = STUDENTS[login]
         cache[login] = analyse(student.http_server)
         cache[login]['status'] = student.status
+        cache[login].login = login
         comments = {}
         for line in (student['comments'] or '').split('\n'):
             if line:
@@ -470,6 +478,53 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         text.append(' '.join(competences_list))
         text.append('</tr>')
     text.append('</table>')
+
+    text.append('''<p>Key stroke per minute
+    <style>
+    D, E, F, G, H, J, K, L { display: inline-block }
+    D { background: #EEE }
+    M { background: #FFF }
+    F { background: #CFC }
+    G { background: #0F0 }
+    H { background: #F80 }
+    J { background: #F00 }
+    K { background: #F0F }
+    L { background: #000 }
+    </style>
+    ''')
+    def block(nr_keys, text=' '):
+        square = 'DMFGHJKL'[int((nr_keys or 0) / 20)]
+        if not square:
+            square = 'L'
+        return '<' + square + '>' + text + '</' + square + '>'
+    def sort_key(value_a, value_b):
+        return (value_a.grades or 0) - (value_b.grades or 0)
+
+    for i in range(0, 150, 10):
+        text.append(block(i, i) + ' ')
+    text.append('<br>')
+    last_time = 0
+    sorted_logins = []
+    for login in students:
+        sorted_logins.append(cache[login])
+        if login.match(RegExp('[0-9][0-9]')):
+            for k in cache[login].key_strokes:
+                k = int(k)
+                if k > last_time:
+                    last_time = k
+    sorted_logins.sort(sort_key)
+    print(last_time)
+    if last_time > 180:
+        last_time = 180
+    text.append('<table>')
+    for stats in sorted_logins:
+        text.append('<tr><td>' + stats.login + '<td>' + stats.grades + '<td>')
+        for i in range(last_time+1):
+            square = 'DEFGHJKL'[int((stats.key_strokes[i] or 0) / 20)]
+            if not square:
+                square = 'L'
+            text.append(block(stats.key_strokes[i]))
+        text.append('</tr>')
 
     document.body.innerHTML = text.join('') # pylint: disable=no-member
 
