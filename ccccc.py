@@ -1576,7 +1576,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 button.className = 'grade_selected'
                 value = Number(grading[g][0])
                 if int(button.getAttribute('c')):
-                    if value != 0:
+                    if value >= 0:
                         competences.append(value)
                 else:
                     grading_sum += value

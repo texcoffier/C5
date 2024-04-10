@@ -564,6 +564,9 @@ SELECT {
     right: 0.2em; /* Some space for firefox scrollbar */
     color: #00F;
 }
+.grading PRE SPAN.competence BUTTON[v="-1"] {
+    --color: #DDD;
+}
 .grading PRE SPAN.competence BUTTON[v="0"] {
     --color: #EB707F;
 }
