@@ -961,13 +961,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Mouse move"""
         if event.target.tagName == 'CANVAS':
             self.mouse_position = [event.offsetX, event.offsetY]
+    def text_allowed(self, text):
+        """Check if the copy or paste is allowed"""
+        return (text in cleanup(self.source)
+            or text in cleanup(self.question.innerText)
+            or text in cleanup(self.tester.innerText)
+            or text in cleanup(self.executor.innerText)
+            or text == self.copied)
+
     def oncopy(self, event, what='Copy'):
         """Copy"""
         if self.options['allow_copy_paste']:
             self.record(what)
             return
         text = cleanup(window.getSelection().toString())
-        if text not in cleanup(self.source) and text not in cleanup(self.question.innerText):
+        if not self.text_allowed(text):
             self.record(what + 'Rejected')
             self.popup_message(self.options['forbiden'])
             stop_event(event)
@@ -1020,11 +1028,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.record('Paste')
             self.insert_text(event, text)
             return
-        if (text_clean in cleanup(self.source)
-            or text_clean in cleanup(self.question.innerText)
-            or text_clean in cleanup(self.tester.innerText)
-            or text_clean in cleanup(self.executor.innerText)
-            or text_clean == self.copied):
+        if self.text_allowed(text_clean):
             self.record('PasteOk')
             self.insert_text(event, text)
             return # auto paste allowed
@@ -2502,7 +2506,7 @@ def update_feedback(feedback):
         if feedback != 5:
             element.innerHTML = "Cliquer ici pour indiquer que vous avez fini de corriger."
         else:
-            element.innerHTML = "Les notes et commentaires sont peut-être affichées."
+            element.innerHTML = "Les notes et commentaires sont peut-être affichés."
     else:
         element.value = feedback
 
