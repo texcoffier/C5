@@ -391,6 +391,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         </ul>
         <table id="TOMUSS"><tr><td>ID<td>Nom<td>Prénom""")
         labels = {}
+        header2 = '' # Second line of headers
         for infos in notation:
             _text, grade_label, values = infos
             if len(grade_label) == 0:
@@ -419,11 +420,11 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             if -grade_min > grade_max:
                 grade_max = -grade_min
             text.append(
-                "<td>" + what + grade_max + '<td>' + html(grade_label)
-            )
+                "<td>" + what + grade_max + '<td>' + html(grade_label))
+            header2 += '<td>Note<td>Commentaire'
+
         text.append('</tr><tr><td><td><td>')
-        for _ in range(len(notation) - 1):
-            text.append('<td>Note<td>Commentaire')
+        text.append(header2)
         text.append('</tr>')
         for login in students:
             student = STUDENTS[login]
@@ -433,7 +434,12 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             text.append(login)
             text.append('<td><td>')
             grading = parse_grading(student['grades'])
-            for i in range(len(notation) - 1):
+            for infos in notation:
+                _text, grade_label, values = infos
+                if len(grade_label) == 0:
+                    continue
+                if ':' in grade_label:
+                    continue # It's a competence
                 text.append('<td>')
                 if grading[i]:
                     text.append(grading[i][0])
