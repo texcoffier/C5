@@ -271,6 +271,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         for filename in student.files:
             text.append(' <a target="_blank" href="/adm/get/COMPILE_'
                 + COURSE.replace('=', '/') + '/')
+            text.append('LOGS/')
             text.append(login)
             text.append('/')
             text.append(filename)
