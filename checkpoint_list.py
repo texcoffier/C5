@@ -2,10 +2,13 @@
 Tools the sessions list
 """
 
+class INTERFACE:
+    filter = None          # The filter value
+    filter_element = None  # The INPUT containing the filter
+
 def edit():
     """Launch editor on a set of session"""
-    session_filter = document.getElementById('edit').value
-    session_filter = get_regexp_from_filter(session_filter)
+    session_filter = get_regexp_from_filter(INTERFACE.filter)
     window.open('/adm/session/^'
                 + encodeURIComponent(session_filter).replace(RegExp('\\.', 'g'), '%2E')
                 + '?ticket=' + TICKET)
@@ -20,10 +23,11 @@ def get_regexp_from_filter(value):
 
 def filter_change(event):
     """Option selected"""
-    the_filter = event.target.value
-    document.getElementById('edit').value = the_filter
-    update(the_filter)
-    localStorage['checkpoint_list'] = the_filter
+    INTERFACE.filter = event.target.value
+    if INTERFACE.filter_element:
+        INTERFACE.filter_element.value = INTERFACE.filter
+    update(INTERFACE.filter)
+    localStorage['checkpoint_list'] = INTERFACE.filter
 
 def init_filters(the_filter):
     """Fill the options of the select filter"""
@@ -59,8 +63,11 @@ def change_header_visibility(header, visible):
 
 def update(value):
     """Update display status"""
-    path = window.location.toString().replace(RegExp('/\\*[^?]*'),
-                                              '/*/' + encodeURIComponent(value))
+    location = window.location.toString()
+    if 'checkpoint' in location:
+        path = location.replace(RegExp('/\\*[^?]*'), '/*/' + encodeURIComponent(value))
+    else:
+        path = location.replace('?', 'checkpoint/*/' + encodeURIComponent(value) + '?')
     window.history.replaceState('_a_', '', path)
     value = get_regexp_from_filter(value)
     session_filter = RegExp('^' + value)
@@ -79,11 +86,11 @@ def update(value):
             found = session_filter.exec(row.cells[0].textContent)
             if value == '' or value == '^':
                 found = False
-            if (row.cells[12].textContent.indexOf(LOGIN) == -1
-                and row.cells[13].textContent.indexOf(LOGIN) == -1
-                and CONFIG.roots.indexOf(LOGIN) == -1
-                and CONFIG.masters.indexOf(LOGIN) == -1):
-                found = False
+            # if (row.cells[12].textContent.indexOf(LOGIN) == -1
+            #     and row.cells[13].textContent.indexOf(LOGIN) == -1
+            #     and CONFIG.roots.indexOf(LOGIN) == -1
+            #     and CONFIG.masters.indexOf(LOGIN) == -1):
+            #     found = False
             if value == '' or value == '^':
                 found = True
             if row.cells[0].tagName == 'TH' or found:
@@ -112,15 +119,15 @@ def init_interface():
     """Use location to get filter"""
     url = window.location.toString()
     try:
-        the_filter = localStorage['checkpoint_list']
+        INTERFACE.filter = localStorage['checkpoint_list']
     except: # pylint: disable=bare-except
-        the_filter = ''
+        INTERFACE.filter = ''
     if url.indexOf('/*/') != -1:
-        the_filter = decodeURIComponent(url.replace(RegExp('.*/'), '').split('?')[0])
-    if not the_filter or the_filter == '':
-        the_filter = 'Toutes les sessions'
-    update(the_filter)
-    init_filters(the_filter)
-    the_input = document.getElementById('edit')
-    if the_input:
-        the_input.value = the_filter
+        INTERFACE.filter = decodeURIComponent(url.replace(RegExp('.*/'), '').split('?')[0])
+    if not INTERFACE.filter or INTERFACE.filter == '':
+        INTERFACE.filter = 'Toutes les sessions'
+    update(INTERFACE.filter)
+    init_filters(INTERFACE.filter)
+    INTERFACE.filter_element = document.getElementById('edit')
+    if INTERFACE.filter_element:
+        INTERFACE.filter_element.value = INTERFACE.filter

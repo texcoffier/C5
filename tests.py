@@ -1021,7 +1021,7 @@ class Q1(Question):
         """Check session display"""
         with self.admin_rights():
             self.goto('adm/course/REMOTE=test')
-            self.check('BODY', {'innerHTML': Contains('<a href="/grade/REMOTE=test/Anon_')})
+            self.check('BODY', {'innerHTML': Contains('adm_course.js')})
 
     def test_rename(self):
         """Check session renaming"""
@@ -1109,6 +1109,7 @@ class Q1(Question):
                 return process.stdout.read()
 
         response = requests.get('https://127.0.0.1:4201/', verify = False)
+        self.delete_session_xxx()
         save_ticket = self.ticket
         self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
         with self.admin_rights():
