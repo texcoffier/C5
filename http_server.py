@@ -1516,7 +1516,6 @@ async def checkpoint_list(request:Request) -> Response:
         for compiler in COMPILERS:
             content.append(f'''
             <form method="POST" enctype="multipart/form-data"
-                  target="_blank"
                   action="/upload_course/{compiler}/_new_?ticket={session.ticket}">
             <label>
             <input type="file" name="course" accept="text/x-python"
