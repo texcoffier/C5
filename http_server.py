@@ -1511,7 +1511,7 @@ async def checkpoint_list(request:Request) -> Response:
         content.append('''
         <p>Edit all the session with a name (without the compiler)
         starting with this regular expression:
-        <input id="edit" onkeyup="update(this.value)"><button onclick="edit()">Edit</button>''')
+        <input id="edit" onkeyup="filter_change(event)"><button onclick="edit()">Edit</button>''')
         content.append("<p>Download a Python file to add a new session for the compiler: ")
         for compiler in COMPILERS:
             content.append(f'''

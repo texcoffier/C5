@@ -28,7 +28,10 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
         http_server = ''
     blur_start = 0
     thinking_time = 0
+    last_key_time = 0
     key_strokes = {}
+    key_spacing = {}
+    phrase = {}
     for line in http_server.split('\n'):
         if len(line) == 0:
             continue
@@ -65,6 +68,11 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
                             start_time = current_time
                         minutes = int((current_time - start_time) / 60)
                         key_strokes[minutes] = (key_strokes[minutes] or 0) + 1
+                        if last_key_time:
+                            delta_t = current_time - last_key_time
+                            key_spacing[delta_t] = (key_spacing[delta_t] or 0) + 1
+                        last_key_time = current_time
+                        phrase[minutes] = (phrase[minutes] or '') + cell
                     key_stroke += 1
                 continue
             elif is_int(cell):
@@ -98,6 +106,7 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             text += '·'
         if not time_sum[i]:
             time_sum[i] = 0
+    print(phrase)
     return {'questions': text, 'key_stroke': key_stroke, 'mouse_click': mouse_click,
             'copy_bad': copy_bad, 'copy_ok': copy_ok,
             'paste_bad': paste_bad, 'paste_ok': paste_ok,
@@ -107,7 +116,9 @@ def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,to
             'time_sum': time_sum,
             'time_bonus': time_bonus / 60,
             'blur_time': blur_time,
-            'key_strokes': key_strokes
+            'key_strokes': key_strokes,
+            'key_spacing': key_spacing,
+            'phrase': phrase
            }
 
 WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'comments', 'version', 'graders', 'time',
@@ -524,6 +535,21 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
     if last_time > 180:
         last_time = 180
     text.append('<table>')
+    ratios = [0,0,0]
+    nr_ratios = 0
+    for stats in sorted_logins:
+        ratio = []
+        for i in range(3):
+            if stats.key_spacing[i+1] > 10:
+                ratio.append(stats.key_spacing[i] / stats.key_spacing[i+1])
+            else:
+                break
+        if len(ratio) == 3:
+            nr_ratios += 1
+            for i in range(3):
+                ratios[i] += ratio[i]
+    for i in range(3):
+        ratios[i] /= nr_ratios
     for stats in sorted_logins:
         text.append('<tr><td>' + stats.login + '<td>' + stats.grades + '<td>')
         for i in range(last_time+1):
@@ -531,7 +557,35 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             if not square:
                 square = 'L'
             text.append(block(stats.key_strokes[i]))
+        text.append('<td>')
+        distance = 0
+        for i in range(3):
+            if stats.key_spacing[i+1] > 10:
+                distance += Math.abs(stats.key_spacing[i] / stats.key_spacing[i+1] - ratios[i])
+            else:
+                break
+        if distance:
+            text.append('<span style="')
+            if distance < 1:
+                text.append('opacity:0.2')
+            elif distance < 1.5:
+                text.append('opacity:0.6')
+            elif distance < 2:
+                text.append('opacity:1')
+            elif distance > 2.5:
+                text.append('font-weight:bold')
+            text.append('">')
+            text.append(distance.toFixed(1) + '</span> ')
+        if stats.key_spacing[0]:
+            text.append(stats.key_spacing[0] + ' ')
+            for i in range(1, 30):
+                if stats.key_spacing[i] > 10:
+                    text.append(Math.round(stats.key_spacing[i-1] / stats.key_spacing[i]) + ' ')
+                else:
+                    break
+        text.append('<td>' + STUDENT_DICT[stats.login][2])
         text.append('</tr>')
+    text.append('</table>')
 
     document.body.innerHTML = text.join('') # pylint: disable=no-member
 
