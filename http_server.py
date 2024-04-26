@@ -201,9 +201,14 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
     if feedback >= 3:
         comments = course.get_comments(login)
         if feedback >= 4:
-            the_grade = course.active_teacher_room.get(login).grade
-            if feedback >= 5:
-                grades = course.get_grades(login)
+            active_teacher_room = course.active_teacher_room.get(login)
+            if active_teacher_room:
+                the_grade = active_teacher_room.grade
+                if feedback >= 5:
+                    grades = course.get_grades(login)
+            else:
+                the_grade = 0
+                grades = []
 
     return answer(
         session.header() + f'''

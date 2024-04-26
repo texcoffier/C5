@@ -344,6 +344,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.state = self.config['state']
         self.feedback = self.config['feedback']
         self.force_grading_done = int(self.config['force_grading_done'])
+        self.feedback_for_all = int(self.config['feedback_for_all'])
         self.expected_students = set(re.split('[ \n\r\t]+', self.config['expected_students']))
         self.expected_students_required = int(self.config['expected_students_required'])
         if os.path.exists(self.dir_media):
@@ -491,19 +492,23 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
     def get_feedback(self, login:str) -> int:
         """Return the feedback level"""
         active_teacher_room = self.active_teacher_room.get(login, None)
-        if not active_teacher_room:
+        if not active_teacher_room and not self.feedback_for_all:
             return 0
         if self.status(login) != 'done':
             return 0
         if self.state != 'Done':
             return 0
-        if self.force_grading_done:
+        if self.force_grading_done or not active_teacher_room:
             return self.feedback
         return min(self.feedback, active_teacher_room.feedback)
 
     def get_notation(self, login:str) -> str:
         """Return the notation for the student"""
-        version = self.active_teacher_room.get(login)[2].split(',')
+        active_teacher_room = self.active_teacher_room.get(login)
+        if active_teacher_room:
+            version = active_teacher_room[2].split(',')
+        else:
+            return self.notation
         if len(version) < 3:
             return self.notation
         version = version[3]

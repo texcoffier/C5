@@ -40,6 +40,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],
     ['grading_done'         ,1, "Graders indicate «grading done» in place of the grading level"],
     ['force_grading_done'   ,0, "Consider all gradings done even if graders did not approve"],
+    ['feedback_for_all'     ,0, "Allow an empty feedback (with the examination questions) to students who did not attend to the session"],
     ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
     ['git_url'              ,'', "The GIT url to fetch updates. <b>You must only commit 'questions.py' and 'MEDIA/*' nothing else.</b>"],
