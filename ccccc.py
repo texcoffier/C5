@@ -2153,6 +2153,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             event.target.removeChild(event.target.lastChild)
         span = document.createElement('DIV')
         span.id = 'executor_line_' + line
+        if text[-1] == '#&lt;void&gt;':
+            text[-1] = '<span style="color:#BBB">' + text[-1] + '</span>'
         span.innerHTML = '\n'.join(text[1:]).replace(
             RegExp('^([^ ]*) (.*) (#&lt;continuation-mark-set&gt;.*)$', 's'),
                 '<i style="opacity:0.3">$1</i><br><b>$2</b><br><i style="opacity:0.3">$3</i>')
