@@ -603,7 +603,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if student.feedback >= 3:
                 grading += '#👁'
             if grading != '':
-                ctx.fillStyle = "#000"
+                if student.grade[1] == self.nr_max_grade:
+                    if student.feedback >= 5:
+                        ctx.fillStyle = "#0A0"
+                    else:
+                        ctx.fillStyle = "#880"
+                else:
+                    ctx.fillStyle = "#000"
                 ctx.fillText(grading, x_pos, y_pos + 2*line_height)
             if student.blur_time > 2:
                 ctx.fillStyle = "#000"
@@ -1506,11 +1512,14 @@ def update_page():
     students.sort(cmp_student_name)
     ROOM.students = []
     ROOM.waiting_students = []
+    ROOM.nr_max_grade = 0
     for student in students:
         if student.building == ROOM.building:
             ROOM.students.append(student)
         elif not student.active:
             ROOM.waiting_students.append(student)
+        if student.grade != '' and student.grade[1] > ROOM.nr_max_grade:
+            ROOM.nr_max_grade = student.grade[1]
 
     if ROOM.moving and ROOM.moving != True: # pylint: disable=singleton-comparison
         student = STUDENT_DICT[ROOM.moving['login']]
