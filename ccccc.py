@@ -1588,6 +1588,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 nr_grades += 1
             else:
                 button.className = 'grade_unselected'
+        self.grading_sum = grading_sum
+        self.competence_average = (sum(competences)/len(competences)).toFixed(1)
         element = document.getElementById('grading_value')
         if element:
             if nr_real_grade:
@@ -1596,7 +1598,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             element2 = document.getElementById('competence_value')
             if len(competences):
                 element2.parentNode.style.display = 'initial'
-                element2.innerHTML = (sum(competences)/len(competences)).toFixed(1)
+                element2.innerHTML = self.competence_average
             else:
                 element2.innerHTML = '?'
 
@@ -1692,7 +1694,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 Note<br>temporaire</x>
                 <x style="border:0.2em solid #000; background:#FFF;
                           padding: 0.2em;font-size:''' + (size+20) + '''%">'''
-                + GRADE[0] + '/' + self.options.notation_max + '</x>')
+                + (self.grading_sum or GRADE[0]) + '/' + self.options.notation_max + '</x>')
         content.append('</h2></div>')
 
         if GRADING or NOTATION:
