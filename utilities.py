@@ -343,6 +343,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.messages = self.config['messages']
         self.state = self.config['state']
         self.feedback = self.config['feedback']
+        self.force_grading_done = int(self.config['force_grading_done'])
         self.expected_students = set(re.split('[ \n\r\t]+', self.config['expected_students']))
         self.expected_students_required = int(self.config['expected_students_required'])
         if os.path.exists(self.dir_media):
@@ -496,6 +497,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             return 0
         if self.state != 'Done':
             return 0
+        if self.force_grading_done:
+            return self.feedback
         return min(self.feedback, active_teacher_room.feedback)
 
     def get_notation(self, login:str) -> str:
