@@ -1652,10 +1652,16 @@ async def checkpoint_bonus(request:Request) -> Response:
 async def home(request:Request) -> Response:
     """Test the user rights to display the good home page"""
     session = await Session.get_or_fail(request)
-    if session.is_root():
-        return await adm_root(request)
-    if not session.is_student():
-        return await checkpoint_list(request)
+    if session.is_student():
+        login = ''
+    else:
+        login = request.query.get('login', '')
+    if not login:
+        login = session.login
+        if session.is_root():
+            return await adm_root(request)
+        if not session.is_student():
+            return await checkpoint_list(request)
     # Student
     CourseConfig.load_all_configs()
 
@@ -1663,20 +1669,20 @@ async def home(request:Request) -> Response:
     courses = sorted(CourseConfig.configs.items())
     data = []
     for _course_name, course in courses:
-        expected = (session.login in course.expected_students
-                    or session.login in course.tt_list)
+        expected = (login in course.expected_students
+                    or login in course.tt_list)
         if course.expected_students_required and not expected:
             continue
-        status = course.status(session.login)
-        feedback = course.get_feedback(session.login)
+        status = course.status(login)
+        feedback = course.get_feedback(login)
         if status not in ('pending', 'running') and not feedback:
             continue
         if now < course.hide_before_seconds:
             continue # Too soon to display
         data.append((course.course, course.highlight, expected, feedback,
                      course.title, course.start_timestamp, course.stop_timestamp,
-                     session.login in course.tt_list))
-    return answer(f'''{session.header()}
+                     login in course.tt_list))
+    return answer(f'''{session.header(login=login)}
 <script src="/home.js?ticket={session.ticket}"></script>
 <script>home({json.dumps(data)})</script>
 ''')

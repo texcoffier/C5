@@ -984,8 +984,10 @@ class Session:
         """The user is a student"""
         return CONFIG.is_student(self.login)
 
-    def header(self, courses=(), more='') -> str:
+    def header(self, courses=(), more='', login=None) -> str:
         """Standard header"""
+        if not login:
+            login = self.login
         return f"""<!DOCTYPE html>
             <html>
             <head>
@@ -1000,7 +1002,7 @@ class Session:
             TICKET = {json.dumps(self.ticket)};
             COURSES = {json.dumps(courses)};
             MORE = {json.dumps(more)};
-            LOGIN = {json.dumps(self.login)};
+            LOGIN = {json.dumps(login)};
             CONFIG = {CONFIG.json};
             </script>
             """

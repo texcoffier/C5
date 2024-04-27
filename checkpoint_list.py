@@ -132,6 +132,13 @@ def my_sessions():
                 break
     return '(' + '|'.join(sessions) + ')'
 
+def go_student():
+    """Display as student"""
+    student = document.getElementById('student').value
+    localStorage['student'] = student
+    student = student.replace(RegExp('^1'), 'p')
+    window.open('/?ticket=' + TICKET + '&login=' + student)
+
 def init_interface():
     """Use location to get filter"""
     url = window.location.toString()
@@ -149,3 +156,13 @@ def init_interface():
     INTERFACE.filter_element = document.getElementById('edit')
     if INTERFACE.filter_element:
         INTERFACE.filter_element.value = INTERFACE.filter
+
+    value = localStorage['student'] or ''
+    element = document.createElement('DIV')
+    element.innerHTML = '''
+    <p>
+    <button onclick="go_student()">Display</button> <INPUT id="student" value="''' + value + '''"> student page.
+    Beware: if you go into a session, modify the code and save it, it will
+    modify <b>your history</b> not the student one.
+    '''
+    document.body.appendChild(element)
