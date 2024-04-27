@@ -1524,7 +1524,7 @@ async def checkpoint_list(request:Request) -> Response:
         <p>Edit all the session with a name (without the compiler)
         starting with this regular expression:
         <input id="edit" onkeyup="filter_change(event)"><button onclick="edit()">Edit</button>''')
-        content.append("<p>Download a Python file to add a new session for the compiler: ")
+        content.append("<div>Download a Python file to add a new session for the compiler: ")
         for compiler in COMPILERS:
             content.append(f'''
             <form method="POST" enctype="multipart/form-data"
@@ -1535,13 +1535,13 @@ async def checkpoint_list(request:Request) -> Response:
             <span>{compiler}</span>
             </label>
             </form>''')
-    content.append('<script>init_interface();</script>')
     if session.is_mapper():
-        content.append('<p>Edit building map:<p>')
+        content.append('<p>Edit building map: ')
         for building in sorted(utilities.get_buildings()):
             content.append(f'''
             <button onclick="window.open(\'/adm/building/{building}?ticket={session.ticket}\')"
             >{building}</button>''')
+    content.append('</div><script>init_interface();</script>')
 
     return answer(''.join(content))
 
