@@ -208,7 +208,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.start_time = millisecs()
         self.course = COURSE
         self.stop_timestamp = STOP
-        self.worker = Worker(COURSE + "?ticket=" + TICKET) # pylint: disable=undefined-variable
+        self.worker = Worker(COURSE + "?ticket=" + TICKET + '&login=' + LOGIN) # pylint: disable=undefined-variable
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
         self.worker.onerror = bind(self.onerror, self)

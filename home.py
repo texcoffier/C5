@@ -51,6 +51,7 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
         if expected:
             style = ';font-weight: bold'
         text = ('<tr onclick="location = \'/=' + course + '?ticket=' + TICKET
+                + '&login=' + LOGIN
                 + '\'" style="' + style + '"><td><p>' + text + '<td><p>')
         if title != '':
             text += html(title)

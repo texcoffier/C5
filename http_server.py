@@ -186,13 +186,12 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
                 last_answers[key] = value[-1] # Only the last answer
         if course:
             stop = course.get_stop(login)
+    infos = await utilities.LDAP.infos(login)
     if grading or feedback >= 5:
         notation = f"NOTATION = {json.dumps(course.get_notation(login))};"
-        infos = await utilities.LDAP.infos(login)
         title = infos['sn'].upper() + ' ' + infos['fn'].title()
     else:
         notation = 'NOTATION = "";'
-        infos = session.infos
         title = course.course.split('=', 1)[1]
 
     comments = None
@@ -211,7 +210,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
                 grades = []
 
     return answer(
-        session.header() + f'''
+        session.header(login=login) + f'''
         <title>{title}</title>
         <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
         <link rel="stylesheet" href="/ccccc.css?ticket={session.ticket}">
@@ -254,15 +253,25 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
             assert '/.' not in filename
             filename = base + '/' + filename
         else:
-            if filename.startswith("="):
-                course = CourseConfig.get(utilities.get_course(filename[1:]))
+            if '=' in filename:
+                course = CourseConfig.get(utilities.get_course(filename.lstrip('=')))
                 if not course.dir_log:
                     return session.message('unknown')
-                status = course.status(login, session.hostname)
+                is_admin = False
+                if session.is_student():
+                    login_as = ''
+                    status = course.status(login, session.hostname)
+                else:
+                    login_as = request.query.get('login', '')
+                    if login_as:
+                        status = course.status(login_as) # Should not modify anything
+                    else:
+                        is_admin = session.is_grader(course)
+                        status = course.status(login, session.hostname)
                 if status == 'draft':
                     return session.message('draft')
-                is_admin = session.is_grader(course)
-                feedback = course.get_feedback(login)
+            if filename.startswith("="):
+                feedback = course.get_feedback(login_as or login)
                 if not is_admin:
                     if status == 'done' and not feedback:
                         return session.message('done')
@@ -280,15 +289,11 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                         changed[3] = version
                     course.active_teacher_room[login][2] = ','.join(changed)
                     feedback = 0 # No feedback on try
-                return await editor(session, is_admin, course, session.login, feedback=feedback)
+                return await editor(session, is_admin, course, login_as or login, feedback=feedback)
             if '=' in filename:
-                course = CourseConfig.get(utilities.get_course(filename))
                 filename = course.file_js
-                status = course.status(login, session.hostname)
-                if status == 'draft':
-                    return session.message('draft')
-                if not session.is_grader(course) and not status.startswith('running'):
-                    if status == 'done' and course.get_feedback(login) > 0:
+                if (not session.is_grader(course) or login_as) and not status.startswith('running'):
+                    if status == 'done' and course.get_feedback(login_as or login) > 0:
                         pass # Feedback allowed
                     else:
                         return session.message('done')
