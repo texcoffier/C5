@@ -263,7 +263,9 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                     status = course.status(login, session.hostname)
                 else:
                     login_as = request.query.get('login', '')
-                    if login_as:
+                    if login_as == login:
+                        login_as = ''
+                    if login_as and session.is_proctor(course):
                         status = course.status(login_as) # Should not modify anything
                     else:
                         is_admin = session.is_grader(course)
