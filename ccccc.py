@@ -350,6 +350,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     self.overlay.style.right = '0px'
                     self.editor.style.right = '0px'
                 self.editor.style.paddingBottom = 0.9*self.layered.offsetHeight + 'px'
+                self.editor.style.background = background
             if not e:
                 continue
             if left >= 100 or top >= 100:
@@ -370,8 +371,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             e.style.bottom = (100 - top - height) + '%'
             if key == 'editor_title':
                 e.style.bottom = 'calc(100% - var(--header_height))'
-            e.style.background = background
-            e.background = background
+            if key != 'layered':
+                e.style.background = background
+                e.background = background
         self.save_history.onchange = bind(self.change_history, self)
         if GRADING or self.options['feedback']:
             self.save_button.style.display = 'none'
