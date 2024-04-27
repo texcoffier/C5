@@ -385,7 +385,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             document.body.className = 'dograding'
         self.options['positions']['editor_title'] = self.options['positions']['editor']
         for key in self.options['positions']:
-            if key == 'stop_button' and not self.options['checkpoint']:
+            if key == 'stop_button':
                 continue
             if key in DEPRECATED:
                 print(key, "this block position is no more used")
