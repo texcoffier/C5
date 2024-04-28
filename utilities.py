@@ -211,6 +211,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.streams = [] # To send changes
         self.to_send = [] # Data to send
         self.send_journal_running = False
+        self.doing_grading = {}
 
     def get_config(self):
         """Config not leaking informations to students"""

@@ -387,6 +387,7 @@ async def record_grade(request:Request) -> Response:
     if 'grade' in post:
         grades = course.append_grade(
             login, [int(time.time()), session.login, post['grade'], post['value']])
+        course.doing_grading[session.login] = time.time()
     else:
         grades = course.get_grades(login)
     return answer(f"window.parent.ccccc.update_grading({json.dumps(grades)})")
@@ -396,16 +397,17 @@ async def record_comment(request:Request) -> Response:
     session, course = await get_teacher_login_and_course(request)
     is_grader = session.is_grader(course)
     if not is_grader:
-        return answer("alert('Vous n'êtes pas autorisé à noter.')")
+        return answer("window.parent.ccccc.record_not_done(\"Vous n'êtes pas autorisé à noter.\")")
     post = await request.post()
     login = str(post['student'])
     if not os.path.exists(f'{course.dir_log}/{login}'):
-        return answer("Aucun travail à commenter.")
+        return answer("window.parent.ccccc.record_not_done(\"Aucun travail à commenter.\")")
     if 'comment' in post:
         course.append_comment(
             login,
             [int(time.time()), session.login, int(str(post['question'])),
              int(str(post['version'])), int(str(post['line'])), post['comment']])
+        course.doing_grading[session.login] = time.time()
     comments = course.get_comments(login)
     return answer(f"window.parent.ccccc.update_comments({json.dumps(comments)})")
 
@@ -1468,7 +1470,10 @@ async def checkpoint_list(request:Request) -> Response:
         <link rel="stylesheet" href="/checkpoint_list.css?ticket={session.ticket}">
         <title>SESSIONS</title>
         <select id="filters"></select> ← filter only what matters to you.
-        <div style="float: right"><span id="nr_actives"></span> users active</div>
+        <div style="float: right">
+        <span id="nr_doing_grading"></span> active graders</span>,
+        <span id="nr_actives"></span> active student</span>
+        </div>
         <table>''']
     def hide_header():
         if '<th>' in content[-1]:
@@ -1541,7 +1546,14 @@ async def checkpoint_list(request:Request) -> Response:
             content.append(f'''
             <button onclick="window.open(\'/adm/building/{building}?ticket={session.ticket}\')"
             >{building}</button>''')
-    content.append('</div><script>init_interface();</script>')
+    nr_doing_grading = 0
+    now = time.time() - 5 * 60
+    for course in courses:
+        for _teacher, timestamp in course.doing_grading.items():
+            if timestamp > now:
+                nr_doing_grading += 1
+
+    content.append(f'</div><script>init_interface({nr_doing_grading});</script>')
 
     return answer(''.join(content))
 

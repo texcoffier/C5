@@ -119,6 +119,7 @@ def update(value):
                 nr_actives += Number(row.cells[4].textContent)
     change_header_visibility(header, one_visible)
     document.getElementById('nr_actives').innerHTML = nr_actives
+    document.getElementById('nr_doing_grading').innerHTML = INTERFACE.nr_doing_grading
 
 def my_sessions():
     sessions = []
@@ -139,8 +140,9 @@ def go_student():
     student = student.replace(RegExp('^1'), 'p')
     window.open('/?ticket=' + TICKET + '&login=' + student)
 
-def init_interface():
+def init_interface(nr_doing_grading):
     """Use location to get filter"""
+    INTERFACE.nr_doing_grading = nr_doing_grading
     url = window.location.toString()
     try:
         INTERFACE.filter = localStorage['checkpoint_list']
