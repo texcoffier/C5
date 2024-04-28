@@ -1384,7 +1384,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
 
     bools = ''
     for attr, letter, tip in (
-        ('coloring', '🎨', 'Syntaxic source code coloring'),
+        # ('coloring', '🎨', 'Syntaxic source code coloring'),
         ('allow_copy_paste', '✂', 'Copy/Paste allowed'),
         ('checkpoint', '🚦', 'Checkpoint required'),
         ('sequential', 'S', 'Sequential question access'),
