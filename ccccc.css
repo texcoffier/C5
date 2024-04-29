@@ -555,9 +555,10 @@ SELECT {
 .grading PRE SPAN.grade_undefined {
     background: #FF0;
 }
-.grading PRE BUTTON:hover {
+BODY.dograding .grading PRE BUTTON:hover, .grading PRE BUTTON.grade_selected:hover {
     border: 1px solid #040;
 }
+
 .grading SPAN {
     font-family: sans-serif;
     position: absolute;

@@ -1578,7 +1578,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if g not in grading or grading[g][0] == '':
                 button.className = 'grade_unselected grade_undefined'
             elif button.innerText == grading[g][0]:
-                button.title = grading[g][1]
+                if GRADING:
+                    button.title = grading[g][1]
+                else:
+                    button.title = grading[g][1].split('\n')[-1]
                 button.className = 'grade_selected'
                 value = Number(grading[g][0])
                 if int(button.getAttribute('c')):

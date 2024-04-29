@@ -1472,7 +1472,7 @@ async def checkpoint_list(request:Request) -> Response:
         <select id="filters"></select> ← filter only what matters to you.
         <div style="float: right">
         <span id="nr_doing_grading"></span> active graders</span>,
-        <span id="nr_actives"></span> active student</span>
+        <span id="nr_actives"></span> active students</span>
         </div>
         <table>''']
     def hide_header():
