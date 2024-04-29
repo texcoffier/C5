@@ -1189,7 +1189,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             Student.moving_element.style.background = "#FFF"
             document.getElementById('top').style.background = TOP_ACTIVE
         scheduler.draw = True
-        scheduler.square_feedback = True
+        scheduler.draw_square_feedback = True
     def move_student_to(self, student, column, line):
         """Move the student on a chair.
         If not an A or B version, ask for the version.
