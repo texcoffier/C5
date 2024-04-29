@@ -185,7 +185,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 and self.columns_width[2*col] == 0.5
                 and self.lines_height[2*lin] == 0.5
            ):
-            return [col, lin]
+            if not free_slot or self.student_from_column_line(col, lin) is None:
+                return [col, lin] # Not 2 students at the same place
         if free_slot:
             # Current slot is not free: search around
             distances = []
@@ -201,9 +202,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                                and self.columns_width[2*col2] == 0.5
                                and self.lines_height[2*lin2] == 0.5
                            ):
-                            distances.append([
-                                # +1000 because of string javascript sort
-                                1000 + distance(event_x, event_y, event_x2, event_y2), col2, lin2])
+                            if not self.student_from_column_line(col2, lin2):
+                                distances.append([
+                                    # +1000 because of string javascript sort
+                                    1000 + distance(event_x, event_y, event_x2, event_y2), col2, lin2])
                 if len(distances): # pylint: disable=len-as-condition
                     break
             if len(distances): # pylint: disable=len-as-condition
@@ -882,6 +884,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.do_zoom(event.clientX, event.clientY,
                      self.scale * (1000 - event.deltaY) / 1000)
         event.preventDefault()
+    def student_from_column_line(self, column, line):
+        """Get the student at the indicated position"""
+        for student in self.students:
+            if student.column == column and student.line == line:
+                if self.moving and self.moving['login'] == student.login:
+                    return
+                return student
     def drag_start(self, event):
         """Start moving the map"""
         self.get_event(event)
@@ -898,12 +907,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 return
         self.student_clicked = None
         column, line = self.get_coord(self.event_x, self.event_y)
-        for student in self.students:
-            if student.column == column and student.line == line:
-                self.student_clicked = {'login': student.login,
-                            'column': student.column,
-                            'line': student.line}
-                break
+        student = self.student_from_column_line(column, line)
+        if student:
+            self.student_clicked = {'login': student.login,
+                                    'column': student.column,
+                                    'line': student.line}
         self.moved = False
         self.drag_x_start = self.drag_x_current = self.event_x
         self.drag_y_start = self.drag_y_current = self.event_y
