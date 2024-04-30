@@ -217,7 +217,10 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         for question in grading:
             if ':' in notation[question][1]:
                 continue # It'a a competence
-            grade += Number(grading[question][0])
+            value = grading[question][0]
+            if value == '?':
+                continue
+            grade += Number(value)
             if len(grading[question][0]):
                 grader = grading[question][1].split('\n')[1]
                 if grader not in graders:

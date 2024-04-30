@@ -299,14 +299,16 @@ def select_tab(label):
     then '▶' is blue and clickable to scroll the source code to the first matching line.
     </p>
     <p>
-    If the grading part is «{printf:SomeKey:0,1,2,3}» then «SomeKey» will be
+    If the grading part is «{printf:SomeKey:-1,0,1,2,3}» then «SomeKey» will be
     hidden to the grader but used to compute the competence export table
-    for TOMUSS. <b>If it is a competence the value will not be used to compute the grade</b>.
+    for TOMUSS.
+    -1 is for not evaluated and 0 for not acquired.
+     <b>If it is a competence the value will not be used to compute the grade</b>.
     <pre>
 #include &lt;stdio.h&gt;               {stdio.h:0,1}
 int main()▶                      {main declaration:0,1}
-{                                {bloc:0,1}
-   printf("Hello World\\n");      {printf:0,0.5,1,1.5,2}
+{        /* ? = Not evaluated */ {bloc:?,0,1}
+   printf("Hello World\\n");     {printf:0,0.5,1,1.5,2}
 }
 // Malus                         {No comments:-1,0}
 </pre>

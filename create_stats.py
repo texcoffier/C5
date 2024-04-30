@@ -146,7 +146,7 @@ class Stat:
         line = eval(line_txt)
         self.grade[line[2]] = line[3]
 
-    def __repr__(self):
+    def finalize(self):
         self.question_dict = dict(self.question_dict)
         self.allow_edit_dict = dict(self.allow_edit_dict)
         self.nr_sessions = len(self.sessions)
@@ -158,9 +158,17 @@ class Stat:
             self.sessions_last = self.sessions_average = self.sessions_median = -1
 
         if self.grade:
-            self.grade = sum(int(i) for i in self.grade) / len(self.grade)
+            grade = []
+            for i in self.grade.values():
+                try:
+                    grade.append(float(i))
+                except ValueError:
+                    pass
+            self.grade = sum(grade)
         else:
             del self.grade
+
+    def __repr__(self):
         return repr(self.__dict__)
 
 def compile_stats(courses) -> None:
@@ -196,6 +204,19 @@ def compile_stats(courses) -> None:
                         encoding='utf-8') as file:
                     for line in file:
                         stat.parse_grade(line)
+        grades = []
+        for student in students.values():
+            student.finalize()
+            if hasattr(student, 'grade'):
+                grades.append(student.grade)
+        print(grades)
+        if grades:
+            maximum_grade = max(grades)
+            if maximum_grade:
+                for student in students.values():
+                    if hasattr(student, 'grade'):
+                        student.grade /= maximum_grade
+
         content = repr(dict(students))
         with open(resume_file, 'w', encoding='utf-8') as file:
             file.write(content)

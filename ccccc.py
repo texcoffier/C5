@@ -1583,12 +1583,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 else:
                     button.title = grading[g][1].split('\n')[-1]
                 button.className = 'grade_selected'
-                value = Number(grading[g][0])
+                value = grading[g][0]
                 if int(button.getAttribute('c')):
                     if value >= 0:
-                        competences.append(value)
+                        competences.append(Number(value))
                 else:
-                    grading_sum += value
+                    if value != '?':
+                        grading_sum += Number(value)
                     nr_real_grade += 1
                 nr_grades += 1
             else:
@@ -2194,7 +2195,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         for _text, grade_label, values in parse_notation(NOTATION):
             if i not in graded and len(grade_label) and values:
                 if index == 1:
-                    if min(values) >= 0:
+                    if values[0] >= 0 or values[0] == '?':
                         self.record_grade(i, values[0])
                 elif index == 0:
                     self.record_grade(i, values[0])

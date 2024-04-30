@@ -547,11 +547,13 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         for line in grades.split('\n'):
             if line:
                 line = json.loads(line)
-                if line[3]:
+                if line[3] == '?':
+                    grading[line[2]] = '?'
+                elif line[3]:
                     grading[line[2]] = float(line[3])
                 else:
                     grading.pop(line[2], None)
-        new_value = [sum(grading.values()), len(grading)]
+        new_value = [sum(i for i in grading.values() if i != '?'), len(grading)]
         self.set_parameter('active_teacher_room', new_value, login, 8)
         return grades
 

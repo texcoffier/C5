@@ -79,18 +79,20 @@ def parse_grading(history):
             grading[line[2]] = [line[3], d + '\n' + line[1]]
     return grading
 
+POSSIBLE_GRADES = ":([?],)?[-0-9,.]+$"
+
 def parse_notation(notation):
     """Returns a list or [text, grade_label, [grade_values]]"""
     content = []
     text = ''
     for i, item in enumerate(notation.split('{')):
         options = item.split('}')
-        if len(options) == 1 or not options[0].match(RegExp('^.*:[-0-9,.]+$')):
+        if len(options) == 1 or not options[0].match(RegExp('^.*' + POSSIBLE_GRADES)):
             if i != 0:
                 text += '{'
             text += item
             continue
-        grade_label = options[0].replace(RegExp(':[-0-9,.]+$'), '')
+        grade_label = options[0].replace(RegExp(POSSIBLE_GRADES), '')
         grade_values = options[0].replace(RegExp('.*:'), '').split(',')
         content.append([text, grade_label, grade_values])
         text = options[1:].join('}')
