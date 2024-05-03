@@ -126,6 +126,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     student_clicked = None # The student that may be moved
     ctrl = False # Control key pressed
     time_span = [0, 1e50]
+    rotate_180 = False
     def __init__(self, building):
         self.menu = document.getElementById('top')
         self.ips = {}
@@ -153,17 +154,34 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             return [-1, -1]
         column = -1
         for i, position in enumerate(self.columns_x):
-            if position > (pos_x - self.left) / self.scale:
-                column = int(i/2)
-                break
+            if self.rotate_180:
+                if position <= (pos_x - self.left) / self.scale:
+                    column = int(i/2)
+                    break
+            else:
+                if position > (pos_x - self.left) / self.scale:
+                    column = int(i/2)
+                    break
         line = -1
         for i, position in enumerate(self.lines_y):
-            if position > (pos_y - self.top) / self.scale:
-                line = int(i/2)
-                break
+            if self.rotate_180:
+                if position <= (pos_y - self.top) / self.scale:
+                    line = int(i/2)
+                    break
+            else:
+                if position > (pos_y - self.top) / self.scale:
+                    line = int(i/2)
+                    break
         if column >= 0 and column <= self.x_max and line >= 0 and line < len(self.lines):
             return [column, line]
         return [-1, -1]
+    def do_rotate_180(self):
+        """Rotate the display"""
+        self.rotate_180 = not self.rotate_180
+        self.left = -self.left + self.width + self.menu.offsetWidth - (self.x_max+1) * self.scale
+        self.top = -self.top + self.height - (len(self.lines)+1) * self.scale
+        self.update_visible()
+        scheduler.update_page = True
     def get_event(self, event):
         """Get event coordinates"""
         self.ctrl = event.ctrlKey
@@ -337,15 +355,21 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         for width in self.columns_width:
             self.columns_x.append(position)
             position += width
+        if self.rotate_180:
+            for i, value in enumerate(self.columns_x):
+                self.columns_x[i] = position - self.columns_x[i] + width
         position = 0
         self.lines_y = []
         for height in self.lines_height:
             self.lines_y.append(position)
             position += height
+        if self.rotate_180:
+            for i, value in enumerate(self.lines_y):
+                self.lines_y[i] = position - self.lines_y[i] + height
     def get_room(self, column, line):
         """Get room position : col_min, lin_min, width, height, center_x, center_y"""
         if not self.lines[line] or not self.lines[line][column]: # XXX Called outside the map
-            return [0, 0, 0, 0, 0, 0]
+            return [0, 0, -1, -1, 0, 0]
         done = []
         for orig_line in self.lines:
             done.append([])
@@ -357,11 +381,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         while len(todo):
             new_todo = []
             for lin, col in todo:
+                if not done[lin] or col < 0 or col >= self.x_max:
+                    return [0, 0, -1, -1, 0, 0]
                 if done[lin][col]:
                     continue
                 done[lin][col] = True
-                if not self.lines[lin] or not self.lines[lin][col]:
-                    return [0, 0, 0, 0, 0, 0]
                 if self.lines[lin][col] in ROOM_BORDER:
                     continue
                 if col < col_start:
@@ -701,11 +725,22 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 if self.columns_width[2*column] < 0.5:
                     continue
                 x_pos, y_pos, _x_size, y_size = self.xys(column, line)
+                rotate = self.rotate_180 and char.charCodeAt() < 256
+                if rotate:
+                    ctx.save()
+                    ctx.translate(x_pos, y_pos)
+                    ctx.rotate(Math.PI)
+                    ctx.translate(-x_pos, -y_pos)
                 ctx.fillText(char, x_pos - char_size.width/2, y_pos + y_size/2)
+                if rotate:
+                    ctx.restore()
     def draw_square_feedback(self, ctx):
         """Single square feedback"""
         column, line = self.get_coord(self.event_x, self.event_y, True)
-        x_pos, y_pos, x_size, y_size = self.xys(column - 0.5, line - 0.5)
+        if self.rotate_180:
+            x_pos, y_pos, x_size, y_size = self.xys(column + 0.5, line + 0.5)
+        else:
+            x_pos, y_pos, x_size, y_size = self.xys(column + 0.5, line + 0.5)
         y_pos += DECAL_Y * self.scale
         ctx.fillStyle = "#0F0"
         ctx.globalAlpha = 0.5
@@ -774,6 +809,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     or self.columns_width[2*column] < 0.5):
                     continue
                 x_pos, y_pos, _x_size, _y_size = self.xys(column, line)
+                if self.rotate_180:
+                    x_pos -= ctx.measureText(room['teachers']).width
                 ctx.fillText(room['teachers'], x_pos, y_pos)
     def draw_ips(self, ctx):
         """Display used IP in room"""
@@ -840,16 +877,19 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.update_sizes(0.5)
             self.update_visible()
             self.scale = self.min_scale = min(
-                (self.width - self.real_left) / self.columns_x[2 * self.x_max - 1],
-                (self.height - self.real_top) / self.lines_y[2 * len(self.lines) - 1 - HELP_LINES])
+                (self.width - self.real_left) / max(self.columns_x[0], self.columns_x[2 * self.x_max - 1]),
+                (self.height - self.real_top) / max(self.lines_y[0], self.lines_y[2 * len(self.lines) - 1 - HELP_LINES]))
             self.top = self.real_top
             if not my_rooms:
                 self.top += HELP_LINES * self.scale
         ctx = canvas.getContext("2d")
         self.left_column, self.top_line = self.get_column_row(0, self.real_top+1)
+        self.right_column, self.bottom_line = self.get_column_row(self.width, self.height)
+        if self.rotate_180:
+            self.left_column, self.top_line, self.right_column, self.bottom_line = (
+                self.right_column, self.bottom_line, self.left_column, self.top_line)
         self.left_column = max(self.left_column, 0) - 1
         self.top_line = max(self.top_line, 0) - 2
-        self.right_column, self.bottom_line = self.get_column_row(self.width, self.height)
         if self.right_column == -1:
             self.right_column = self.x_max
         if self.bottom_line == -1:
@@ -865,9 +905,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.draw_square_feedback(ctx)
         self.draw_help(ctx)
         self.draw_times.append(Date().getTime() - start)
+        ctx.font = "16px sans-serif"
         if LOGIN == 'thierry.excoffier' and len(self.draw_times) > 10:
             self.draw_times = self.draw_times[1:]
-            ctx.font = "16px sans-serif"
             ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms',
                          self.width - 70, 50)
         self.draw_ips(ctx)
@@ -1053,7 +1093,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 return (start*i + end*(nr_frame-i)) / nr_frame
             final_scale = Math.min(event.target.offsetWidth / room_width,
                                    event.target.offsetHeight / room_height) / 2
-            final_left = event.target.offsetWidth/2 - center_x * final_scale
+            final_left = (event.target.offsetWidth + self.menu.offsetWidth)/2 - center_x * final_scale
             final_top = event.target.offsetHeight/2 - center_y * final_scale
             self.transitions = [
                 [
@@ -1407,7 +1447,6 @@ def create_page(building_name):
                 transition: transform 0.5s; cursor: pointer;
                 margin-left: 0.5em; }
         .icon:hover { transform: scale(2, 2) }
-        #TTL { font-size: 70% ; display: inline-block }
         #messages { position: fixed ; right: 0px ; bottom: 0px ;
             max-width: 40vw;
             max-height: 100vh;
@@ -1436,7 +1475,8 @@ def create_page(building_name):
         >
         <span class="icon" onclick="send_alert()">🚨</span>
         <span class="icon" onclick="search_student()">🔍</span>
-        <span id="TTL"></span>
+        <button onclick="ROOM.do_rotate_180()" style="float:right;"><span style="font-family:emoji;font-size:200%; line-height:0.4px">↺</span><br>180°</button>
+        <div id="TTL" style="line-height: 0.1em; padding-top: 0.7em"></div>
         ''']
     content.append(
         '<span class="course" id="display_session_name">'
@@ -1833,9 +1873,9 @@ def scheduler():
         if now >= OPTIONS['stop']:
             message = "Examen<br>terminé"
         elif now < OPTIONS['start']:
-            message = 'Début dans<br>' + split_time(strptime(OPTIONS['start']) - secs)
+            message = 'Début dans ' + split_time(strptime(OPTIONS['start']) - secs)
         else:
-            message = 'Fin dans<br>' + split_time(strptime(OPTIONS['stop']) - secs)
+            message = 'Fin dans ' + split_time(strptime(OPTIONS['stop']) - secs)
         document.getElementById('TTL').innerHTML = message
     if Student.moving_student or Student.highlight_student:
         ROOM.draw(scheduler.draw_square_feedback)
