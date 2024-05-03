@@ -563,7 +563,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         now = seconds()
         line_height = self.scale/4
         ctx.font = line_height + "px sans-serif"
-        self.students.sort(cmp_student_position)
+        if self.rotate_180:
+            self.students.sort(cmp_student_position_reverse)
+        else:
+            self.students.sort(cmp_student_position)
         for student in self.students:
             if (student.column < self.left_column or student.column > self.right_column
                     or student.line < self.top_line or student.line > self.bottom_line):
@@ -1402,6 +1405,9 @@ def cmp_student_name(student_a, student_b):
 def cmp_student_position(student_a, student_b):
     """Compare 2 students column"""
     return student_a.column - student_b.column
+def cmp_student_position_reverse(student_a, student_b):
+    """Compare 2 students column"""
+    return student_b.column - student_a.column
 
 def create_page(building_name):
     """Fill the page content"""
