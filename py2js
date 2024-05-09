@@ -29,7 +29,7 @@ restore() {
 case $1 in
 	COMPILE*)
 		COMPILER=$(echo $1 | sed -e 's,/.*,,' | tr '[A-Z]' '[a-z]')
-		FILES="compatibility.py options.py compile.py question.py $COMPILER.py $PY"
+		FILES="compatibility.py xxx_local.py options.py compile.py question.py $COMPILER.py $PY"
 		SESSION=$(
 			echo
 			echo 'if not Compile.worker: Session(['
@@ -40,7 +40,7 @@ case $1 in
 		;;
 	*)
 		COMPILER=
-		FILES="compatibility.py options.py $PY"
+		FILES="compatibility.py xxx_local.py options.py $PY"
 		;;
 esac
 

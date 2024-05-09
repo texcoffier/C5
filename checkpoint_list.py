@@ -137,7 +137,7 @@ def go_student():
     """Display as student"""
     student = document.getElementById('student').value
     localStorage['student'] = student
-    student = student.replace(RegExp('^1'), 'p')
+    student = normalize_login(student)
     window.open('/?ticket=' + TICKET + '&login=' + student)
 
 def init_interface(nr_doing_grading):

@@ -1,8 +1,14 @@
 
 PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 
-%.js:%.py compatibility.py options.py compile.py question.py compile_[!s]*.py
+%.js:%.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
 	@./py2js $* || true
+
+xxx_local.py:common.py $(C5_CUSTOMIZE)
+	cat common.py $(C5_CUSTOMIZE) >$@
+
+$(C5_CUSTOMIZE):
+	echo '"""Redefine «common.py» functions here (as in «local_ucbl.py»)"""' >$@
 
 default:all
 	@./utilities.py open # Open page on browser
@@ -67,7 +73,7 @@ lint:
 	-mypy dns_server.py infos_server.py http_server.py compile_server.py
 	pylint [^x]*.py
 clean:
-	rm -r xxx* COMPILE_REMOTE/test/LOGS/Anon* COMPILE_REMOTE/test/session.cf \
+	-rm -r xxx* COMPILE_REMOTE/test/LOGS/Anon* COMPILE_REMOTE/test/session.cf \
 	      *.log *.js *~ COMPILE_*/*~ COMPILE_*/questions.js COMPILE_*/questions.json \
 
 kill:

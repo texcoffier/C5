@@ -24,6 +24,10 @@ import aiohttp
 from aiohttp import web
 import options
 
+os.system("make xxx_local.py")
+
+import xxx_local
+
 def local_ip() -> str:
     """Get the local IP"""
     try:
@@ -36,7 +40,7 @@ def local_ip() -> str:
 # To please pylint:
 C5_HOST = C5_IP = C5_ROOT = C5_LOGIN = C5_HTTP = C5_SOCK = C5_MAIL = C5_CERT = None
 C5_LOCAL = C5_URL = C5_DIR = C5_WEBSOCKET = C5_REDIRECT = C5_VALIDATE = C5_LDAP = None
-C5_LDAP_LOGIN = C5_LDAP_PASSWORD = C5_LDAP_BASE = C5_LDAP_ENCODING = None
+C5_LDAP_LOGIN = C5_LDAP_PASSWORD = C5_LDAP_BASE = C5_LDAP_ENCODING = C5_CUSTOMIZE = None
 
 CONFIGURATIONS = (
     ('C5_HOST'         ,'Production host (for SSH)'            , local_ip()),
@@ -58,6 +62,7 @@ CONFIGURATIONS = (
     ('C5_LDAP_PASSWORD','LDAP reader password'                 , ''),
     ('C5_LDAP_BASE'    ,'LDAP user search base'                , ''),
     ('C5_LDAP_ENCODING','LDAP character encoding'              , 'utf-8'),
+    ('C5_CUSTOMIZE'    ,'File with «common.py» overloading'    , 'local_my.py'),
 )
 
 def var(name, comment, export='export '):
@@ -843,7 +848,7 @@ class Session:
                     content = await data.text()
                     lines = content.split('\n')
                     if lines[0] == 'yes':
-                        self.login = lines[1].lower()
+                        self.login = xxx_local.normalize_login(lines[1])
                         self.infos = await LDAP.infos(self.login)
                         self.record()
             if not self.login:

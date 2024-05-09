@@ -5,7 +5,7 @@ Display checkpoint page
 # pylint: disable=chained-comparison
 
 HELP_LINES = 10
-BOLD_TIME = 180 # In seconds for new students in checking room
+BOLD_TIME = 300 # In seconds for new students in checking room
 BOLD_TIME_ACTIVE = 300 # In seconds for last activity
 MENU_WIDTH = 9
 MENU_HEIGHT = 10
@@ -1612,8 +1612,8 @@ def canonize(txt):
 def get_login(student):
     """Get login from any information: name, surname, number"""
     if (not student
-            or student in STUDENT_DICT
-            or 'p' + student[1:] in STUDENT_DICT):
+            or normalize_login(student) in STUDENT_DICT
+            or student_id(student) in STUDENT_DICT):
         return student
     possibles = []
     possibles2 = []

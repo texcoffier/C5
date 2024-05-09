@@ -20,6 +20,7 @@ export C5_LDAP="ldaps://192.168.0.1:636"
 export C5_LDAP_LOGIN="admin"
 export C5_LDAP_PASSWORD="admin"
 export C5_LDAP_BASE="DC=univ-lyon1,DC=fr"
+export C5_CUSTOMIZE="local_my.py"
 
 ./utilities.py $@
 

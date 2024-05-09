@@ -2,7 +2,7 @@
 
 HEIGHTS = {}
 
-def home(sessions):
+def home(sessions, infos):
     """Display student home page"""
     content = [
         '''
@@ -27,7 +27,7 @@ def home(sessions):
     TABLE TR { cursor: pointer; transition: 0.3s opacity; }
     TABLE.close TR { opacity: 0 }
 </style>
-<h1>C5 de  ''', LOGIN, '''</h1>
+<h1>C5 de  ''', LOGIN, ' ', infos['fn'], ' ', infos['sn'], '''</h1>
 <p>
 <a target="_blank" href="/zip/C5.zip?ticket=''', TICKET, '''">
 💾 ZIP</a> contenant la dernière sauvegarde de toutes vos sessions.

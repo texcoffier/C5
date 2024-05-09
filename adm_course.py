@@ -324,7 +324,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
     def link(login, replace=False):
         """Grading link"""
         if replace:
-            txt = login.replace('p', '1')
+            txt = student_id(login)
         else:
             txt = login
         return ('<a href="/grade/'+COURSE+'/'+login+'?ticket='+TICKET
