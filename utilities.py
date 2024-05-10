@@ -1400,4 +1400,6 @@ if aiohttp.__version__ < '3.8':
     web.HTTPUnauthorized = HTTPUnauthorizedFixed
 
 if __name__ == "__main__":
+    dumps = json.dumps
+    json.dumps = lambda x: dumps(x).replace('<', '\\074')
     main()

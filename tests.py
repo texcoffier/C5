@@ -1021,7 +1021,7 @@ class Q1(Question):
         """Check session display"""
         with self.admin_rights():
             self.goto('adm/course/REMOTE=test')
-            self.check('BODY', {'innerHTML': Contains('adm_course.js')})
+            self.check('BODY', {'innerHTML': Contains('D, E, F, G, H, J, K, L')})
 
     def test_rename(self):
         """Check session renaming"""
