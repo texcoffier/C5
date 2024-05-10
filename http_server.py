@@ -472,12 +472,26 @@ async def adm_course(request:Request) -> Response:
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
         raise session.exception('not_proctor')
-    students = {}
+
+    stream = web.StreamResponse(headers={
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp",
+        })
+    stream.content_type = 'text/html;charset=UTF-8'
+    await stream.prepare(request)
+    await stream.write(
+        (session.header() + f"""
+            <script>
+            STUDENT_DICT = {json.dumps(course.active_teacher_room)};
+            COURSE = '{course.course}';
+            NOTATION = {json.dumps(course.config['notation'])};
+            NOTATIONB = {json.dumps(course.config['notationB'])};
+            STUDENTS = {{
+            """).encode('utf-8'))
+    separator = ''
     for user in sorted(os.listdir(course.dir_log)):
-        await asyncio.sleep(0)
         files:List[str] = []
         student:Dict[str,Any] = {'files': files}
-        students[user] = student = {'files': files}
         for filename in sorted(os.listdir(f'{course.dir_log}/{user}')):
             if '.' in filename:
                 # To not display executables
@@ -487,25 +501,24 @@ async def adm_course(request:Request) -> Response:
             with open(f'{course.dir_log}/{user}/http_server.log', encoding='utf-8') as file:
                 student['http_server'] = file.read()
 
-            with open(f'{course.dir_log}/{user}/grades.log', encoding='utf-8') as file:
-                student['grades'] = file.read()
+            filename = f'{course.dir_log}/{user}/grades.log'
+            if os.path.exists(filename):
+                with open(filename, encoding='utf-8') as file:
+                    student['grades'] = file.read()
 
             student['comments'] = course.get_comments(user)
         except IOError:
             pass
+        await stream.write(f'{separator} {json.dumps(user)}: {json.dumps(student)}'.encode('utf-8'))
+        separator = ','
 
-    return answer(
-        session.header() + f"""
-            <script>
-            STUDENTS = {json.dumps(students)};
-            STUDENT_DICT = {json.dumps(course.active_teacher_room)};
-            COURSE = '{course.course}';
-            NOTATION = {json.dumps(course.config['notation'])};
-            NOTATIONB = {json.dumps(course.config['notationB'])};
+    await stream.write(
+        f"""}}
             </script>
             <script src="/adm_course.js?ticket={session.ticket}"></script>
             <div id="top"></div>
-            """)
+            """.encode('utf-8'))
+    return stream
 
 async def git_pull(course, stream):
     """GIT pull for a course."""

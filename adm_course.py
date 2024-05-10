@@ -586,7 +586,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
                     text.append(Math.round(stats.key_spacing[i-1] / stats.key_spacing[i]) + ' ')
                 else:
                     break
-        text.append('<td>' + STUDENT_DICT[stats.login][2])
+        text.append('<td>' + (STUDENT_DICT[stats.login] and STUDENT_DICT[stats.login][2] or '?'))
         text.append('</tr>')
     text.append('</table>')
 
