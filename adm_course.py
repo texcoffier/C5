@@ -169,6 +169,7 @@ BUTTON { width: 100% }
 E { font-family: emoji }
 TABLE#report TR:first-child, TABLE#TOMUSS TR:first-child { position: sticky; top: 0px; background: #FFFD; }
 TABLE#report > TBODY > TR:hover > TD { background: #DDD }
+TABLE#report > TBODY > TR > TD:nth-child(2) > DIV { font-size: 60% }
 BUTTON.download { width: calc(100% - 2px); font-size: 150%; height: 1.5em; margin: 1px;}
 DIALOG { position: fixed; right: 0px; top: 0px; border: 4px solid #0F0 }
 DIALOG BUTTON { font-size: 200%; width: 2em }
@@ -184,7 +185,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 <dialog id="dialog"></dialog>
 <p>
 <table id="report" border>
-    <tr><th>Login<th>Minutes<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Comments<th>Version<th>Graders<th>Time<br>in sec.<th>Keys
+    <tr><th colspan="2">Login<th>Minutes<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Comments<th>Version<th>Graders<th>Time<br>in sec.<th>Keys
         <th>Mouse<th>Copy<th>Copy<br>Fail<th>Cut<th>Cut<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Blur<br>time<th>Time per question<br>
         <E>🐌</E> : clamped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
 """)
@@ -261,6 +262,9 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
                 + '" target="_blank">' + login + '</a>')
         else:
             text.append(login)
+        text.append('<td><div>')
+        infos = window.parent.STUDENTS[login] or {'sn': '?', 'fn': '?'}
+        text.append(infos.sn + '<br>' + infos.fn)
         stats['time'] = sum(stats['time_sum'])
         for what in WHAT:
             text.append('<td>')
@@ -293,7 +297,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             text.append('">')
             text.append(filename)
             text.append('</a>')
-    text.append('<tr><td><tt>login value</tt>\nStatus=Any')
+    text.append('<tr><td><tt>login value</tt>\nStatus=Any<td>')
     for what in WHAT:
         text.append('<td><button class="download" onclick="show(\''
                     + what + '\')">📥</button>')
@@ -314,7 +318,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
                     + '<td>' + max(times)
                     + '</tr>')
     text.append('</table></tr>')
-    text.append('<tr><td><tt>login value</tt>\nStatus=done')
+    text.append('<tr><td><tt>login value</tt>\nStatus=done<td>')
     for what in WHAT:
         text.append('<td><button  class="download" onclick="show(\''
                     + what + '\001done' + '\')">📥</button>')

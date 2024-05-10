@@ -88,19 +88,21 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                 element.innerHTML = ''.join(content)
             elif attr == 'active_teacher_room':
                 content = [
-                    '''<table class="students">
-                       <tr>
-                       <th>Student
-                       <th>Closed
-                       <th>Proctor
-                       <th>Room
-                       <th>Last student action
-                       <th>#Blurs
-                       <th>#Questions
-                       <th>Last hostname
-                       <th>Time bonus
-                       <th>Grade,#items graded
-                       </th>
+                    '''
+                    <style>TABLE.students TD:nth-child(2) { font-size: 50% }</style>
+                    <table class="students">
+                    <tr>
+                    <th colspan="2">Student
+                    <th>Closed
+                    <th>Proctor
+                    <th>Room
+                    <th>Last student action
+                    <th>#Blurs
+                    <th>#Questions
+                    <th>Last hostname
+                    <th>Time bonus
+                    <th>Grade,#items graded
+                    </th>
                     ''']
                 for login in value:
                     active, teacher, room, timestamp, nr_blurs, nr_questions, \
@@ -120,10 +122,12 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                         more += '⏱'
                     date = nice_date(date.getTime() / 1000)
                     # do_grade_login
+                    infos = STUDENTS[login] or {'sn': '?', 'fn': '?'}
                     content.append(
                         '<tr><td><span style="width:' + 2*nr_blurs + 'px"></span>'
                         + '<a target="_blank" href="/grade/' + COURSE + '/'
                         + login + '?ticket=' + TICKET + '">' + login + '</a>'
+                        + '<td>' + infos.sn + '<br>' + infos.fn + '</td>'
                         + '<td>' + active + '</td>'
                         + '<td>' + teacher + '</td>'
                         + '<td>' + room + '</td>'

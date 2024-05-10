@@ -1842,12 +1842,16 @@ async def course_config(request:Request) -> Response:
 async def adm_session(request:Request) -> Response:
     """Session configuration for administrators"""
     session, config = await get_course_config(request)
+    students = {login: await utilities.LDAP.infos(login)
+                for login in config.active_teacher_room
+               }
     return answer(
         session.header()
         + f'''
         <script>
         COURSE = {json.dumps(config.course)};
         BUILDINGS = {json.dumps(sorted(os.listdir('BUILDINGS')))};
+        STUDENTS = {json.dumps(students)};
         </script>
         <script src="/adm_session.js?ticket={session.ticket}"></script>''')
 
