@@ -989,7 +989,7 @@ async def my_zip(request:Request) -> StreamResponse: # pylint: disable=too-many-
                 continue
             makefile = config.get_makefile()
             if makefile:
-                zipper.writestr(f'C5/{config.course}/Makefile', makefile)
+                zipper.writestr(f'C5/{config.course.replace("=", "_")}/Makefile', makefile)
             for question, sources in answers.items():
                 if sources:
                     source = sources[-1]
@@ -1049,7 +1049,7 @@ async def my_git(request:Request) -> StreamResponse: # pylint: disable=too-many-
             await run('git', 'init', '-b', 'master')
             makefile = course.get_makefile()
             if makefile:
-                pathlib.Path(f'{root}/C5/{course.course}/Makefile').write_text(
+                pathlib.Path(f'{root}/C5/{course.course.replace("=", "_")}/Makefile').write_text(
                     makefile, encoding='utf8')
                 await run('git', 'add', 'Makefile')
         await run('git', 'add', course.get_question_filename(question))

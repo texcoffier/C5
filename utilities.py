@@ -655,7 +655,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def get_question_path(self, question:int) -> str:
         """Get a question title usable as filename"""
-        return f'C5/{self.course}/{self.get_question_filename(question)}'
+        return f'C5/{self.course.replace("=", "_")}/{self.get_question_filename(question)}'
 
     def get_makefile(self) -> str:
         """Get the text content of the Makefile"""
