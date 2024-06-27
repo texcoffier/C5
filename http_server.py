@@ -1429,6 +1429,26 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
         run = 'Try'
     else:
         run = 'Take'
+    minutes = int(course.stop_timestamp - course.start_timestamp)//60
+    hours = minutes // 60
+    days = hours // 24
+    weeks = days // 7
+    if weeks > 100:
+        duration = ''
+    elif weeks:
+        duration = f'{weeks} weeks'
+        if days % 7:
+            duration += f'+{days % 7}d'
+    elif days:
+        duration = f'{days} days'
+        if hours % 24:
+            duration += f'+{hours % 24}h'
+    elif hours:
+        duration = f'{hours}h'
+        if minutes % 60:
+            duration += f'{minutes % 60:02d}'
+    else:
+        duration = f'{minutes}m'
     content.append(f'''
     <tr>
     <td class="clipped course"><div>{course.course.split('=')[1]}{title}</div></td>
@@ -1439,6 +1459,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     <td>{len(with_me) or ''}
     <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
     <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
+    <td style="white-space: nowrap">{duration}
     <td style="white-space: nowrap; background:{course.config['highlight']}">{bools}
     <td> {
         f'<a target="_blank" href="/adm/session/{course.course}?ticket={session.ticket}">Edit</a>'
@@ -1475,7 +1496,7 @@ async def checkpoint_list(request:Request) -> Response:
     session = await Session.get_or_fail(request)
     titles = '''<tr class="sticky2"><th>Session<th>Comp<br>iler
         <th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
-        <th>Start date<th>Stop date<th>Options<th>Edit<th>👁<th>Waiting<br>Room
+        <th>Start date<th>Stop date<th>Duration<th>Options<th>Edit<th>👁<th>Waiting<br>Room
         <th>Creator<th>Admins<th>Graders<th>Proctors<th>Media</tr>'''
     content = [
         session.header(),

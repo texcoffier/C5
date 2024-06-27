@@ -164,4 +164,5 @@ BODY.hide13 TR > *:nth-child(13),
 BODY.hide14 TR > *:nth-child(14),
 BODY.hide15 TR > *:nth-child(15),
 BODY.hide16 TR > *:nth-child(16),
-BODY.hide17 TR > *:nth-child(17) { display: none }
+BODY.hide16 TR > *:nth-child(17),
+BODY.hide17 TR > *:nth-child(18) { display: none }
