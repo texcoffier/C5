@@ -1014,9 +1014,9 @@ async def my_git(request:Request) -> StreamResponse: # pylint: disable=too-many-
     course = CourseConfig.get(utilities.get_course(request.match_info['course']))
 
     answers, _blurs = get_answers(course.dir_log, session.login)
-    if not os.path.exists('GIT'):
-        os.mkdir('GIT')
-    root = f'GIT/{session.login}'
+    if not os.path.exists('xxx-GIT'):
+        os.mkdir('xxx-GIT')
+    root = f'xxx-GIT/{session.login}'
     if not os.path.exists(root):
         os.mkdir(root)
     git_dir = None
