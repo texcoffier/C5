@@ -1,5 +1,6 @@
 BODY {
-    font-family: sans-serif
+    font-family: sans-serif;
+    margin-top: 0px;
 }
 
 TABLE {
@@ -117,7 +118,7 @@ SPAN:hover VAR {
     display: block
 }
 
-SPAN:hover {
+TD SPAN:hover {
     background: #FF0
 }
 
@@ -125,12 +126,42 @@ BUTTON {
     font-size: 100%
 }
 
-.sticky {
+#header {
     position: sticky;
     top: 0px;
+    background: #FFE ;
+    z-index: 1000;
+}
+
+.sticky {
+    position: sticky;
+    top: 3.4em;
 }
 
 .sticky2 {
     position: sticky;
-    top: 1.6em;
+    top: 5em;
 }
+
+#column_toggles SPAN:hover { background: #EEE }
+
+#column_toggles SPAN[checked="1"] { border: 1px solid #FFF }
+#column_toggles SPAN[checked="0"] { border: 1px solid #000 }
+
+BODY.hide1 TR > *:nth-child(1),
+BODY.hide2 TR > *:nth-child(2),
+BODY.hide3 TR > *:nth-child(3),
+BODY.hide4 TR > *:nth-child(4),
+BODY.hide5 TR > *:nth-child(5),
+BODY.hide6 TR > *:nth-child(6),
+BODY.hide7 TR > *:nth-child(7),
+BODY.hide8 TR > *:nth-child(8),
+BODY.hide9 TR > *:nth-child(9),
+BODY.hide10 TR > *:nth-child(10),
+BODY.hide11 TR > *:nth-child(11),
+BODY.hide12 TR > *:nth-child(12),
+BODY.hide13 TR > *:nth-child(13),
+BODY.hide14 TR > *:nth-child(14),
+BODY.hide15 TR > *:nth-child(15),
+BODY.hide16 TR > *:nth-child(16),
+BODY.hide17 TR > *:nth-child(17) { display: none }

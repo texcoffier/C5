@@ -1482,12 +1482,7 @@ async def checkpoint_list(request:Request) -> Response:
         f'''
         <script src="/checkpoint_list.js?ticket={session.ticket}"></script>
         <link rel="stylesheet" href="/checkpoint_list.css?ticket={session.ticket}">
-        <title>SESSIONS</title>
-        <select id="filters"></select> ← filter only what matters to you.
-        <div style="float: right">
-        <span id="nr_doing_grading"></span> active graders</span>,
-        <span id="nr_actives"></span> active students</span>
-        </div>
+        <div id="header"></div>
         <table>''']
     def hide_header():
         if '<th>' in content[-1]:
@@ -1820,6 +1815,7 @@ async def get_course_config(request:Request) -> Tuple[Session,CourseConfig]:
             """Config for a set of sessions defined by regular expression"""
             def __init__(self, **kargs): # pylint: disable=super-init-not-called
                 self.__dict__.update(kargs)
+            active_teacher_room = ()
         first = min(matches, key=lambda x: x.course)
         config = FakeConfig(
             session=first.session,

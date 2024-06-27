@@ -43,8 +43,6 @@ def filter_change(event):
 def init_filters(the_filter):
     """Fill the options of the select filter"""
     INTERFACE.filter_menu.onchange = filter_change
-    INTERFACE.filter_menu.className = 'sticky'
-    INTERFACE.filter_menu.style.zIndex = 2
     options = []
     rows = document.getElementsByTagName('TR')
     for row in rows:
@@ -148,16 +146,17 @@ def init_interface(nr_doing_grading):
         INTERFACE.filter = localStorage['checkpoint_list']
     except: # pylint: disable=bare-except
         INTERFACE.filter = ''
+    try:
+        columns = localStorage['columns']
+    except: # pylint: disable=bare-except
+        columns = None
+    if not columns:
+        columns = '["Compiler","Students","Start date","Stop date","Options","Edit","👁","Waiting Room"]'
+    INTERFACE.columns = JSON.parse(columns)
     if url.indexOf('/*/') != -1:
         INTERFACE.filter = decodeURIComponent(url.replace(RegExp('.*/'), '').split('?')[0])
     if not INTERFACE.filter or INTERFACE.filter == '':
         INTERFACE.filter = 'Toutes les sessions'
-    update(INTERFACE.filter)
-    INTERFACE.filter_menu = document.getElementById('filters')
-    init_filters(INTERFACE.filter)
-    INTERFACE.filter_element = document.getElementById('edit')
-    if INTERFACE.filter_element:
-        INTERFACE.filter_element.value = INTERFACE.filter
 
     value = localStorage['student'] or ''
     element = document.createElement('DIV')
@@ -168,3 +167,60 @@ def init_interface(nr_doing_grading):
     modify <b>your history</b> not the student one.
     '''
     document.body.appendChild(element)
+
+    top = ['''<title>SESSIONS</title>
+<select id="filters"></select> ← filter only what matters to you.
+<div style="float: right">
+<span id="nr_doing_grading"></span> active graders</span>,
+<span id="nr_actives"></span> active students</span>
+</div>
+<div id="column_toggles"  style="font-size:80%;white-space:nowrap"  onclick="column_toggle(event)">Columns:'''
+          ]
+    for i, header in enumerate(['Compiler', 'Students', 'Waiting', 'Actives', 'With me',
+                   'Start date', 'Stop date', 'Options', 'Edit', '👁', 'Waiting Room',
+                   'Creator', 'Admins', 'Graders', 'Proctors', 'Media']):
+        if header in INTERFACE.columns:
+            checked = '0'
+        else:
+            checked = '1'
+        top.append('<span index="' + (i+2) + '" checked="'
+                   + checked + '">' + header + '</span>')
+        top.append(' ')
+    top.pop()
+
+    top.append('''
+        </div>
+        ''')
+
+    document.getElementById('header').innerHTML = ''.join(top)
+
+    update(INTERFACE.filter)
+    INTERFACE.filter_menu = document.getElementById('filters')
+    init_filters(INTERFACE.filter)
+    INTERFACE.filter_element = document.getElementById('edit')
+    if INTERFACE.filter_element:
+        INTERFACE.filter_element.value = INTERFACE.filter
+    update_body_class()
+
+def column_toggle(event):
+    """Show Hide column"""
+    span = event.target
+    if span.tagName != 'SPAN':
+        return
+    checked = int(span.getAttribute('checked'))
+    span.setAttribute('checked', 1 - checked)
+    column = span.textContent
+    if checked:
+        INTERFACE.columns.append(column)
+    else:
+        INTERFACE.columns = [i for i in INTERFACE.columns if i != column]
+    update_body_class()
+    localStorage['columns'] = JSON.stringify(INTERFACE.columns)
+
+def update_body_class():
+    """To hide columns"""
+    hidden = []
+    for col in document.getElementById('column_toggles').getElementsByTagName('SPAN'):
+        if col.getAttribute('checked') == '1':
+            hidden.append('hide' + col.getAttribute('index'))
+    document.body.className = ' '.join(hidden)

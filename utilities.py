@@ -1137,7 +1137,7 @@ ACTIONS = {
         sudo sh -c '
             set -e
             apt update
-            apt -y install astyle nginx certbot python3-websockets python3-ldap python3-aiohttp python3-psutil python3-certbot-nginx npm racket zip
+            apt -y install astyle nginx certbot python3-websockets python3-ldap python3-aiohttp python3-psutil python3-certbot-nginx npm racket zip curl
             apt -y upgrade
             # set-timezone Europe/Paris
             '
@@ -1163,7 +1163,7 @@ ACTIONS = {
         """,
     'cp': f"""
         tar -cf - $(git ls-files | grep -v -e DOCUMENTATION -e BUILDINGS) |
-        ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} ; tar -xvf - ; touch *.py'
+        ssh {C5_LOGIN}@{C5_HOST} 'cd {C5_DIR} && tar -xvf - && touch *.py'
         """,
     'diff': f"""
         mkdir DIFF
