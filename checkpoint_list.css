@@ -135,12 +135,12 @@ BUTTON {
 
 .sticky {
     position: sticky;
-    top: 3.4em;
+    top: 2.8em;
 }
 
 .sticky2 {
     position: sticky;
-    top: 5em;
+    top: 4.2em;
 }
 
 #column_toggles SPAN:hover { background: #EEE }
