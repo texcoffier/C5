@@ -24,6 +24,15 @@ sys.stderr.close()
 sys.stderr = open('infos_server.log', 'a', encoding='utf-8') # pylint: disable=consider-using-with
 print(f"\nStart at {time.ctime()}", file=sys.stderr)
 
+if C5_LDAP_LOGIN == 'admin' and C5_LDAP_PASSWORD == 'admin':
+    for line in sys.stdin:
+        login = line.strip()
+        print("About:", login, file=sys.stderr)
+        sys.stdout.write(
+            json.dumps([login, {'fn': 'FN' + login, 'sn': 'SN' + login}]) + '\n')
+        sys.stdout.flush()
+    sys.exit(0)
+
 while True:
     try:
         print("Before LDAP bind", file=sys.stderr)

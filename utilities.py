@@ -108,6 +108,7 @@ class Process: # pylint: disable=invalid-name
             )
         asyncio.ensure_future(self.reader())
         atexit.register(self.process.kill)
+        print(self.process, self.command)
 
     async def reader(self) -> None:
         """Parse infos from process"""
@@ -115,6 +116,9 @@ class Process: # pylint: disable=invalid-name
             raise ValueError('Bug')
         while True:
             infos = await self.process.stdout.readline()
+            if not infos:
+                print('FAIL READ', self.process, self.process.stdout, flush=True)
+                return
             infos = json.loads(infos)
             self.cache[infos[0]] = infos[1]
             if '/' not in infos[0]:
@@ -571,10 +575,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         # Clearly not efficient
         students = []
         for student, active_teacher_room in self.active_teacher_room.items():
-            if C5_VALIDATE:
-                infos = await LDAP.infos(student)
-            else:
-                infos = {'fn': 'FN' + student, 'sn': 'SN'+student}
+            infos = await LDAP.infos(student)
             students.append([student, active_teacher_room, infos])
         return students
 

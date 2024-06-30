@@ -228,7 +228,7 @@ class Tests: # pylint: disable=too-many-public-methods
         action.perform()
     def goto(self, url):
         """Load page"""
-        print('\tGOTO', url)
+        print('\tGOTO', url, self.ticket)
         # This line is here to not display the confirming Leave Page popup
         # because Selenium can manage it properly:
         # It says there is a popup by deny dismissing it (sometime randomly)

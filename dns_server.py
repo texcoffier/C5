@@ -31,13 +31,16 @@ def analyse():
         sys.stdout.write(json.dumps([addr, {'name': name.lower(), 'time': int(start)}]) + '\n')
         sys.stdout.flush()
         print(f"Done in {time.time() - start:6.3f} seconds\n", file=sys.stderr)
+    print("stdin closed", file=sys.stderr)
     sys.exit(0) # stdin closed
 
 while True:
     try:
         analyse()
     except KeyboardInterrupt:
+        print(f"Stop at {time.ctime()} keyboard interrupt", file=sys.stderr)
         break
     except: # pylint: disable=bare-except
+        print("EXCEPTION!", file=sys.stderr)
         traceback.print_exc()
         time.sleep(0.01) # Do not overload LDAP server
