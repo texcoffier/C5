@@ -841,16 +841,17 @@ class Session:
             return self.login
         service = service.replace(f'http://{C5_IP}:{C5_HTTP}/', f'https://{C5_URL}/')
         if C5_VALIDATE:
-            async with aiohttp.ClientSession() as session:
-                url = C5_VALIDATE % (urllib.parse.quote(service),
-                                     urllib.parse.quote(self.ticket))
-                async with session.get(url) as data:
-                    content = await data.text()
-                    lines = content.split('\n')
-                    if lines[0] == 'yes':
-                        self.login = xxx_local.normalize_login(lines[1])
-                        self.infos = await LDAP.infos(self.login)
-                        self.record()
+            if self.ticket:
+                async with aiohttp.ClientSession() as session:
+                    url = C5_VALIDATE % (urllib.parse.quote(service),
+                                        urllib.parse.quote(self.ticket))
+                    async with session.get(url) as data:
+                        content = await data.text()
+                        lines = content.split('\n')
+                        if lines[0] == 'yes':
+                            self.login = xxx_local.normalize_login(lines[1])
+                            self.infos = await LDAP.infos(self.login)
+                            self.record()
             if not self.login:
                 raise web.HTTPFound(C5_REDIRECT + urllib.parse.quote(service))
         else:
@@ -1193,6 +1194,7 @@ server {{
         proxy_set_header Upgrade \\\\\\$http_upgrade;
         proxy_set_header Connection Upgrade;
         proxy_set_header Host \\\\\\$host;
+        proxy_set_header X-Forwarded-For \\\\\\$proxy_add_x_forwarded_for;
         }}
     location ~ {{
     proxy_pass http://127.0.0.1:{C5_HTTP};
