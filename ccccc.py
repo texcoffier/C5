@@ -732,6 +732,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay.innerHTML = html(self.source_with_newlines)
         self.overlay.className = 'overlay language-' + self.options['language']
         if self.options['coloring']:
+            del self.overlay.dataset.highlighted
             hljs.highlightElement(self.overlay)
         for line_char, what in self.highlight_errors.Items():
             line_char = line_char.split(':')
