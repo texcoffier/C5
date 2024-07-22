@@ -1139,7 +1139,7 @@ ACTIONS = {
         sudo sh -c '
             set -e
             apt update
-            apt -y install astyle nginx certbot python3-websockets python3-ldap python3-aiohttp python3-psutil python3-certbot-nginx npm racket zip curl
+            apt -y install astyle nginx certbot python3-websockets python3-ldap python3-aiohttp python3-psutil python3-certbot-nginx npm racket zip curl rsync
             apt -y upgrade
             # set-timezone Europe/Paris
             '

@@ -151,7 +151,7 @@ def init_interface(nr_doing_grading):
     except: # pylint: disable=bare-except
         columns = None
     if not columns:
-        columns = '["Compiler","Students","Start date","Duration","Options","Edit","👁","Waiting Room"]'
+        columns = '["Compiler","Title","Students","Start date","Duration","Options","Edit","👁","Waiting Room"]'
     INTERFACE.columns = JSON.parse(columns)
     if url.indexOf('/*/') != -1:
         INTERFACE.filter = decodeURIComponent(url.replace(RegExp('.*/'), '').split('?')[0])
@@ -176,7 +176,7 @@ def init_interface(nr_doing_grading):
 </div>
 <div id="column_toggles"  style="font-size:80%;white-space:nowrap"  onclick="column_toggle(event)">Columns:'''
           ]
-    for i, header in enumerate(['Compiler', 'Students', 'Waiting', 'Actives', 'With me',
+    for i, header in enumerate(['Compiler', 'Title', 'Students', 'Waiting', 'Actives', 'With me',
                    'Start date', 'Stop date', 'Duration', 'Options', 'Edit', '👁', 'Waiting Room',
                    'Creator', 'Admins', 'Graders', 'Proctors', 'Media']):
         if header in INTERFACE.columns:

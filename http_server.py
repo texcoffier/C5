@@ -1421,10 +1421,6 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     for media in course.media:
         medias.append(f'<a target="_blank" href="/media/{course.course}/{media}?ticket={session.ticket}">{media}</a>')
     medias = ' '.join(medias)
-    if course.title:
-        title = f' «{course.title}»'
-    else:
-        title = ''
     if session.is_grader(course):
         run = 'Try'
     else:
@@ -1451,8 +1447,9 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
         duration = f'{minutes}m'
     content.append(f'''
     <tr>
-    <td class="clipped course"><div>{course.course.split('=')[1]}{title}</div></td>
+    <td class="clipped course"><div>{course.course.split('=')[1]}</div></td>
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
+    <td class="clipped title"><div>{html.escape(course.title)}</div>
     <td>{len(course.active_teacher_room) or ''}
     <td>{len(waiting) if course.checkpoint else ''}
     <td><b>{course.number_of_active_students() or ''}</b>
@@ -1495,6 +1492,7 @@ async def checkpoint_list(request:Request) -> Response:
     """Page with all checkpoints"""
     session = await Session.get_or_fail(request)
     titles = '''<tr class="sticky2"><th>Session<th>Comp<br>iler
+        <th>Title
         <th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
         <th>Start date<th>Stop date<th>Duration<th>Options<th>Edit<th>👁<th>Waiting<br>Room
         <th>Creator<th>Admins<th>Graders<th>Proctors<th>Media</tr>'''
