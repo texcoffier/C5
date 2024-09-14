@@ -1990,12 +1990,19 @@ create_page(OPTIONS.default_building or "Nautibus")
 ROOM = Room(document.getElementById('buildings').value)
 scheduler.update_page = True
 
+def reload_on_error(event):
+    if isinstance(event, ProgressEvent):
+        return
+    print('Connexion closed')
+    print(event)
+    window.location.reload()
+
 if COURSE == "=IPS":
     clean_up_bad_placements()
 else:
     XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
     XHR.addEventListener('readystatechange', reader)
-    XHR.addEventListener('error', bind(window.location.reload, window.location))
+    XHR.addEventListener('error', reload_on_error)
     XHR.open("GET", '/journal/' + COURSE + '?ticket=' + TICKET)
     XHR.send()
 

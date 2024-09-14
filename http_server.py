@@ -1978,8 +1978,13 @@ async def journal(request:Request) -> StreamResponse:
     stream = StreamResponse()
     await stream.prepare(request)
     course.streams.append(stream)
-    while stream in course.streams:
+    while stream in tuple(course.streams):
         await asyncio.sleep(60)
+        try:
+            await stream.write(b'\n')
+            await stream.drain()
+        except ConnectionResetError:
+            course.streams.remove(stream)
     return stream
 
 async def record_feedback(request:Request) -> Response:
