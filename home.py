@@ -29,7 +29,7 @@ def home(sessions, infos):
 </style>
 <h1>C5 de  ''', LOGIN, ' ', infos['fn'], ' ', infos['sn'], '''</h1>
 <p>
-<a target="_blank" href="/zip/C5.zip?ticket=''', TICKET, '''">
+<a target="_blank" href="zip/C5.zip?ticket=''', TICKET, '''">
 💾 ZIP</a> contenant la dernière sauvegarde de toutes vos sessions.
 <br> 
 <p>

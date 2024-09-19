@@ -258,7 +258,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         stats = cache[login]
         text.append('<tr><td>')
         if student.status != 'checkpoint':
-            text.append('<a href="/checkpoint/' + COURSE + '?ticket=' + TICKET + '#' + login
+            text.append('<a href="checkpoint/' + COURSE + '?ticket=' + TICKET + '#' + login
                 + '" target="_blank">' + login + '</a>')
         else:
             text.append(login)
@@ -287,7 +287,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
                         + 'px" class="sec' + i % len(COLORS) + '">' + more + '</span>')
         text.append('<td>')
         for filename in student.files:
-            text.append(' <a target="_blank" href="/adm/get/COMPILE_'
+            text.append(' <a target="_blank" href="adm/get/COMPILE_'
                 + COURSE.replace('=', '/') + '/')
             text.append('LOGS/')
             text.append(login)
@@ -331,7 +331,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             txt = student_id(login)
         else:
             txt = login
-        return ('<a href="/grade/'+COURSE+'/'+login+'?ticket='+TICKET
+        return ('<a href="grade/'+COURSE+'/'+login+'?ticket='+TICKET
                 + '" target="_blank">' + txt + '</a>')
 
     def links(logins, replace=False):

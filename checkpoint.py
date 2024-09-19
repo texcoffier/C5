@@ -1018,17 +1018,17 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     self.move_student_to(self.moving, column, line)
             elif not self.moved:
                 # Simple click
-                record('/checkpoint/SPY/' + COURSE + '/' + self.moving['login'])
+                record('checkpoint/SPY/' + COURSE + '/' + self.moving['login'])
         else:
             self.highlight_disk = None
-            record('/checkpoint/' + COURSE + '/' + self.moving['login'] + '/EJECT')
+            record('checkpoint/' + COURSE + '/' + self.moving['login'] + '/EJECT')
             self.force_update_waiting_room = True
     def drag_stop_click_on_computer_menu(self):
         """Select a compulter malfunction"""
         if self.selected_item:
             if self.selected_item[-1] == '!':
                 self.selected_item = ''
-            record('/computer/' + COURSE + '/'
+            record('computer/' + COURSE + '/'
                    + self.selected_computer[0] + '/'
                    + self.selected_computer[1] + '/'
                    + self.selected_computer[2] + '/'
@@ -1251,7 +1251,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 version = version.lower()
             else:
                 version = student.version or 'a'
-        record('/checkpoint/' + COURSE + '/' + student.login + '/'
+        record('checkpoint/' + COURSE + '/' + student.login + '/'
                + self.building + ',' + column + ',' + line + ',' + version)
         self.highlight_disk = [column, line, millisecs()]
     def stop_move_student(self, event):
@@ -1262,7 +1262,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.move_student_to(STUDENT_DICT[Student.moving_student], pos[0], pos[1])
         else:
             if Student.moving_student_position == [self.event_x, self.event_y]:
-                record('/checkpoint/SPY/' + COURSE + '/' + Student.moving_student)
+                record('checkpoint/SPY/' + COURSE + '/' + Student.moving_student)
         document.body.onmousemove = document.body.ontouchmove = None
         window.onmouseup = document.body.ontouchend = None
         document.getElementById('top').style.background = TOP_INACTIVE
@@ -1553,7 +1553,7 @@ def send_alert():
     """Sent an on map alert message to all teachers"""
     message = prompt("Message à afficher sur les plans de tous les surveillants :")
     if message:
-        record('/checkpoint/MESSAGE/' + COURSE + '/' + encodeURIComponent(message))
+        record('checkpoint/MESSAGE/' + COURSE + '/' + encodeURIComponent(message))
 
 def update_page():
     """Update students"""
@@ -1592,12 +1592,12 @@ def update_page():
 
 def close_exam(login):
     """Terminate the student exam"""
-    record('/checkpoint/' + COURSE + '/' + login + '/STOP')
+    record('checkpoint/' + COURSE + '/' + login + '/STOP')
     spy_close()
 
 def open_exam(login):
     """Open again the student exam"""
-    record('/checkpoint/' + COURSE + '/' + login + '/RESTART')
+    record('checkpoint/' + COURSE + '/' + login + '/RESTART')
     spy_close()
 
 def spy_close():
@@ -1757,7 +1757,7 @@ def spy_concat(sources):
 
 def set_time_bonus(element, login):
     """Recode and update student bonus time"""
-    record('/checkpoint/TIME_BONUS/' + COURSE + '/' + login + '/' + 60*int(element.value))
+    record('checkpoint/TIME_BONUS/' + COURSE + '/' + login + '/' + 60*int(element.value))
     element.style.background = "#DFD"
     STUDENT_DICT[login].bonus_time = element.value
 
@@ -2003,7 +2003,7 @@ else:
     XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
     XHR.addEventListener('readystatechange', reader)
     XHR.addEventListener('error', reload_on_error)
-    XHR.open("GET", '/journal/' + COURSE + '?ticket=' + TICKET)
+    XHR.open("GET", 'journal/' + COURSE + '?ticket=' + TICKET)
     XHR.send()
 
 setInterval(scheduler, 20)

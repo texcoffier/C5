@@ -11,7 +11,7 @@ def display(): # pylint: disable=too-many-statements
     text = [
         '<title>Root</title>',
         MORE,
-        '<h1>Root (goto <a href="/checkpoint/*?ticket=', TICKET, '">Sessions</a>)</h1>',
+        '<h1>Root (goto <a href="checkpoint/*?ticket=', TICKET, '">Sessions</a>)</h1>',
     '''
     <style>
         BODY { font-family: sans-serif; background: #EEE }
@@ -81,7 +81,7 @@ def display(): # pylint: disable=too-many-statements
     for room in CONFIG.ips_per_room:
         content.append(room + ' ' + CONFIG.ips_per_room[room])
     add_textarea('/adm/c5/ips_per_room', '\n'.join(content))
-    text.append('<a href="/checkpoint/HOSTS/*?ticket=' + TICKET + '">Check IP usage per room</a>')
+    text.append('<a href="checkpoint/HOSTS/*?ticket=' + TICKET + '">Check IP usage per room</a>')
     text.append('<hr>')
     text.append('It is a student if the login match regexp: ')
     add_input('/adm/c5/student', CONFIG.student, name="student")
@@ -103,7 +103,7 @@ def display(): # pylint: disable=too-many-statements
     text.append('<hr>Javascript errors for the last:<ul>')
     def link(txt, delta):
         """Link"""
-        return (' <a href="/adm/js_errors/'
+        return (' <a href="adm/js_errors/'
                 + int(millisecs()/1000 - delta) + '?ticket=' + TICKET + '">'
                 + txt + '</a>')
     text.append('<li>')

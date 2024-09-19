@@ -405,17 +405,20 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             asyncio.ensure_future(self.send_journal())
     async def send_journal(self):
         """Send the changes to all listening browsers"""
+        print("start")
         while self.to_send:
             data = self.to_send.pop(0)
             if data[0] == 'active_teacher_room' and data[3] is None: # New student
                 self.to_send.append(('infos', data[2], await LDAP.infos(data[2])))
             data = (json.dumps(data) + '\n').encode('utf-8')
+            print(len(self.streams), data)
             for stream in tuple(self.streams):
                 try:
                     await stream.write(data)
                     await stream.drain()
                 except: # pylint: disable=bare-except
                     self.streams.remove(stream)
+        print("done")
         self.send_journal_running = False
     def get_stop(self, login:str) -> int:
         """Get stop date, taking login into account"""
@@ -894,7 +897,8 @@ class Session:
            ) or self.browser != browser or self.too_old():
             url = getattr(request, 'url', None)
             if url and request.method == 'GET':
-                raise web.HTTPFound(str(request.url).split('?', 1)[0])
+                url = str(url).replace(f'http://{C5_IP}:{C5_HTTP}/', f'https://{C5_URL}/')
+                raise web.HTTPFound(url.split('?', 1)[0])
             return False
         return True
 
@@ -1005,7 +1009,7 @@ class Session:
             <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
             <meta charset="utf-8">
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-            <link REL="icon" href="/favicon.ico?ticket={self.ticket}">
+            <link REL="icon" href="favicon.ico?ticket={self.ticket}">
             </head>
             <body></body></html>
             <script>
@@ -1045,7 +1049,7 @@ class Session:
             <head>
             <meta charset="utf-8">
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-            <link REL="icon" href="/favicon.ico?ticket={self.ticket}">
+            <link REL="icon" href="favicon.ico?ticket={self.ticket}">
             </head>
             <h1>{name} : {CONFIG.config['messages'].get(key, key)}</h1>
             {more}
@@ -1062,7 +1066,7 @@ class Session:
             <head>
             <meta charset="utf-8">
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-            <link REL="icon" href="/favicon.ico?ticket={self.ticket}">
+            <link REL="icon" href="favicon.ico?ticket={self.ticket}">
             </head>
             <h1>{name} : {CONFIG.config['messages'].get(key, key)}</h1>
             """,
@@ -1298,7 +1302,7 @@ With Firefox:
         echo STOP SERVERS
         for I in http_server compile_server infos_server dns_server
         do
-            pkill --oldest -f python3\ ./\$I
+            pkill --uid \$(id -u) --oldest -f python3\ ./\$I
         done
         """,
     'open': f"""

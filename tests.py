@@ -932,7 +932,7 @@ return sum ;
             self.goto('checkpoint/REMOTE=test')
             self.check(f'DIV[login=Anon_{student}]', {'innerHTML': Contains(student)})
             self.driver.execute_script(
-                f"record('/checkpoint/REMOTE=test/Anon_{student}/Nautibus,42,42,a')")
+                f"record('checkpoint/REMOTE=test/Anon_{student}/Nautibus,42,42,a')")
             admin = self.ticket
 
             self.ticket = student
@@ -1077,7 +1077,7 @@ class Q1(Question):
                 files={'course': ('xxx-test.png', content, 'text/plain')},
                 verify=False
             )
-            assert 'src="/media/REMOTE=grapic/xxx-test.png' in response.text
+            assert 'src="media/REMOTE=grapic/xxx-test.png' in response.text
         self.ticket = save_ticket
         with self.admin_rights():
             self.goto('adm/session/REMOTE=grapic')

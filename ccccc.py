@@ -1533,7 +1533,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def do_stop(self):
         """Really stop the session"""
-        record('/checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
+        record('checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
         document.body.innerHTML = self.options['stop_done']
         document.exitFullscreen()
 
@@ -1890,11 +1890,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 links.append(' ')
             if self.options['display_local_zip']:
                 tips.append("Sauvegarder un ZIP de toutes les questions sur la machine locale")
-                links.append('<a target="_blank" href="/zip/' + COURSE + window.location.search
+                links.append('<a target="_blank" href="zip/' + COURSE + window.location.search
                     + '">' + self.options['icon_local'] + '</a>')
             if self.options['display_local_git']:
                 tips.append("Sauvegarder sur la machine locale avec l'historique dans GIT")
-                links.append('<a target="_blank" href="/git/' + COURSE + window.location.search
+                links.append('<a target="_blank" href="git/' + COURSE + window.location.search
                      + '">' + self.options['icon_git'] + '</a>')
             tips.append(' ')
             links.append(' ')
@@ -2510,7 +2510,7 @@ def version_change(select):
 
 def feedback_change(element):
     """The grader changed the feedback level"""
-    record('/record_feedback/' + COURSE + '/' + STUDENT + '/' + element.value)
+    record('record_feedback/' + COURSE + '/' + STUDENT + '/' + element.value)
 
 def update_feedback(feedback):
     """Update the feedback from server answer"""
@@ -2527,9 +2527,9 @@ def update_feedback(feedback):
 def grading_toggle(element):
     """Grading done or not"""
     if element.feedback != 5:
-        record('/record_feedback/' + COURSE + '/' + STUDENT + '/5')
+        record('record_feedback/' + COURSE + '/' + STUDENT + '/5')
     else:
-        record('/record_feedback/' + COURSE + '/' + STUDENT + '/1')
+        record('record_feedback/' + COURSE + '/' + STUDENT + '/1')
 
 ccccc = CCCCC()
 G = Grapic(ccccc)

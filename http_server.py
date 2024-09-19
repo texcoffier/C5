@@ -213,9 +213,9 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
     return answer(
         session.header(login=login) + f'''
         <title>{title}</title>
-        <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
-        <link rel="stylesheet" href="/ccccc.css?ticket={session.ticket}">
-        <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
+        <link rel="stylesheet" href="HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
+        <link rel="stylesheet" href="ccccc.css?ticket={session.ticket}">
+        <script src="HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         <script>
             GRADING = {int(grading)};{notation}
             STUDENT = "{login}";
@@ -237,7 +237,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             COURSE_CONFIG = {json.dumps(course.get_config())};
             COURSE_CONFIG['feedback'] = {feedback};
         </script>
-        <script src="/ccccc.js?ticket={session.ticket}"></script>''')
+        <script src="ccccc.js?ticket={session.ticket}"></script>''')
 
 
 def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
@@ -515,7 +515,7 @@ async def adm_course(request:Request) -> Response:
     await stream.write(
         f"""}}
             </script>
-            <script src="/adm_course.js?ticket={session.ticket}"></script>
+            <script src="adm_course.js?ticket={session.ticket}"></script>
             <div id="top"></div>
             """.encode('utf-8'))
     return stream
@@ -640,7 +640,7 @@ async def adm_media(request:Request) -> Response:
                 style="float: right; font-family: emoji"
         >🗑</button>
         <br>
-        <img src="/media/{course.course}/{media_name}?ticket={session.ticket}"
+        <img src="media/{course.course}/{media_name}?ticket={session.ticket}"
              style="vertical-align: bottom"
         ></div>''')
     return answer(session.header() + ''.join(medias))
@@ -929,7 +929,7 @@ async def adm_root(request:Request, more:str='') -> Response:
     session = await get_root_login(request)
     return answer(
         session.header((), more)
-        + f'<script src="/adm_root.js?ticket={session.ticket}"></script>')
+        + f'<script src="adm_root.js?ticket={session.ticket}"></script>')
 
 async def adm_get(request:Request) -> StreamResponse:
     """Get a file or a ZIP"""
@@ -1342,7 +1342,7 @@ async def store_media(request:Request, course:CourseConfig) -> str:
         os.mkdir(course.dir_media)
     with open(f'{course.dir_media}/{media_name}' , "wb") as file:
         file.write(filehandle.file.read())
-    return f"""<tt style="font-size:100%">'&lt;img src="/media/{course.course}/{media_name}'
+    return f"""<tt style="font-size:100%">'&lt;img src="media/{course.course}/{media_name}'
         + location.search + '"&gt;'</tt>"""
 
 async def upload_media(request:Request) -> Response:
@@ -1419,7 +1419,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     status = course.status('')
     medias = []
     for media in course.media:
-        medias.append(f'<a target="_blank" href="/media/{course.course}/{media}?ticket={session.ticket}">{media}</a>')
+        medias.append(f'<a target="_blank" href="media/{course.course}/{media}?ticket={session.ticket}">{media}</a>')
     medias = ' '.join(medias)
     if session.is_grader(course):
         run = 'Try'
@@ -1459,16 +1459,16 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     <td style="white-space: nowrap">{duration}
     <td style="white-space: nowrap; background:{course.config['highlight']}">{bools}
     <td> {
-        f'<a target="_blank" href="/adm/session/{course.course}?ticket={session.ticket}">Edit</a>'
+        f'<a target="_blank" href="adm/session/{course.course}?ticket={session.ticket}">Edit</a>'
         if session.is_admin(course) else ''
     }
     <td> {
-        f'<a target="_blank" href="/={course.course}?ticket={session.ticket}">{run}</a>'
+        f'<a target="_blank" href="={course.course}?ticket={session.ticket}">{run}</a>'
         if status.startswith('running') or session.is_grader(course)
         else ''
     }
     <td> {
-        f'<a target="_blank" href="/checkpoint/{course.course}?ticket={session.ticket}">Place</a>'
+        f'<a target="_blank" href="checkpoint/{course.course}?ticket={session.ticket}">Place</a>'
         if session.is_proctor(course) else ''
     }
     <td class="clipped names"><div>{course.creator}</div>
@@ -1499,8 +1499,8 @@ async def checkpoint_list(request:Request) -> Response:
     content = [
         session.header(),
         f'''
-        <script src="/checkpoint_list.js?ticket={session.ticket}"></script>
-        <link rel="stylesheet" href="/checkpoint_list.css?ticket={session.ticket}">
+        <script src="checkpoint_list.js?ticket={session.ticket}"></script>
+        <link rel="stylesheet" href="checkpoint_list.css?ticket={session.ticket}">
         <div id="header"></div>
         <table>''']
     def hide_header():
@@ -1598,10 +1598,10 @@ async def checkpoint(request:Request) -> Response:
         MESSAGES = {json.dumps(course.messages)};
         OPTIONS = {json.dumps(course.config)};
         </script>
-        <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
-        <script src="/checkpoint.js?ticket={session.ticket}"></script>
-        <link rel="stylesheet" href="/HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
-        <script src="/HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
+        <script src="checkpoint/BUILDINGS?ticket={session.ticket}"></script>
+        <script src="checkpoint.js?ticket={session.ticket}"></script>
+        <link rel="stylesheet" href="HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
+        <script src="HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         ''')
 
 async def checkpoint_hosts(request:Request) -> Response:
@@ -1630,8 +1630,8 @@ async def checkpoint_hosts(request:Request) -> Response:
         OPTIONS = {json.dumps({"default_building": ""})};
         IPS = {json.dumps(ips)};
         </script>
-        <script src="/checkpoint/BUILDINGS?ticket={session.ticket}"></script>
-        <script src="/checkpoint.js?ticket={session.ticket}"></script>
+        <script src="checkpoint/BUILDINGS?ticket={session.ticket}"></script>
+        <script src="checkpoint.js?ticket={session.ticket}"></script>
         ''')
 
 async def update_browser_data(course:CourseConfig) -> Response:
@@ -1730,7 +1730,7 @@ async def home(request:Request) -> Response:
                      course.title, course.start_timestamp, course.stop_timestamp,
                      login in course.tt_list))
     return answer(f'''{session.header(login=login)}
-<script src="/home.js?ticket={session.ticket}"></script>
+<script src="home.js?ticket={session.ticket}"></script>
 <script>home({json.dumps(data)}, {await utilities.LDAP.infos(login)})</script>
 ''')
 
@@ -1868,7 +1868,7 @@ async def adm_session(request:Request) -> Response:
         BUILDINGS = {json.dumps(sorted(os.listdir('BUILDINGS')))};
         STUDENTS = {json.dumps(students)};
         </script>
-        <script src="/adm_session.js?ticket={session.ticket}"></script>''')
+        <script src="adm_session.js?ticket={session.ticket}"></script>''')
 
 async def adm_editor(request:Request) -> Response:
     """Session questions editor"""
@@ -1970,6 +1970,8 @@ async def js_errors(request:Request) -> Response:
         await write_lines(stream, lines)
     return stream
 
+
+# utilities.CourseConfig.get("COMPILE_REMOTE/LIFAPI_TP01_Prise_en_mains").streams[1].enable_chunked_encoding()
 async def journal(request:Request) -> StreamResponse:
     """Get a file or a ZIP"""
     session, course = await get_teacher_login_and_course(request)
@@ -1984,7 +1986,10 @@ async def journal(request:Request) -> StreamResponse:
             await stream.write(b'\n')
             await stream.drain()
         except ConnectionResetError:
-            course.streams.remove(stream)
+            try:
+                course.streams.remove(stream)
+            except ValueError:
+                pass
     return stream
 
 async def record_feedback(request:Request) -> Response:
@@ -2012,10 +2017,10 @@ async def full_stats(request:Request) -> Response:
     return answer(f'''<!DOCTYPE html>
     <title>STATS</title>
     <script>STATS = {data}</script>
-    <link REL="icon" href="/favicon.ico?ticket={session.ticket}">
+    <link REL="icon" href="favicon.ico?ticket={session.ticket}">
     <div id="header"></div>
     <div id="top"></div>
-    <script src="/stats.js?ticket={session.ticket}"></script>
+    <script src="stats.js?ticket={session.ticket}"></script>
     ''')
 
 APP = web.Application()

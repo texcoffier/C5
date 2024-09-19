@@ -125,7 +125,7 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     infos = STUDENTS[login] or {'sn': '?', 'fn': '?'}
                     content.append(
                         '<tr><td><span style="width:' + 2*nr_blurs + 'px"></span>'
-                        + '<a target="_blank" href="/grade/' + COURSE + '/'
+                        + '<a target="_blank" href="grade/' + COURSE + '/'
                         + login + '?ticket=' + TICKET + '">' + login + '</a>'
                         + '<td>' + infos.sn + '<br>' + infos.fn + '</td>'
                         + '<td>' + active + '</td>'
@@ -254,13 +254,13 @@ def select_tab(label):
     elif label == "Try B":
         content = '<iframe src="=' + COURSE + '/Vb?ticket=' + TICKET + '"></iframe>'
     elif label == "Place":
-        content =  '<iframe src="/checkpoint/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
+        content =  '<iframe src="checkpoint/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
     elif label == 'Edit':
-        content = '<iframe src="/adm/editor/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
+        content = '<iframe src="adm/editor/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
     elif label == "Media":
-        content = '<iframe src="/adm/media/' + COURSE + '/list/*?ticket=' + TICKET + '"></iframe>'
+        content = '<iframe src="adm/media/' + COURSE + '/list/*?ticket=' + TICKET + '"></iframe>'
     elif label == 'Results':
-        content = '<iframe src="/adm/course/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
+        content = '<iframe src="adm/course/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
     elif label == 'Chat':
         content = '<div id="messages"></div>'
     elif label == 'Students':
@@ -392,7 +392,7 @@ def init():
      <div id="server_feedback">Problems and server feedbacks will be written here.</div>
     </h1>
     <title>""" + html(COURSE.replace(RegExp('.*=', ''), ' ')) + """</title>
-    <link rel="stylesheet" href="/adm_session.css?ticket=""" + TICKET + """">
+    <link rel="stylesheet" href="adm_session.css?ticket=""" + TICKET + """">
     <div id="tabs" onclick="select_tab(event.target.id)">
     <div id="Config">Config</div>
     <div id="Access">Access</div>
