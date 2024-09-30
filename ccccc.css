@@ -161,6 +161,10 @@ DIV.executor > DIV:first-child
     opacity: 0.5;
 }
 
+.executor > DIV {
+    word-break: break-all;
+}
+
 .executor > DIV > VAR {
     font-size: 80%;
     background: #FFF;
