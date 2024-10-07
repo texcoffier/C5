@@ -85,6 +85,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['display_history',      1, "display version history"],
     ['display_indent',       1, "display the F8 button"],
     ['display_line_numbers', 1, "display line numbers"],
+    ['display_grading',      1, "display grading interface"],
     ['display_global_grading',0, "display the buttons to set all grades to min or max"],
     ['diff',                 0, "Green line numbers for student inserted lines (togglable by clicking on line numbers)"],
 

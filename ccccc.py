@@ -326,9 +326,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.options['positions']['comments'] = [
                 left + width, 100 - (left + width), top, height]
             left, width, top, height, background = self.options['positions']['question']
-            self.options['positions']['question'][2] = 75
-            self.options['positions']['question'][3] = 25
-            self.options['positions']['grading'] = [left, width, 0, 75, '#FFF8']
+            if COURSE_CONFIG['display_grading']:
+                height = 75
+            else:
+                height = 20
+            self.options['positions']['question'][2] = height
+            self.options['positions']['question'][3] = 100 - height
+            self.options['positions']['grading'] = [left, width, 0, height, '#FFF8']
             self.options['positions']['tester'][0] = 100 # Hide tester
 
         for key in self.options['positions']:
