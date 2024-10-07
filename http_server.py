@@ -21,10 +21,11 @@ import pathlib
 import glob
 import urllib.request
 import csv
+import signal
 import options
 import common
 import xxx_local
-from aiohttp import web
+from aiohttp import web, WSMsgType
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response,StreamResponse
 
@@ -260,8 +261,8 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                 course = CourseConfig.get(utilities.get_course(filename.lstrip('=')))
                 if not course.dir_log:
                     return session.message('unknown')
-                is_admin = False
-                if session.is_student():
+                is_admin = session.is_grader(course)
+                if session.is_student() and not is_admin:
                     login_as = ''
                     status = course.status(login, session.hostname)
                 else:
@@ -271,11 +272,10 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                     if login_as and session.is_proctor(course):
                         status = course.status(login_as) # Should not modify anything
                     else:
-                        is_admin = session.is_grader(course)
                         status = course.status(login, session.hostname)
+                # print('session=', session.login, "is_student=", session.is_student(), "is_admin=", is_admin, utilities.CONFIG.is_admin(session.login), "status=", status, "login_as=", login_as)
                 if status == 'draft':
                     return session.message('draft')
-            if filename.startswith("="):
                 feedback = course.get_feedback(login_as or login)
                 if not is_admin:
                     if status == 'done' and not feedback:
@@ -284,6 +284,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                         return session.message('pending', course.start_timestamp)
                     if status == 'checkpoint':
                         return session.message('checkpoint')
+            if filename.startswith("="):
                 version = request.match_info.get('version', None)
                 if version:
                     place = course.active_teacher_room[login][2]
@@ -297,11 +298,6 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                 return await editor(session, is_admin, course, login_as or login, feedback=feedback)
             if '=' in filename:
                 filename = course.file_js
-                if (not session.is_grader(course) or login_as) and not status.startswith('running'):
-                    if status == 'done' and course.get_feedback(login_as or login) > 0:
-                        pass # Feedback allowed
-                    else:
-                        return session.message('done')
         return File.get(filename).answer()
     return real_handle
 
@@ -439,6 +435,10 @@ async def startup(app:web.Application) -> None:
     if False:
         app['simulate_active_student'] = asyncio.create_task(simulate_active_student())
     print("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
+    def close_all(*args, **kargs):
+        JournalLink.close_all_sockets()
+    signal.signal(signal.SIGTERM, close_all)
+
 
 async def get_author_login(request:Request) -> Session:
     """Get the admin login or redirect to home page if it isn't one"""
@@ -1148,60 +1148,44 @@ def get_answers(course:str, user:str, compiled:bool=False) -> Tuple[Answers, Blu
          * 0 : saved source
          * 1 : source passing the test
          * 2 : compilation (if compiled is True)
-         * 3 : snapshot (5 seconds before examination end)
+         * 3 : Final state of the source code
     Returns 'answers' and 'blurs'
     answers is a dict from question to a list of [source, type, timestamp, tag]
     """
     answers:Answers = collections.defaultdict(list)
     blurs:Dict[int,int] = collections.defaultdict(int)
-    try:
-        with open(f'{course}/{user}/http_server.log', encoding='utf-8') as file:
-            question = 0
-            for line in file: # pylint: disable=too-many-nested-blocks
-                line = line.strip()
-                if not line:
-                    continue
-                seconds = 0
-                for cell in json.loads(line):
-                    if isinstance(cell, list):
-                        what = cell[0]
-                        if what == 'answer':
-                            answers[cell[1]].append((cell[2], 1, seconds, ''))
-                        elif what == 'save':
-                            answers[cell[1]].append((cell[2], 0, seconds, ''))
-                        elif what == 'snapshot':
-                            answers[cell[1]].append((cell[2], 3, seconds, ''))
-                        elif what == 'question':
-                            question = cell[1]
-                        elif what == 'tag':
-                            timestamp = cell[2]
-                            tag = cell[3]
-                            if timestamp:
-                                for i, saved in enumerate(answers[cell[1]]):
-                                    if saved[2] == timestamp:
-                                        answers[cell[1]][i] = (saved[0], saved[1], saved[2], tag)
-                            else:
-                                item = answers[cell[1]][-1]
-                                answers[cell[1]][-1] = (item[0], item[1], item[2], tag)
-                    elif isinstance(cell, str):
-                        if cell == 'Blur':
-                            blurs[question] += 1
-                    else:
-                        seconds += cell
-    except IOError:
-        return {}, {}
-
-    if compiled:
-        try:
-            with open(f'{course}/{user}/compile_server.log', encoding='utf-8') as file:
-                for line in file:
-                    if "('COMPILE'," in line:
-                        line = ast.literal_eval(line)
-                        answers[int(line[2][1][1])].append((line[2][1][6], 2, int(line[0]), ''))
-        except (IndexError, FileNotFoundError):
-            pass
-        for value in answers.values():
-            value.sort(key=lambda x: x[2]) # Sort by timestamp
+    final:Dict[int,str] = {}
+    filename = f'{course}/{user}/journal.log'
+    if not os.path.exists(filename):
+        return answers, blurs
+    journal = common.Journal()
+    with open(f'{course}/{user}/journal.log', newline='\n', encoding='utf-8') as file:
+        for line in file:
+            line = line[:-1]
+            if not line:
+                continue
+            journal.append(line)
+            timestamp = int(journal.timestamp)
+            final[journal.question] = (journal.content, 3, timestamp, '')
+            if line.startswith('Sanswer'):
+                answers[journal.question].append((journal.content, 1, timestamp, ''))
+            elif line.startswith('Ssave'):
+                answers[journal.question].append((journal.content, 0, timestamp, ''))
+            elif line.startswith('Ssnapshot'):
+                answers[journal.question].append((journal.content, 3, timestamp, ''))
+            elif line.startswith('t'):
+                answers[journal.question].append((journal.content, 0, timestamp, line[1:-1]))
+            elif line.startswith('B'):
+                blurs[journal.question] += 1
+            elif compiled and line.startswith('c'):
+                answers[journal.question].append((journal.content, 2, timestamp, ''))
+    # XXX These lines are only useful for journals generated by upgrade_logs.py
+    for question, responses in enumerate(answers.values()):
+        for response in responses:
+            if response[1] == 3:
+                break # Yet a snapshot
+        else:
+            responses.append(final[question])
     return answers, blurs
 
 def question_source(config:CourseConfig, comment:str, where:str, user:str, # pylint: disable=too-many-arguments,too-many-locals
@@ -2070,77 +2054,218 @@ async def full_stats(request:Request) -> Response:
     <script src="stats.js?ticket={session.ticket}"></script>
     ''')
 
-APP = web.Application()
-APP.add_routes([web.get('/', home),
-                web.get('/{filename}', handle()),
-                web.get('/{filename}/V{version}', handle()),
-                web.get('/node_modules/{filename:.*}', handle('node_modules')),
-                web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
-                web.get('/adm/get/{filename:.*}', adm_get),
-                web.get('/adm/get_exclude/{exclude}/{filename:.*}', adm_get),
-                web.get('/adm/answers/{course:.*}', adm_answers),
-                web.get('/adm/root', adm_root),
-                web.get('/adm/session/{course}', adm_session), # Edit page
-                web.get('/adm/session2/{course}/{action}/{value}', adm_config),
-                web.get('/adm/session2/{course}/{action}', adm_config),
-                web.get('/adm/course/{course}', adm_course),
-                web.get('/adm/git_pull/{course}', adm_git_pull),
-                web.get('/adm/force_grading_done/{course}', adm_force_grading_done),
-                web.get('/adm/media/{course}/{action}/{media}', adm_media),
-                web.get('/adm/editor/{course}', adm_editor),
-                web.get('/adm/js_errors/{date}', js_errors),
-                web.get('/adm/building/{building}', adm_building),
-                web.get('/config/reload', config_reload),
-                web.get('/course_config/{course}', course_config),
-                web.get('/checkpoint/*', checkpoint_list),
-                web.get('/checkpoint/*/{filter:.*}', checkpoint_list),
-                web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
-                web.get('/checkpoint/{course}', checkpoint),
-                web.get('/checkpoint/SPY/{course}/{student}', checkpoint_spy),
-                web.get('/checkpoint/MESSAGE/{course}/{message:.*}', checkpoint_message),
-                web.get('/checkpoint/TIME_BONUS/{course}/{student}/{bonus}', checkpoint_bonus),
-                web.get('/checkpoint/HOSTS/*', checkpoint_hosts),
-                web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
-                web.get('/journal/{course}', journal),
-                web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
-                web.get('/computer/{course}/{building}/{column}/{line}', computer),
-                web.get('/record_feedback/{course}/{student}/{feedback}', record_feedback),
-                web.get('/grade/{course}/{login}', grade),
-                web.get('/zip/{course}', my_zip),
-                web.get('/git/{course}', my_git),
-                web.get('/media/{course}/{value}', get_media),
-                web.get('/debug/change_session_ip', change_session_ip),
-                web.get('/stats/{param}', full_stats),
-                web.post('/upload_course/{compiler}/{course}', upload_course),
-                web.post('/upload_media/{compiler}/{course}', upload_media),
-                web.post('/log', log),
-                web.post('/record_grade/{course}', record_grade),
-                web.post('/record_comment/{course}', record_comment),
-                web.post('/adm/c5/{action}', adm_c5),
-                web.post('/adm/building/{building}', adm_building_store),
-                web.post('/adm/session/{course}/{action}', adm_config),
-                ])
-APP.on_startup.append(startup)
-logging.basicConfig(level=logging.DEBUG)
-TIME = time
+class JournalLink:
+    journals:Dict[Tuple[str,str],"JournalLink"] = {} # session+login → JournalLink (containing sockets)
 
-class AccessLogger(AbstractAccessLogger): # pylint: disable=too-few-public-methods
-    """Logger for aiohttp"""
-    def log(self, request, response, time): # pylint: disable=redefined-outer-name
-        path = request.path.replace('\n', '\\n')
-        session = Session.session_cache.get(
-            request.query_string.replace('ticket=', ''), None)
-        if session:
-            login = session.login
+    def __init__(self, course, login):
+        self.login = login
+        self.course = course
+        dirname = f'{self.course.dir_log}/{login}'
+        if not os.path.exists(dirname):
+            if not os.path.exists(self.course.dir_log):
+                os.mkdir(self.course.dir_log)
+            os.mkdir(dirname)
+        path = pathlib.Path(dirname + '/journal.log')
+        if path.exists():
+            content = path.read_text(encoding='utf-8')
+            if content:
+                self.content = content.split('\n')
+                self.content.pop() # Empty string
+            else:
+                self.content = []
         else:
-            login = ''
-        print(f"{TIME.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
-              f"{time:5.3f} {request.method[0]} "
-              f"{request.query_string.replace('ticket=ST-', '').split('-')[0]} "
-              f"{login} "
-              f"{path}",
-              flush=True)
+            self.content = []
+        self.journal = path.open('a', encoding='utf-8')
+        self.msg_id = str(len(self.content))
+        self.connections = [] # List of Socket, port of connected browsers
+        self.locked = False
 
-web.run_app(APP, host=utilities.C5_IP, port=utilities.C5_HTTP,
-            access_log_format="%t %s %D %r", access_log_class=AccessLogger,
-            ssl_context=utilities.get_certificate(False))
+    async def __aenter__(self):
+        while self.locked:
+            await asyncio.sleep(0)
+        self.locked = True
+
+    async def __aexit__(self, *_args):
+        self.locked = False
+
+    async def write(self, message):
+        if self.course.status(self.login) != 'running':
+            return
+        ############## XXX ################## Must check message validity and add timestamp
+        self.content.append(message)
+        self.journal.write(message + '\n')
+        message = self.msg_id + ' ' + message
+        self.journal.flush()
+        self.msg_id = str(len(self.content))
+        async with self: # Locked to garantee the order of events
+            for socket, port in self.connections:
+                try:
+                    await socket.send_str(f'{port} {message}')
+                except: # pylint: disable=bare-except
+                    JournalLink.closed_socket(socket)
+
+    def close(self, socket, port=None):
+        # Remove socket/port from the list
+        self.connections = [connection
+                            for connection in self.connections
+                            if connection[0] is not socket
+                               or port is not None and connection[1] != port
+                            ]
+        if not self.connections:
+            JournalLink.journals.pop((self.course.course, self.login))
+
+    @classmethod
+    def new(cls, course, login, socket, port):
+        journa = JournalLink.journals.get((course.course, login), None)
+        if not journa:
+            journa = JournalLink.journals[course.course, login] = JournalLink(course, login)
+        journa.connections.append((socket, port))
+        return journa
+
+    @classmethod
+    def closed_socket(cls, socket):
+        # tuple() because journals may be removed while looping.
+        for journa in tuple(JournalLink.journals.values()):
+            journa.close(socket)
+
+    @classmethod
+    def close_all_sockets(cls):
+        print("JournalLink.close_all_sockets()", flush=True)
+        for journa in JournalLink.journals.values():
+            for socket, _port in journa.connections:
+                try:
+                    socket._writer.transport.close()
+                except IOError:
+                    pass
+        print("JournalLink.close_all_socket() done", flush=True)
+
+async def live_link(request:Request) -> StreamResponse:
+    """Live link beetween the browser and the server.
+    It is an uniq link for all the opened tabs.
+
+    For the editor, it receives:
+       all student actions: cursor move, scroll, keys, question change...
+       It stores these in the session/login journal.
+       And dispatch change to the others
+
+    Protocol is defined in «live_link.py»
+    """
+    session = await Session.get_or_fail(request)
+
+    socket = web.WebSocketResponse()
+    await socket.prepare(request)
+
+    journals:Dict[int,JournalLink] = {}
+
+    async for msg in socket:
+        if msg.type == WSMsgType.ERROR:
+            print(f'socket connection closed with exception {socket.exception()}')
+            break
+        if msg.type != WSMsgType.TEXT:
+            print(f'Type {msg.type}')
+            break
+        port, message = msg.data.split(' ', 1)
+        journa, allow_edit = journals.get(port, (None, True))
+        if not allow_edit:
+            continue
+        if message == '-':
+            journa.close(socket, port)
+            journals.pop(port)
+        elif journa:
+            msg_id, message = message.split(' ', 1)
+            if msg_id == journa.msg_id:
+                await journa.write(message)
+        else:
+            assert port not in journals
+            session_name, asked_login = message.split(' ', 1)
+            course = CourseConfig.get(utilities.get_course(session_name))
+            allow_edit = asked_login == session.login
+            if asked_login and session.is_proctor(course):
+                login = asked_login
+            else:
+                login = session.login
+            journa = JournalLink.new(course, asked_login, socket, port)
+            journals[port] = [journa, allow_edit]
+            await socket.send_str(
+                port + ' J' + '\n'.join(journa.content) + '\n')
+            if allow_edit:
+                await journa.write(f'O{login} {session.client_ip} {port}')
+    JournalLink.closed_socket(socket)
+    print('websocket connection closed')
+
+if __name__ == '__main__':
+    APP = web.Application()
+    APP.add_routes([web.get('/', home),
+                    web.get('/{filename}', handle()),
+                    web.get('/{filename}/V{version}', handle()),
+                    web.get('/node_modules/{filename:.*}', handle('node_modules')),
+                    web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
+                    web.get('/adm/get/{filename:.*}', adm_get),
+                    web.get('/adm/get_exclude/{exclude}/{filename:.*}', adm_get),
+                    web.get('/adm/answers/{course:.*}', adm_answers),
+                    web.get('/adm/root', adm_root),
+                    web.get('/adm/session/{course}', adm_session), # Edit page
+                    web.get('/adm/session2/{course}/{action}/{value}', adm_config),
+                    web.get('/adm/session2/{course}/{action}', adm_config),
+                    web.get('/adm/course/{course}', adm_course),
+                    web.get('/adm/git_pull/{course}', adm_git_pull),
+                    web.get('/adm/force_grading_done/{course}', adm_force_grading_done),
+                    web.get('/adm/media/{course}/{action}/{media}', adm_media),
+                    web.get('/adm/editor/{course}', adm_editor),
+                    web.get('/adm/js_errors/{date}', js_errors),
+                    web.get('/adm/building/{building}', adm_building),
+                    web.get('/config/reload', config_reload),
+                    web.get('/course_config/{course}', course_config),
+                    web.get('/checkpoint/*', checkpoint_list),
+                    web.get('/checkpoint/*/{filter:.*}', checkpoint_list),
+                    web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
+                    web.get('/checkpoint/{course}', checkpoint),
+                    web.get('/checkpoint/SPY/{course}/{student}', checkpoint_spy),
+                    web.get('/checkpoint/MESSAGE/{course}/{message:.*}', checkpoint_message),
+                    web.get('/checkpoint/TIME_BONUS/{course}/{student}/{bonus}', checkpoint_bonus),
+                    web.get('/checkpoint/HOSTS/*', checkpoint_hosts),
+                    web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
+                    web.get('/journal/{course}', journal),
+                    web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
+                    web.get('/computer/{course}/{building}/{column}/{line}', computer),
+                    web.get('/record_feedback/{course}/{student}/{feedback}', record_feedback),
+                    web.get('/grade/{course}/{login}', grade),
+                    web.get('/zip/{course}', my_zip),
+                    web.get('/git/{course}', my_git),
+                    web.get('/media/{course}/{value}', get_media),
+                    web.get('/debug/change_session_ip', change_session_ip),
+                    web.get('/stats/{param}', full_stats),
+                    web.get('/live_link/session', live_link),
+                    web.post('/upload_course/{compiler}/{course}', upload_course),
+                    web.post('/upload_media/{compiler}/{course}', upload_media),
+                    web.post('/log', log),
+                    web.post('/record_grade/{course}', record_grade),
+                    web.post('/record_comment/{course}', record_comment),
+                    web.post('/adm/c5/{action}', adm_c5),
+                    web.post('/adm/building/{building}', adm_building_store),
+                    web.post('/adm/session/{course}/{action}', adm_config),
+                    ])
+    APP.on_startup.append(startup)
+    logging.basicConfig(level=logging.DEBUG)
+    TIME = time
+
+    class AccessLogger(AbstractAccessLogger): # pylint: disable=too-few-public-methods
+        """Logger for aiohttp"""
+        def log(self, request, response, time): # pylint: disable=redefined-outer-name
+            path = request.path.replace('\n', '\\n')
+            session = Session.session_cache.get(
+                request.query_string.replace('ticket=', ''), None)
+            if session:
+                login = session.login
+            else:
+                login = ''
+            print(f"{TIME.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
+                f"{time:5.3f} {request.method[0]} "
+                f"{request.query_string.replace('ticket=ST-', '').split('-')[0]} "
+                f"{login} "
+                f"{path}",
+                flush=True)
+
+    web.run_app(APP, host=utilities.C5_IP, port=utilities.C5_HTTP,
+                access_log_format="%t %s %D %r", access_log_class=AccessLogger,
+                ssl_context=utilities.get_certificate(False))

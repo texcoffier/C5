@@ -7,9 +7,6 @@ Display checkpoint page
 HELP_LINES = 10
 BOLD_TIME = 300 # In seconds for new students in checking room
 BOLD_TIME_ACTIVE = 300 # In seconds for last activity
-MENU_WIDTH = 9
-MENU_HEIGHT = 10
-MENU_LINE = 0.6
 DECAL_Y = 0.15
 TOP_INACTIVE = '#FFFD'
 TOP_ACTIVE = '#8F8D'
@@ -104,6 +101,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     students = []
     selected_computer = None
     selected_item = None
+    selected_student = student_menu = None
     moved = False
     transitions = []
     columns_x = []
@@ -356,7 +354,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.columns_x.append(position)
             position += width
         if self.rotate_180:
-            for i, value in enumerate(self.columns_x):
+            for i, _value in enumerate(self.columns_x):
                 self.columns_x[i] = position - self.columns_x[i] + width
         position = 0
         self.lines_y = []
@@ -495,18 +493,76 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             lines.sort()
             ips[key] = lines
         self.all_ips = ips
-    def draw_computer_menu(self, ctx, messages):
-        """The computer problems menu"""
-        x_pos, y_pos, x_size, y_size = self.xys(self.selected_computer[1] - 0.5,
-                                                self.selected_computer[2] - 0.5)
+    def draw_menu(self, ctx, x_pos, y_pos, selected, model):
+        """
+        Returns the text overed by the mouse
+        """
+        ctx.font = "16px sans-serif"
+        if self.rotate_180:
+            x_pos -= self.scale
+            y_pos -= self.scale
+        padding = 10
+        menu_width = 0
+        y_size = 0
+        for message in model:
+            box = ctx.measureText(message)
+            menu_width = max(box.width, menu_width)
+            descent = box.fontBoundingBoxDescent
+            y_size = max(box.fontBoundingBoxAscent + descent, y_size)
+        menu_width += 2 * padding
+        menu_line = y_size * 1.1
+        menu_height = len(model) * menu_line
+
         ctx.fillStyle = "#FFC"
         ctx.globalAlpha = 0.9
-        ctx.fillRect(x_pos, y_pos, x_size, y_size)
-        ctx.fillRect(x_pos + self.scale, y_pos, MENU_WIDTH*self.scale, MENU_HEIGHT*self.scale)
+        ctx.fillRect(x_pos + self.scale, y_pos, menu_width, menu_height)
+
+        ctx.strokeStyle = "#000"
+        ctx.lineWidth = 2
+        ctx.lineCap = 'round'
+        ctx.moveTo(x_pos, y_pos)
+        ctx.lineTo(x_pos + self.scale + menu_width, y_pos)
+        ctx.lineTo(x_pos + self.scale + menu_width, y_pos + menu_height)
+        ctx.lineTo(x_pos + self.scale, y_pos + menu_height)
+        ctx.lineTo(x_pos + self.scale, y_pos + self.scale)
+        ctx.lineTo(x_pos, y_pos + self.scale)
+        ctx.lineTo(x_pos, y_pos)
+        ctx.stroke()
+
+        x_pos += self.scale + padding
         ctx.globalAlpha = 1
         ctx.fillStyle = "#000"
-        self.selected_item = None
-        for i, message in enumerate([
+        selected_item = None
+        for i, message in enumerate(model):
+            y_item = y_pos + menu_line * i
+            if message in selected:
+                ctx.fillStyle = "#FDD"
+                ctx.fillRect(x_pos + self.scale, y_item, menu_width - 2 * padding, menu_line)
+                ctx.fillStyle = "#000"
+            # print(self.event_x, x_pos, x_pos + menu_width, y_item, self.event_y , y_item + menu_line)
+            if (i > 1 # pylint: disable=too-many-boolean-expressions
+                    and message != ''
+                    and self.event_x > x_pos
+                    and self.event_x < x_pos + menu_width
+                    and self.event_y > y_item
+                    and self.event_y < y_item + menu_line
+               ):
+                ctx.fillStyle = "#FF0"
+                ctx.fillRect(x_pos, y_item, menu_width - 2 * padding, menu_line)
+                ctx.fillStyle = "#000"
+                selected_item = message
+            ctx.fillText(message, x_pos, y_item + menu_line - descent)
+        return selected_item
+
+    def draw_computer_menu(self, ctx):
+        """The computer problems menu"""
+        messages = self.draw_computer_problems(ctx)
+        if not self.selected_computer or self.selected_computer[0] != self.building:
+            return
+        x_pos, y_pos, _x_size, _y_size = self.xys(self.selected_computer[1] - 0.5,
+                                                  self.selected_computer[2] - 0.5)
+        self.selected_item = self.draw_menu(ctx, x_pos, y_pos, messages,
+            [
                 "Les câbles sont branchés mais :",
                 "",
                 "Machine : ne se lance pas",
@@ -523,26 +579,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 "Linux : pas de fichiers",
                 "",
                 "Réparé : tout fonctionne !"
-            ]):
-            y_item = y_pos + MENU_LINE * y_size * i
-            if message in messages:
-                ctx.fillStyle = "#FDD"
-                ctx.fillRect(x_pos + x_size, y_item,
-                             MENU_WIDTH*x_size, MENU_LINE*y_size)
-                ctx.fillStyle = "#000"
-            if (i > 1 # pylint: disable=too-many-boolean-expressions
-                    and message != ''
-                    and self.event_x > x_pos + x_size
-                    and self.event_x < x_pos + x_size + MENU_WIDTH*y_size
-                    and self.event_y > y_item
-                    and self.event_y < y_item + MENU_LINE * y_size
-               ):
-                ctx.fillStyle = "#FF0"
-                ctx.fillRect(x_pos + x_size, y_item,
-                             MENU_WIDTH*x_size, MENU_LINE*y_size)
-                ctx.fillStyle = "#000"
-                self.selected_item = message
-            ctx.fillText(message, x_pos + x_size*1.5, y_item + (MENU_LINE - 0.1)*y_size)
+            ])
     def draw_computer_problems(self, ctx):
         """Draw a red square on computer with problems"""
         ctx.fillStyle = "#F00"
@@ -567,6 +604,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.students.sort(cmp_student_position_reverse)
         else:
             self.students.sort(cmp_student_position)
+        char_size = ctx.measureText('x')
         for student in self.students:
             if (student.column < self.left_column or student.column > self.right_column
                     or student.line < self.top_line or student.line > self.bottom_line):
@@ -574,7 +612,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
             x_pos, y_pos, x_size, y_size = self.xys(student.column, student.line)
             x_pos -= self.scale / 2
-            y_pos += DECAL_Y * self.scale
             ctx.globalAlpha = 0.7
             if student.active:
                 ctx.fillStyle = "#FF0"
@@ -618,8 +655,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if not student.good_room:
                 ctx.fillStyle = "#F88"
             ctx.globalAlpha = 1
-            ctx.fillText(student.firstname, x_pos, y_pos)
-            ctx.fillText(student.surname, x_pos, y_pos + line_height)
+            ctx.fillText(student.firstname, x_pos, y_pos - char_size.fontBoundingBoxDescent)
+            ctx.fillText(student.surname, x_pos, y_pos + line_height - char_size.fontBoundingBoxDescent)
             grading = ''
             if student.grade != '':
                 grading += student.grade[0]
@@ -734,7 +771,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     ctx.translate(x_pos, y_pos)
                     ctx.rotate(Math.PI)
                     ctx.translate(-x_pos, -y_pos)
-                ctx.fillText(char, x_pos - char_size.width/2, y_pos + y_size/2)
+                ctx.fillText(char, x_pos - char_size.width/2, y_pos + y_size/2 - char_size.fontBoundingBoxDescent)
                 if rotate:
                     ctx.restore()
     def draw_square_feedback(self, ctx):
@@ -864,6 +901,32 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillStyle = "#000"
             ctx.fillText(ip, x_pos, y_pos + y_size/2)
 
+    def draw_student_menu(self, ctx):
+        if not self.student_menu:
+            return
+        student = self.student_menu
+
+        x_pos, y_pos, _x_size, _y_size = self.xys(student.column - 0.5, student.line - 0.5)
+        if student.active:
+            state = "Clôturer l'examen"
+        else:
+            state = "Rouvrir l'examen"
+        temps = "Temps bonus"
+        if student.bonus_time:
+            temps += ' (' + int(student.bonus_time / 60) + ' min.)'
+
+        self.selected_student = self.draw_menu(ctx, x_pos, y_pos, [],
+            [
+                student.firstname + ' ' + student.surname,
+                "",
+                "Regarder en temps réel",
+                temps,
+                state,
+                "Naviguer dans le temps",
+                "Noter l'étudiant",
+                student.mail or 'Adresse mail inconnue'
+            ])
+
     def draw(self, square_feedback=False):
         """Display on canvas"""
         start = Date().getTime()
@@ -901,9 +964,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.draw_students(ctx)
         ctx.font = self.scale/2 + "px sans-serif"
         self.draw_teachers(ctx)
-        messages = self.draw_computer_problems(ctx)
-        if self.selected_computer and self.selected_computer[0] == self.building:
-            self.draw_computer_menu(ctx, messages)
+        self.draw_computer_menu(ctx)
         if square_feedback:
             self.draw_square_feedback(ctx)
         self.draw_help(ctx)
@@ -913,6 +974,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.draw_times = self.draw_times[1:]
             ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms',
                          self.width - 70, 50)
+        self.draw_student_menu(ctx)
         self.draw_ips(ctx)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
@@ -921,7 +983,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.scale = new_scale
         self.compute_rooms_on_screen()
         self.update_waiting_room()
-        scheduler.draw = True
+        scheduler.draw = "do_zoom"
     def zoom(self, event):
         """Zooming on the map"""
         self.do_zoom(event.clientX, event.clientY,
@@ -960,7 +1022,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.drag_y_start = self.drag_y_current = self.event_y
         self.drag_millisec_start = millisecs()
         self.moving = True
-        scheduler.draw = True
+        scheduler.draw = "drag_start"
     def drag_move(self, event):
         """Moving the map"""
         self.get_event(event)
@@ -969,7 +1031,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if (self.moving == True # Student no moving
             and not self.moved # Nothing yet moved
             and not self.zooming
-            and time_since_click > 150 # Long clic
+            and time_since_click > 250 # Long clic
             and distance2(self.drag_x_start, self.drag_y_start,
                           self.event_x, self.event_y) > 5
         ):
@@ -981,15 +1043,15 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                                    event.touches[1].pageX, event.touches[1].pageY)
                 self.do_zoom(self.zooming_x, self.zooming_y,
                              self.scale_start * zooming / self.zooming)
-                scheduler.draw = True
+                scheduler.draw = "drag_move zooming"
                 return
             self.zooming = 0
             window.onmousemove = window.ontouchmove = None
             window.onmouseup = window.ontouchend = None
             return
         if not self.moving:
-            if self.selected_computer:
-                scheduler.draw = True
+            if self.selected_computer or self.student_menu:
+                scheduler.draw = "drag_move moving"
             return
         self.moved = self.moved or distance2(self.drag_x_start, self.drag_y_start,
                                              self.event_x, self.event_y) > 10
@@ -1009,7 +1071,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 document.getElementById('top').style.background = TOP_INACTIVE
             else:
                 document.getElementById('top').style.background = TOP_ACTIVE
-        scheduler.draw = True
+        scheduler.draw = "drag_move default"
     def drag_stop_student(self, column, line):
         """Stop moving a student"""
         if column != -1:
@@ -1018,7 +1080,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     self.move_student_to(self.moving, column, line)
             elif not self.moved:
                 # Simple click
-                record('checkpoint/SPY/' + COURSE + '/' + self.moving['login'])
+                self.student_menu = STUDENT_DICT[self.moving['login']]
+                self.selected_computer = None
+                scheduler.draw = "drag_stop_student"
         else:
             self.highlight_disk = None
             record('checkpoint/' + COURSE + '/' + self.moving['login'] + '/EJECT')
@@ -1034,7 +1098,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                    + self.selected_computer[2] + '/'
                    + self.selected_item)
             self.selected_item = None
-            scheduler.draw = True
+            scheduler.draw = "drag_stop_click_on_computer_menu"
             return True
         return False
     def drag_stop_click_on_computer(self, column, line):
@@ -1047,7 +1111,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.moving = False
             elif self.selected_computer:
                 self.selected_computer = None
-                scheduler.draw = True
+                scheduler.draw = "drag_stop_click_on_computer"
                 self.moving = False
             return True
         return False
@@ -1076,7 +1140,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             div.style.display = 'block'
             def open_tabs():
                 for login in logins:
-                    window.open('/grade/' + COURSE + '/' + login
+                    window.open(BASE + '/grade/' + COURSE + '/' + login
                         + '?ticket=' + TICKET)
             document.getElementById('open_tabs').onclick = open_tabs            
             return True
@@ -1128,6 +1192,34 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             column, line = self.get_coord(self.event_x, self.event_y, True)
             self.drag_stop_student(column, line)
         elif not self.moved:
+            if self.student_menu:
+                if self.selected_student:
+                    login = self.student_menu.login
+                    if self.selected_student.startswith("Naviguer"):
+                        record('checkpoint/SPY/' + COURSE + '/' + login)
+                    elif self.selected_student.startswith("Regarder"):
+                        create_realtime_spy(self.student_menu)
+                    elif self.selected_student.startswith("Clôturer"):
+                        close_exam(login)
+                    elif self.selected_student.startswith("Rouvrir"):
+                        open_exam(login)
+                    elif self.selected_student.startswith("Noter"):
+                        window.open(BASE + '/grade/' + COURSE + '/' + login + '?ticket=' + TICKET)
+                    elif self.selected_student.startswith("Temps"):
+                        minutes = prompt(
+                            "Nombre de minutes bonus pour l'étudiant.\n"
+                            + "C'est un temps total, pas un incrément.\n"
+                            + "Les tiers-temps ont déjà leur temps en plus.",
+                            int(self.student_menu.bonus_time / 60))
+                        if minutes is not None:
+                            record('checkpoint/TIME_BONUS/' + COURSE + '/'
+                                   + login + '/' + 60*int(minutes))
+                    elif self.selected_student:
+                        alert(self.selected_student)
+
+                self.student_menu = self.selected_student = None
+                scheduler.draw = "drag_stop not moved student_menu"
+
             # Simple click
             if (not self.drag_stop_click_on_computer_menu()
                     and not self.drag_stop_click_on_computer(column, line)
@@ -1137,12 +1229,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 # No special click
                 if self.selected_computer:
                     self.selected_computer = None
-                    scheduler.draw = True
+                    scheduler.draw = "drag_stop not moved selected computer"
         else:
             # Panning: recompute waiting room list
             self.compute_rooms_on_screen()
             self.update_waiting_room()
-        if not self.selected_computer:
+        if not self.selected_computer and not self.student_menu:
             window.onmousemove = None
             window.ontouchmove = None
         window.onmouseup = None
@@ -1152,7 +1244,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Transition from zoom"""
         if len(self.transitions): # pylint: disable=len-as-condition
             self.scale, self.left, self.top = self.transitions.pop()
-            scheduler.draw = True
+            scheduler.draw = "animate_zoom"
             setTimeout(bind(self.animate_zoom, self), 50)
         else:
             self.compute_rooms_on_screen()
@@ -1231,7 +1323,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         else:
             Student.moving_element.style.background = "#FFF"
             document.getElementById('top').style.background = TOP_ACTIVE
-        scheduler.draw = True
+        scheduler.draw = "move_student"
         scheduler.draw_square_feedback = True
     def move_student_to(self, student, column, line):
         """Move the student on a chair.
@@ -1286,7 +1378,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         left, top, _dx, _dy = self.xys(student.column, student.line)
         self.left = self.real_left - left + (self.width - self.real_left) / 2
         self.top = self.real_top - top + (self.height - self.real_top) / 2
-        scheduler.draw = True
+        scheduler.draw = "zoom_student"
 
 def hide_messages(first, last):
     """Hide the indicated message indexes (last not included)"""
@@ -1420,13 +1512,16 @@ def create_page(building_name):
         .name { background: #EEEA; display: block; white-space: nowrap;
              padding-top: 0.3em; padding-bottom: 0.3em;
               overflow: hidden; }
-        BODY { font-family: sans-serif}
+        BODY { font-family: sans-serif;
+               --menu-width: 12em;
+               --menu-padding: 2em;
+             }
         .name:hover { background: #FFF }
         .name SPAN { color: #888 }
         CANVAS { position: absolute; left: 0px; width: 100%; top: 0px; height: 100% }
         #waiting { display: inline }
         #top {z-index: 2; position: absolute;
-              top: 0px; left: 0px; width: 12em; padding-right: 2em; height: 100vh;
+              top: 0px; left: 0px; width: var(--menu-width); padding-right: var(--menu-padding); height: 100vh;
               overflow-y: scroll; overflow-x: visible;
               background: ''', TOP_INACTIVE, '''}
         #top * { vertical-align: middle }
@@ -1447,6 +1542,34 @@ def create_page(building_name):
             background: #FFFC;
             padding: 0.2em;
             z-index: 2;
+        }
+        #live_spy {
+            position: fixed;
+            top: 0; right: 0;
+            padding-left: calc(var(--menu-width) + var(--menu-padding));
+            text-align: right;
+            pointer-events: none;
+            font-size: 12px;
+        }
+        #live_spy > DIV {
+            display: inline-block;
+            vertical-align: top;
+            white-space: break-spaces;
+            overflow: hidden;
+            height: 1em;
+            background: #FFCE;
+            text-align: left;
+            max-width: 35em;
+        }
+        #live_spy > DIV > DIV {
+            margin-bottom: 100em;
+        }
+        #live_spy > DIV > B {
+            display: block;
+            background: #FF0E;
+            position: sticky;
+            top: 0px;
+            text-align: right;
         }
         #source { margin-top: 7em }
         .icon { font-size: 200% ; display: inline-block; font-family: emoji;
@@ -1500,7 +1623,7 @@ def create_page(building_name):
     content.append('</select>')
     content.append(
         '<label id="display_my_rooms">'
-        + '<input id="my_rooms" onchange="ROOM.scale = 0; scheduler.draw=true"'
+        + '<input id="my_rooms" onchange="ROOM.scale = 0; scheduler.draw=\'onchange\'"'
         + '       type="checkbox">Seulement mes salles</label>')
     content.append(
         '<div><label id="display_student_filter" class="filter">Mettre en évidence les logins :<br>'
@@ -1542,6 +1665,7 @@ def create_page(building_name):
             ontouchstart="ROOM.drag_start(event)"
         ></canvas>
         <div id="spy"></div>
+        <div id="live_spy"></div>
         ''')
     document.body.innerHTML = ''.join(content)
     document.body.onkeydown = key_event_handler
@@ -1602,8 +1726,14 @@ def open_exam(login):
 
 def spy_close():
     """Close the student source code"""
-    document.getElementById('spy').style.display = 'none'
-
+    spy_elm = document.getElementById('spy')
+    if spy_elm.style.display != 'none' and spy_elm.style.display:
+        spy_elm.style.display = 'none'
+        return
+    spy_elm = document.getElementById('live_spy')
+    if spy_elm.lastChild:
+        spy_elm.lastChild.shared_worker.close()
+        spy_elm.lastChild.remove()
 
 def canonize(txt):
     """Cleanup name"""
@@ -1765,10 +1895,7 @@ def spy(sources, login, infos, blurs):
     """Display the infos source code"""
     student = STUDENT_DICT[login]
     sources.sort()
-    if student.active:
-        state = '<button onclick="close_exam(\'' + login + '\')">Clôturer examen</button>'
-    else:
-        state = '<button onclick="open_exam(\'' + login + '\')">Rouvrir examen</button>'
+    state = ''
     if not student.good_room and student.active:
         state += ' (Adresse IP dans la mauvaise salle)'
 
@@ -1776,12 +1903,7 @@ def spy(sources, login, infos, blurs):
     content = [
         '<div class="spytop">',
         '<button class="closepopup" onclick="spy_close()">×</button> ',
-        '<a style="font-family:emoji;text-decoration:none" href="mailto:', student.mail or login + '@?.?', '">✉️</a>',
-        login, ' ', infos.fn, ' ', infos.sn, ', ', state,
-        ', <input onchange="set_time_bonus(this,\'' + login,
-        '\')" value="', student.bonus_time/60, '">minutes bonus, ',
-        '<button onclick="window.open(\'/grade/', COURSE, '/', login, '?ticket=', TICKET,
-        "')\">Noter l'étudiant</button>",
+        login, ' ', infos.fn, ' ', infos.sn, state,
         '<div id="time" onmousedown="spy_it(event)"',
         ' onmousemove="if (event.buttons) spy_it(event)">']
     spy.sources = []
@@ -1986,9 +2108,37 @@ def clean_up_bad_placements():
         lines.append('\n')
     print(''.join(lines))
 
+
+def create_realtime_spy(student):
+    """
+    Choisir login
+    """
+    feedback = document.createElement('DIV')
+    feedback_header = document.createElement('B')
+    feedback.appendChild(feedback_header)
+    feedback_header.innerHTML = (
+        '<var style="font-weight: normal; color: #888">(Échap pour fermer)</var> '
+        + student.surname + ' ' + student.firstname
+        )
+    feedback_div = document.createElement('DIV')
+    feedback.appendChild(feedback_div)
+    document.getElementById('live_spy').appendChild(feedback)
+    feedback_div.textContent = '0'
+    line_height = feedback_div.offsetHeight
+
+    def update_real_time(journal):
+        if not journal.remote_update:
+            return
+        feedback_div.textContent = journal.content
+        feedback.style.height = journal.height * line_height + 'px'
+        feedback.scrollTo({'top': journal.scroll_line * line_height, 'behavior': 'smooth'})
+
+    feedback.shared_worker, _journal = create_shared_worker(student.login, update_real_time)
+
 create_page(OPTIONS.default_building or "Nautibus")
 ROOM = Room(document.getElementById('buildings').value)
 scheduler.update_page = True
+
 
 def reload_on_error(event):
     if isinstance(event, ProgressEvent):

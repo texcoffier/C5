@@ -38,9 +38,10 @@ def local_ip() -> str:
         return '127.0.0.1'
 
 # To please pylint:
-C5_HOST = C5_IP = C5_ROOT = C5_LOGIN = C5_HTTP = C5_SOCK = C5_MAIL = C5_CERT = None
+C5_HOST = C5_IP = C5_LOGIN = C5_HTTP = C5_SOCK = C5_MAIL = C5_CERT = None
 C5_LOCAL = C5_URL = C5_DIR = C5_WEBSOCKET = C5_REDIRECT = C5_VALIDATE = C5_LDAP = None
 C5_LDAP_LOGIN = C5_LDAP_PASSWORD = C5_LDAP_BASE = C5_LDAP_ENCODING = C5_CUSTOMIZE = None
+C5_ROOT = ''
 
 CONFIGURATIONS = (
     ('C5_HOST'         ,'Production host (for SSH)'            , local_ip()),
@@ -89,7 +90,7 @@ class Process: # pylint: disable=invalid-name
     It is more simple than using an asyncio LDAP library.
     """
     cache:Dict[Any,Any] = {}
-    started:bool = None
+    started:Optional[bool] = None
 
     def __init__(self, command, name):
         self.command = command
@@ -429,7 +430,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if login in self.tt_list:
             return self.stop_tt_timestamp + bonus_time
         return self.stop_timestamp + bonus_time
-    def update_checkpoint(self, login:str, hostname:Optional[str], now:int) -> Optional[Tuple]:
+    def update_checkpoint(self, login:str, hostname:Optional[str], now:int) -> Optional[State]:
         """Update active_teacher_room"""
         if not login:
             return None
@@ -1017,6 +1018,7 @@ class Session:
             </head>
             <body></body></html>
             <script>
+            BASE = "https://{C5_URL}";
             TICKET = {json.dumps(self.ticket)};
             COURSES = {json.dumps(courses)};
             MORE = {json.dumps(more)};
@@ -1077,6 +1079,7 @@ class Session:
             content_type='text/html',
             headers={'Cache-Control': 'no-cache'}
             )
+
 def js_message(key:str) -> aiohttp.web_response.Response:
     """Send a pure javascript error message to display on the page"""
     message = json.dumps(CONFIG.config['messages'].get(key, key))
@@ -1282,8 +1285,16 @@ With Firefox:
         echo RESTART compile_server
         cd {C5_DIR} 2>/dev/null || true
         pkill --oldest -f compile_server.py || true
+        sleep 1
         ./compile_server.py >>compile_server.log 2>&1 &
-        tail -f compile_server.log
+        """,
+    'restart_http_server': fr"""#C5_LOGIN
+        set -e
+        echo RESTART http_server
+        cd {C5_DIR} 2>/dev/null || true
+        pkill --oldest -f http_server.py || true
+        sleep 1
+        ./http_server.py >>http_server.log 2>&1 &
         """,
     'start': fr"""#C5_LOGIN
         set -e
@@ -1336,7 +1347,7 @@ With Firefox:
         ./utilities.py __create_stats__
         """,
 }
-ACTIONS['restart'] = ACTIONS['compile'] + '\n' + ACTIONS['stop'] + 'sleep 1\n' + ACTIONS['start']
+ACTIONS['restart'] = ACTIONS['compile'] + '\n' + ACTIONS['stop'] + 'sleep 2\n' + ACTIONS['start']
 
 def main() -> None:
     """MAIN"""

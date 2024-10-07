@@ -13,6 +13,7 @@ try:
     @external
     class Worker: # pylint: disable=function-redefined,too-few-public-methods
         """Needed for rapydscript"""
+        onmessage = onmessageerror = onerror = None
         def postMessage(self, _message):
             """Send a message to the worker"""
 except: # pylint: disable=bare-except
@@ -25,6 +26,14 @@ DEPRECATED = ('save_button', 'local_button', 'stop_button', 'reset_button', 'lin
 NAME_CHARS = '[a-zA-Z_0-9]'
 NAME = RegExp(NAME_CHARS)
 NAME_FIRST = RegExp('[a-zA-Z_]')
+
+REAL_GRADING = GRADING
+if not COURSE_CONFIG['display_grading']:
+    GRADING = False
+
+SHARED_WORKER, JOURNAL = create_shared_worker(LOGIN)
+
+IS_TEACHER = LOGIN != STUDENT
 
 def get_xhr_data(event):
     """Evaluate the received javascript"""
@@ -125,11 +134,13 @@ def stop_event(event):
 
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
+    course = worker = shared_buffer = line_height = active_completion = completion = None
+    grading_sum = competence_average = None
     server_time_delta = int(millisecs()/1000 - SERVER_TIME)
     question = editor = overlay = tester = compiler = executor = time = None
     index = save_button = local_button = line_numbers = None
     stop_button = fullscreen = comments = save_history = editor_title = None
-    tag_button = indent_button = layered = None
+    tag_button = indent_button = layered = canvas = None
     top = None # Top page HTML element
     source = None # The source code to compile
     source_with_newlines = None
@@ -138,7 +149,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question_done = {}
     question_original = {}
     last_answer = {}
-    last_answer_cursor = {}
     copied = None # Copy with ^C ou ^X
     state = "uninitalised"
     input_index = -1 # The input number needed
@@ -165,6 +175,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     do_update_cursor_position = True
     mouse_pressed = -1
     mouse_position = [0, 0]
+    worker_url = None
      # These options are synchronized between GUI and compiler/session
     options = {}
     stop_timestamp = 0
@@ -178,7 +189,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     grading = None
     current_key = None
     meter = document.createRange()
-    localstorage_checked = {} # For each question
     span_highlighted = None # Racket eval result line highlighted
     first_F11 = True
     first_update = True
@@ -186,8 +196,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
     dialog_on_screen = False
     hide_completion_chooser = 0
     to_complete = ''
+    last_scroll = 0 # Last scroll position sent to journal in seconds
+    old_scroll_top = 0
+    wait_indentation = False
+    user_compilation = False
 
-    def __init__(self):
+    def init(self):
         self.options = options = COURSE_CONFIG
 
         # XXX to remove
@@ -208,14 +222,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.start_time = millisecs()
         self.course = COURSE
         self.stop_timestamp = STOP
-        if GRADING:
-            self.worker = Worker(COURSE + "?ticket=" + TICKET) # pylint: disable=undefined-variable
-        else:
-            self.worker = Worker(COURSE + "?ticket=" + TICKET + '&login=' + LOGIN) # pylint: disable=undefined-variable
+        self.worker_url = BASE + '/' + COURSE + "?ticket=" + TICKET
+        if REAL_GRADING:
+            self.worker_url += '&login=' + LOGIN
+        self.worker = Worker(self.worker_url)
         self.worker.onmessage = bind(self.onmessage, self)
         self.worker.onmessageerror = bind(self.onerror, self)
-        self.worker.onerror = bind(self.onerror, self)
-        self.options['url'] = window.location.toString()
+        self.worker.onerror = bind(self.onSocketError, self)
         self.worker.postMessage(['config', self.options])
         try:
             self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
@@ -226,6 +239,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # Will be updated after
             self.options['positions']['grading'] = [0, 1, 0, 75, '#FFF8']
         print("GUI: wait worker")
+
+    def onSocketError(self):
+        """Can't start the worker"""
+        window.location = self.worker_url # Because it contains the error message
 
     def terminate_init(self):
         """Only terminate init when the worker started"""
@@ -335,6 +352,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.options['positions']['grading'] = [left, width, 0, height, '#FFF8']
             self.options['positions']['tester'][0] = 100 # Hide tester
 
+        if document.body.classList.contains('versions'):
+            version_height = '4em'
+            version_height = '8em'
+        else:
+            version_height = '0px'
+
         for key in self.options['positions']:
             if key in DEPRECATED:
                 continue # No more used button
@@ -372,12 +395,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 e.style.right = (100 - left - width) + '%'
             if key == 'layered':
-                e.style.top = 'calc(' + top + '% + var(--header_height))'
+                e.style.top = 'calc(' + top + '% + var(--header_height) + ' + version_height + ')'
             else:
                 e.style.top = top + '%'
             e.style.bottom = (100 - top - height) + '%'
             if key == 'editor_title':
-                e.style.bottom = 'calc(100% - var(--header_height))'
+                e.style.bottom = 'calc(100% - var(--header_height) - ' + version_height + ')'
+                e.firstChild.style.height = version_height
             if key != 'layered':
                 e.style.background = background
                 e.background = background
@@ -386,10 +410,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_button.style.display = 'none'
             if self.stop_button:
                 self.stop_button.style.display = 'none'
+        self.line_height = self.line_numbers.firstChild.offsetHeight
+        self.canvas.height = self.canvas.parentNode.offsetHeight
+        self.canvas.width = self.canvas.offsetWidth
     def create_gui(self): # pylint: disable=too-many-statements
         """The text editor container"""
+        classes = []
         if GRADING:
-            document.body.className = 'dograding'
+            classes.append('dograding')
+        if (self.options['version_for_teachers'] and IS_TEACHER
+            or self.options['version_for_students'] and not IS_TEACHER):
+            classes.append('versions')
+        document.body.className = ' '.join(classes)
         self.options['positions']['editor_title'] = self.options['positions']['editor']
         for key in self.options['positions']:
             if key == 'stop_button':
@@ -418,6 +450,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         for number in self.line_numbers.childNodes:
                             number.style.background = ''
                 self.line_numbers.onclick = toggle_diff
+                self.line_numbers.appendChild(document.createElement('DIV'))
+                self.line_numbers.firstChild.textContent = '1'
                 self.layered.appendChild(self.line_numbers)
                 if GRADING or self.options['feedback'] >= 3:
                     self.comments = document.createElement('DIV')
@@ -480,6 +514,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.local_button.onclick = bind(self.save_local, self)
             self.editor_title.firstChild.appendChild(self.local_button)
 
+        canvas = document.createElement('DIV')
+        canvas.className = 'canvas'
+        self.canvas = document.createElement('CANVAS')
+        def canvas_event(event):
+            JOURNAL.tree_canvas(this, event)
+        self.canvas.onmousemove = canvas_event
+        self.canvas.onmousedown = canvas_event
+        canvas.appendChild(self.canvas)
+        self.editor_title.insertBefore(canvas, self.editor_title.firstChild)
+
         self.fullscreen = document.createElement('DIV')
         self.fullscreen.className = 'fullscreen'
         self.fullscreen.innerHTML = """
@@ -523,6 +567,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     item[2] = tag
                     break
             self.update_save_history()
+            SHARED_WORKER.tag(tag)
         self.prompt("Nom de la sauvegarde :", do_tagging)
 
     def save_local(self):
@@ -540,7 +585,58 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         if self.record_now_lock:
             self.record(['BUG', 'record_now_lock', 'scheduler'])
+        if LOGIN == 'thierry.excoffier':
+            self.time.style.inset = '40% 0% 10% 0%'
+            self.time.style.background = '#FFF8'
+            self.time.style.color = '#F00'
+            self.time.style.opacity = 1
+            self.time.style.zIndex = 10
+            self.time.innerHTML = (
+                'in_past_history=' + self.in_past_history + '<br>'
+                + 'pending_goto=' +  JOURNAL.pending_goto + ' : ' + JOURNAL.pending_goto_history + '<br>'
+                + '[' + str(len(JOURNAL.lines)-4) + ']=' + JOURNAL.lines[-4] + '<br>'
+                + '[' + str(len(JOURNAL.lines)-3) + ']=' + JOURNAL.lines[-3] + '<br>'
+                + '[' + str(len(JOURNAL.lines)-2) + ']=' + JOURNAL.lines[-2] + '<br>'
+                + '[' + str(len(JOURNAL.lines)-1) + ']=' + JOURNAL.lines[-1] + '<br>'
+                + '<pre>'
+                + '\n'.join(JOURNAL.tree_text())
+                + '</pre>'
+                )
+
+        remote_scroll = False
+        if JOURNAL.remote_update:
+            JOURNAL.remote_update = False
+            if self.current_question != JOURNAL.question:
+                self.unlock_worker()
+                self.worker.postMessage(['goto', JOURNAL.question])
+                return
+            if not JOURNAL.get_question(self.current_question).created_now: # Not the first time
+                self.set_editor_content(JOURNAL.content)
+            JOURNAL.get_question(self.current_question).created_now = False
+            if JOURNAL.old_scroll_line != JOURNAL.scroll_line:
+                # Remote scroll
+                line = (self.line_numbers.childNodes[JOURNAL.scroll_line]
+                    or self.editor.childNodes[JOURNAL.scroll_line])
+                top = line.offsetTop
+                self.layered.scrollTo({'top': top, 'behavior': 'instant'}) # NOT SMOOTH REQUIRED
+                remote_scroll = True
+                JOURNAL.old_scroll_line = JOURNAL.scroll_line
+                self.old_scroll_top = self.layered.scrollTop
+
         seconds = int(millisecs() / 1000)
+
+        if (self.old_scroll_top != self.layered.scrollTop # Do not record if no change
+                and not remote_scroll
+                and seconds != self.last_scroll # No more than one position per second
+                ):
+            # Send scroll position to server
+            line = int(self.layered.scrollTop / self.line_height + 0.5)
+            if line != JOURNAL.scroll_line and not JOURNAL.pending_goto:
+                SHARED_WORKER.scroll_line(line, int(self.layered.offsetHeight / self.line_height))
+                JOURNAL.old_scroll_line = JOURNAL.scroll_line
+                self.last_scroll = seconds
+                self.old_scroll_top = self.layered.scrollTop
+
         if (len(self.records_in_transit)
                 and seconds - self.records_in_transit[0][0] > 5
                 and seconds - self.records_last_retry > 5
@@ -553,17 +649,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
            ):
             if self.fullscreen.style.display != 'block':
                 self.fullscreen.style.display = 'block'
-                self.record(['FullScreenQuit', screen.height, window.innerHeight, window.outerHeight])
+                self.record(['FullScreenQuit', screen.height,
+                             window.innerHeight, window.outerHeight])
                 if not self.first_F11:
                     self.record('Blur', send_now=True)
+                    SHARED_WORKER.blur()
         else:
             if self.fullscreen.style.display != 'none':
                 self.fullscreen.style.display = 'none'
-                self.record(['FullScreenEnter', screen.height, window.innerHeight, window.outerHeight])
+                self.record(['FullScreenEnter', screen.height,
+                             window.innerHeight, window.outerHeight])
                 if self.first_F11:
                     self.first_F11 = False
                 else:
                     self.record('Focus', send_now=True)
+                    SHARED_WORKER.focus()
 
         if self.do_update_cursor_position:
             # print('do_update_cursor_position', self.do_update_cursor_position)
@@ -597,12 +697,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.update_save_history()
             if old_need_save != need_save:
                 self.save_button.setAttribute('enabled', need_save)
-            if need_save:
-                try:
-                    localStorage[COURSE + '/' + self.current_question
-                                ] = JSON.stringify([seconds, self.source])
-                except: # pylint: disable=bare-except
-                    pass
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
@@ -728,7 +822,40 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.source_with_newlines = ''.join(state['text'])
         while state['text'][-1] == '\n':
             state['text'].pop()
+
         self.source = ''.join(state['text'])
+        self.send_diff_to_journal()
+
+    def record_pending_goto(self):
+        """Must be recorded because action in the past"""
+        if JOURNAL.pending_goto:
+            # Validate the pending goto
+            JOURNAL.clear_pending_goto()
+            SHARED_WORKER.post(JOURNAL.pop())
+
+    def send_diff_to_journal(self):
+        """Compute differences, returns a list of:
+              * [True, position, text]    For insertion
+              * [False, position, number] For deletion
+        """
+        if JOURNAL.remote_update:
+            # SHARED_WORKER.debug("Diff not done because remote update")
+            return
+        # SHARED_WORKER.debug("Diff begin")
+        old = JOURNAL.content
+        replace = self.source
+        if old == replace:
+            return
+        self.record_pending_goto()
+        rep = replace
+        for what, position, value in compute_diffs(old, rep):
+            if what:
+                SHARED_WORKER.insert(position, value)
+            else:
+                SHARED_WORKER.delete_nr(position, value)
+        if replace != JOURNAL.content:
+            raise ValueError('Bug ' + replace + '!=' + JOURNAL.content)
+        # SHARED_WORKER.debug("Diff end")
 
     def coloring(self): # pylint: disable=too-many-statements,too-many-branches
         """Coloring of the text editor with an overlay."""
@@ -783,7 +910,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.line_numbers.childNodes[i].style.top = rect['top'] + 'px'
             if rect['height'] and rect['height'] < line_height:
                 line_height = rect['height']
-                self.line_height = line_height
                 continue
             if rect['height'] < line_height * 1.8:
                 continue
@@ -813,7 +939,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         # self.editor.style.height = self.overlay.offsetHeight + self.layered.offsetHeight + 'px'
         if GRADING or self.options['feedback'] >= 3:
             self.comments.style.height = self.overlay.offsetHeight + 'px'
+        self.tree_canvas()
 
+    def tree_canvas(self):
+        """Display the version tree"""
+        JOURNAL.tree_canvas(self.canvas)
     def record_now(self):
         """Record on the server"""
         if self.record_now_lock:
@@ -876,10 +1006,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     ALL_SAVES[current_question].append([timestamp, source, ''])
                     self.update_save_history()
                     self.save_button.setAttribute('state', 'ok')
-                    try:
-                        del localStorage[COURSE + '/' + current_question]
-                    except: # pylint: disable=bare-except
-                        pass
             self.records_in_transit.splice(0, 1) # pylint:disable=no-member # Pop first item
         if len(self.records_in_transit):
             self.record_now()
@@ -1230,17 +1356,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.completion.style.display = 'none'
         self.hide_completion_chooser -= 1
 
-    def save_cursor(self):
-        """Save the cursor position"""
-        self.last_answer_cursor[self.current_question] = [
-            self.layered.scrollTop,
-            self.cursor_position,
-            self.source[:self.cursor_position]
-            ]
     def do_indent(self):
         """Formate the source code"""
+        self.user_compilation = True # Indent trigger compile
         self.unlock_worker()
-        self.save_cursor()
+        self.wait_indentation = True
         self.worker.postMessage(['indent', self.source.strip()])
 
     def try_completion(self):
@@ -1290,6 +1410,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.active_completion = 0
         self.hide_completion_chooser = 2
 
+    def goto_line(self, line):
+        """Goto in the past"""
+        if line <= 0:
+            return
+        self.unlock_worker()
+        JOURNAL.see_past(line)
+        self.set_editor_content(JOURNAL.content)
+
     def onkeydown(self, event): # pylint: disable=too-many-branches
         """Key down"""
         if not self.allow_edit:
@@ -1308,7 +1436,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 direction = 1
             elif event.key == 'Enter':
                 document.execCommand('insertText', False,
-                    self.completion.childNodes[self.active_completion].innerHTML[len(self.to_complete):])
+                    self.completion.childNodes[self.active_completion].innerHTML[
+                        len(self.to_complete):])
                 stop_event(event)
                 return
             else:
@@ -1331,6 +1460,23 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_unlock()
             # self.save_local() # No more local save with Ctrl+S
             stop_event(event)
+        elif event.key in 'yz' and event.ctrlKey:
+            stop_event(event)
+            if event.key == 'z':
+                if JOURNAL.pending_goto:
+                    JOURNAL.pending_goto_history.append(JOURNAL.pending_goto)
+                else:
+                    JOURNAL.pending_goto_history.append(len(JOURNAL.lines))
+                if JOURNAL.pending_goto_history[-1] == JOURNAL.pending_goto_history[-2]:
+                    JOURNAL.pending_goto_history.pop()
+                else:
+                    self.goto_line(JOURNAL.parent_position(JOURNAL.pending_goto_history[-1]))
+            else:
+                if not JOURNAL.pending_goto:
+                    # ^Y without ^Z
+                    return
+                if len(JOURNAL.pending_goto_history):
+                    self.goto_line(JOURNAL.pending_goto_history.pop())
         elif event.key == 'f' and event.ctrlKey:
             self.do_not_register_this_blur = True
             return
@@ -1339,6 +1485,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         elif event.key == 'F9':
             if self.options['automatic_compilation'] == 0: # pylint: disable=singleton-comparison
+                self.user_compilation = True
                 self.compilation_run()
             elif self.options['automatic_compilation']:
                 document.getElementById('automatic_compilation').className = 'unchecked'
@@ -1398,10 +1545,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         if self.options['checkpoint']:
             self.record('Blur', send_now=True)
+            SHARED_WORKER.blur()
     def onfocus(self, _event):
         """Window focus"""
         if self.options['checkpoint']:
             self.record('Focus', send_now=True)
+            SHARED_WORKER.focus()
     def memorize_inputs(self):
         """Record all input values"""
         inputs = self.executor.getElementsByTagName('INPUT')
@@ -1430,7 +1579,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if box in self.do_not_clear:
             return
         self.do_not_clear[box] = True
-        if self[box]:
+        if self[box]: # pylint: disable=unsubscriptable-object
             self[box].innerHTML = '' # pylint: disable=unsubscriptable-object
 
     def onerror(self, event): # pylint: disable=no-self-use
@@ -1445,12 +1594,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
             saved = self.save()
 
         choosen = event.target.selectedOptions[0].getAttribute('timestamp')
+        print('choosen', choosen)
         if not choosen:
             return
         choosen = int(choosen)
         if choosen == 1:
             source = self.question_original[self.current_question]
             self.in_past_history = 1
+            print('===================================================')
+            JOURNAL.questions[JOURNAL.question].saved[source] = JOURNAL.questions[JOURNAL.question].start + 2
+            print(JOURNAL.questions[JOURNAL.question])
         else:
             for (timestamp, source, _tag) in ALL_SAVES[self.current_question]:
                 if timestamp == choosen:
@@ -1459,8 +1612,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     else:
                         self.in_past_history = timestamp
                     break
+        print('source_in_past', source)
         self.source_in_past = source
-        self.set_editor_content(source)
+        index = JOURNAL.questions[JOURNAL.question].saved[source]
+        print('index', index)
+        if index:
+            self.goto_line(index)
+            # SHARED_WORKER.goto(index)
+        else:
+            self.set_editor_content(source)
         self.editor.focus()
         self.update_save_history()
 
@@ -1480,10 +1640,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.tag_button.style.pointerEvents = 'all'
             self.save_history.style.color = "#000"
         now = millisecs() / 1000
-        for (timestamp, _source, tag) in (ALL_SAVES[self.current_question] or [])[::-1]:
+        for (timestamp, source, tag) in (ALL_SAVES[self.current_question] or [])[::-1]:
             delta = int( (now - timestamp) / 10 ) * 10
             content.append('<option timestamp="' + timestamp + '"')
-            if self.in_past_history == timestamp:
+            if self.source == source:
                 content.append(' selected')
             content.append('>')
             if delta < 10:
@@ -1511,6 +1671,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.in_past_history and self.source_in_past.strip() == self.source.strip():
             # Do not save again source from the past if they are unmodified
             return False
+        if JOURNAL.pending_goto:
+            return False
         return (self.last_answer[self.current_question]
             or self.question_original[self.current_question]).strip() != self.source.strip()
 
@@ -1524,6 +1686,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_button.setAttribute('state', 'wait')
             self.record([what, self.current_question, self.source], send_now=True)
             self.last_answer[self.current_question] = self.source
+            self.record_pending_goto()
+            SHARED_WORKER.save(what)
             return True
         return False
 
@@ -1792,15 +1956,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.terminate_init()
             self.update_gui()
         elif what == 'current_question':
+            if JOURNAL.pending_goto:
+                JOURNAL.pop()
+                JOURNAL.pending_goto_history = []
             self.do_not_clear = {}
-            self.update_source()
-            self.save_cursor()
-            if (self.current_question >= 0 and value != self.current_question
-                    and self.need_save() and not self.in_past_history):
-                self.save()
             self.current_question = value
             self.record(['question', self.current_question])
             self.in_past_history = 0
+            self.record_pending_goto() # Record pending goto because if ^Z
+            SHARED_WORKER.question(value)
+
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
             self.add_highlight_errors(value[0], value[1], what)
@@ -1812,11 +1977,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.state == "inputdone":
                 self.state = "running"
         elif what == 'good':
-            if self.current_question not in self.question_done:
+            if self.current_question not in self.question_done and not JOURNAL.questions[self.current_question].good:
                 self.save('answer')
                 self.question_done[self.current_question] = True
                 messages = self.options['good']
                 self.popup_message(messages[millisecs() % len(messages)])
+                SHARED_WORKER.good()
+                self.tree_canvas() # Here because scheduler do not call coloring
         elif what == 'executor':
             self.clear_if_needed(what)
             for value in value.split('\001'):
@@ -1900,6 +2067,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 tips.append("Sauvegarder sur la machine locale avec l'historique dans GIT")
                 links.append('<a target="_blank" href="git/' + COURSE + window.location.search
                      + '">' + self.options['icon_git'] + '</a>')
+            if self.options['display_version_toggle']:
+                tips.append("Afficher/cacher l'arbre des versions")
+                links.append('<span onclick="ccccc.display_version_toggle()">'
+                    + self.options['icon_version_toggle'] + '</span>')
             tips.append(' ')
             links.append(' ')
             content = ['<div class="questions"><div class="tips">']
@@ -1919,34 +2090,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             # New question
+            question = JOURNAL.get_question(self.current_question)
             self.compile_now = True
-            message = value + '\n\n\n'
-            self.set_editor_content(message)
-            try:
-                old_time, old_version = JSON.parse(
-                    localStorage[COURSE + '/' + self.current_question])
-            except: # pylint: disable=bare-except
-                old_version = None
-            if old_version and millisecs()/1000 - old_time > 86400*30*3:
-                # Remove old stuff
-                old_version = None
-                del localStorage[COURSE + '/' + self.current_question]
-            if (self.current_question not in self.localstorage_checked
-                    and not GRADING
-                    and not self.options['feedback']
-                    and old_version
-                    and old_version.strip() != message.strip()):
-                def get_old_version():
-                    self.set_editor_content(old_version)
-                date = Date()
-                date.setTime(1000 * old_time)
-                self.popup_message(
-                    "J'ai trouvé une version non sauvegardée du<br><br>" + str(date),
-                    'Effacer définitivement', ok='Continuer avec',
-                    callback=get_old_version)
-                del localStorage[COURSE + '/' + self.current_question]
-            self.localstorage_checked[self.current_question] = True
+            if not question or question.created_now or self.wait_indentation:
+                message = value
+                if not self.wait_indentation:
+                    message += '\n\n\n'
+                self.set_editor_content(message)
+                if question.created_now:
+                    JOURNAL.questions[JOURNAL.question].saved[value] = len(JOURNAL.lines) + 1
+                self.wait_indentation = False
+            else:
+                self.set_editor_content(JOURNAL.content)
         elif what == 'default':
+            print("DEFAULT", value)
             self.question_original[value[0]] = value[1]
         elif what in ('tester', 'compiler', 'question', 'time'):
             if not value:
@@ -1972,6 +2129,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self[what].style.background = '#FAA' # pylint: disable=unsubscriptable-object
             else:
                 self[what].style.background = self[what].background # pylint: disable=unsubscriptable-object
+            if what == 'compiler' and '<h2>' not in value and not self.in_past_history and not JOURNAL.pending_goto and self.user_compilation:
+                self.user_compilation = False
+                SHARED_WORKER.compile('<error' in value)
+                self.tree_canvas() # Here because scheduler do not call coloring
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
             if what == 'question' and GRADING:
                 self.update_grading()
@@ -1997,7 +2158,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.in_past_history:
                 # No changes were done in past, come back to present
                 self.worker.postMessage(['source', self.current_question,
-                    ALL_SAVES[self.current_question][-1][1]])
+                ALL_SAVES[self.current_question][-1][1]])
             else:
                 self.worker.postMessage(['source', self.current_question, self.source])
             self.worker.postMessage(['goto', index])
@@ -2008,88 +2169,77 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Scroll the indicated source line to the window top"""
         for i, line in enumerate(self.source.split('\n')):
             if line.indexOf(target_line) != -1:
-                self.layered.scrollTo({'top': i * (self.line_height+0.25), 'behavior': 'smooth'})
+                self.layered.scrollTo({'top': i * self.line_height, 'behavior': 'smooth'})
                 break
 
     def set_editor_content(self, message): # pylint: disable=too-many-branches,too-many-statements
         """Set the editor content (question change or reset)"""
         self.overlay_hide()
         self.editor.innerText = message
-        if self.last_answer_cursor[self.current_question]:
-            scrollpos, cursorpos, left = self.last_answer_cursor[self.current_question]
-            if message[:cursorpos] != left:
-                def nr_letters(txt):
-                    return len(txt.replace(RegExp('[ \t\n]', 'g'), ''))
-                nr_letters_old = nr_letters(left)
-                nr_letters_new = nr_letters(message[:cursorpos])
-                i = cursorpos
-                size = len(message)
-                while True: # Search position not using white space
-                    if nr_letters_old > nr_letters_new:
-                        if message[i] not in ' \t\n':
-                            nr_letters_new += 1
-                        i += 1
-                    elif nr_letters_old < nr_letters_new:
-                        i -= 1
-                        if i < size and message[i] not in ' \t\n':
-                            nr_letters_new -= 1
-                    else:
-                        break
-                while i > 0 and message[i-1] in ' \t\n':
-                    i -= 1
-                # Search the good line
-                nr_newline_before = 0
-                for char in left[::-1]:
-                    if char == '\n':
-                        nr_newline_before += 1
-                    elif char not in ' \t':
-                        break
-                while nr_newline_before and i < size and message[i] in ' \t\n':
-                    if message[i] == '\n':
-                        nr_newline_before -= 1
-                    i += 1
-                # Search the good space
-                nr_space_before = 0
-                for char in left[::-1]:
-                    if char in ' \t':
-                        nr_space_before += 1
-                    else:
-                        break
-                while nr_space_before and i < size and message[i] in ' \t':
-                    nr_space_before -= 1
-                    i += 1
-                cursorpos = i
 
-            self.layered.scrollTop = scrollpos
-            for line in self.editor.childNodes:
-                if line.tagName:
-                    cursorpos -= 1
-                    if cursorpos < 0:
-                        document.getSelection().collapse(line, 0)
-                        break
-                    continue
-                cursorpos -= len(line.textContent)
-                if cursorpos < 0:
-                    document.getSelection().collapse(line, cursorpos + len(line.textContent))
+        scrollpos = JOURNAL.scroll_line * self.line_height
+        cursorpos = JOURNAL.position
+        left = JOURNAL.content[:JOURNAL.position]
+        if message[:cursorpos] != left:
+            def nr_letters(txt):
+                return len(txt.replace(RegExp('[ \t\n]', 'g'), ''))
+            nr_letters_old = nr_letters(left)
+            nr_letters_new = nr_letters(message[:cursorpos])
+            i = cursorpos
+            size = len(message)
+            while True: # Search position not using white space
+                if nr_letters_old > nr_letters_new:
+                    if message[i] not in ' \t\n':
+                        nr_letters_new += 1
+                    i += 1
+                elif nr_letters_old < nr_letters_new:
+                    i -= 1
+                    if i < size and message[i] not in ' \t\n':
+                        nr_letters_new -= 1
+                else:
                     break
-        else:
-            self.layered.scrollTop = 0
+            while i > 0 and message[i-1] in ' \t\n':
+                i -= 1
+            # Search the good line
+            nr_newline_before = 0
+            for char in left[::-1]:
+                if char == '\n':
+                    nr_newline_before += 1
+                elif char not in ' \t':
+                    break
+            while nr_newline_before and i < size and message[i] in ' \t\n':
+                if message[i] == '\n':
+                    nr_newline_before -= 1
+                i += 1
+            # Search the good space
+            nr_space_before = 0
+            for char in left[::-1]:
+                if char in ' \t':
+                    nr_space_before += 1
+                else:
+                    break
+            while nr_space_before and i < size and message[i] in ' \t':
+                nr_space_before -= 1
+                i += 1
+            cursorpos = i
+
+        self.old_scroll_top = self.layered.scrollTop = scrollpos
+        for line in self.editor.childNodes:
+            if line.tagName:
+                cursorpos -= 1
+                if cursorpos < 0:
+                    document.getSelection().collapse(line, 0)
+                    break
+                continue
+            cursorpos -= len(line.textContent)
+            if cursorpos < 0:
+                document.getSelection().collapse(line, cursorpos + len(line.textContent))
+                break
         # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
         self.highlight_errors = {}
         self.do_coloring = "set_editor_content"
         self.source = message
         self.update_save_history()
-
-    def onbeforeunload(self, event):
-        """Prevent page closing"""
-        if self.options['close'] == '' or GRADING or self.options['feedback']:
-            return None
-        if not self.need_save():
-            return None
-        # self.record("Close", send_now=True) # The form cannot be submited
-        stop_event(event)
-        event.returnValue = self.options['close']
-        return event.returnValue
 
     def create_html(self):
         """Create the page content"""
@@ -2104,8 +2254,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         window.onkeydown = bind(self.onkeydown, self)
         window.onkeyup = bind(self.onkeyup, self)
         window.onkeypress = bind(self.onkeypress, self)
-        if navigator.vendor != "Google Inc.":
-            window.onbeforeunload = bind(self.onbeforeunload, self)
         window.onblur = bind(self.onblur, self)
         window.onfocus = bind(self.onfocus, self)
         def do_coloring():
@@ -2180,7 +2328,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def goto_home(self):
         """Goto C5 home"""
-        self.save()
         setTimeout("window.location = window.location.search", 200)
 
     def record_grade(self, grade_id, value):
@@ -2210,7 +2357,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 elif index == -1:
                     self.record_grade(i, values[-1])
                 else:
-                    bug_index;
+                    raise ValueError('set_all_grades index=' + index)
             i += 1
     def send_mail_right(self):
         """Send a mail to the student"""
@@ -2271,6 +2418,13 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
             )
         w.document.close()
 
+    def display_version_toggle(self):
+        """Toggle the display of the version tree"""
+        self.options['version_for_teachers'] = not self.options['version_for_teachers']
+        self.options['version_for_students']  = not self.options['version_for_students']
+        document.body.classList.toggle('versions')
+        self.update_gui()
+        self.tree_canvas()
 class Plot:
     """Grapic state and utilities"""
     def __init__(self, ctx, height, bcolor):
@@ -2566,7 +2720,6 @@ def version_change(select):
     """Change the displayed version"""
     source, _what, _time = VERSIONS[ccccc.current_question][select.selectedIndex]
     ccccc.version = select.selectedIndex
-    ccccc.save_cursor()
     ccccc.set_editor_content(source)
     ccccc.compile_now = True
 

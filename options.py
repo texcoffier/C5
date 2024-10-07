@@ -88,11 +88,13 @@ DEFAULT_COURSE_OPTIONS = [
     ['display_grading',      1, "display grading interface"],
     ['display_global_grading',0, "display the buttons to set all grades to min or max"],
     ['diff',                 0, "Green line numbers for student inserted lines (togglable by clicking on line numbers)"],
+    ['version_for_teachers', 1, "Display version tree to teachers"],
+    ['version_for_students', 0, "Display version tree to students"],
+    ['display_version_toggle',1,"Display the toggle to hide/display version tree"],
 
     "Popup messages",
 
     ['forbiden', "Coller du texte copié venant d'ailleurs n'est pas autorisé.", "Alert"],
-    ['close', "Voulez-vous vraiment quitter cette page ?", "Alert"],
     ['stop_confirm', "Vous voulez vraiment terminer l'examen maintenant ?", "Alert"],
     ['stop_done', "<h1>C'est fini.</h1>", "Alert"],
     ['good', ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"], "Alert on success"],
@@ -117,6 +119,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['icon_git', '<b style="font-size:50%">GIT</b>', "Button label"],
     ['icon_tag', 'TAG', "Button label"],
     ['icon_stop', 'Terminer<br>Examen', "Button label displayed if checkpoint"],
+    ['icon_version_toggle', '<span style="font-family:emoji">🌳</span>', "Button label"],
 
     "Time countdown",
 

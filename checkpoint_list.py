@@ -17,7 +17,7 @@ def edit():
     if confirm("Vous allez modifier " + INTERFACE.nr_sessions_filtered
         + " sessions en même temps, vous voulez vraiment le faire ?"):
         window.open(
-            '/adm/session/^'
+            BASE + '/adm/session/^'
             + encodeURIComponent(session_filter).replace(RegExp('\\.', 'g'), '%2E')
             + '?ticket=' + TICKET)
 

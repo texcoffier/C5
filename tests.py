@@ -345,6 +345,7 @@ class Tests: # pylint: disable=too-many-public-methods
     def wait_save(self):
         """Wait the source save"""
         self.check('.save_button[state="ok"]')
+        self.check('.save_history OPTION:first-child', {'innerText': Not(Equal('Non sauvegardé'))})
 
     def move_cursor(self, path, relative_x=0, relative_y=0):
         """Set the cursor at the position and click"""
@@ -420,7 +421,7 @@ class Tests: # pylint: disable=too-many-public-methods
         """Tests automatic recompilation"""
         self.load_page('=JS=introduction')
         self.move_cursor('.editor')
-        self.check('.editor').send_keys('§')
+        self.check('.editor').send_keys('\n§')
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
         self.check('.editor').send_keys(Keys.BACKSPACE)
         self.check('.compiler', {'innerHTML': Contains('sans')})
@@ -440,11 +441,19 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.compiler', {'innerHTML': Contains('sans')})
         self.check('.compiler LABEL').click()
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
+    def goto_initial_version(self):
+        """Returns to the initial version"""
+        self.check('.save_history OPTION:last-child').click()
+        time.sleep(0.2)
     def test_save_button(self):
         """Test save button"""
         self.load_page('=JS=introduction')
         self.move_cursor('.editor', 4, 4)
+        self.check('.editor', {'innerHTML': Contains('§')}) # Previous test
+        self.goto_initial_version()
         self.check('.editor', {'innerHTML': ~Contains('§')})
+        time.sleep(0.1)
+        self.move_cursor('.editor', 4, 4)
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§')})
         self.check('.save_button').click()
@@ -453,21 +462,23 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.editor', {'innerHTML': Contains('§')})
         time.sleep(0.2) # For Firefox
         self.move_cursor('.editor', 4, 4)
-        self.check('.editor').send_keys('§')
-        self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
+        self.check('.editor').send_keys('¤')
+        self.check('.editor', {'innerHTML': Contains('§¤')})
         self.control('s')
         self.wait_save()
         self.load_page('=JS=introduction')
-        self.check('.editor', {'innerHTML': Contains('§<br><br>§')})
+        self.check('.editor', {'innerHTML': Contains('§¤')})
         self.move_cursor('.editor', 30, 5)
         for _ in range(6):
             self.check('.editor').send_keys(Keys.BACKSPACE)
         self.check('.save_button').click()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': ~Contains('§')})
+
     def test_copy_paste_allowed(self):
         """Test a working copy paste"""
         self.load_page('=JS=introduction')
+        self.goto_initial_version()
         self.move_cursor('.editor')
         self.check('.editor').click()
         self.select_all()
@@ -477,6 +488,7 @@ class Tests: # pylint: disable=too-many-public-methods
     def test_question_index(self):
         """Test question index"""
         self.load_page('=JS=introduction')
+        self.goto_initial_version()
         # Try to click on the next question
         self.check(question(4)).click() # Will fail
         self.check('.editor', {'innerText': Contains('court') & ~Contains('long')})
@@ -545,6 +557,8 @@ class Tests: # pylint: disable=too-many-public-methods
         # Previous tests must run before this one.
         self.load_page('=JS=introduction')
         self.check(question(3)).click() # Returns to the first question
+        self.goto_initial_version()
+        self.control('y')
         #for line in sys.stdin:
         #    try:
         #        self.check(question(int(line.strip()))).click()
@@ -567,14 +581,14 @@ class Tests: # pylint: disable=too-many-public-methods
         self.control('z')
         editor.send_keys(Keys.END) # Second line second char
         editor.send_keys('D')
-        self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauch e.D</span>\n\n')})
+        self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauche.D</span>\n\n')})
         self.control('z')
         self.control(Keys.END)
         editor.send_keys('/')
         editor.send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains(');\n\n/')})
+        self.check('.overlay', {'innerHTML': Contains(');/\n')})
         editor.send_keys('/')
-        self.check('.overlay', {'innerHTML': Contains(');\n\n/\n/')})
+        self.check('.overlay', {'innerHTML': Contains(');/\n/\n')})
     def test_many_inputs(self):
         """Test IP change in grader editor"""
         self.goto('=REMOTE=test')
@@ -620,10 +634,11 @@ return sum ;
         self.load_page('=TEXT=demo')
         self.check('.save_history', {'length': Equal('1')})
         editor = self.move_cursor('.editor')
+        time.sleep(1)
+        # self.check('.editor', {'textContent': Contains('Bravo')})
         editor.send_keys('univers vie')
         self.check_dialog(accept=True, required=True) # Ok to congratulation
-        time.sleep(0.1)
-
+        # We are now automaticaly on the second question
         self.check('.save_history', {'length': Equal('1')})
         self.check(question(3)).click() # Returns to the first question
         self.check('.save_history', {'length': Equal('2')}) # Has been saved
@@ -639,12 +654,14 @@ return sum ;
         editor.send_keys(' every')
         self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=300)
         time.sleep(0.2)
-        self.check(question(4)).click() # Returns to the second question
-        self.wait_save()
+        self.check(question(4)).click() # goto the second question
+        self.wait_save() # No save needed
         self.check('.save_history', {'length': Equal('1')}) # Only initial version
         time.sleep(1)
         self.check(question(3)).click() # Returns to the first question
         self.check('.save_history', {'length': Equal('3')}) # A new save !
+        self.control('s')
+        self.wait_save()
 
         # Tag the new save
         time.sleep(0.5)
@@ -653,6 +670,8 @@ return sum ;
         self.check('#popup_input').send_keys(Keys.ENTER)
         self.check('.save_history', {'length': Equal('3')}, nbr=200)
         self.check('.save_history', {'innerHTML': Contains('>A<') & Contains('>B<') & Contains('<option timestamp="1">Vers')})
+        self.control('s')
+        self.wait_save()
 
         # Goto in the past (A) and change question: no saving done
         retry(lambda: self.check('.save_history OPTION:nth-child(2)').click(), nbr=2)
@@ -670,7 +689,9 @@ return sum ;
         self.check(question(4)).click() # Returns to the second question
         self.check(question(3)).click() # Returns to the first question
         self.check('.save_history', {'length': Equal('4')})
-        self.check('.save_history', {'value': Equal("Sauvé à l'instant")})
+        self.check('.save_history', {'value': Equal("Non sauvegardé")})
+        self.control('s')
+        self.wait_save()
 
         # Tag the new save
         self.check('.tag_button').click()

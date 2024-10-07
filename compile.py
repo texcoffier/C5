@@ -151,6 +151,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def start_question(self):
         """Start a new question"""
         # print("START QUESTION", self.current_question, '/', self.current_question_max)
+        if self.current_question < 0:
+            return
         self.post('current_question', self.current_question)
         self.post('allow_edit', '0')
         if self.quest:
@@ -158,7 +160,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         if self.current_question > self.current_question_max:
             self.current_question_max = self.current_question
         self.quest = self.questions[self.current_question]
-        if hasattr(self.quest, 'last_answer'):
+        if self.quest and hasattr(self.quest, 'last_answer'):
             self.source = self.quest.last_answer
         else:
             self.source = self.quest.default_answer()
@@ -249,7 +251,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self.options['positions']['compiler'][0] >= 100
                 or self.options['positions']['compiler'][2] >= 100
                 ) and self.options['display_compile_run']:
-            more = (' <label onclick="ccccc.compilation_run()">'
+            more = (' <label onclick="ccccc.user_compilation=true;ccccc.compilation_run()">'
                     + self.options['executor_title_button'] + '</label>')
         else:
             more = ''
@@ -260,7 +262,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             + self.options['INFOS']['mail']
             + '?subject=' + self.options['COURSE']
             # + '&amp;body=Bonjour.%0A%0AVotre devoir corrigé : '
-            # + self.options['url'].split('/grade/')[0] + '/=' + self.options['COURSE']
+            # + self.options['BASE XXX'] + '/=' + self.options['COURSE']
             # + '%0A%0ACordialement.'
             + '">✉</a>'
             )
@@ -281,7 +283,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                     + self.options['compiler_title_toggle'] + '</label>')
         else:
             if self.options['display_compile_run']:
-                more = ('<label onclick="ccccc.compilation_run()">'
+                more = ('<label onclick="ccccc.user_compilation=true;ccccc.compilation_run()">'
                         + self.options['compiler_title_button'] + '</label>')
             else:
                 more = ''

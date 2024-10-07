@@ -3,8 +3,8 @@ BODY {
     font-size: 1vw;
     --pad: 0.5em;
     --line_height: 1.18vw;
-    --header_height: 2.1em;
     --line_number_width: 40px;
+    --header_height: 2.4em;
     overflow: hidden;
 }
 
@@ -54,7 +54,23 @@ DIV.editor_title SELECT {
     font-size: 70%;
     max-width: 16em;
 }
+BODY.versions DIV.editor_title H2 {
+    padding-top: 0px;
+    padding-left: 0px;
+}
+BODY.versions DIV.editor_title .canvas {
+    display: block;
+}
 
+DIV.editor_title .canvas {
+    display: none;
+    overflow: scroll;
+}
+
+DIV.editor_title CANVAS {
+    width: 3000px;
+    height: 300px;
+}
 
 DIV.tester {
     overflow: auto;

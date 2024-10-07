@@ -128,4 +128,3 @@ def display(): # pylint: disable=too-many-statements
     setTimeout(anime, 100)
 
 display()
-

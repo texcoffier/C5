@@ -17,22 +17,22 @@ def add(element):
 def load_config():
     """Retrieve the current configuration"""
     script = document.createElement('SCRIPT')
-    script.src = '/course_config/' + COURSE + '?ticket=' + TICKET
+    script.src = BASE + '/course_config/' + COURSE + '?ticket=' + TICKET
     add(script)
     select_tab('Config')
 
 def do_grade(login):
     """Open the window to grade the student"""
-    window.open('/grade/' + COURSE + '/' + login + '?ticket=' + TICKET)
+    window.open(BASE + '/grade/' + COURSE + '/' + login + '?ticket=' + TICKET)
 
 def update_course_config(config, feedback): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Update the HTML with the configuration.
     This function is called by server answer.
     """
     State.config = config
-    if len(State.original_value) == 0:
+    if len(State['original_value']) == 0:
         for attr in config:
-            State.original_value[attr] = config[attr]
+            State['original_value'][attr] = config[attr]
     for attr in config: # pylint: disable=too-many-nested-blocks
         value = config[attr]
         if attr == 'highlight':
@@ -41,7 +41,7 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
         element = document.getElementById(attr)
         if element:
             if element.tagName != 'DIV':
-                if JSON.stringify(value) == JSON.stringify(State.original_value[attr]):
+                if JSON.stringify(value) == JSON.stringify(State['original_value'][attr]):
                     class_name = ''
                 else:
                     class_name = 'changed'
@@ -60,12 +60,14 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     content = "overrided by style"
                 else:
                     for key in value:
-                        content.append('    ' + JSON.stringify(key) + ':' + JSON.stringify(value[key]))
+                        content.append('    ' + JSON.stringify(key)
+                                       + ':' + JSON.stringify(value[key]))
                     element.value = '{\n' + ',\n'.join(content) + '\n}'
                 if attr not in ('admins', 'graders', 'proctors', 'expected_students', 'expected_students_required', 'tt'):
                     element.rows = len(content) + 3
                 if attr == 'expected_students':
-                        document.getElementById("nr_expected_students").innerHTML = count_words('expected_students')
+                    document.getElementById("nr_expected_students"
+                                           ).innerHTML = count_words('expected_students')
                 if attr == 'tt':
                     document.getElementById("nr_tt").innerHTML = count_words('tt')
             elif element.tagName == 'INPUT':
@@ -188,7 +190,9 @@ def onchange(event):
         value = target.id
         attr = target.name
         target = target.parentNode
-    elif not State.original_value[attr] and State.original_value[attr] != 0 and State.original_value[attr] != '':
+    elif (not State['original_value'][attr]
+          and State['original_value'][attr] != 0
+          and State['original_value'][attr] != ''):
         return
     else:
         if target.parentNode.tagName == 'LABEL' and target.tagName != 'SELECT':
@@ -248,10 +252,10 @@ def select_tab(label):
     new_tab = document.getElementById(label)
     if not new_tab:
         return # Action menu
-    if State.selected_tab:
-        State.selected_tab.className = ''
-    State.selected_tab = new_tab
-    State.selected_tab.className = "selected"
+    if State['selected_tab']:
+        State['selected_tab'].className = ''
+    State['selected_tab'] = new_tab
+    State['selected_tab'].className = "selected"
 
     if label == "Try A":
         content = '<iframe src="=' + COURSE + '/Va?ticket=' + TICKET + '"></iframe>'
@@ -372,14 +376,15 @@ A subject and B subject if they are different.
                     tag = '<input style="width: 100%" id="' + key + '">'
                 comment = '<div style="float:right">' + comment + '</div>'
             content.append(
-                '<tr><td style="width: 30em"><tt>' + key + '</tt>' + comment + '<td>' + tag + '</tr>')
+                '<tr><td style="width: 30em"><tt>' + key + '</tt>'
+                + comment + '<td>' + tag + '</tr>')
         content.append('</table></div>')
         content = ''.join(content)
     else:
         content = ''
 
     document.getElementById('content').innerHTML = content
-    if len(State.original_value):
+    if len(State['original_value']):
         update_course_config(State.config, '')
 
 def init():
@@ -437,6 +442,7 @@ def init():
     setInterval(update_interface, 1000)
 
 def count_words(element_id):
+    """Search for duplicate student ID"""
     text = document.getElementById(element_id).value.strip()
     if len(text) == 0:
         return ''
