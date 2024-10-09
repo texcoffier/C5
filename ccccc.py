@@ -2212,6 +2212,64 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 else:
                     bug_index;
             i += 1
+    def send_mail_right(self):
+        """Send a mail to the student"""
+        width = 0
+        for line in self.source.split("\n"):
+            width = max(width, len(line))
+        content = []
+        for i, line in enumerate(self.source.split("\n")):
+            content.append(line)
+            for _ in range(width - len(line)):
+                content.append(' ')
+            content.append(COMMENT_STRING)
+            comment = self.get_comment(i)
+            if comment:
+                add_blank = False
+                for comment_line in comment.strip().split('\n'):
+                    if add_blank:
+                        content.append('\n')
+                        for _ in range(width):
+                            content.append(' ')
+                        content.append(COMMENT_STRING)
+                    content.append(comment_line)
+                    add_blank = True
+            content.append('\n')
+        return content
+
+    def send_mail_top(self):
+        """Send a mail to the student"""
+        content = []
+        for i, line in enumerate(self.source.split("\n")):
+            comment = self.get_comment(i)
+            if comment:
+                content.append('\n')
+                for comment_line in comment.strip().split('\n'):
+                    content.append(COMMENT_STRING + ' ' + LOGIN + ' : ')
+                    content.append(comment_line)
+                    content.append('\n')
+            content.append(line)
+            content.append('\n')
+        return content
+
+    def send_mail(self):
+        """Prepare mail for student"""
+        if confirm('''OK pour mettre les commentaires à droite des lignes.
+
+CANCEL pour les mettre au dessus des lignes de code.'''):
+            content = self.send_mail_right()
+        else:
+            content = self.send_mail_top()
+        base = document.getElementsByTagName('BASE')[0].href
+        w = window.open()
+        w.document.write('<!DOCTYPE html>\n<html>'
+            + '<link rel="stylesheet" href="' + base + 'HIGHLIGHT/a11y-light.css?ticket=' + TICKET + '">'
+            + '<h1>'
+            + INFOS['mail'] + '<br>'
+            + COURSE.split('=')[1] + '\n</h1><pre>'
+            + hljs.highlight(''.join(content), { language: self.options['language'] }).value
+            )
+        w.document.close()
 
 class Plot:
     """Grapic state and utilities"""

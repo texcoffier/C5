@@ -253,7 +253,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                     + self.options['executor_title_button'] + '</label>')
         else:
             more = ''
-        more += '<span style="float:right; background: #CCF; margin-right: 0.3em;">'
+        more += '<span ondblclick="ccccc.send_mail()" style="float:right; background: #CCF; margin-right: 0.3em;">'
         if self.options['GRADING']:
             more += (
             '<a style="font-family:emoji;text-decoration:none" href="mailto:'

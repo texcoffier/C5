@@ -640,6 +640,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if self.compiler == 'PYTHON':
             return 'py', '# ', ''
         if self.compiler in ('REMOTE', 'CPP'):
+            if self.config['compiler'] == 'racket':
+                return 'rkt', ';', ''
             return 'cpp', '//', 'CPPFLAGS=-Wall'
         if self.compiler == 'JS':
             return 'js', '//', ''
