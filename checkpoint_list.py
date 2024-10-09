@@ -113,8 +113,8 @@ def update(value):
                 INTERFACE.nr_sessions_filtered += 1
             else:
                 row.style.display = "none"
-            if row.cells[4].textContent != '':
-                nr_actives += Number(row.cells[4].textContent)
+            if row.cells[5].textContent.strip() != '':
+                nr_actives += Number(row.cells[5].textContent)
     change_header_visibility(header, one_visible)
     document.getElementById('nr_actives').innerHTML = nr_actives
     document.getElementById('nr_doing_grading').innerHTML = INTERFACE.nr_doing_grading
