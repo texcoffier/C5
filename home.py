@@ -49,7 +49,7 @@ Cliquez pour ouvrir/fermer le cours qui vous intéresse :
         text = '<span style="opacity: 0.3">' + text[0] + '</span> ' + text[1]
         style = "background:" + highlight
         if expected:
-            style = ';font-weight: bold'
+            style += ';font-weight: bold'
         text = ('<tr onclick="location = \'/=' + course + '?ticket=' + TICKET
                 + '&login=' + LOGIN
                 + '\'" style="' + style + '"><td><p>' + text + '<td><p>')
