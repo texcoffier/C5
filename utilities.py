@@ -589,8 +589,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if config:
             return config
         config = CourseConfig(course)
-        if hasattr(config, 'time'):
+        if getattr(config, 'time', 0):
             return config
+        # No file with this name
+        cls.configs.pop(course)
         raise ValueError("Session inconnue : " + course)
 
     @classmethod

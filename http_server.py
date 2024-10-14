@@ -1317,12 +1317,14 @@ async def upload_course(request:Request) -> Response:
         error = await update_file(request, session, compiler, replace)
     if '!' not in error and '<pre' not in error and not replace:
         raise web.HTTPFound(f'https://{utilities.C5_URL}/checkpoint/*?ticket={session.ticket}')
-    if '!' in error:
-        style = 'background:#FAA;'
-    else:
-        # Create session.cf
-        CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace[:-3]}')
-        style = ''
+    style = 'background:#FAA;'
+    if '!' not in error:
+        try:
+            # Create session.cf
+            CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace[:-3]}')
+            style = ''
+        except ValueError:
+            error = "ERROR: Le fichier Python ne contient pas un questionnaire."
     return answer('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
         + '<div style="height:100%;' + style + '">'
         + error + '</div>')

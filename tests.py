@@ -1117,7 +1117,7 @@ class Q1(Question):
 
             print("\tUpload bad source")
             response = upload("class Q1(Question):\n pass\n")
-            assert 'background:#FAA">ERROR' in response.text
+            assert 'background:#FAA;">ERROR' in response.text
             assert not os.path.exists('COMPILE_REMOTE/xxx')
 
             print("\tUpload good source")
