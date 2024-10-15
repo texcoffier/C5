@@ -743,7 +743,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if self.rotate_180:
             x_pos, y_pos, x_size, y_size = self.xys(column + 0.5, line + 0.5)
         else:
-            x_pos, y_pos, x_size, y_size = self.xys(column + 0.5, line + 0.5)
+            x_pos, y_pos, x_size, y_size = self.xys(column - 0.5, line - 0.5)
         y_pos += DECAL_Y * self.scale
         ctx.fillStyle = "#0F0"
         ctx.globalAlpha = 0.5
