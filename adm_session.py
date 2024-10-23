@@ -224,6 +224,10 @@ def git_pull():
     """Pull source update from GIT"""
     window.location = '/adm/git_pull/' + COURSE + '?ticket=' + TICKET
 
+def force_grading_done():
+    """Indicate that grading is done for all students with a complete grading."""
+    window.location = '/adm/force_grading_done/' + COURSE + '?ticket=' + TICKET
+
 def select_action(element):
     """Action on the select menu"""
     if element.selectedIndex > 0:
@@ -415,6 +419,7 @@ def init():
     <option action="load_min_zip">Load ZIP question+media</option>
     <option action="load_full_zip">Load ZIP question+media+logs</option>
     <option action="git_pull">GIT pull</option>
+    <option action="force_grading_done">Force «Grading done» on finished gradings</option>
     </select>
     </div>
     <div id="content"></div>

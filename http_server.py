@@ -22,6 +22,7 @@ import glob
 import urllib.request
 import csv
 import options
+import common
 import xxx_local
 from aiohttp import web
 from aiohttp.web_request import Request
@@ -612,6 +613,49 @@ async def adm_git_pull(request:Request) -> Response:
     for config in configs:
         if session.is_admin(config):
             await git_pull(config, stream)
+    return stream
+
+async def adm_force_grading_done(request:Request) -> Response:
+    """Force grading done for complete grading"""
+    session, config = await get_course_config(request)
+    course = request.match_info['course']
+    if course.startswith('^'):
+        configs = [
+            config
+            for config in CourseConfig.configs.values()
+            if re.match(course, config.session)
+        ]
+    else:
+        configs = [config]
+
+    stream = web.StreamResponse()
+    stream.content_type = 'text/html;charset=UTF-8'
+    await stream.prepare(request)
+    await stream.write(b'<title>Force grading done</title>')
+
+    for config in configs:
+        if not session.is_admin(config):
+            continue
+        await stream.write(f'<h1>{config.course}</h1><pre>'.encode('utf-8'))
+        nbr_grades = {'a': len(common.parse_notation(config.notation)) - 1}
+        if config.notationB:
+            nbr_grades['b'] = len(common.parse_notation(config.notationB)) - 1
+        else:
+            nbr_grades['b'] = nbr_grades['a']
+        for student, state in config.active_teacher_room.items():
+            if state.feedback == 5:
+                await stream.write(f'{student}: yet with feedback.\n'.encode('utf-8'))
+                continue
+            if not state.grade:
+                await stream.write(f'{student}: ungraded.\n'.encode('utf-8'))
+                continue
+            version = state.room.split(',')[3]
+            if state.grade[1] != nbr_grades[version]:
+                await stream.write(f'{student}: grading unfinished.\n'.encode('utf-8'))
+                continue # Not finished grading
+            config.set_parameter('active_teacher_room', 5, student, 10)
+            await stream.write(f'{student}: <b>Force grading done.</b>\n'.encode('utf-8'))
+        await stream.write(b'</pre>')
     return stream
 
 def move_to_trash(path):
@@ -2041,6 +2085,7 @@ APP.add_routes([web.get('/', home),
                 web.get('/adm/session2/{course}/{action}', adm_config),
                 web.get('/adm/course/{course}', adm_course),
                 web.get('/adm/git_pull/{course}', adm_git_pull),
+                web.get('/adm/force_grading_done/{course}', adm_force_grading_done),
                 web.get('/adm/media/{course}/{action}/{media}', adm_media),
                 web.get('/adm/editor/{course}', adm_editor),
                 web.get('/adm/js_errors/{date}', js_errors),
