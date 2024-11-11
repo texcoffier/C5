@@ -102,7 +102,7 @@ def strptime(yyyymmddhhmmss):
         yyyymmddhhmmss[8:10],
         yyyymmddhhmmss[11:13],
         yyyymmddhhmmss[14:16],
-        yyyymmddhhmmss[17:18])
+        yyyymmddhhmmss[17:19])
     return js_date.getTime() / 1000.
 
 def max(*items): # pylint: disable=redefined-builtin)
