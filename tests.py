@@ -1355,7 +1355,8 @@ except KeyboardInterrupt:
 except: # pylint: disable=bare-except
     log(traceback.format_exc().strip().replace('\n', '\n\t'))
     traceback.print_exc()
-    time.sleep(10000)
+    if 'nosleep' not in sys.argv:
+        time.sleep(10000)
 finally:
     os.system('./127 stop')
     os.system('./clean.py')
