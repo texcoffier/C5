@@ -346,6 +346,10 @@ Image image(int w, int h) {
     return Image(w, h);
 }
 
+Image image(const char *url) {
+    return Image(url);
+}
+
 void image_printInfo(Image &im) {
     cout << "id=" << im.id << endl;
 }
