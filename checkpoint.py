@@ -1877,7 +1877,7 @@ def scheduler():
         scheduler.secs = secs # To not recompute multiple time per seconds
         now = nice_date(secs) + ':00'
         if now >= OPTIONS['stop']:
-            message = "Examen<br>terminé"
+            message = "Examen terminé"
         elif now < OPTIONS['start']:
             message = 'Début dans ' + split_time(strptime(OPTIONS['start']) - secs)
         else:
