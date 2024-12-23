@@ -922,7 +922,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 "Regarder en temps réel",
                 temps,
                 state,
-                "Naviguer dans le temps",
                 "Noter l'étudiant",
                 student.mail or 'Adresse mail inconnue'
             ])
@@ -1195,9 +1194,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if self.student_menu:
                 if self.selected_student:
                     login = self.student_menu.login
-                    if self.selected_student.startswith("Naviguer"):
-                        record('checkpoint/SPY/' + COURSE + '/' + login)
-                    elif self.selected_student.startswith("Regarder"):
+                    if self.selected_student.startswith("Regarder"):
                         create_realtime_spy(self.student_menu)
                     elif self.selected_student.startswith("Clôturer"):
                         close_exam(login)
@@ -1528,21 +1525,6 @@ def create_page(building_name):
         #top .course { font-size: 150%; }
         #top SELECT { font-size: 150%; }
         #top .drag_and_drop { display: inline-block }
-        #spy { position: absolute; left: 9% ; top: 5% ; right: 1%; bottom: 5%;
-               display: none; background: #FFF; opacity: 0.95; overflow: auto;
-               padding: 0px; font-size: 150%; z-index: 3;
-               border:0.5em solid #000;
-             }
-        #spy BUTTON, #spy INPUT { font-size: 100%; }
-        #spy INPUT { font-family: monospace,monospace; width: 2em }
-        #spy .source {  white-space: pre; }
-        .spytop {
-            position: fixed;
-            width: calc(90% - 2em);
-            background: #FFFC;
-            padding: 0.2em;
-            z-index: 2;
-        }
         #live_spy {
             position: fixed;
             top: 0; right: 0;
@@ -1664,7 +1646,6 @@ def create_page(building_name):
             onmousedown="ROOM.drag_start(event)"
             ontouchstart="ROOM.drag_start(event)"
         ></canvas>
-        <div id="spy"></div>
         <div id="live_spy"></div>
         ''')
     document.body.innerHTML = ''.join(content)
@@ -1717,23 +1698,10 @@ def update_page():
 def close_exam(login):
     """Terminate the student exam"""
     record('checkpoint/' + COURSE + '/' + login + '/STOP')
-    spy_close()
 
 def open_exam(login):
     """Open again the student exam"""
     record('checkpoint/' + COURSE + '/' + login + '/RESTART')
-    spy_close()
-
-def spy_close():
-    """Close the student source code"""
-    spy_elm = document.getElementById('spy')
-    if spy_elm.style.display != 'none' and spy_elm.style.display:
-        spy_elm.style.display = 'none'
-        return
-    spy_elm = document.getElementById('live_spy')
-    if spy_elm.lastChild:
-        spy_elm.lastChild.shared_worker.close()
-        spy_elm.lastChild.remove()
 
 def canonize(txt):
     """Cleanup name"""
@@ -1778,7 +1746,6 @@ def get_login(student):
 
 def search_student():
     """Zoom on a student"""
-    spy_close()
     student = prompt("Début de numéro d'étudiant ou nom ou prénom à chercher")
     if not student:
         return
@@ -1790,8 +1757,6 @@ def search_student():
 
 def key_event_handler(event):
     """The spy popup receive a keypress"""
-    if event.key == 'Escape':
-        spy_close()
     if event.key == 'f' and event.ctrlKey:
         search_student()
         event.preventDefault()
@@ -1803,133 +1768,11 @@ def key_event_handler(event):
             ROOM.move_student_to(student, col, row)
             ROOM.force_update_waiting_room = True
 
-def spy_cursor(source):
-    """Set the cursor position and content in the time scrollbar"""
-    if not spy.sources[0]:
-        return
-    time_bar = document.getElementById('time')
-    cursor = time_bar.lastChild
-    first = spy.sources[0][0] - BEFORE_FIRST
-    last = spy.sources[-1][0]
-    width = last - first
-    pos_x = (source[0] - first) / width * time_bar.offsetWidth
-    if pos_x < time_bar.offsetWidth / 2:
-        cursor.style.left = pos_x + 'px'
-        cursor.style.right = 'auto'
-        cursor.className = 'cursor left c' + source[2]
-    else:
-        cursor.style.right = time_bar.offsetWidth - pos_x + 'px'
-        cursor.style.left = 'auto'
-        cursor.className = 'cursor right c' + source[2]
-    cursor.innerHTML = (
-        nice_date(source[0])
-        + '<br>' + {'c': 'Compile', 's': 'Sauve', 'a': 'Réussi'}[source[2]]
-        + ' N° ' + (source[1] + 1)
-    )
-
-def spy_it(event=None):
-    """Display the selected source"""
-    if not spy.sources[0]:
-        return
-    time_bar = document.getElementById('time')
-    first = spy.sources[0][0] - BEFORE_FIRST
-    last = spy.sources[-1][0]
-    width = last - first
-    if event:
-        time = (first
-            + width
-            * (event.clientX - time_bar.offsetLeft - time_bar.parentNode.offsetLeft)
-            / time_bar.offsetWidth)
-        source = None # To please pylint
-        last_source = None
-        for source in spy.sources:
-            if source[0] >= time:
-                break
-            last_source = source
-        if last_source and source[0] - time > time - last_source[0]:
-            source = last_source # Take the previous because it is nearer
-        event.stopPropagation()
-        event.preventDefault()
-    else:
-        source = spy.sources[-1]
-    spy_cursor(source)
-    div_source = document.getElementById('source')
-    div_source.textContent = source[3]
-    hljs.highlightElement(div_source)
-
-def spy_concat(sources):
-    """Display all answers concatenated"""
-    done = {}
-    div_source = document.getElementById('source')
-    for source in sources[::-1]:
-        if source[1] in done:
-            continue
-        done[source[1]] = True
-        title = document.createElement('H1')
-        title.textContent = 'Question ' + (source[1] + 1)
-        div_source.appendChild(title)
-        lines = document.createElement('PRE')
-        lines.style.position = 'absolute'
-        lines.style.left = '0px'
-        lines.style.textAlign = 'right'
-        lines.style.marginTop = '0px'
-        lines.textContent = '\n'.join(
-            [
-                str(i+1)
-                for i, _ in enumerate(source[3].split('\n'))
-            ])
-        div_source.appendChild(lines)
-        code = document.createElement('PRE')
-        code.textContent = source[3]
-        code.style.marginLeft = "2em"
-        hljs.highlightElement(code)
-        div_source.appendChild(code)
-
 def set_time_bonus(element, login):
     """Recode and update student bonus time"""
     record('checkpoint/TIME_BONUS/' + COURSE + '/' + login + '/' + 60*int(element.value))
     element.style.background = "#DFD"
     STUDENT_DICT[login].bonus_time = element.value
-
-def spy(sources, login, infos, blurs):
-    """Display the infos source code"""
-    student = STUDENT_DICT[login]
-    sources.sort()
-    state = ''
-    if not student.good_room and student.active:
-        state += ' (Adresse IP dans la mauvaise salle)'
-
-    div = document.getElementById('spy')
-    content = [
-        '<div class="spytop">',
-        '<button class="closepopup" onclick="spy_close()">×</button> ',
-        login, ' ', infos.fn, ' ', infos.sn, state,
-        '<div id="time" onmousedown="spy_it(event)"',
-        ' onmousemove="if (event.buttons) spy_it(event)">']
-    spy.sources = []
-    if sources[0]:
-        first = sources[0][0] - BEFORE_FIRST
-        last = sources[-1][0]
-        width = (last - first) or 1
-        for source in sources:
-            spy.sources.append(source)
-            content.append(
-                '<span style="left:' + 100*(source[0] - first)/width
-                + '%" class="' + source[2] + '">'
-                + (source[2] == 'a' and (source[1]+1) or '')
-                + '</span>')
-        for (blur_start, blur_length) in blurs:
-            content.append(
-                '<tt style="left:' + 100*(blur_start - first)/width
-                + '%;width:' +   100*blur_length/width + '%" class="blur_span">blur</tt>')
-    else:
-        content.append("Aucune sauvegarde n'a été faite.")
-    content.append('<span class="cursor right"></span>')
-    content.append('</div></div><pre id="source"></pre>')
-    div.innerHTML = ''.join(content)
-    div.style.display = 'block'
-    spy_concat(sources)
-    spy_cursor(spy.sources[-1])
 
 def debug():
     """debug"""
@@ -1937,7 +1780,6 @@ def debug():
     for room_name, room in ROOM.rooms.Items():
         students_per_room[room_name] = [student.login for student in room.students]
     print(JSON.stringify(students_per_room))
-
 
 def set_visibility(attr):
     """For display_student_filter display_my_rooms display_session_name"""

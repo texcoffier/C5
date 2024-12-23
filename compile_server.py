@@ -84,7 +84,6 @@ class Process: # pylint: disable=too-many-instance-attributes
             if not os.path.exists(self.course.dir_log):
                 os.mkdir(self.course.dir_log)
             os.mkdir(self.dir)
-        self.log_file = f"{self.dir}/compile_server.log"
         self.exec_file = f"{self.dir}/{self.conid}"
         self.source_file = f"{self.dir}/{self.conid}.cpp"
         self.compiler = None
@@ -95,11 +94,10 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.filetree_out = ()
 
     def log(self, more:Union[str,Tuple]) -> None:
-        """Log action to COURSE/login/compile_server.log"""
+        """Log"""
         if self.feedback:
             return
-        with open(self.log_file, "a", encoding="utf-8") as file:
-            file.write(repr((int(time.time()), self.conid, more)) + '\n')
+        print((int(time.time()), self.login, self.course.course, self.conid, more))
 
     def course_running(self) -> bool:
         """Check if the course is running for the user"""

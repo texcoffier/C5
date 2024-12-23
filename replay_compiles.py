@@ -13,6 +13,10 @@ This script generate big log files, they must be cleaned:
 
 """
 
+THIS PROGRAM MUST BE REWROTE TO READ GLOBAL compile_server.log
+and not students ones.
+
+
 import glob
 import asyncio
 import sys

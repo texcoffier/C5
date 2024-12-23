@@ -1791,54 +1791,6 @@ async def computer(request:Request) -> Response:
     utilities.CONFIG.set_value('computers', utilities.CONFIG.computers)
     return await update_browser_data(course)
 
-async def checkpoint_spy(request:Request) -> Response:
-    """All the sources of the student as a list of:
-           [timestamp, question, compile | save | answer, source]
-    """
-    session, course = await get_teacher_login_and_course(request)
-    if not session.is_proctor(course):
-        return utilities.js_message("not_proctor")
-    student = request.match_info['student']
-    answers = []
-    blurs = []
-    try:
-        with open(f'{course.dir_log}/{student}/compile_server.log', encoding='utf-8') as file:
-            for line in file:
-                if "('COMPILE'," in line:
-                    line = ast.literal_eval(line)
-                    answers.append((int(line[0]), line[2][1][1], 'c', line[2][1][6]))
-                    await asyncio.sleep(0)
-    except (IndexError, FileNotFoundError):
-        pass
-
-    try:
-        with open(f'{course.dir_log}/{student}/http_server.log', encoding='utf-8') as file:
-            for line in file:
-                seconds = 0
-                for item in json.loads(line):
-                    if isinstance(item, list) and item[0] in ('answer', 'save'):
-                        answers.append((seconds, item[1], item[0][0], item[2]))
-                    elif isinstance(item, int):
-                        seconds += item
-                    elif item == 'Blur':
-                        blur_start = seconds
-                    elif item == 'Focus':
-                        try:
-                            blurs.append((blur_start, seconds - blur_start))
-                        except UnboundLocalError:
-                            pass # First Focus
-                await asyncio.sleep(0)
-
-    except (IndexError, FileNotFoundError):
-        pass
-
-    return answer(
-        f'''spy({json.dumps(answers)},
-               {json.dumps(student)},
-               {json.dumps(await utilities.LDAP.infos(student))},
-               {json.dumps(blurs)})''',
-        content_type='application/javascript')
-
 async def checkpoint_message(request:Request) -> Response:
     """The last answer from the student"""
     session, course = await get_teacher_login_and_course(request)
@@ -2220,7 +2172,6 @@ if __name__ == '__main__':
                     web.get('/checkpoint/*/{filter:.*}', checkpoint_list),
                     web.get('/checkpoint/BUILDINGS', checkpoint_buildings),
                     web.get('/checkpoint/{course}', checkpoint),
-                    web.get('/checkpoint/SPY/{course}/{student}', checkpoint_spy),
                     web.get('/checkpoint/MESSAGE/{course}/{message:.*}', checkpoint_message),
                     web.get('/checkpoint/TIME_BONUS/{course}/{student}/{bonus}', checkpoint_bonus),
                     web.get('/checkpoint/HOSTS/*', checkpoint_hosts),
