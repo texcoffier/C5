@@ -23,7 +23,7 @@ restore() {
     then
         mv $JSON~ $JSON
     fi
-    rm $PY.xxx
+    # rm $PY.xxx
 }
 
 case $1 in

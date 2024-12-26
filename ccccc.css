@@ -534,15 +534,12 @@ SPAN:hover .truncate_sn, SPAN:hover .truncate_fn {
     height: auto;
 }
 
-LABEL, .index DIV, .save_button, .local_button, .tag_button, .indent_button { cursor: pointer }
+LABEL, .index DIV, .save_button, .local_button, .indent_button { cursor: pointer }
 
 
-.save_button, .save_history, .tag_button { float: right; margin-right: 0.5em }
-
-.save_button[enabled="false"][state="wait"] { background: #F00 }
-.save_button[enabled="false"][state="ok"]   { background: #0F0 }
-.save_button[enabled="true"][state="wait"]  { background: #F00 }
-.save_button[enabled="true"][state="ok"]    { }
+.save_button, .save_history { float: right; margin-right: 0.5em }
+.save_button { transition: background 1s }
+.save_button[state="wait"] { background: #F00; transition: background 0s }
 
 .index > .version {
     background: #0F0;

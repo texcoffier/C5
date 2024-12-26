@@ -154,15 +154,6 @@ class Process: # pylint: disable=invalid-name
 LDAP = Process('./infos_server.py', 'LDAP')
 DNS = Process('./dns_server.py', 'DNS')
 
-def student_log(course_name:str, login:str, data:str) -> None:
-    """Add a line to the student log"""
-    if not os.path.exists(f'{course_name}/{login}'):
-        if not os.path.exists(course_name):
-            os.mkdir(course_name)
-        os.mkdir(f'{course_name}/{login}')
-    with open(f'{course_name}/{login}/http_server.log', "a", encoding='utf-8') as file:
-        file.write(data)
-
 def get_buildings() -> Dict[str,str]:
     """Building list"""
     if time.time() - get_buildings.time > 300:
@@ -446,23 +437,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             # Add to the checkpoint room
             active_teacher_room = State((0, '', place, now, 0, 0, hostname, 0, '', 0, 1))
             self.set_parameter('active_teacher_room', active_teacher_room, login)
-            to_log = [now, ["checkpoint_in", hostname]]
         elif hostname and hostname != active_teacher_room.hostname:
             # Student IP changed
             self.set_parameter('active_teacher_room', hostname, login, 6)
             if self.checkpoint and not self.allow_ip_change:
                 # Undo checkpointing
                 self.set_parameter('active_teacher_room', 0, login, 0)
-                to_log = [now, ["checkpoint_ip_change_eject", hostname]]
             else:
                 if not self.checkpoint:
                     # Automaticaly place if no checkpoint
                     self.set_parameter('active_teacher_room', CONFIG.host_to_place.get(hostname, ''), login, 2)
-                to_log = [now, ["checkpoint_ip_change", hostname]]
-        else:
-            to_log = None
-        if to_log:
-            student_log(self.dir_log, login, json.dumps(to_log) + '\n')
         return active_teacher_room
 
     def status(self, login:str, hostname:str=None) -> str: # pylint: disable=too-many-return-statements,too-many-statements,too-many-branches

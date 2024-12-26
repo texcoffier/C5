@@ -106,11 +106,11 @@ class QuestionStats:
     def __init__(self, start):
         self.start = start # <index> of the question creation
         self.head = None # <index> of the last version
-        self.saves = [] # List of saved sources as ('what', <index>)
-        self.saved = {'': start} # To be compatible with old history menu : source content → <index>
+        self.tags = [('', start+2)] # List[Tuple[<tag>, <index>]]
         self.good = False
+        self.source_old = self.source = ''
     def dump(self):
-        return f'start={self.start}, head={self.head}, good={self.good}, {len(self.saves)} save, {len(self.saved)} saved'
+        return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
 class Journal:
     position = content = scroll_line = height = remote_update = question = None
     _tree = _tree_question = last_event = None
@@ -174,7 +174,7 @@ class Journal:
         self.height = int(height)
     def action_t(self, tag, start):
         """Tag"""
-        self.questions[self.question].saved[self.content] = start + 1 # overwrite Save position
+        self.questions[self.question].tags.append((tag, start + 1)) # overwrite Save position
     def action_I(self, value, _start):
         """Text insert"""
         string = replace_all(value, '\000', '\n')
@@ -237,9 +237,6 @@ class Journal:
         """Do nothing: debug message in the logs"""
     def action_S(self, value, start):
         """Student asked to save"""
-        self.questions[self.question].saves.append((value, start)) # Add timestamps ?
-        # XXX Only for compatibility for old log method
-        self.questions[self.question].saved[self.content] = start
     def action_c(self, value, start):
         """Last compilation result, currently unused"""
     def action_g(self, value, start):
@@ -255,7 +252,10 @@ class Journal:
         for line in lines:
             self.actions[line[0]](line[1:], start)
             start += 1
-            self.questions[self.question].head = start
+            question = self.questions[self.question]
+            question.head = start
+            question.source_old = question.source
+            question.source = self.content
             self.children.append([start])
 
     def append(self, line):
@@ -272,7 +272,9 @@ class Journal:
             self.children.pop()
             self.children[-1].append(len(self.lines))
             # The ^Z does not change the question and is always at the end.
-            self.questions[self.question].head -= 1
+            question = self.questions[self.question]
+            question.head -= 1
+            question.source = question.source_old
             self.action_G(len(self.lines), None) # Update content
             self.pending_goto = False
             self._tree = None
@@ -843,6 +845,7 @@ def create_shared_worker(login='', hook=None):
         window.location.reload()
     def shared_worker_message(event):
         """Message from the shared worker"""
+        print(event)
         if event.data.startswith('J'):
             journal.__init__(event.data[1:])
             print('Init journal: ' + len(journal.lines) + ' lines')
@@ -858,6 +861,10 @@ def create_shared_worker(login='', hook=None):
         elif event.data.startswith('R'):
             reload_page("Le serveur a été arrêté pour une maintenance.")
         else:
+            try:
+                ccccc.save_button.setAttribute('state', 'ok')
+            except TypeError:
+                pass # ccccc does not exist (checkpoint spy)
             msg_id = event.data.split(' ')[0]
             message = event.data.replace(RegExp('[0-9]* '), '')
             if journal.lines[msg_id] == message:

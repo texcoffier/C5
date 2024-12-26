@@ -1,5 +1,4 @@
 
-PYTOJS = nodejs RapydScript/bin/rapydscript --prettify --bare
 
 %.js:%.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
 	@./py2js $* || true

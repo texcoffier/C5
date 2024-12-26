@@ -4,19 +4,12 @@ import os
 import ast
 import json
 import glob
+import time
 import common
 import http_server
 
-"""
-        _course, _question, compiler, compile_options, ld_options, allowed, source = data
-        self.compiler = compiler
-        self.log(("COMPILE", data))
-
-
-        self.log(("ERRORS", stderr.count(': error:'), stderr.count(': warning:')))
-
-            self.log(("EXIT", return_value))
-"""
+# Should retrieve EXIT value?
+#          self.log(("EXIT", return_value))
 
 def get_answers_old(course:str, user:str, compiled:bool=False) -> Tuple[Answers, Blurs] : # pylint: disable=too-many-branches,too-many-locals
     """Get question answers.
@@ -154,7 +147,8 @@ def get_answers(course, user):
                     what = cell[0]
                     if what in ('answer', 'save', 'snapshot'):
                         Diff(cell[2])
-                        Append(f'S{what}', dt=0) # Timestamp needed for tagging
+                        Append(f'S{what}')
+                        Append(f't{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(seconds))}')
                     elif what == 'question':
                         question = int(cell[1])
                         if journal.question != question:

@@ -155,38 +155,11 @@ def filter_last_answer(answers:List[Answer]) -> AnswerPerType:
 async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: disable=too-many-arguments,too-many-locals
                  login:str, grading:bool=False, author:str='', feedback:int=0) -> Response:
     """Return the editor page.
-       'saved' : see 'get_answer' comment.
     """
-    versions = {}
     stop = 8000000000
-    all_saves = collections.defaultdict(list)
     if author and is_admin:
-        with open(course.file_py, 'r', encoding='utf-8') as file:
-            source = file.read()
-        last_answers:Dict[int,Optional[Answer]] = {0: (source, 0, 0, '')}
         course = CourseConfig.get('COMPILE_PYTHON/editor')
     else:
-        last_answers = {}
-        answers, _blurs = get_answers(course.dir_log, login, compiled = grading or feedback)
-        if grading or feedback:
-            # The last save or ok or compiled or snapshot
-            for key, value in answers.items():
-                last = filter_last_answer(value)
-                last_answers[key] = max(last, key=lambda x: x[2] if x else 0) # Last time
-                versions[key] = last
-        else:
-            # The last save
-            for key, value in answers.items():
-                good = 0
-                for source, answer_question, timestamp, tag in value:
-                    if answer_question == 0:
-                        item = value[-1]
-                        value[-1] = (item[0], good, item[2], item[3])
-                        all_saves[key].append([timestamp, source, tag])
-                    elif answer_question == 1:
-                        all_saves[key].append([timestamp, source, tag])
-                        good = 1 # Correct answer even if changed after
-                last_answers[key] = value[-1] # Only the last answer
         if course:
             stop = course.get_stop(login)
     infos = await utilities.LDAP.infos(login)
@@ -226,10 +199,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             SOCK = "wss://{utilities.C5_WEBSOCKET}";
             ADMIN = {int(is_admin)};
             STOP = {stop};
-            VERSIONS = {json.dumps(versions)};
             INFOS = {json.dumps(infos)};
-            ANSWERS = {json.dumps(last_answers)};
-            ALL_SAVES = {json.dumps(all_saves)};
             WHERE = {json.dumps(course.active_teacher_room.get(
                 login, utilities.State((False, '?', '?,0,0,a', 0, 0, 0, 'ip', 0, '', 0, 0))))};
             SERVER_TIME = {time.time()};
@@ -308,70 +278,6 @@ async def grade(request:Request) -> Response:
     if not is_grader:
         return answer("Vous n'êtes pas autorisé à noter.")
     return await editor(session, True, course, request.match_info['login'], grading=True)
-
-async def log(request:Request) -> Response: # pylint: disable=too-many-branches
-    """Log user actions"""
-    post = await request.post()
-    course = CourseConfig.get(utilities.get_course(str(post['course'])))
-    session = await Session.get_or_fail(request, allow_ip_change=bool(course.allow_ip_change))
-    if not course.running(session.login, session.hostname):
-        return answer('''window.ccccc.record_not_done(
-            "Ce que vous faites n'est plus enregistré car l'examen est terminé.<br>Faites Ctrl+W pour fermer l'onglet.<br>Si nécessaire faites F11 ou échappement pour quitter le plein écran.")''')
-    data = urllib.parse.unquote(str(post['line']))
-    # Must do sanity check on logged data
-    try:
-        parsed_data = json.loads(data)
-        bad_json = 0
-    except: # pylint: disable=bare-except
-        bad_json = 10
-    if bad_json:
-        utilities.student_log(
-            course.dir_log, session.login, json.dumps([int(time.time()), ["HACK", data]]))
-    else:
-        utilities.student_log(course.dir_log, session.login, data)
-
-    if session.login in course.active_teacher_room:
-        infos = course.active_teacher_room[session.login]
-        last_time = infos.last_time
-        course.set_parameter('active_teacher_room', int(time.time()), session.login, 3)
-        if parsed_data[-1] == 'Blur':
-            course.set_parameter('active_teacher_room', infos.nr_blurs + 1, session.login, 4)
-            infos.last_time = sum(i for i in parsed_data if isinstance(i, int))
-        if parsed_data[-1] == 'Focus' and infos.nr_blurs:
-            duration = int(time.time() - last_time)
-            course.set_parameter(
-                'active_teacher_room', infos.blur_time + duration, session.login, 9)
-        nr_answers = 0
-        for item in parsed_data:
-            if isinstance(item, list) and item[0] == 'answer':
-                nr_answers += 1
-        if nr_answers:
-            course.set_parameter(
-                'active_teacher_room', infos.nr_answers + nr_answers, session.login, 5)
-
-    if course.course == 'PYTHON=editor':
-        source = None
-        for item in parsed_data:
-            if isinstance(item, list) and item[0] == 'save':
-                source = item[2]
-        if source:
-            edit = CourseConfig.get(utilities.get_course(post['real_course']))
-            if not session.is_admin(edit):
-                return answer('window.ccccc.record_not_done("Vous n\'avez pas le droit !")')
-            if edit is None:
-                return answer('window.ccccc.record_not_done("Rechargez la page.")')
-            os.rename(edit.file_py, edit.file_py + '~')
-            with open(edit.file_py, 'w', encoding="utf-8") as file:
-                file.write(source)
-            with os.popen(f'make {edit.file_js} 2>&1', 'r') as file:
-                errors = file.read()
-            if 'ERROR' in errors or 'FAIL' in errors:
-                os.rename(edit.file_py + '~', edit.file_py)
-            return answer(
-                f'window.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
-
-    return answer(
-        f"window.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)},{time.time()})")
 
 async def record_grade(request:Request) -> Response:
     """Log a grade"""
@@ -500,8 +406,8 @@ async def adm_course(request:Request) -> Response:
                 files.append(filename)
         try:
             student['status'] = course.status(user)
-            with open(f'{course.dir_log}/{user}/http_server.log', encoding='utf-8') as file:
-                student['http_server'] = file.read()
+            with open(f'{course.dir_log}/{user}/journal.log', encoding='utf-8') as file:
+                student['journal'] = file.read()
 
             filename = f'{course.dir_log}/{user}/grades.log'
             if os.path.exists(filename):
@@ -1689,27 +1595,28 @@ async def checkpoint_student(request:Request) -> Response:
         return utilities.js_message('not_proctor')
     seconds = int(time.time())
     old = course.active_teacher_room[student]
+
     if room == 'STOP':
         course.set_parameter('active_teacher_room', 0, student, 0)
-        to_log = [seconds, ["checkpoint_stop", session.login]]
+        to_log = f'#checkpoint_stop {session.login}'
     elif room == 'RESTART':
         course.set_parameter('active_teacher_room', 1, student, 0)
         course.set_parameter('active_teacher_room', session.login, student, 1)
-        to_log = [seconds, ["checkpoint_restart", session.login]]
+        to_log = f'#checkpoint_restart {session.login}'
     elif room == 'EJECT':
         course.set_parameter('active_teacher_room', 0, student, 0)
         course.set_parameter('active_teacher_room', '', student, 1)
         course.set_parameter('active_teacher_room', '', student, 2)
         course.set_parameter('active_teacher_room', seconds, student, 3)
-        to_log = [seconds, ["checkpoint_eject", session.login]]
+        to_log = f'#checkpoint_eject {session.login}'
     else:
         if old.teacher == '':
             # A moved STOPed student must not be reactivated
             course.set_parameter('active_teacher_room', 1, student, 0)
         course.set_parameter('active_teacher_room', session.login, student, 1)
         course.set_parameter('active_teacher_room', room, student, 2)
-        to_log = [seconds, ["checkpoint_move", session.login, room]]
-    utilities.student_log(course.dir_log, student, json.dumps(to_log) + '\n')
+        to_log = f'#checkpoint_move {session.login} {room}'
+    JournalLink.new(course, student, None, None).write(to_log)
     if session.is_student() and not session.is_proctor(course):
         return utilities.js_message("C'est fini.")
     return await update_browser_data(course)
@@ -1723,8 +1630,6 @@ async def checkpoint_bonus(request:Request) -> Response:
         return utilities.js_message("not_proctor")
     seconds = int(time.time())
     course.set_parameter('active_teacher_room', int(bonus), student, 7)
-    utilities.student_log(course.dir_log, student,
-                          f'[{seconds},["time bonus",{bonus},"{session.login}"]]\n')
     return await update_browser_data(course)
 
 async def home(request:Request) -> Response:
@@ -1986,6 +1891,15 @@ async def record_feedback(request:Request) -> Response:
     course.set_parameter('active_teacher_room', feedback, student, 10)
     return answer(f"window.update_feedback({feedback})")
 
+async def error(request:Request) -> Response:
+    """Record errors"""
+    session = await Session.get_or_fail(request)
+    course = request.match_info['course']
+    post = await request.post()
+    data = str(post['data'])
+    print(session.login, course, data)
+    return answer('console.log("error recorded")')
+
 async def change_session_ip(request:Request) -> Response:
     """Change the current session IP"""
     session = await Session.get_or_fail(request)
@@ -2031,6 +1945,8 @@ class JournalLink:
         self.msg_id = str(len(self.content))
         self.connections = [] # List of Socket, port of connected browsers
         self.locked = False
+        self.last_set_parameter = 0
+        self.last_blur = 0
 
     async def __aenter__(self):
         while self.locked:
@@ -2046,6 +1962,26 @@ class JournalLink:
         ############## XXX ################## Must check message validity and add timestamp
         self.content.append(message)
         self.journal.write(message + '\n')
+
+        if self.login in self.course.active_teacher_room:
+            infos = self.course.active_teacher_room[self.login]
+            infos.last_time = int(time.time())
+            if message.startswith('B'):
+                self.last_blur = infos.last_time
+                self.course.set_parameter(
+                    'active_teacher_room', infos.nr_blurs + 1, self.login, 4)
+            elif message.startswith('F'):
+                if infos.nr_blurs:
+                    duration = infos.last_time - self.last_blur
+                    self.course.set_parameter(
+                        'active_teacher_room', infos.blur_time + duration, self.login, 9)
+            elif message.startswith('g'):
+                self.course.set_parameter(
+                    'active_teacher_room', infos.nr_answers + 1, self.login, 5)
+            elif infos.last_time - self.last_set_parameter > 60:
+                self.course.set_parameter('active_teacher_room', infos.last_time, self.login, 3)
+                self.last_set_parameter = infos.last_time
+
         message = self.msg_id + ' ' + message
         self.journal.flush()
         self.msg_id = str(len(self.content))
@@ -2068,10 +2004,12 @@ class JournalLink:
 
     @classmethod
     def new(cls, course, login, socket, port):
+        print( course, login, socket, port)
         journa = JournalLink.journals.get((course.course, login), None)
         if not journa:
             journa = JournalLink.journals[course.course, login] = JournalLink(course, login)
-        journa.connections.append((socket, port))
+        if socket is not None:
+            journa.connections.append((socket, port))
         return journa
 
     @classmethod
@@ -2090,6 +2028,35 @@ class JournalLink:
                 except IOError:
                     pass
         print("JournalLink.close_all_socket() done", flush=True)
+
+
+
+"""
+
+    if course.course == 'PYTHON=editor':
+        source = None
+        for item in parsed_data:
+            if isinstance(item, list) and item[0] == 'save':
+                source = item[2]
+        if source:
+            edit = CourseConfig.get(utilities.get_course(post['real_course']))
+            if not session.is_admin(edit):
+                return answer('window.ccccc.record_not_done("Vous n\'avez pas le droit !")')
+            if edit is None:
+                return answer('window.ccccc.record_not_done("Rechargez la page.")')
+            os.rename(edit.file_py, edit.file_py + '~')
+            with open(edit.file_py, 'w', encoding="utf-8") as file:
+                file.write(source)
+            with os.popen(f'make {edit.file_js} 2>&1', 'r') as file:
+                errors = file.read()
+            if 'ERROR' in errors or 'FAIL' in errors:
+                os.rename(edit.file_py + '~', edit.file_py)
+            return answer(
+                f'window.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
+
+    return answer(
+        f"window.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)},{time.time()})")
+"""
 
 async def live_link(request:Request) -> StreamResponse:
     """Live link beetween the browser and the server.
@@ -2126,7 +2093,10 @@ async def live_link(request:Request) -> StreamResponse:
         elif journa:
             msg_id, message = message.split(' ', 1)
             if msg_id == journa.msg_id:
-                await journa.write(message)
+                if message.startswith('#'):
+                    pass # Not allowed for students
+                else:
+                    await journa.write(message)
         else:
             assert port not in journals
             session_name, asked_login = message.split(' ', 1)
@@ -2187,9 +2157,9 @@ if __name__ == '__main__':
                     web.get('/debug/change_session_ip', change_session_ip),
                     web.get('/stats/{param}', full_stats),
                     web.get('/live_link/session', live_link),
-                    web.post('/upload_course/{compiler}/{course}', upload_course),
+                    web.post('/error/{course}', error),
+                    web.post('/upload_course/{course}', upload_course),
                     web.post('/upload_media/{compiler}/{course}', upload_media),
-                    web.post('/log', log),
                     web.post('/record_grade/{course}', record_grade),
                     web.post('/record_comment/{course}', record_comment),
                     web.post('/adm/c5/{action}', adm_c5),
