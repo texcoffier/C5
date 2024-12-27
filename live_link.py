@@ -69,7 +69,7 @@ class Server:
             SELF.reload()
         def onmessage(event):
             """Dispatch server message to the good client in the browser"""
-            SELF.print("Receive from server:" + event.data)
+            SELF.print("Receive from server:" + event.data[:20] + '...' + event.data[-20:])
             port = event.data.split(' ')[0]
             message = event.data.replace(RegExp('[0-9]* '), '')
             #SELF.print("port=" + event.data + ', message=' + message + ', client=' + CLIENTS[port])

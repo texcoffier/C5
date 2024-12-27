@@ -397,20 +397,17 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             asyncio.ensure_future(self.send_journal())
     async def send_journal(self):
         """Send the changes to all listening browsers"""
-        print("start")
         while self.to_send:
             data = self.to_send.pop(0)
             if data[0] == 'active_teacher_room' and data[3] is None: # New student
                 self.to_send.append(('infos', data[2], await LDAP.infos(data[2])))
             data = (json.dumps(data) + '\n').encode('utf-8')
-            print(len(self.streams), data)
             for stream in tuple(self.streams):
                 try:
                     await stream.write(data)
                     await stream.drain()
                 except: # pylint: disable=bare-except
                     self.streams.remove(stream)
-        print("done")
         self.send_journal_running = False
     def get_stop(self, login:str) -> int:
         """Get stop date, taking login into account"""

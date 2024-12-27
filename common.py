@@ -391,6 +391,7 @@ class Journal:
             'P': ['P',         -1,          '#000', 0, 0],
             'T': ['T',         -1,          '#000', 0, 0],
             'H': ['H',         -1,          '#000', 0, 0],
+            '#': ['#',         -1,          '#000', 0, 0],
             'O': ['⏼', size * 0.9,          '#000', 0, 0],
             'S': ['📩',size * 1.3,            None, 0, -size * 0.2],
             'g': ['👍',size * 1.3,            None, 0, 0],
@@ -845,7 +846,6 @@ def create_shared_worker(login='', hook=None):
         window.location.reload()
     def shared_worker_message(event):
         """Message from the shared worker"""
-        print(event)
         if event.data.startswith('J'):
             journal.__init__(event.data[1:])
             print('Init journal: ' + len(journal.lines) + ' lines')
@@ -863,7 +863,7 @@ def create_shared_worker(login='', hook=None):
         else:
             try:
                 ccccc.save_button.setAttribute('state', 'ok')
-            except TypeError:
+            except: # pylint: disable=bare-except
                 pass # ccccc does not exist (checkpoint spy)
             msg_id = event.data.split(' ')[0]
             message = event.data.replace(RegExp('[0-9]* '), '')
@@ -975,7 +975,12 @@ def create_shared_worker(login='', hook=None):
     shared_worker.debug = shared_worker_debug
     shared_worker.port.onmessage = shared_worker_message
     shared_worker.port.start()
-    shared_worker.port.postMessage(['TICKET', window.location.search, COURSE, login])
+    if REAL_COURSE != COURSE:
+        course = REAL_COURSE
+        login = '_FOR_EDITOR_' + login
+    else:
+        course = COURSE
+    shared_worker.port.postMessage(['TICKET', window.location.search, course, login])
     window.onbeforeunload = shared_worker_close
     return shared_worker, journal
 

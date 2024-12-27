@@ -254,7 +254,7 @@
         L'ensemble de l'environnement est programmé en Python.
     </p>
     <ul>
-        <li> Vous composez votre sujet dans un fichier <tt>nom_sujet.py</tt>,
+        <li> Vous composez votre sujet dans un fichier <tt>nom_session.py</tt>,
             ce nom sera affiché aux étudiants,
             il est conseillé de le préfixer par le code du cours
             suivi de «_».
@@ -902,9 +902,9 @@ System calls allowable for g++/gcc:
         <li> Éditer le plan d'un bâtiment directement sur la page web.</li>
     </ul>
     <p>
-        Cette configuration est enregistrée sous le nom <tt>COMPILE_*/nom_sujet.cf</tt>
-        le sujet est dans <tt>COMPILE_*/nom_sujet.py</tt> et les logs des étudiants
-        dans le répertoire <tt>COMPILE_*/nom_sujet</tt>.
+        Cette configuration est enregistrée sous le nom <tt>COMPILE_*/NOM_SESSION/session.cf</tt>
+        le sujet est dans <tt>COMPILE_*/NOM_SESSION/questions.py</tt> et les logs des étudiants
+        dans le répertoire <tt>COMPILE_*/NOM_SESSION/LOGS</tt>.
     </p>
 
     <h2>Les autres pages de C5.</h2>
@@ -1482,63 +1482,63 @@ server {
                 Empty est pour la salle privée dans enseignants.
         </tr>
         <tr class="cours">
-            <td>COMPILE_CPP/test.py
+            <td>COMPILE_CPP/test/questions.py
             <td>Exemple d'utilisation de compile_cpp et de récupération
                 des informations concernant la place de l'étudiant dans la salle.
         </tr>
         <tr class="cours">
-            <td>COMPILE_JS/example.py
+            <td>COMPILE_JS/example/questions.py
             <td>Un exemple minimaliste de cours pour commencer.
         </tr>
         <tr class="cours">
-            <td>COMPILE_JS/introduction.py
+            <td>COMPILE_JS/introduction/questions.py
             <td>Mini cours de JavaScript.
         </tr>
         <tr class="cours">
-            <td>COMPILE_LISP/conway.py
+            <td>COMPILE_LISP/conway/questions.py
             <td>Un exemple de programme LISP.
         </tr>
         <tr class="">
-            <td>COMPILE_PYTHON/editor.py
+            <td>COMPILE_PYTHON/editor/questions.py
             <td>C'est l'éditeur interactif de sujet.
                 Les sujets étant écrits en Python,
                 il est nécessaire de les éditer et tester
                 dans l'environnement Python.
         </tr>
         <tr class="cours">
-            <td>COMPILE_PYTHON/introduction.py
+            <td>COMPILE_PYTHON/introduction/questions.py
             <td>Un mini cours Python.
         </tr>
         <tr class="cours">
-            <td>COMPILE_REMOTE/errors.py
+            <td>COMPILE_REMOTE/errors/questions.py
             <td>Une série d'exercices dans lesquels l'étudiant doit corriger des erreurs de syntaxe.
         </tr>
         <tr class="cours">
-            <td>COMPILE_REMOTE/files.py
+            <td>COMPILE_REMOTE/files/questions.py
             <td>Exemple de test sur la lecture et l'écriture de fichiers.
         </tr>
         <tr class="">
-            <td>COMPILE_REMOTE/grapic-chien.png
+            <td>COMPILE_REMOTE/grapic/questions-chien.png
             <td>Média utilisé dans les exemples Grapic.
         </tr>
         <tr class="cours">
-            <td>COMPILE_REMOTE/grapic.py
+            <td>COMPILE_REMOTE/grapic/questions.py
             <td>Les exemples Grapic pour faire des applications graphiques.
         </tr>
         <tr class="cours">
-            <td>COMPILE_REMOTE/racket.py
+            <td>COMPILE_REMOTE/racket/questions.py
             <td>Un exemple utilisant l'interpréteur Racket sur le serveur.
         </tr>
         <tr class="cours">
-            <td>COMPILE_REMOTE/test.py
+            <td>COMPILE_REMOTE/test/questions.py
             <td>Exemple d'utilisation de compile_remote.
         </tr>
         <tr class="cours">
-            <td>COMPILE_SQL/test.py
+            <td>COMPILE_SQL/test/questions.py
             <td>Exemple d'utilisation de compile_sql pour tester s'il fonctionne.
         </tr>
         <tr class="cours">
-            <td>COMPILE_TEXT/demo.py
+            <td>COMPILE_TEXT/demo/questions.py
             <td>Exemple d'utilisation de compile_text pour la saisie de texte libre.
         </tr>
         <tr>
@@ -1766,7 +1766,7 @@ server {
                 <li> La liste des ordinateurs en panne.
             </ul>
         </li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/nom_sujet.cf</tt> est la configuration d'un cours
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/NOM_SESSION/session.cf</tt> est la configuration d'un cours
             <ul>
                 <li> Dates de début et fin.</li>
                 <li> Listes des étudiants avec un tiers-temps.</li>
@@ -1787,7 +1787,7 @@ server {
         <li> <tt>dns_server.log</tt> toutes les requêtes DNS faites.</li>
         <li> <tt>infos_server.log</tt> toutes les requêtes nom/prénom faites.</li>
         <li> <tt>tests.log</tt> Résumé des tests de régression.</li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/nom_sujet/LOGIN/</tt>
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/NOM_SESSION/LOGS/LOGIN/</tt>
             <ul>
                 <li> <tt>journal.log</tt> toutes les actions de l'étudiant.<br>
                     <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
@@ -1797,7 +1797,9 @@ server {
                     les commentaires sur les codes de l'étudiant.</li>
             </ul>
         </li>
-    </ul>
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/NOM_SESSION/journal.log</tt>
+            historique des modifications du <tt>questions.py</tt>
+        </ul>
     <p>
         Divers fichiers générés à l'installation ou à l'utilisation :
     </p>

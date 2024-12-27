@@ -153,15 +153,16 @@ def filter_last_answer(answers:List[Answer]) -> AnswerPerType:
     return last
 
 async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: disable=too-many-arguments,too-many-locals
-                 login:str, grading:bool=False, author:str='', feedback:int=0) -> Response:
+                 login:str, grading:bool=False, feedback:int=0) -> Response:
     """Return the editor page.
     """
     stop = 8000000000
-    if author and is_admin:
+    real_course = course.course
+    if login == 'PYTHON=editor' and is_admin:
         course = CourseConfig.get('COMPILE_PYTHON/editor')
+        login = session.login
     else:
-        if course:
-            stop = course.get_stop(login)
+        stop = course.get_stop(login)
     infos = await utilities.LDAP.infos(login)
     if grading or feedback >= 5:
         notation = f"NOTATION = {json.dumps(course.get_notation(login))};"
@@ -195,7 +196,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             GRADING = {int(grading)};{notation}
             STUDENT = "{login}";
             COURSE = "{course.course}";
-            REAL_COURSE = "{author}";
+            REAL_COURSE = "{real_course}";
             SOCK = "wss://{utilities.C5_WEBSOCKET}";
             ADMIN = {int(is_admin)};
             STOP = {stop};
@@ -1616,7 +1617,7 @@ async def checkpoint_student(request:Request) -> Response:
         course.set_parameter('active_teacher_room', session.login, student, 1)
         course.set_parameter('active_teacher_room', room, student, 2)
         to_log = f'#checkpoint_move {session.login} {room}'
-    JournalLink.new(course, student, None, None).write(to_log)
+    await JournalLink.new(course, student, None, None, False).write(to_log)
     if session.is_student() and not session.is_proctor(course):
         return utilities.js_message("C'est fini.")
     return await update_browser_data(course)
@@ -1764,7 +1765,7 @@ async def adm_editor(request:Request) -> Response:
     is_admin = session.is_admin(course)
     if not is_admin:
         return answer("Vous n'êtes pas autorisé à modifier les questions.")
-    return await editor(session, is_admin, course, session.login, author=course.course)
+    return await editor(session, is_admin, course, 'PYTHON=editor')
 
 async def get_media(request:Request) -> Response:
     """Get a media file"""
@@ -1923,15 +1924,23 @@ async def full_stats(request:Request) -> Response:
 class JournalLink:
     journals:Dict[Tuple[str,str],"JournalLink"] = {} # session+login → JournalLink (containing sockets)
 
-    def __init__(self, course, login):
+    def __init__(self, course, login, editor):
         self.login = login
         self.course = course
-        dirname = f'{self.course.dir_log}/{login}'
+        self.editor = editor
+        if editor:
+            dirname = f'{self.course.dir_session}'
+        else:
+            dirname = f'{self.course.dir_log}/{login}'
         if not os.path.exists(dirname):
             if not os.path.exists(self.course.dir_log):
                 os.mkdir(self.course.dir_log)
             os.mkdir(dirname)
         path = pathlib.Path(dirname + '/journal.log')
+        if editor and not path.exists():
+            content = pathlib.Path(course.file_py).read_text(encoding='utf-8')
+            content = content.replace('\n', '\0')
+            path.write_text(f'Q0\nI{content}\ntI\n', encoding='utf-8')
         if path.exists():
             content = path.read_text(encoding='utf-8')
             if content:
@@ -1957,13 +1966,22 @@ class JournalLink:
         self.locked = False
 
     async def write(self, message):
-        if self.course.status(self.login) != 'running':
+        if self.course.status(self.login) != 'running' and not self.editor:
             return
         ############## XXX ################## Must check message validity and add timestamp
         self.content.append(message)
         self.journal.write(message + '\n')
 
-        if self.login in self.course.active_teacher_room:
+        if self.editor:
+            if message.startswith('t'):
+                os.rename(self.course.file_py, self.course.file_py + '~')
+                with open(self.course.file_py, 'w', encoding="utf-8") as file:
+                    file.write(common.Journal('\n'.join(self.content)).content)
+                with os.popen(f'make {self.course.file_js} 2>&1', 'r') as file:
+                    errors = file.read()
+                if 'ERROR' in errors or 'FAIL' in errors:
+                    os.rename(self.course.file_py + '~', self.course.file_py)
+        elif self.login in self.course.active_teacher_room:
             infos = self.course.active_teacher_room[self.login]
             infos.last_time = int(time.time())
             if message.startswith('B'):
@@ -2003,11 +2021,12 @@ class JournalLink:
             JournalLink.journals.pop((self.course.course, self.login))
 
     @classmethod
-    def new(cls, course, login, socket, port):
-        print( course, login, socket, port)
+    def new(cls, course, login, socket, port, editor):
+        if editor:
+            login = ''
         journa = JournalLink.journals.get((course.course, login), None)
         if not journa:
-            journa = JournalLink.journals[course.course, login] = JournalLink(course, login)
+            journa = JournalLink.journals[course.course, login] = JournalLink(course, login, editor)
         if socket is not None:
             journa.connections.append((socket, port))
         return journa
@@ -2028,35 +2047,6 @@ class JournalLink:
                 except IOError:
                     pass
         print("JournalLink.close_all_socket() done", flush=True)
-
-
-
-"""
-
-    if course.course == 'PYTHON=editor':
-        source = None
-        for item in parsed_data:
-            if isinstance(item, list) and item[0] == 'save':
-                source = item[2]
-        if source:
-            edit = CourseConfig.get(utilities.get_course(post['real_course']))
-            if not session.is_admin(edit):
-                return answer('window.ccccc.record_not_done("Vous n\'avez pas le droit !")')
-            if edit is None:
-                return answer('window.ccccc.record_not_done("Rechargez la page.")')
-            os.rename(edit.file_py, edit.file_py + '~')
-            with open(edit.file_py, 'w', encoding="utf-8") as file:
-                file.write(source)
-            with os.popen(f'make {edit.file_js} 2>&1', 'r') as file:
-                errors = file.read()
-            if 'ERROR' in errors or 'FAIL' in errors:
-                os.rename(edit.file_py + '~', edit.file_py)
-            return answer(
-                f'window.ccccc.record_done({parsed_data[0]});alert({json.dumps(errors)})')
-
-    return answer(
-        f"window.ccccc.record_done({parsed_data[0]},{course.get_stop(session.login)},{time.time()})")
-"""
 
 async def live_link(request:Request) -> StreamResponse:
     """Live link beetween the browser and the server.
@@ -2106,7 +2096,15 @@ async def live_link(request:Request) -> StreamResponse:
                 login = asked_login
             else:
                 login = session.login
-            journa = JournalLink.new(course, asked_login, socket, port)
+            editor = login.startswith('_FOR_EDITOR_')
+            if editor:
+                login = login.replace('_FOR_EDITOR_', '')
+                asked_login = asked_login.replace('_FOR_EDITOR_', '')
+                if session.is_admin(course):
+                    allow_edit = True
+                else:
+                    login = session.login
+            journa = JournalLink.new(course, asked_login, socket, port, editor)
             journals[port] = [journa, allow_edit]
             await socket.send_str(
                 port + ' J' + '\n'.join(journa.content) + '\n')

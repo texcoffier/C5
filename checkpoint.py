@@ -263,6 +263,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.all_ips = {}
         self.force_update_waiting_room = True
         scheduler.update_messages = True
+        self.student_menu = self.selected_student = None # Why not computer menu?
+
     def prepare_draw(self):
         """Compile information to draw quickly the map"""
         self.walls = []
@@ -497,7 +499,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """
         Returns the text overed by the mouse
         """
-        ctx.font = "16px sans-serif"
+        ctx.font = "24px sans-serif"
         if self.rotate_180:
             x_pos -= self.scale
             y_pos -= self.scale
@@ -1171,6 +1173,37 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ]
             setTimeout(bind(self.animate_zoom, self), 40)
             self.animate_zoom()
+    def drag_stop_click_on_student_menu(self):
+        """Choose an item in student menu"""
+        if not self.student_menu:
+            return False
+        if not self.selected_student:
+            return False
+        login = self.student_menu.login
+        if self.selected_student.startswith("Regarder"):
+            create_realtime_spy(self.student_menu)
+        elif self.selected_student.startswith("Clôturer"):
+            close_exam(login)
+        elif self.selected_student.startswith("Rouvrir"):
+            open_exam(login)
+        elif self.selected_student.startswith("Noter"):
+            window.open(BASE + '/grade/' + COURSE + '/' + login + '?ticket=' + TICKET)
+        elif self.selected_student.startswith("Temps"):
+            minutes = prompt(
+                "Nombre de minutes bonus pour l'étudiant.\n"
+                + "C'est un temps total, pas un incrément.\n"
+                + "Les tiers-temps ont déjà leur temps en plus.",
+                int(self.student_menu.bonus_time / 60))
+            if minutes is not None:
+                record('checkpoint/TIME_BONUS/' + COURSE + '/'
+                        + login + '/' + 60*int(minutes))
+        elif self.selected_student:
+            alert(self.selected_student)
+
+        self.student_menu = self.selected_student = None
+        scheduler.draw = "drag_stop not moved student_menu"
+        return True
+
     def drag_stop(self, event):
         """Stop moving the map"""
         if self.zooming:
@@ -1186,47 +1219,26 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         document.getElementById('top').style.background = TOP_INACTIVE
         self.get_event(event)
         column, line = self.get_coord(self.event_x, self.event_y)
-        if self.moving != True or (not self.moved and self.student_clicked): # pylint: disable=singleton-comparison
+        if self.moving != True or (not self.moved and self.student_clicked and not self.selected_computer): # pylint: disable=singleton-comparison
             self.moving = self.student_clicked
             column, line = self.get_coord(self.event_x, self.event_y, True)
             self.drag_stop_student(column, line)
         elif not self.moved:
-            if self.student_menu:
-                if self.selected_student:
-                    login = self.student_menu.login
-                    if self.selected_student.startswith("Regarder"):
-                        create_realtime_spy(self.student_menu)
-                    elif self.selected_student.startswith("Clôturer"):
-                        close_exam(login)
-                    elif self.selected_student.startswith("Rouvrir"):
-                        open_exam(login)
-                    elif self.selected_student.startswith("Noter"):
-                        window.open(BASE + '/grade/' + COURSE + '/' + login + '?ticket=' + TICKET)
-                    elif self.selected_student.startswith("Temps"):
-                        minutes = prompt(
-                            "Nombre de minutes bonus pour l'étudiant.\n"
-                            + "C'est un temps total, pas un incrément.\n"
-                            + "Les tiers-temps ont déjà leur temps en plus.",
-                            int(self.student_menu.bonus_time / 60))
-                        if minutes is not None:
-                            record('checkpoint/TIME_BONUS/' + COURSE + '/'
-                                   + login + '/' + 60*int(minutes))
-                    elif self.selected_student:
-                        alert(self.selected_student)
-
+            # Simple click
+            if self.selected_computer:
+                self.drag_stop_click_on_computer_menu()
+                self.selected_computer = None
+                scheduler.draw = "drag_stop not moved selected computer"
+            elif self.student_menu:
+                self.drag_stop_click_on_student_menu()
                 self.student_menu = self.selected_student = None
                 scheduler.draw = "drag_stop not moved student_menu"
-
-            # Simple click
-            if (not self.drag_stop_click_on_computer_menu()
-                    and not self.drag_stop_click_on_computer(column, line)
-                    and not self.drag_stop_click_on_grade(column, line)
-                    and not self.drag_stop_click_on_room(event, column, line)
-               ):
-                # No special click
-                if self.selected_computer:
-                    self.selected_computer = None
-                    scheduler.draw = "drag_stop not moved selected computer"
+            elif (not self.drag_stop_click_on_computer(column, line)
+                  and not self.drag_stop_click_on_grade(column, line)
+                  and not self.drag_stop_click_on_room(event, column, line)
+                 ):
+                # No new menu open
+                pass
         else:
             # Panning: recompute waiting room list
             self.compute_rooms_on_screen()
@@ -1767,6 +1779,10 @@ def key_event_handler(event):
             col, row = ROOM.positions[hostname]
             ROOM.move_student_to(student, col, row)
             ROOM.force_update_waiting_room = True
+    if event.key == 'Escape':
+        students = document.getElementById('live_spy')
+        if students.lastChild:
+            students.removeChild(students.lastChild)
 
 def set_time_bonus(element, login):
     """Recode and update student bonus time"""
@@ -1980,6 +1996,7 @@ def create_realtime_spy(student):
 create_page(OPTIONS.default_building or "Nautibus")
 ROOM = Room(document.getElementById('buildings').value)
 scheduler.update_page = True
+REAL_COURSE = COURSE
 
 
 def reload_on_error(event):

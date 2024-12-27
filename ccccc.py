@@ -268,7 +268,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         def close(event):
             """Close the dialog"""
             self.dialog_on_screen = False
-            document.body.removeChild(popup)
+            try:
+                document.body.removeChild(popup)
+            except: # pylint: disable=bare-except
+                # On examination termination : body.innerHTLM = ''
+                pass
             stop_event(event)
 
         def validate(event):
@@ -605,10 +609,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         else:
             if self.fullscreen.style.display != 'none':
                 self.fullscreen.style.display = 'none'
-                if self.first_F11:
-                    self.first_F11 = False
-                else:
-                    SHARED_WORKER.focus()
+                self.first_F11 = False
+                SHARED_WORKER.focus()
 
         if self.do_update_cursor_position:
             # print('do_update_cursor_position', self.do_update_cursor_position)
@@ -1344,6 +1346,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             stop_event(event)
         elif event.key == 'F8':
             self.do_indent()
+        elif event.key == 'F11':
+            if self.first_F11:
+                self.first_F11 = False
+                SHARED_WORKER.focus()
         elif event.key == 'Enter' and event.target is self.editor:
             # Automatic indent
             self.update_source()
@@ -1395,7 +1401,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             SHARED_WORKER.blur()
     def onfocus(self, _event):
         """Window focus"""
-        if self.options['checkpoint']:
+        if self.options['checkpoint'] and self.fullscreen.style.display == 'none':
             self.record_pending_goto()
             SHARED_WORKER.focus()
     def memorize_inputs(self):
@@ -1478,9 +1484,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def do_stop(self):
         """Really stop the session"""
         record('checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
+        SHARED_WORKER.close()
         document.body.innerHTML = self.options['stop_done']
         document.exitFullscreen()
-
     def stop(self):
         """The student stop its session"""
         self.popup_message(
