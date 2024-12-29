@@ -5,6 +5,7 @@ BODY {
     --line_height: 1.18vw;
     --line_number_width: 40px;
     --header_height: 2.4em;
+    --bubble_handle_size: 1.2vh;
     overflow: hidden;
 }
 
@@ -50,7 +51,7 @@ DIV.overlay {
 DIV.editor_title H2 {
     margin-bottom: 0px;
 }
-DIV.editor_title SELECT {
+DIV.editor_title SELECT.save_history {
     font-size: 70%;
     max-width: 16em;
 }
@@ -195,6 +196,42 @@ DIV.executor > DIV:first-child
     opacity: 0.5;
 }
 
+.bubble_target {
+    position: absolute;
+    background: #FF0;
+    opacity: 0.5;
+    border: 1px solid #0000;
+}
+
+.bubble_content {
+    position: absolute;
+    background: #FF8;
+    opacity: 0.9;
+    border: 1px solid #880;
+    border-top-width: var(--bubble_handle_size);
+    border-radius: 0.8em;
+    font-family: sans-serif;
+    resize: both;
+    pointer-events: all;
+    overflow: auto;
+    white-space: pre-wrap;
+    font-size: 0.7vw;
+    box-sizing: border-box;
+}
+
+.bubble_close {
+    pointer-events: all;
+    position: absolute;
+    color: #FFF;
+    font-weight: bold;
+    font-size: 1vw;
+    margin-top: -0.3em;
+}
+
+.bubble_target[hovered="1"], .bubble_content[hovered="1"] {
+    border-color: #000;
+}
+
 .line_numbers {
     text-align: right;
     font-size: 50%;
@@ -213,46 +250,8 @@ DIV.executor > DIV:first-child
     z-index: 1000;
     overflow: hidden;
     pointer-events: none;
-}
-.comments TEXTAREA {
-    position: absolute;
-    display: block;
-    opacity: 0.3;
-    font-size: 80%;
-    pointer-events: all;
-    white-space: pre; /* To be wysiwyg */
-}
-.comments TEXTAREA:hover, .comments TEXTAREA:focus {
-    opacity: 1;
-}
-
-.comments TEXTAREA.empty {
-    width: 1vw;
-    resize: none;
-    height: 1.2em;
-}
-
-.comments TEXTAREA.empty:focus {
-    width: auto;
-    height: auto;
-    resize: both;
-}
-
-.comments TEXTAREA.filled, .comments TEXTAREA:focus {
-    z-index: 2;
-}
-.comments TEXTAREA.saving {
-    background: #F88;
-}
-.comments TEXTAREA.filled {
-    background: #DFD;
-    border-left: 0.5em solid #000;
-}
-.comments TEXTAREA.feedback {
-    opacity: 1;
-}
-.comments TEXTAREA:focus {
-    background: #FFF;
+    height: 100%;
+    width: calc(100% - var(--line_number_width));
 }
 
 BODY>DIV>DIV {
@@ -275,9 +274,6 @@ DIV.layered {
     overflow-y: auto;
     z-index: 10;
 }
-
-BODY.dograding DIV.layered { direction: rtl; }
-BODY.dograding DIV.layered > DIV { direction: ltr; }
 
 DIV.overlay, DIV.editor, DIV.line_numbers, DIV.comments {
     position: absolute;
@@ -536,6 +532,12 @@ SPAN:hover .truncate_sn, SPAN:hover .truncate_fn {
 
 LABEL, .index DIV, .save_button, .local_button, .indent_button { cursor: pointer }
 
+.editmode {
+    margin-left: 0.5em;
+}
+.editmode {
+    font-size: 64%
+}
 
 .save_button, .save_history { float: right; margin-right: 0.5em }
 .save_button { transition: background 1s }

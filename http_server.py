@@ -113,7 +113,7 @@ class File:
             self.mime = 'image/jpg'
             self.charset = None
         else:
-            print('Unknow mimetype', filename)
+            log(f'Unknown mimetype {filename}')
             self.mime = 'text/plain'
     def get_content(self) -> Union[str,bytes]:
         """Check file date and returns content"""
@@ -171,11 +171,9 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
         notation = 'NOTATION = "";'
         title = course.course.split('=', 1)[1]
 
-    comments = None
     grades = None
     the_grade = None
     if feedback >= 3:
-        comments = course.get_comments(login)
         if feedback >= 4:
             active_teacher_room = course.active_teacher_room.get(login)
             if active_teacher_room:
@@ -193,6 +191,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
         <link rel="stylesheet" href="ccccc.css?ticket={session.ticket}">
         <script src="HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         <script>
+            SESSION_LOGIN = "{session.login}";
             GRADING = {int(grading)};{notation}
             STUDENT = "{login}";
             COURSE = "{course.course}";
@@ -205,7 +204,6 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
                 login, utilities.State((False, '?', '?,0,0,a', 0, 0, 0, 'ip', 0, '', 0, 0))))};
             SERVER_TIME = {time.time()};
             GRADE = {json.dumps(the_grade)};
-            COMMENTS = {json.dumps(comments)};
             GRADES = {json.dumps(grades)};
             COURSE_CONFIG = {json.dumps(course.get_config())};
             COURSE_CONFIG['feedback'] = {feedback};
@@ -298,25 +296,6 @@ async def record_grade(request:Request) -> Response:
         grades = course.get_grades(login)
     return answer(f"window.parent.ccccc.update_grading({json.dumps(grades)})")
 
-async def record_comment(request:Request) -> Response:
-    """Log a comment"""
-    session, course = await get_teacher_login_and_course(request)
-    is_grader = session.is_grader(course)
-    if not is_grader:
-        return answer("window.parent.ccccc.record_not_done(\"Vous n'êtes pas autorisé à noter.\")")
-    post = await request.post()
-    login = str(post['student'])
-    if not os.path.exists(f'{course.dir_log}/{login}'):
-        return answer("window.parent.ccccc.record_not_done(\"Aucun travail à commenter.\")")
-    if 'comment' in post:
-        course.append_comment(
-            login,
-            [int(time.time()), session.login, int(str(post['question'])),
-             int(str(post['version'])), int(str(post['line'])), post['comment']])
-        course.doing_grading[session.login] = time.time()
-    comments = course.get_comments(login)
-    return answer(f"window.parent.ccccc.update_comments({json.dumps(comments)})")
-
 async def load_student_infos() -> None:
     """Load all student info in order to answer quickly"""
     CourseConfig.load_all_configs()
@@ -341,7 +320,7 @@ async def startup(app:web.Application) -> None:
         app['load_student_infos'] = asyncio.create_task(load_student_infos())
     if False:
         app['simulate_active_student'] = asyncio.create_task(simulate_active_student())
-    print("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
+    log("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
     def close_all(*args, **kargs):
         JournalLink.close_all_sockets()
     signal.signal(signal.SIGTERM, close_all)
@@ -414,8 +393,6 @@ async def adm_course(request:Request) -> Response:
             if os.path.exists(filename):
                 with open(filename, encoding='utf-8') as file:
                     student['grades'] = file.read()
-
-            student['comments'] = course.get_comments(user)
         except IOError:
             pass
         await stream.write(f'{separator} {json.dumps(user)}: {json.dumps(student)}'.encode('utf-8'))
@@ -1898,7 +1875,7 @@ async def error(request:Request) -> Response:
     course = request.match_info['course']
     post = await request.post()
     data = str(post['data'])
-    print(session.login, course, data)
+    log(f'ERROR {session.login} {course} {data}')
     return answer('console.log("error recorded")')
 
 async def change_session_ip(request:Request) -> Response:
@@ -1966,8 +1943,6 @@ class JournalLink:
         self.locked = False
 
     async def write(self, message):
-        if self.course.status(self.login) != 'running' and not self.editor:
-            return
         ############## XXX ################## Must check message validity and add timestamp
         self.content.append(message)
         self.journal.write(message + '\n')
@@ -2039,14 +2014,14 @@ class JournalLink:
 
     @classmethod
     def close_all_sockets(cls):
-        print("JournalLink.close_all_sockets()", flush=True)
+        log("JournalLink.close_all_sockets()")
         for journa in JournalLink.journals.values():
             for socket, _port in journa.connections:
                 try:
                     socket._writer.transport.close()
                 except IOError:
                     pass
-        print("JournalLink.close_all_socket() done", flush=True)
+        log("JournalLink.close_all_socket() done")
 
 async def live_link(request:Request) -> StreamResponse:
     """Live link beetween the browser and the server.
@@ -2068,15 +2043,18 @@ async def live_link(request:Request) -> StreamResponse:
 
     async for msg in socket:
         if msg.type == WSMsgType.ERROR:
-            print(f'socket connection closed with exception {socket.exception()}')
+            log(f'socket connection closed with exception {socket.exception()}')
             break
         if msg.type != WSMsgType.TEXT:
-            print(f'Type {msg.type}')
+            log(f'Type {msg.type}')
             break
         port, message = msg.data.split(' ', 1)
         journa, allow_edit = journals.get(port, (None, True))
         if not allow_edit:
-            continue
+            log(f'{session.is_grader(journa.course)} {message.split(" ", 1)[1]}')
+            if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'GbT':
+                continue
+            # Allow grader comments
         if message == '-':
             journa.close(socket, port)
             journals.pop(port)
@@ -2084,34 +2062,42 @@ async def live_link(request:Request) -> StreamResponse:
             msg_id, message = message.split(' ', 1)
             if msg_id == journa.msg_id:
                 if message.startswith('#'):
-                    pass # Not allowed for students
+                    log(f'Not allowed via web interface «{message}»')
+                elif message.startswith('b+') and not message.startswith(f'b+{session.login}'):
+                    log(f'Hacker «{message}»')
                 else:
+                    # log(f'record {message}')
                     await journa.write(message)
+            else:
+                log(f'{journa.msg_id} != {msg_id}  for  {message}')
         else:
             assert port not in journals
             session_name, asked_login = message.split(' ', 1)
             course = CourseConfig.get(utilities.get_course(session_name))
-            allow_edit = asked_login == session.login
+            allow_edit = asked_login == session.login or session.is_grader(course)
             if asked_login and session.is_proctor(course):
                 login = asked_login
             else:
                 login = session.login
-            editor = login.startswith('_FOR_EDITOR_')
-            if editor:
+            for_editor = login.startswith('_FOR_EDITOR_')
+            if for_editor:
                 login = login.replace('_FOR_EDITOR_', '')
                 asked_login = asked_login.replace('_FOR_EDITOR_', '')
                 if session.is_admin(course):
                     allow_edit = True
                 else:
                     login = session.login
-            journa = JournalLink.new(course, asked_login, socket, port, editor)
+            journa = JournalLink.new(course, asked_login, socket, port, for_editor)
             journals[port] = [journa, allow_edit]
             await socket.send_str(
                 port + ' J' + '\n'.join(journa.content) + '\n')
             if allow_edit:
                 await journa.write(f'O{login} {session.client_ip} {port}')
     JournalLink.closed_socket(socket)
-    print('websocket connection closed')
+    log('websocket connection closed')
+
+def log(message):
+    print(f'{TIME.strftime("%Y-%m-%d %H:%M:%S")}     {message}', flush=True)
 
 if __name__ == '__main__':
     APP = web.Application()
@@ -2159,7 +2145,6 @@ if __name__ == '__main__':
                     web.post('/upload_course/{course}', upload_course),
                     web.post('/upload_media/{compiler}/{course}', upload_media),
                     web.post('/record_grade/{course}', record_grade),
-                    web.post('/record_comment/{course}', record_comment),
                     web.post('/adm/c5/{action}', adm_c5),
                     web.post('/adm/building/{building}', adm_building_store),
                     web.post('/adm/session/{course}/{action}', adm_config),

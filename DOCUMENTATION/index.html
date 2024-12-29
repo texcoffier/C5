@@ -1737,6 +1737,11 @@ server {
             <td>Tests de régression (ne teste pas la salle d'attente).
         </tr>
         <tr class="executable">
+            <td>upgrade_logs.py
+            <td>Passage de la version 1 à la version 2 de C5 en créant <tt>journal.log</tt>
+                (<tt>http_server.log</tt> et <tt>comments.log</tt> peuvent être détruit)
+        </tr>
+        <tr class="executable">
             <td>utilities.py
             <td>Classes et fonctions nécessaires pour les serveurs,
                 mais c'est aussi le script d'administration du serveur.
@@ -1793,8 +1798,6 @@ server {
                     <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
                 <li> <tt>grades.log</tt><br>
                     les notes de l'étudiant.</li>
-                <li> <tt>comments.log</tt><br>
-                    les commentaires sur les codes de l'étudiant.</li>
             </ul>
         </li>
         <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/NOM_SESSION/journal.log</tt>

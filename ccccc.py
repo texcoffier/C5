@@ -30,6 +30,7 @@ if not COURSE_CONFIG['display_grading']:
     GRADING = False
 
 SHARED_WORKER, JOURNAL = create_shared_worker(LOGIN)
+EDITMODE = ['', ''] # Journals without and with comments
 
 IS_TEACHER = LOGIN != STUDENT
 
@@ -124,6 +125,23 @@ def walk_regtests():
 
 walk_regtests()
 
+def bubble_resize_do(event):
+    ccccc.bubble_save_change()
+    SHARED_WORKER.bubble_size(event.target.bubble_index,
+                              (event.target.offsetWidth / ccccc.char_width).toFixed(2),
+                              (event.target.offsetHeight / ccccc.line_height).toFixed(2))
+    event.target.onmouseup = ''
+    ccccc.do_coloring = 'bubble_resize'
+
+def bubble_resize(entries):
+    """Send bubble size change"""
+    if not ccccc.resize_observer_active:
+        return
+    for entry in entries:
+        if entry.target.nextSibling and entry.target.nextSibling.className == 'bubble_close':
+            entry.target.nextSibling.remove()
+        entry.target.onmouseup = bubble_resize_do
+
 def stop_event(event):
     """Stop the event"""
     event.preventDefault(True)
@@ -132,7 +150,7 @@ def stop_event(event):
 
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
-    course = worker = shared_buffer = line_height = active_completion = completion = None
+    course = worker = shared_buffer = line_height = char_width = active_completion = completion = None
     grading_sum = competence_average = None
     server_time_delta = int(millisecs()/1000 - SERVER_TIME)
     question = editor = overlay = tester = compiler = executor = time = None
@@ -159,7 +177,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     do_not_clear = {}
     inputs = {} # User input in execution bloc
     grading_history = ''
-    all_comments = {}
     focus_on_next_input = False
     cursor_position = 0
     insert_on_keyup = None
@@ -168,6 +185,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
     mouse_pressed = -1
     mouse_position = [0, 0]
     worker_url = None
+    hover_bubble = None
+    moving_bubble = None
+    resize_observer_active = False
+    add_comments = GRADING
      # These options are synchronized between GUI and compiler/session
     options = {}
     stop_timestamp = 0
@@ -231,6 +252,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if GRADING or self.options['feedback'] >= 5:
             # Will be updated after
             self.options['positions']['grading'] = [0, 1, 0, 75, '#FFF8']
+
+        self.resize_observer = eval('new ResizeObserver(bubble_resize)')
         print("GUI: wait worker")
 
     def onSocketError(self):
@@ -246,6 +269,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.inputs = {} # Indexed by the question number
         self.do_not_clear = {}
         self.seconds = int(millisecs() / 1000)
+        EDITMODE[0] = EDITMODE[1] = '\n'.join(JOURNAL.lines)
         print("GUI: init done")
 
     def popup_message(self, txt, cancel='', ok='OK', callback=None, add_input=False, init=None): # pylint: disable=no-self-use
@@ -332,6 +356,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.layered.setAttribute('display_line_numbers', 'yes')
         else:
             self.layered.setAttribute('display_line_numbers', 'no')
+        if self.add_comments:
+            self.indent_button.style.opacity = 0.2
+        else:
+            self.indent_button.style.opacity = 1
         self.options['positions']['editor_title'] = self.options['positions']['editor']
         if GRADING or self.options['feedback'] >= 5:
             left, width, top, height, background = self.options['positions']['editor']
@@ -363,17 +391,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if key == 'editor':
                 key = 'layered'
                 e = self.layered
-                if GRADING or self.options['feedback'] >= 3:
-                    if self.options['display_line_numbers']:
-                        padding = self.line_numbers.offsetWidth + 5
-                    else:
-                        padding = 12
-                    self.overlay.style.left = self.editor.style.left = padding + 'px'
-                    ewidth = self.comments.offsetLeft - self.editor.offsetLeft + 'px'
-                    self.overlay.style.width = self.editor.style.width = ewidth
-                else:
-                    self.overlay.style.right = '0px'
-                    self.editor.style.right = '0px'
+                self.overlay.style.right = '0px'
+                self.editor.style.right = '0px'
                 self.editor.style.paddingBottom = 0.9*self.layered.offsetHeight + 'px'
                 self.editor.style.background = background
             if not e:
@@ -383,12 +402,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             else:
                 e.style.display = 'block'
             e.style.left = left + '%'
-            if key == 'layered' and (GRADING or self.options['feedback'] >= 3):
-                e.style.right = '0px'
-                self.comments.style.left = 100 * width / (100 - left) + '%'
-                self.comments.style.right = '0px'
-            else:
-                e.style.right = (100 - left - width) + '%'
+            e.style.right = (100 - left - width) + '%'
             if key == 'layered':
                 e.style.top = 'calc(' + top + '% + var(--header_height) + ' + version_height + ')'
             else:
@@ -448,10 +462,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.line_numbers.appendChild(document.createElement('DIV'))
                 self.line_numbers.firstChild.textContent = '1'
                 self.layered.appendChild(self.line_numbers)
-                if GRADING or self.options['feedback'] >= 3:
-                    self.comments = document.createElement('DIV')
-                    self.comments.className = 'comments'
-                    self.layered.appendChild(self.comments)
+                self.comments = document.createElement('DIV')
+                self.comments.className = 'comments'
+                self.layered.appendChild(self.comments)
                 e = self.layered
             if GRADING and key in ('executor', 'compiler'):
                 e.style.position = 'fixed'
@@ -490,8 +503,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_history.className = 'save_history'
             self.editor_title.firstChild.appendChild(self.save_history)
 
-        if GRADING or self.options['feedback']:
-            self.save_history.style.display = 'none'
+        if GRADING:
+            self.editmode = document.createElement('SELECT')
+            self.editmode.className = 'editmode'
+            self.editmode.innerHTML = '<option>Bidouiller le code source</option><option selected>Commenter en sélectionnant</option>'
+            self.editmode.onchange = bind(self.update_editmode, self)
+            self.editor_title.firstChild.appendChild(self.editmode)
 
         if self.options['display_local_save']:
             self.local_button = document.createElement('TT')
@@ -532,6 +549,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
         </p>
         """
         self.top.appendChild(self.fullscreen)
+
+    def set_editmode(self, value):
+        """Toggle between edit source code and comment it"""
+        EDITMODE[self.add_comments] = '\n'.join(JOURNAL.lines)
+        self.add_comments = value
+        JOURNAL.__init__(EDITMODE[self.add_comments] + '\n')
+        self.set_editor_content(JOURNAL.content)
+        self.update_gui()
+
+    def update_editmode(self, event):
+        """Toggle between edit source code and comment it"""
+        self.set_editmode(event.target.selectedIndex)
 
     def save_local(self):
         """Save the source on a local file"""
@@ -610,7 +639,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.fullscreen.style.display != 'none':
                 self.fullscreen.style.display = 'none'
                 self.first_F11 = False
-                SHARED_WORKER.focus()
+                if self.options['checkpoint']:
+                    SHARED_WORKER.focus()
 
         if self.do_update_cursor_position:
             # print('do_update_cursor_position', self.do_update_cursor_position)
@@ -809,52 +839,144 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 line_nr, char_nr, width = line_char
             self.add_highlight_errors(line_nr, char_nr, what, width)
 
-        line_height = 1000
-        comments = self.all_comments[self.current_question] or {}
-        comments = comments[self.version] or {}
         i = 0
         for i, line in enumerate(self.editor_lines):
             rect = self.get_rect(line)
             if not self.line_numbers.childNodes[i]:
                 self.line_numbers.appendChild(document.createElement('DIV'))
                 self.line_numbers.childNodes[i].textContent = i+1
-            if GRADING or (self.options['feedback'] >= 3 and comments[i]):
-                comment = self.comments.childNodes[i]
-                if not comment:
-                    comment = document.createElement('TEXTAREA')
-                    comment.line = i
-                    self.comments.appendChild(comment)
-                if comment.style.top != rect['top'] + 'px':
-                    comment.style.top = rect['top'] + 'px'
-                comment.value = comments[i] or ''
-                if comments[i]:
-                    if GRADING:
-                        comment.className = 'filled'
-                    else:
-                        comment.className = 'filled feedback'
-                else:
-                    comment.className = 'empty'
-                if comments[i]:
-                    lines = comments[i].split('\n')
-                    comment.rows = len(lines)
-                    comment.cols = min(max(*[len(line) for line in lines]), 50)
-                else:
-                    comment.rows = 3
-                    comment.cols = 40
-
             self.line_numbers.childNodes[i].style.top = rect['top'] + 'px'
-            if rect['height'] and rect['height'] < line_height:
-                line_height = rect['height']
-                continue
-            if rect['height'] < line_height * 1.8:
+            if not self.char_width:
+                nr_chars = len(line.textContent)
+                if nr_chars:
+                    self.char_width = rect['width'] / nr_chars
+            if rect['height'] < self.line_height * 1.8:
                 continue
             marker = document.createElement('DIV')
             marker.className = 'wrapped'
             marker.style.left = rect['left'] + 'px'
-            marker.style.top = rect['top'] + line_height + 'px'
+            marker.style.top = rect['top'] + self.line_height + 'px'
             marker.style.width = rect['width'] + 'px'
-            marker.style.height = rect['height'] - line_height + 'px'
+            marker.style.height = rect['height'] - self.line_height + 'px'
             self.overlay.appendChild(marker)
+
+        def enter_bubble(event):
+            if self.hover_bubble:
+                self.hover_bubble.bubble.setAttribute('hovered', '0')
+                self.hover_bubble.setAttribute('hovered', '0')
+            self.hover_bubble = event.target
+            self.hover_bubble.bubble.setAttribute('hovered', '1')
+            self.hover_bubble.setAttribute('hovered', '1')
+        def add_marker(column, line, column_stop):
+            line = self.editor_lines[line-1]
+            if not line:
+                return
+
+            box = document.createRange()
+            box.setStart(line, column)
+            if column_stop < 0:
+                column_stop = len(line.textContent)
+            box.setEnd(line, column_stop)
+            rect = self.get_rect(box)
+            marker = document.createElement('DIV')
+            marker.className = 'bubble_target'
+            marker.style.left = rect['left'] + 'px'
+            marker.style.top = rect['top'] + 'px'
+            marker.style.width = rect['width'] + 'px'
+            marker.style.height = rect['height'] + 'px'
+            marker.onmouseenter = enter_bubble
+            marker.bubble = bubble_elm
+            self.comments.appendChild(marker)
+
+        def bubble_move(event):
+            self.moving_bubble.style.left = self.get_layer_x(event.clientX) - self.moving_bubble.dx + 'px'
+            self.moving_bubble.style.top = self.get_layer_y(event.clientY) - 8 + 'px'
+            if self.moving_bubble.nextSibling and self.moving_bubble.nextSibling.className == 'bubble_close':
+                self.moving_bubble.nextSibling.remove()
+            stop_event(event)
+        def bubble_move_stop(event):
+            event.target.onmouseup = ''
+            self.layered.onmousemove = ''
+            x, y = event.target.relative_to
+            self.record_pending_goto()
+            SHARED_WORKER.bubble_position(
+                self.moving_bubble.bubble_index,
+                (self.moving_bubble.offsetTop / self.line_height - y).toFixed(2),
+                (self.moving_bubble.offsetLeft / self.char_width - x).toFixed(2))
+            self.do_coloring = 'bubble_move'
+            stop_event(event)
+        def comment_change(event):
+            if event.target.disable_next_change:
+                event.target.disable_next_change = False # See 'goto_line'
+            else:
+                bubble_index = event.target.bubble_index
+                if event.target.value != JOURNAL.bubbles[bubble_index].comment:
+                    self.record_pending_goto()
+                    SHARED_WORKER.bubble_comment(bubble_index, event.target.value)
+
+        def bubble_move_start(event):
+            self.resize_observer_active = True
+            if self.get_layer_y(event.clientY) - event.target.offsetTop < 16:
+                self.bubble_save_change()
+                self.layered.onmousemove = bubble_move
+                event.target.onmouseup = bubble_move_stop
+                event.target.dx = self.get_layer_x(event.clientX) - event.target.offsetLeft
+                self.moving_bubble = event.target
+                stop_event(event)
+
+        def bubble_delete(event):
+            print('Delete bubble ', event.target.previousSibling.bubble_index)
+            SHARED_WORKER.bubble_delete(event.target.previousSibling.bubble_index)
+            self.moving_bubble = None # Not necessary?
+            self.record_pending_goto()
+            self.do_coloring = 'bubble_delete'
+
+        self.resize_observer_active = False
+        self.comments.innerHTML = ''
+        for j, bubble in enumerate(JOURNAL.bubbles):
+            if not bubble.login:
+                continue # Deleted bubble
+            bubble_elm = document.createElement('TEXTAREA')
+            line1, column1 = self.get_line_column(bubble.pos_start)
+            line2, column2 = self.get_line_column(bubble.pos_end)
+            if line1 == line2:
+                add_marker(column1, line1, column2)
+            else:
+                add_marker(column1, line1, -1)
+                for line in range(line1+1, line2):
+                    add_marker(0, line, -1)
+                add_marker(0, line2, column2)
+
+            bubble_elm.className = 'bubble_content'
+            bubble_elm.relative_to = [min(column1, column2), max(line1, line2)]
+            left = (bubble_elm.relative_to[0] + bubble.column) * self.char_width
+            top = (bubble_elm.relative_to[1] + bubble.line) * self.line_height
+            width = bubble.width * self.char_width
+            bubble_elm.style.left = left + 'px'
+            bubble_elm.style.top = top + 'px'
+            bubble_elm.style.width = width + 'px'
+            bubble_elm.style.height = bubble.height * self.line_height + 'px'
+            bubble_elm.bubble_index = j
+            bubble_elm.bubble = self.comments.lastChild
+            bubble_elm.onmousedown = bubble_move_start
+            bubble_elm.onmouseenter = enter_bubble
+            bubble_elm.onchange = comment_change
+            bubble_elm.placeholder = "Indiquez votre commentaire ici."
+            if bubble.login != SESSION_LOGIN:
+                bubble_elm.setAttribute('readonly', 1)
+            if bubble.comment:
+                bubble_elm.innerHTML = html(bubble.comment)
+            self.comments.appendChild(bubble_elm)
+            self.resize_observer.observe(bubble_elm)
+
+            bubble_close = document.createElement('DIV')
+            bubble_close.className = 'bubble_close'
+            bubble_close.style.left = left + width - 2 * self.char_width + 'px'
+            bubble_close.style.top = top + 'px'
+            bubble_close.innerHTML = '×'
+            bubble_close.onclick = bubble_delete
+            self.comments.appendChild(bubble_close)
+
         for i in range(i+1, len(self.line_numbers.childNodes)):
             self.line_numbers.childNodes[i].style.top = '-10em'
 
@@ -871,14 +993,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         self.overlay_show()
         self.line_numbers.style.height = self.overlay.offsetHeight + 'px'
-        # self.editor.style.height = self.overlay.offsetHeight + self.layered.offsetHeight + 'px'
-        if GRADING or self.options['feedback'] >= 3:
-            self.comments.style.height = self.overlay.offsetHeight + 'px'
         self.tree_canvas()
 
     def tree_canvas(self):
         """Display the version tree"""
         JOURNAL.tree_canvas(self.canvas)
+
+    def get_layer_x(self, x):
+        """From screen coordinate to layer coordinates"""
+        return x - self.layered.offsetLeft - self.editor.offsetLeft
+
+    def get_layer_y(self, y):
+        """From screen coordinate to layer coordinates"""
+        return y - self.layered.offsetTop + self.layered.scrollTop
 
     def get_rect(self, element):
         """Get rectangle in self.layered coordinates"""
@@ -888,8 +1015,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         rect = element.getBoundingClientRect()
         return {
             'width': rect.width, 'height': rect.height,
-            'top': rect.top - self.layered.offsetTop + self.layered.scrollTop,
-            'left': rect.left - self.layered.offsetLeft - self.editor.offsetLeft
+            'top': self.get_layer_y(rect.top),
+            'left': self.get_layer_x(rect.left)
         }
 
     def add_highlight_errors(self, line_nr, char_nr, what, width=1):
@@ -952,9 +1079,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onmousedown(self, event):
         """Mouse down"""
         self.mouse_pressed = event.button
-    def onmouseup(self, _event):
+
+    def onmouseup(self, event):
         """Mouse up"""
         self.mouse_pressed = -1
+        selection = window.getSelection()
+        if not self.editor.contains(selection.anchorNode) or not self.editor.contains(event.target):
+            return
+        # Selection in source code
+        self.update_cursor_position_now()
+        if REAL_GRADING and self.add_comments:
+            pos_end = self.cursor_position
+            pos_start = pos_end - len(selection.toString())
+            if pos_start != pos_end:
+                self.record_pending_goto()
+                SHARED_WORKER.bubble(SESSION_LOGIN, pos_start, pos_end, 0, 0, 20, 2, '')
     def onmousemove(self, event):
         """Mouse move"""
         if event.target.tagName == 'CANVAS':
@@ -982,6 +1121,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.target.tagName == 'TEXTAREA':
             return # Grading comment
         if not self.allow_edit:
+            stop_event(event)
+            return
+        if self.add_comments:
             stop_event(event)
             return
         self.oncopy(event, 'Cut')
@@ -1013,6 +1155,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.target.tagName == 'TEXTAREA':
             return # Grading comment
         if not self.allow_edit:
+            stop_event(event)
+            return
+        if self.add_comments:
             stop_event(event)
             return
         text = (event.clipboardData or event.dataTransfer).getData("text/plain")
@@ -1212,6 +1357,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def do_indent(self):
         """Formate the source code"""
+        if self.add_comments:
+            return
         self.user_compilation = True # Indent trigger compile
         self.unlock_worker()
         self.wait_indentation = True
@@ -1264,10 +1411,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.active_completion = 0
         self.hide_completion_chooser = 2
 
+    def bubble_save_change(self):
+        """The bubble texte content must be saved"""
+        if document.activeElement and document.activeElement.tagName == 'TEXTAREA':
+            document.activeElement.onchange({'target': document.activeElement})
+            document.activeElement.disable_next_change = True
+
     def goto_line(self, line):
         """Goto in the past"""
         if line <= 0:
             return
+        self.bubble_save_change()
         self.unlock_worker()
         JOURNAL.see_past(line)
         self.set_editor_content(JOURNAL.content)
@@ -1304,6 +1458,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if event.target is self.editor and event.key not in (
                 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'):
             self.clear_highlight_errors()
+
+        if event.target.tagName == 'TEXTAREA':
+            # The teacher enter a comment
+            return
+        if self.add_comments and   event.key not in (
+                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'F9'
+                ) and not (event.ctrlKey and event.key in  ('r', 'y', 'z')):
+            stop_event(event)
+            return
+
         if event.key == 'Tab':
             document.execCommand('insertHTML', False, '    ')
             stop_event(event)
@@ -1372,9 +1536,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
-        if event.target.tagName == 'TEXTAREA':
-            # The teacher enter a comment
-            return
         self.overlay_hide()
     def onkeyup(self, event):
         """Key up"""
@@ -1442,7 +1603,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def change_history(self, event):
         """Put an old version in the editor"""
         choosen = event.target.selectedOptions[0].innerHTML
-        print('choosen', choosen)
         if choosen == "Version initiale":
             choosen = ''
         for tag, index in self.journal_question.tags:
@@ -1479,6 +1639,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         # Unlock the next question
                         self.unlock_worker()
                         self.worker.postMessage(['goto', self.current_question + 1])
+                self.set_editor_content(JOURNAL.content) # Put the cursor at the right place
+                setTimeout(bind(self.editor.focus, self.editor), 100)
             self.prompt("Nommez votre sauvegarde :", do_tag, len(self.journal_question.tags))
 
     def do_stop(self):
@@ -1492,21 +1654,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.popup_message(
             self.options['stop_confirm'], 'Non !', "Oui, et je quitte silencieusement la salle",
             bind(self.do_stop, self))
-
-    def update_comments(self, comments):
-        """Fill comments"""
-        for infos in comments.split('\n'):
-            if not infos:
-                continue
-            _timestamp, _login, question, version, line, comment = JSON.parse(infos)
-            if question not in self.all_comments:
-                self.all_comments[question] = {}
-            if version not in self.all_comments[question]:
-                self.all_comments[question][version] = {}
-            self.all_comments[question][version][line] = comment
-            # ANSWERS[question][1] = version # Want to see the commented version
-        self.do_coloring = "update_comments"
-        self.update_grading_select()
 
     def update_grading(self, history=None):
         """Colorize buttons"""
@@ -1573,15 +1720,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if button and button.feedback != 5:
                     button.style.opacity = 0.3
                     button.style.pointerEvents = 'none'
-
-    def get_comment(self, line_number):
-        """Get the actual line comment"""
-        comment = self.all_comments[self.current_question]
-        if comment:
-            comment = comment[self.version]
-            if comment:
-                comment = comment[line_number]
-        return comment
 
     def add_grading(self):
         """HTML of the grading interface"""
@@ -1847,20 +1985,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.clear_if_needed(what)
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
-            need_update_grading_select = False
             if what == 'question' and (GRADING or self.options['feedback']) and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
                 self.add_grading()
                 if self.first_update:
                     self.first_update = False
-                    if self.options['feedback'] >= 3 and COMMENTS:
-                        self.update_comments(COMMENTS)
                 if self.options['feedback'] >= 5 and GRADES:
                     self.update_grading(GRADES)
-                need_update_grading_select = True
             span = document.createElement('DIV')
             span.innerHTML = value
-            if need_update_grading_select:
-                self.update_grading_select()
             if '<error' in value:
                 self[what].style.background = '#FAA' # pylint: disable=unsubscriptable-object
             else:
@@ -1999,12 +2131,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.create_gui()
         setInterval(bind(self.scheduler, self), 200)
         if GRADING:
-            self.comments.onclick = bind(self.add_comment, self)
-            self.comments.onpaste = bind(self.add_comment, self)
-            self.comments.onblur = bind(self.save_comment, self)
             # Get grades
             do_post_data({'student': STUDENT}, 'record_grade/' + COURSE + '?ticket=' + TICKET)
-            do_post_data({'student': STUDENT}, 'record_comment/' + COURSE + '?ticket=' + TICKET)
         self.completion = document.createElement('DATALIST')
         document.getElementsByTagName('BODY')[0].appendChild(self.completion)
         self.completion.className = 'completion'

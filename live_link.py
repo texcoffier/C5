@@ -129,7 +129,7 @@ def my_onconnect(event):
     port.onmessage = onmessage
     port.my_index = len(CLIENTS)
     CLIENTS.append(port)
-    port.postMessage('M======== YOUR PORT IS : ' + port.my_index + " ========")
+    port.postMessage('M======== YOUR PORT IS : ' + port.my_index + " ======== " + millisecs())
 
 onconnect = my_onconnect
 SERVER.start_time = millisecs()

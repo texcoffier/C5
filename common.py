@@ -101,6 +101,7 @@ def parse_notation(notation):
 #    'c<error>'      # 0 if compiled without error message
 #    't<tag>'        # Add a tag
 #    'g'             # Question passed (good)
+#    'b<description> # A bubble comment
 
 class QuestionStats:
     def __init__(self, start):
@@ -111,6 +112,15 @@ class QuestionStats:
         self.source_old = self.source = ''
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
+
+class Bubble:
+    def __init__(self, description):
+        items = description.split(' ')
+        self.login = items[0]
+        self.pos_start, self.pos_end, self.line, self.column, self.width, self.height = [float(i) for i in items[1:7]]
+        self.comment = replace_all(' '.join(items[7:]), '\000', '\n')
+    def str(self):
+        return self.login+' '+self.pos_start+' '+self.pos_end+' '+self.line+' '+self.column+' '+self.width+' '+self.height+' '+self.comment
 class Journal:
     position = content = scroll_line = height = remote_update = question = None
     _tree = _tree_question = last_event = None
@@ -134,6 +144,7 @@ class Journal:
             't': bind(self.action_t, self),
             'F': bind(self.action_F, self),
             'B': bind(self.action_B, self),
+            'b': bind(self.action_b, self),
         }
         self.questions = {}
         self.cache = {}
@@ -144,6 +155,7 @@ class Journal:
             self.lines = journal.split('\n')
             self.lines.pop()
         self.children = []
+        self.bubbles = []
         self.clear_pending_goto()
         self.evaluate(self.lines, 0)
     def clear_pending_goto(self):
@@ -179,10 +191,30 @@ class Journal:
         """Text insert"""
         string = replace_all(value, '\000', '\n')
         self.content = self.content[:self.position] + string + self.content[self.position:]
-        self.position += len(string)
+        size = len(string)
+        for bubble in self.bubbles:
+            if bubble.pos_end > self.position:
+                bubble.pos_end += size
+                if bubble.pos_start >= self.position:
+                    bubble.pos_start += size
+        self.position += size
     def action_D(self, value, _start):
         """Text delete"""
-        self.content = self.content[:self.position] + self.content[self.position + int(value):]
+        value = int(value)
+        for bubble in self.bubbles:
+            if bubble.pos_end > self.position:
+                bubble.pos_end -= value
+                if bubble.pos_end < self.position:
+                    bubble.pos_end = self.position
+                if bubble.pos_start >= self.position:
+                    bubble.pos_start -= value
+                    if bubble.pos_start < self.position:
+                        bubble.pos_start = self.position
+        self.bubbles = [bubble
+                        for bubble in self.bubbles
+                        if bubble.pos_end > bubble.pos_start
+                       ]
+        self.content = self.content[:self.position] + self.content[self.position + value:]
     def update_tree(self, value, start):
         """Update tree"""
         if start is None:
@@ -193,7 +225,8 @@ class Journal:
         """Goto in the past.
         The value is index of the line after the goal"""
         if value in self.cache:
-            self.position, self.content, self.scroll_line, self.height, self.question = self.cache[value]
+            self.position, self.content, self.scroll_line, self.height, self.question, bubbles = self.cache[value]
+            self.bubbles = [Bubble(i) for i in bubbles]
             self.update_tree(value, start)
             return
         index = int(value) - 1
@@ -201,7 +234,7 @@ class Journal:
         while True:
             line = self.lines[index]
             action = line[0]
-            if action in 'PIDL': # Position/Insert/Delete/Line
+            if action in 'PIDLb': # Position/Insert/Delete/Line/Bubble
                 lines.append(line)
                 index -= 1
             elif action in 'TOC#HScgtFB':
@@ -218,30 +251,52 @@ class Journal:
                 break
             else:
                 raise ValueError('Unexpected :' + action)
+        self.bubbles = []
         self.evaluate_fast(lines[::-1])
-        self.cache[value] = (self.position, self.content, self.scroll_line, self.height, self.question)
+        self.cache[value] = (self.position, self.content, self.scroll_line, self.height, self.question, [i.str() for i in self.bubbles])
         self.update_tree(value, start)
 
     def action_T(self, value, _start):
         """Update time"""
         self.timestamp = value
-    def action_O(self, value, _start):
+    def action_O(self, _value, _start):
         """Session open login and IP"""
-    def action_C(self, value, _start):
+    def action_C(self, _value, _start):
         """Session close"""
-    def action_F(self, value, _start):
+    def action_F(self, _value, _start):
         """Focus"""
-    def action_B(self, value, _start):
+    def action_B(self, _value, _start):
         """Blur"""
-    def action_debug(self, value, _start):
+    def action_debug(self, _value, _start):
         """Do nothing: debug message in the logs"""
-    def action_S(self, value, start):
+    def action_S(self, _value, _start):
         """Student asked to save"""
-    def action_c(self, value, start):
+    def action_c(self, _value, _start):
         """Last compilation result, currently unused"""
-    def action_g(self, value, start):
+    def action_g(self, _value, _start):
         """Question passed test (no argument)"""
         self.questions[self.question].good = True
+    def action_b(self, value, _start):
+        """Add a bubble or update it"""
+        if value.startswith('+'):
+            self.bubbles.append(Bubble(value[1:]))
+            return
+        changes = value[1:].split(' ')
+        bubble_index = int(changes[0])
+        bubble = self.bubbles[bubble_index]
+        if value.startswith('P'):
+            bubble.line = float(changes[1])
+            bubble.column = float(changes[2])
+        elif value.startswith('S'):
+            bubble.width = float(changes[1])
+            bubble.height = float(changes[2])
+        elif value.startswith('C'):
+            bubble.comment = replace_all(' '.join(changes[1:]), '\000', '\n')
+        elif value.startswith('-'):
+            bubble.login = ''
+        else:
+            raise ValueError('Bad journal')
+
     def evaluate_fast(self, lines):
         """Evaluate all these lines in the current state"""
         for line in lines:
@@ -289,6 +344,9 @@ class Journal:
         #     print(JSON.stringify(self.children))
         # except:
         #     pass
+        # print(start,
+        #       start < len(self.children) and self.children[start] or '?',
+        #       start < len(self.lines) and self.lines[start] or '?')
         if start < len(self.children):
             children = self.children[start]
         else:
@@ -298,20 +356,25 @@ class Journal:
                 return None
             return [start, 1, 1]
 
-        if self.lines[start].startswith('G'): # Remove G
-            return self.compute_tree(children[0])
-        children = [self.compute_tree(child) for child in children]
-        children = [child for child in children if child]
-        if len(children) == 0:
+        kids = []
+        for child in children:
+            kid = self.compute_tree(child)
+            if kid:
+                if kid[0] < len(self.lines) and self.lines[kid[0]][0] in 'GTBF':
+                    for great_children in kid[3:]:
+                        kids.append(great_children)
+                else:
+                    kids.append(kid)
+        if len(kids) == 0:
             return [start, 1, 1]
         height = 0
-        for i, child in enumerate(children):
+        for i, child in enumerate(kids):
             height += child[2]
-            if child[1] > children[0][1]:
-                children[0], children[i] = children[i], children[0]
+            if child[1] > kids[0][1]:
+                kids[0], kids[i] = kids[i], kids[0]
 
-        result = [start, 1 + children[0][1], height]
-        for child in children:
+        result = [start, 1 + kids[0][1], height]
+        for child in kids:
             result.append(child)
         return result
 
@@ -319,7 +382,7 @@ class Journal:
         """Get the parent position"""
         for i, children in enumerate(self.children):
             if position in children:
-                if self.lines[i][0] in 'GO':
+                if self.lines[i][0] in 'GOTFB':
                     return self.parent_position(i)
                 if self.lines[i][0] == 'Q':
                     return position
@@ -381,7 +444,7 @@ class Journal:
         """Draw tree in canvas.
         Return selected item"""
         tree = self.tree()
-        size = 20 # Font size
+        size = 16 # Font size
         arrow = 3 # Arrow size
         widths = {
             'D': ['|', size * 0.1,          '#F88', 0, -size * 0.15],
@@ -392,6 +455,7 @@ class Journal:
             'T': ['T',         -1,          '#000', 0, 0],
             'H': ['H',         -1,          '#000', 0, 0],
             '#': ['#',         -1,          '#000', 0, 0],
+            'b': ['#', size * 0.7,          '#000', -size * 0.2, 0],
             'O': ['⏼', size * 0.9,          '#000', 0, 0],
             'S': ['📩',size * 1.3,            None, 0, -size * 0.2],
             'g': ['👍',size * 1.3,            None, 0, 0],
@@ -427,7 +491,7 @@ class Journal:
         else:
             mouse_x = mouse_y = 0
         self.last_event = None
-        feedback = []
+        feedback = [None]
 
         def tree_canvas_(tree, x, y):
             """Draw tree in canvas.
@@ -455,11 +519,8 @@ class Journal:
                         char = None
                     else:
                         ctx.fillStyle = fillStyle
-                if mouse_x >= x and mouse_y < y and (mouse_x < x+width or len(tree[3:])==0) and mouse_y >= y-size+1 and char != '✍':
-                    if buttons:
-                        self.last_event = event
-                        ccccc.goto_line(tree[0] + 1)
-                    feedback.append((x+1, y+1, width))
+                if mouse_y < y and mouse_y >= y-size+1 and mouse_x >= x and char != '✍':
+                    feedback[0] = (x+1, y+1, width, tree[0] + 1)
                 if char:
                     ctx.fillText(char, x+dx, y+dy)
                 x += width
@@ -484,11 +545,17 @@ class Journal:
                 y += dy
 
         tree_canvas_(tree, 0.5, size + 0.5)
-        for x, y, width in feedback: # Should only ONE feedback
+        if feedback[0]:
+            x, y, width, _line = feedback[0]
             ctx.strokeStyle = '#000'
             ctx.beginPath()
             ctx.rect(x-1, y-size+1, width+2, size+3)
             ctx.stroke()
+            if buttons:
+                x, y, width, line = feedback[0]
+                # if (mouse_x < x+width or len(tree[3:])==0):
+                self.last_event = event
+                ccccc.goto_line(line)
 
     def see_past(self, index):
         """Look in the past, but will come back to present"""
@@ -770,7 +837,13 @@ def journal_regtest():
    "QI\n"
   ],
  ]],
-
+[["Q0", "tA", "G1", "tB", "G3", "tC"], [
+  [[0, 2, 3, [1, 1, 1], [3, 1, 1], [5, 1, 1, [6, 0, 1]]],
+   "Qt\n" +
+   "└t\n" +
+   "└t*\n"
+  ],
+ ]],
         ]:
         journa = Journal()
         journa.lines = lines
@@ -837,6 +910,7 @@ journal_regtest()
 def create_shared_worker(login='', hook=None):
     print("Start shared worker for communication")
     journal = Journal()
+    print(millisecs())
     shared_worker = eval('new SharedWorker("live_link.js' + window.location.search + '")')
     def reload_page(message):
         # Firefox 129 bug? The alert function does not returns
@@ -876,8 +950,11 @@ def create_shared_worker(login='', hook=None):
                     journal.clear_pending_goto()
             except ReferenceError:
                 pass # ccccc does not exist (checkpoint spy)
+            if GRADING and ccccc.add_comments == 0:
+                ccccc.set_editmode(1) # Keep commented version synchronized
+                ccccc.editmode.selectedIndex = 1
             if int(msg_id) != len(journal.lines):
-                reload_page("Désynchronisation avec le serveur.")
+                reload_page("Désynchronisation avec le serveur. " + msg_id + ' != ' + len(journal.lines))
                 window.location.reload()
             print("Add line to journal: " + message)
             journal.append(message)
@@ -886,7 +963,7 @@ def create_shared_worker(login='', hook=None):
                 hook(journal)
     def shared_worker_post(message):
         """Send a message to the journal"""
-        if GRADING:
+        if GRADING and not (ccccc.add_comments and message[0] in 'GbTt'):
             print('Not recording ' + message)
         else:
             print('Post ' + message)
@@ -915,7 +992,7 @@ def create_shared_worker(login='', hook=None):
         """Insert text"""
         if journal.position != position:
             shared_worker.post('P' + position)
-        shared_worker.post('I' + text.replace(RegExp('\n', 'g'), '\000'))
+        shared_worker.post('I' + replace_all(text, '\n', '\000'))
     shared_worker.insert = shared_worker_insert
     def shared_worker_delete(position, length):
         """Delete text"""
@@ -964,6 +1041,27 @@ def create_shared_worker(login='', hook=None):
         """Goto in the past"""
         shared_worker.post('g')
     shared_worker.good = shared_worker_good
+    def shared_worker_bubble(login, pos_start, pos_end, line, column, width, height, comment):
+        """bubble text"""
+        shared_worker.post('b+' + login + ' ' + pos_start + ' ' + pos_end + ' ' + line + ' ' + column
+            + ' ' + width + ' ' + height + ' ' + replace_all(comment, '\n', '\000'))
+    shared_worker.bubble = shared_worker_bubble
+    def shared_worker_bubble_position(index, line, column):
+        """bubble change position"""
+        shared_worker.post('bP' + index + ' ' + line + ' ' + column)
+    shared_worker.bubble_position = shared_worker_bubble_position
+    def shared_worker_bubble_size(index, width, height):
+        """bubble change size"""
+        shared_worker.post('bS' + index + ' ' + width + ' ' + height)
+    shared_worker.bubble_size = shared_worker_bubble_size
+    def shared_worker_bubble_comment(index, comment):
+        """bubble change comment"""
+        shared_worker.post('bC' + index + ' ' + replace_all(comment, '\n', '\000'))
+    shared_worker.bubble_comment = shared_worker_bubble_comment
+    def shared_worker_bubble_delete(index):
+        """bubble delete"""
+        shared_worker.post('b-' + index)
+    shared_worker.bubble_delete = shared_worker_bubble_delete
 
     def shared_worker_close():
         shared_worker.port.postMessage(['CLOSE'])
