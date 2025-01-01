@@ -32,7 +32,7 @@ if not COURSE_CONFIG['display_grading']:
 SHARED_WORKER, JOURNAL = create_shared_worker(LOGIN)
 EDITMODE = ['', ''] # Journals without and with comments
 
-IS_TEACHER = LOGIN != STUDENT
+IS_TEACHER = SESSION_LOGIN != STUDENT
 
 def get_xhr_data(event):
     """Evaluate the received javascript"""
@@ -2287,7 +2287,7 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
     def display_version_toggle(self):
         """Toggle the display of the version tree"""
         self.options['version_for_teachers'] = not self.options['version_for_teachers']
-        self.options['version_for_students']  = not self.options['version_for_students']
+        self.options['version_for_students'] = not self.options['version_for_students']
         document.body.classList.toggle('versions')
         self.update_gui()
         self.tree_canvas()
