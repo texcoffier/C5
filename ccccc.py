@@ -430,6 +430,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if (self.options['version_for_teachers'] and IS_TEACHER
             or self.options['version_for_students'] and not IS_TEACHER):
             classes.append('versions')
+        self.version_feedback = document.createElement('DIV')
+        self.version_feedback.className = 'version_feedback'
+        document.body.appendChild(self.version_feedback)
         document.body.className = ' '.join(classes)
         self.options['positions']['editor_title'] = self.options['positions']['editor']
         for key in self.options['positions']:

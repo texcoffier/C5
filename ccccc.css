@@ -63,6 +63,16 @@ BODY.versions DIV.editor_title .canvas {
     display: block;
 }
 
+.version_feedback {
+    position: fixed;
+    right: 0px;
+    top: 0px;
+    background: #000;
+    color: #FFF;
+    z-index: 100;
+    padding: 0.2em;
+}
+
 DIV.editor_title .canvas {
     display: none;
     overflow: scroll;

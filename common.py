@@ -156,6 +156,7 @@ class Journal:
             self.lines.pop()
         self.children = []
         self.bubbles = []
+        self.timestamps = []
         self.clear_pending_goto()
         self.evaluate(self.lines, 0)
     def clear_pending_goto(self):
@@ -312,6 +313,7 @@ class Journal:
             question.source_old = question.source
             question.source = self.content
             self.children.append([start])
+            self.timestamps.append(self.timestamp)
 
     def append(self, line):
         """Add a line in the journal"""
@@ -440,6 +442,39 @@ class Journal:
         for child in tree[3:]:
             self.tree_dump(child, texts, indent)
 
+    def explain(self, line_number):
+        """Explain the journal content for version feedback"""
+        line = self.lines[line_number]
+        if line.startswith('I'):
+            text = 'Insertion de ' + (len(line)-1) + ' caractères'
+        elif line.startswith('D'):
+            text = 'Destruction de ' + line[1:] + ' caractères'
+        elif line.startswith('b+'):
+            text = 'Commentaire créé par «' + line[2:].split(' ')[0] + '»'
+        elif line.startswith('bP'):
+            text = 'Commentaire deplacé'
+        elif line.startswith('bS'):
+            text = 'Changement taille commentaire'
+        elif line.startswith('b-'):
+            text = 'Commentaire détruit'
+        elif line.startswith('bC'):
+            text = 'Changement du commentaire : «' + html(line[2:].replace(RegExp('[0-9]* '), '')) + '»'
+        elif line.startswith('g'):
+            text = "Objectif de l'exercice atteint"
+        elif line.startswith('t') or line.startswith('S'):
+            text = 'Sauvegarde'
+        elif line.startswith('O'):
+            infos = line[1:].split(' ')
+            text = 'Connexion de «' + infos[0] + '»'
+        elif line.startswith('c0'):
+            text = 'Compilation sans aucun problème'
+        elif line.startswith('c'):
+            i = int(line[1:])
+            text = 'Compilation avec ' + int(i/100) + ' erreurs et ' + i%100 + ' warnings'
+        else:
+            text = html(line)
+        return '<div style="text-align:right">' + nice_date(self.timestamps[line_number]) + '</div>' + text
+
     def tree_canvas(self, canvas, event=None):
         """Draw tree in canvas.
         Return selected item"""
@@ -459,7 +494,7 @@ class Journal:
             'O': ['⏼', size * 0.9,          '#000', 0, 0],
             'S': ['📩',size * 1.3,            None, 0, -size * 0.2],
             'g': ['👍',size * 1.3,            None, 0, 0],
-            'c': ['•', size * 0.4, ['#080','#F00'], -size * 0.1, 0],
+            'c': ['•', size * 0.4, ['#080', '#FA0', '#F00'], -size * 0.1, 0],
             '✍': ['✍', size      ,            None, 0, -size * 0.2],
             't': ['t', size      ,          '#00F', 0, 0],
             'G': ['G',         -1,            None, 0, 0], # The pending goto
@@ -504,8 +539,14 @@ class Journal:
             if width > 0:
                 if fillStyle:
                     if char == '•':
-                        fillStyle = fillStyle[action[1]]
-                    if char == 't':
+                        value = int(action[1:])
+                        if value == 0:
+                            ctx.fillStyle = fillStyle[0]
+                        elif value < 100:
+                            ctx.fillStyle = fillStyle[1]
+                        else:
+                            ctx.fillStyle = fillStyle[2]
+                    elif char == 't':
                         ctx.font = size + "px sans"
                         char = action[1:]
                         width = ctx.measureText(char).width
@@ -546,16 +587,19 @@ class Journal:
 
         tree_canvas_(tree, 0.5, size + 0.5)
         if feedback[0]:
-            x, y, width, _line = feedback[0]
+            x, y, width, line = feedback[0]
             ctx.strokeStyle = '#000'
             ctx.beginPath()
             ctx.rect(x-1, y-size+1, width+2, size+3)
             ctx.stroke()
+            ccccc.version_feedback.innerHTML = self.explain(line-1) # + '<hr>' + html(self.lines[line-2]) + '<br>' + html(self.lines[line-1]) +  '<br>' + html(self.lines[line])
+            ccccc.version_feedback.style.display = 'block'
             if buttons:
-                x, y, width, line = feedback[0]
                 # if (mouse_x < x+width or len(tree[3:])==0):
                 self.last_event = event
                 ccccc.goto_line(line)
+        else:
+            ccccc.version_feedback.style.display = 'none'
 
     def see_past(self, index):
         """Look in the past, but will come back to present"""
