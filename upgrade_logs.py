@@ -130,6 +130,7 @@ def get_answers(course, user):
         #print(">>>>>", len(journal.content), repr(value[:30]))
 
     def diff(content):
+        content = content.replace('\r', '')
         for insert, pos, value in common.compute_diffs(journal.content, content):
             line_number = max(0, journal.content[:pos].count('\n') - 5)
             append(f'L{line_number}')

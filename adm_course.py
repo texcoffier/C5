@@ -2,131 +2,8 @@
 Generate the home page for a course.
 """
 
-MAX_WIDTH = 400
-SNAIL = 4
-
-def analyse(http_server): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
-    """Extract statistiques from log"""
-    answered = []
-    key_stroke = 0
-    mouse_click = 0
-    copy_bad = 0
-    copy_ok = 0
-    cut_bad = 0
-    cut_ok = 0
-    paste_bad = 0
-    paste_ok = 0
-    nr_answered = 0
-    nr_blurs = 0
-    time_sum = []
-    time_bonus = 0
-    blur_time = 0
-    last = -1
-    current_question = 0
-    current_time = 0
-    if not http_server:
-        http_server = ''
-    blur_start = 0
-    thinking_time = 0
-    last_key_time = 0
-    key_strokes = {}
-    key_spacing = {}
-    phrase = {}
-    for line in http_server.split('\n'):
-        if len(line) == 0:
-            continue
-        line = eval(line) # pylint: disable=eval-used
-        if line[0] < current_time:
-            print(current_time, line)
-            continue
-        current_time = line[0]
-        for cell in line[1:]:
-            if cell.toLowerCase:
-                if blur_start:
-                    blur_time += current_time - blur_start
-                    blur_start = 0
-                if cell.startswith('Mouse'):
-                    mouse_click += 1
-                elif cell == 'CopyRejected':
-                    copy_bad += 1
-                elif cell == 'CutRejected':
-                    cut_bad += 1
-                elif cell == 'PasteRejected':
-                    paste_bad += 1
-                elif cell.startswith('Paste'):
-                    paste_ok += 1
-                elif cell.startswith('Copy'):
-                    copy_ok += 1
-                elif cell.startswith('Cut'):
-                    cut_ok += 1
-                elif cell.startswith('Blur'):
-                    nr_blurs += 1
-                    blur_start = current_time
-                else:
-                    if len(cell) == 1:
-                        if not start_time:
-                            start_time = current_time
-                        minutes = int((current_time - start_time) / 60)
-                        key_strokes[minutes] = (key_strokes[minutes] or 0) + 1
-                        if last_key_time:
-                            delta_t = current_time - last_key_time
-                            key_spacing[delta_t] = (key_spacing[delta_t] or 0) + 1
-                        last_key_time = current_time
-                        phrase[minutes] = (phrase[minutes] or '') + cell
-                    key_stroke += 1
-                continue
-            elif is_int(cell):
-                current_time += cell
-                if cell < 600:
-                    thinking_time += cell
-                continue
-            if cell[0] == 'time bonus':
-                time_bonus = cell[1]
-            if cell[0] == 'answer':
-                answered[cell[1]] = cell[2]
-                if cell[1] > last:
-                    last = cell[1]
-
-            if cell[0] in ('question', 'answer'):
-                if current_question >= 0:
-                    time_sum[current_question] = (time_sum[current_question] or 0) + thinking_time
-                if cell[0] == 'answer':
-                    current_question = -1
-                else:
-                    current_question = cell[1]
-                thinking_time = 0
-    if current_question >= 0:
-        time_sum[current_question] = (time_sum[current_question] or 0) + thinking_time
-    text = ''
-    for i in range(last+1):
-        if answered[i]:
-            text += '|'
-            nr_answered += 1
-        else:
-            text += '·'
-        if not time_sum[i]:
-            time_sum[i] = 0
-    print(phrase)
-    return {'questions': text, 'key_stroke': key_stroke, 'mouse_click': mouse_click,
-            'copy_bad': copy_bad, 'copy_ok': copy_ok,
-            'paste_bad': paste_bad, 'paste_ok': paste_ok,
-            'cut_bad': cut_bad, 'cut_ok': cut_ok,
-            'nr_answered': nr_answered,
-            'nr_blurs': nr_blurs,
-            'time_sum': time_sum,
-            'time_bonus': time_bonus / 60,
-            'blur_time': blur_time,
-            'key_strokes': key_strokes,
-            'key_spacing': key_spacing,
-            'phrase': phrase
-           }
-
-WHAT = ['time_bonus', 'status', 'nr_answered', 'grades', 'comments', 'version', 'graders', 'time',
-        'key_stroke', 'mouse_click',
-        'copy_ok', 'copy_bad', 'cut_ok', 'cut_bad', 'paste_ok', 'paste_bad', 'nr_blurs', 'blur_time'
-       ]
-
-COLORS = ["888", "F44", "FF0", "0F0", "0FF", "88F", "F0F", "CCC"]
+WHAT = ['bonus_time', 'status', 'nr_answered', 'grades', 'comments', 'version', 'graders',
+        'nr_blurs', 'blur_time']
 
 sums = {}
 
@@ -174,44 +51,49 @@ BUTTON.download { width: calc(100% - 2px); font-size: 150%; height: 1.5em; margi
 DIALOG { position: fixed; right: 0px; top: 0px; border: 4px solid #0F0 }
 DIALOG BUTTON { font-size: 200%; width: 2em }
 DIALOG TEXTAREA { width: 40em ; height: 40em }
-"""]
-    for i, color in enumerate(COLORS):
-        text.append(
-            'SPAN.sec' + i + '{ display: inline-block; height: 1em; vertical-align: top;'
-            + 'height: 1.3em;}')
-        text.append('.sec' + i + '{ background: #' + color + '}')
-    text.append("""
 </style>
 <dialog id="dialog"></dialog>
 <p>
 <table id="report" border>
-    <tr><th colspan="2">Login<th>Minutes<br>Bonus<th>Status<th colspan="2">Questions<br>Validated<th>Grade<th>Comments<th>Version<th>Graders<th>Time<br>in sec.<th>Keys
-        <th>Mouse<th>Copy<th>Copy<br>Fail<th>Cut<th>Cut<br>Fail<th>Paste<th>Paste<br>Fail<th>Window<br>Blur<th>Blur<br>time<th>Time per question<br>
-        <E>🐌</E> : clamped to """ + SNAIL + """ times the median answer time.<th>Files</tr>
-""")
+    <tr><th colspan="2">Login<th>Minutes<br>Bonus<th>Status<th>Questions<br>Validated<th>Grade<th>Comments<th>Version<th>Graders<th>Window<br>Blur<th>Blur<br>time<th>Files</tr>
+"""]
     cache = {}
-    question_times = []
     nr_grades_max = {'a': 0, 'b': 0}
     for login in students:
         print(login)
         student = STUDENTS[login]
-        cache[login] = analyse(student.http_server)
-        cache[login]['status'] = student.status
-        cache[login].login = login
-        comments = {}
-        for line in (student['comments'] or '').split('\n'):
-            if line:
-                _date, _who, question, version, line, comment = JSON.parse(line)
-                comments[question + version + line] = comment
-        nr_comments = 0
-        for comment in comments.Values():
-            if comment != '':
-                nr_comments += 1
-        cache[login]['comments'] = nr_comments
+        cache[login] = journal = Journal(student.journal)
+        journal['status'] = student.status
+        journal.login = login
+        journal['comments'] = len([bubble
+                                        for bubble in journal.bubbles
+                                        if bubble.login
+                                      ])
+        nr_blurs = 0
+        blur_time = 0
+        last_blur = 0
+        nr_answered = 0
+        for line in journal.lines:
+            if line.startswith('#bonus_time '):
+                journal['bonus_time'] = int(line.split(' ')[1]) / 60
+            elif line.startswith('T'):
+                t = int(line[1:])
+            elif line.startswith('F'):
+                if last_blur:
+                    blur_time += t - last_blur
+            elif line.startswith('B'):
+                last_blur = t
+                nr_blurs += 1
+            elif line.startswith('g'):
+                nr_answered += 1
+        journal['nr_blurs'] = nr_blurs
+        journal['blur_time'] = blur_time
+        journal['nr_answered'] = nr_answered
+            
         if not STUDENT_DICT[login]:
             print(login, "In LOGS but not in session.cf")
             continue
-        version = cache[login]['version'] = STUDENT_DICT[login][2].split(',')[3]
+        version = journal['version'] = STUDENT_DICT[login][2].split(',')[3]
         grading = parse_grading(student['grades'])
         grade = 0
         graders = []
@@ -230,28 +112,11 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         nr_grades_max[version] = max(nr_grades_max[version], len(grading))
         if len(grading) == 0 and student.status == 'done':
             ungraded.append(login)
-            cache[login]['grades'] = ''
+            journal['grades'] = ''
         else:
-            cache[login]['grades'] = grade
+            journal['grades'] = grade
         graders.sort()
-        cache[login]['graders'] = ' '.join(graders)
-        for i, seconds in enumerate(cache[login]['time_sum']):
-            if not question_times[i]:
-                question_times[i] = []
-            question_times[i].append(seconds)
-    question_medians = []
-    for i, times in enumerate(question_times):
-        sortable = [1000000000 + time for time in times] # JS can't sort numbers
-        sortable.sort()
-        middle = Math.floor(len(sortable) // 2)
-        if len(sortable) % 2 == 1:
-            median = sortable[middle]
-        else:
-            median = (sortable[middle-1] + sortable[middle]) / 2
-        if len(sortable) < 3:
-            median = 1000000010 # Seconds if not 3 samples
-        question_medians[i] = median - 1000000000
-    max_time = Math.max(MAX_WIDTH, sum(question_medians))
+        journal['graders'] = ' '.join(graders)
 
     for login in students:
         student = STUDENTS[login]
@@ -265,26 +130,13 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         text.append('<td><div>')
         infos = window.parent.STUDENTS[login] or {'sn': '?', 'fn': '?'}
         text.append(infos.sn + '<br>' + infos.fn)
-        stats['time'] = sum(stats['time_sum'])
         for what in WHAT:
             text.append('<td>')
             text.append(stats[what])
             sums[what] += login + '\t' + stats[what] + '\n'
             if student.status == 'done':
                 sums[what + '\001done'] += login + '\t' + stats[what] + '\n'
-            if what == 'status':
-                text.append('<td>')
-                text.append(stats['questions'])
 
-        text.append('<td>')
-        for i, seconds in enumerate(stats['time_sum']):
-            more = ''
-            if seconds > question_medians[i] * SNAIL:
-                seconds = question_medians[i] * SNAIL
-                if question_medians[i] != 10:
-                    more = '<E>🐌</E>'
-            text.append('<span style="width:' + (MAX_WIDTH*seconds)/max_time
-                        + 'px" class="sec' + i % len(COLORS) + '">' + more + '</span>')
         text.append('<td>')
         for filename in student.files:
             text.append(' <a target="_blank" href="adm/get/COMPILE_'
@@ -307,23 +159,17 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 <button onclick="window.location.pathname = '/adm/answers/' + COURSE + '.zip'"
 >Sources<br>txt ZIP</button>''')
 
-    text.append('<td rowspan="2"><table style="font-size: 90%">')
-    text.append('<tr><th>Question<th>Students<th>Min<th>Average<th>Median<th>Max</tr>')
-    for i, times in enumerate(question_times):
-        text.append('<tr><td class="sec' + (i % len(COLORS)) + '">' + (i+1)
-                    + '<td>' + len(times)
-                    + '<td>' + min(times)
-                    + '<td>' + Math.floor(sum(times)/len(times))
-                    + '<td>' + question_medians[i]
-                    + '<td>' + max(times)
-                    + '</tr>')
-    text.append('</table></tr>')
+    text.append('</tr>')
     text.append('<tr><td><tt>login value</tt>\nStatus=done<td>')
     for what in WHAT:
         text.append('<td><button  class="download" onclick="show(\''
                     + what + '\001done' + '\')">📥</button>')
     text.append('</tr>')
     text.append('</table>')
+
+    ###########################################################################
+    ###########################################################################
+    ###########################################################################
 
     def link(login, replace=False):
         """Grading link"""
@@ -398,6 +244,10 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 
     text.append('</table>')
 
+    ###########################################################################
+    ###########################################################################
+    ###########################################################################
+
     if NOTATIONB.strip() != '':
         text.append("<h2>Importation du détail des notes dans TOMUSS impossible car 2 barèmes</h2>")
     else:
@@ -468,6 +318,10 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             text.append('</tr>')
         text.append('</table>')
 
+    ###########################################################################
+    ###########################################################################
+    ###########################################################################
+
     notation = parse_notation(NOTATION)
     text.append("""<h2>Compétences</h2>
                    <table id="TOMUSS_competence"><tr><td>ID<td>Compétence</tr>""")
@@ -501,96 +355,6 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
                 competences_list.append(key + 'o0')
         competences_list.sort()
         text.append(' '.join(competences_list))
-        text.append('</tr>')
-    text.append('</table>')
-
-    text.append('''<p>Key stroke per minute
-    <style>
-    D, E, F, G, H, J, K, L { display: inline-block }
-    D { background: #EEE }
-    M { background: #FFF }
-    F { background: #CFC }
-    G { background: #0F0 }
-    H { background: #F80 }
-    J { background: #F00 }
-    K { background: #F0F }
-    L { background: #000 }
-    </style>
-    ''')
-    def block(nr_keys, text=' '):
-        square = 'DMFGHJKL'[int((nr_keys or 0) / 20)]
-        if not square:
-            square = 'L'
-        return '<' + square + '>' + text + '</' + square + '>'
-    def sort_key(value_a, value_b):
-        return (value_a.grades or 0) - (value_b.grades or 0)
-
-    for i in range(0, 150, 10):
-        text.append(block(i, i) + ' ')
-    text.append('<br>')
-    last_time = 0
-    sorted_logins = []
-    for login in students:
-        sorted_logins.append(cache[login])
-        if login.match(RegExp('[0-9][0-9]')):
-            for k in cache[login].key_strokes:
-                k = int(k)
-                if k > last_time:
-                    last_time = k
-    sorted_logins.sort(sort_key)
-    print(last_time)
-    if last_time > 180:
-        last_time = 180
-    text.append('<table>')
-    ratios = [0,0,0]
-    nr_ratios = 0
-    for stats in sorted_logins:
-        ratio = []
-        for i in range(3):
-            if stats.key_spacing[i+1] > 10:
-                ratio.append(stats.key_spacing[i] / stats.key_spacing[i+1])
-            else:
-                break
-        if len(ratio) == 3:
-            nr_ratios += 1
-            for i in range(3):
-                ratios[i] += ratio[i]
-    for i in range(3):
-        ratios[i] /= nr_ratios
-    for stats in sorted_logins:
-        text.append('<tr><td>' + stats.login + '<td>' + stats.grades + '<td>')
-        for i in range(last_time+1):
-            square = 'DEFGHJKL'[int((stats.key_strokes[i] or 0) / 20)]
-            if not square:
-                square = 'L'
-            text.append(block(stats.key_strokes[i]))
-        text.append('<td>')
-        distance = 0
-        for i in range(3):
-            if stats.key_spacing[i+1] > 10:
-                distance += Math.abs(stats.key_spacing[i] / stats.key_spacing[i+1] - ratios[i])
-            else:
-                break
-        if distance:
-            text.append('<span style="')
-            if distance < 1:
-                text.append('opacity:0.2')
-            elif distance < 1.5:
-                text.append('opacity:0.6')
-            elif distance < 2:
-                text.append('opacity:1')
-            elif distance > 2.5:
-                text.append('font-weight:bold')
-            text.append('">')
-            text.append(distance.toFixed(1) + '</span> ')
-        if stats.key_spacing[0]:
-            text.append(stats.key_spacing[0] + ' ')
-            for i in range(1, 30):
-                if stats.key_spacing[i] > 10:
-                    text.append(Math.round(stats.key_spacing[i-1] / stats.key_spacing[i]) + ' ')
-                else:
-                    break
-        text.append('<td>' + (STUDENT_DICT[stats.login] and STUDENT_DICT[stats.login][2] or '?'))
         text.append('</tr>')
     text.append('</table>')
 

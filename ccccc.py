@@ -151,7 +151,7 @@ def stop_event(event):
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     course = worker = shared_buffer = line_height = char_width = active_completion = completion = None
-    grading_sum = competence_average = None
+    grading_sum = competence_average = editmode = None
     server_time_delta = int(millisecs()/1000 - SERVER_TIME)
     question = editor = overlay = tester = compiler = executor = time = None
     index = save_button = local_button = line_numbers = None
