@@ -1069,7 +1069,8 @@ def get_answers(course:str, user:str, compiled:bool=False) -> Tuple[Answers, Blu
             if response[1] == 3:
                 break # Yet a snapshot
         else:
-            responses.append(final[question])
+            if question in final:
+                responses.append(final[question])
     return answers, blurs
 
 def question_source(config:CourseConfig, comment:str, where:str, user:str, # pylint: disable=too-many-arguments,too-many-locals

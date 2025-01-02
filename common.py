@@ -42,7 +42,13 @@ def student_id(login):
     """Returns the student ID"""
     return login
 
+def protect_crlf(text):
+    """Normalize lines separators"""
+    return replace_all(replace_all(text, '\r', ''), '\n', '\000')
 
+def unprotect_crlf(text):
+    """Recover lines separators"""
+    return replace_all(text, '\000', '\n')
 
 POSSIBLE_GRADES = ":([?],)?[-0-9,.]+$"
 
@@ -118,7 +124,7 @@ class Bubble:
         items = description.split(' ')
         self.login = items[0]
         self.pos_start, self.pos_end, self.line, self.column, self.width, self.height = [float(i) for i in items[1:7]]
-        self.comment = replace_all(' '.join(items[7:]), '\000', '\n')
+        self.comment = unprotect_crlf(' '.join(items[7:]))
     def str(self):
         return self.login+' '+self.pos_start+' '+self.pos_end+' '+self.line+' '+self.column+' '+self.width+' '+self.height+' '+self.comment
 class Journal:
@@ -190,7 +196,7 @@ class Journal:
         self.questions[self.question].tags.append((tag, start + 1)) # overwrite Save position
     def action_I(self, value, _start):
         """Text insert"""
-        string = replace_all(value, '\000', '\n')
+        string = unprotect_crlf(value)
         self.content = self.content[:self.position] + string + self.content[self.position:]
         size = len(string)
         for bubble in self.bubbles:
@@ -292,7 +298,7 @@ class Journal:
             bubble.width = float(changes[1])
             bubble.height = float(changes[2])
         elif value.startswith('C'):
-            bubble.comment = replace_all(' '.join(changes[1:]), '\000', '\n')
+            bubble.comment = unprotect_crlf(' '.join(changes[1:]))
         elif value.startswith('-'):
             bubble.login = ''
         else:
@@ -1036,7 +1042,7 @@ def create_shared_worker(login='', hook=None):
         """Insert text"""
         if journal.position != position:
             shared_worker.post('P' + position)
-        shared_worker.post('I' + replace_all(text, '\n', '\000'))
+        shared_worker.post('I' + protect_crlf(text))
     shared_worker.insert = shared_worker_insert
     def shared_worker_delete(position, length):
         """Delete text"""
@@ -1088,7 +1094,7 @@ def create_shared_worker(login='', hook=None):
     def shared_worker_bubble(login, pos_start, pos_end, line, column, width, height, comment):
         """bubble text"""
         shared_worker.post('b+' + login + ' ' + pos_start + ' ' + pos_end + ' ' + line + ' ' + column
-            + ' ' + width + ' ' + height + ' ' + replace_all(comment, '\n', '\000'))
+            + ' ' + width + ' ' + height + ' ' + protect_crlf(comment))
     shared_worker.bubble = shared_worker_bubble
     def shared_worker_bubble_position(index, line, column):
         """bubble change position"""
@@ -1100,7 +1106,7 @@ def create_shared_worker(login='', hook=None):
     shared_worker.bubble_size = shared_worker_bubble_size
     def shared_worker_bubble_comment(index, comment):
         """bubble change comment"""
-        shared_worker.post('bC' + index + ' ' + replace_all(comment, '\n', '\000'))
+        shared_worker.post('bC' + index + ' ' + protect_crlf(comment))
     shared_worker.bubble_comment = shared_worker_bubble_comment
     def shared_worker_bubble_delete(index):
         """bubble delete"""

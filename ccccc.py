@@ -393,7 +393,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 e = self.layered
                 self.overlay.style.right = '0px'
                 self.editor.style.right = '0px'
-                self.editor.style.paddingBottom = 0.9*self.layered.offsetHeight + 'px'
+                self.editor.style.paddingBottom = self.comments.style.paddingBottom = 0.9*self.layered.offsetHeight + 'px'
                 self.editor.style.background = background
             if not e:
                 continue
@@ -951,7 +951,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 add_marker(0, line2, column2)
 
             bubble_elm.className = 'bubble_content'
-            bubble_elm.relative_to = [min(column1, column2), max(line1, line2)]
+            bubble_elm.relative_to = [
+                min(column1, column2),
+                self.line_numbers.childNodes[line2].offsetTop / self.line_height]
             left = (bubble_elm.relative_to[0] + bubble.column) * self.char_width
             top = (bubble_elm.relative_to[1] + bubble.line) * self.line_height
             width = bubble.width * self.char_width
@@ -995,7 +997,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     number.style.background = "#0F0"
 
         self.overlay_show()
-        self.line_numbers.style.height = self.overlay.offsetHeight + 'px'
+        self.line_numbers.style.height = self.comments.style.height = self.overlay.offsetHeight + 'px'
         self.tree_canvas()
 
     def tree_canvas(self):
