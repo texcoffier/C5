@@ -23,6 +23,7 @@ import asyncio
 import aiohttp
 from aiohttp import web
 import options
+import common
 
 os.system("make xxx_local.py")
 
@@ -663,6 +664,14 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             content.append(f"{exec_name}:{source_name}\n")
             content.append(f"{question+1:02}:{exec_name}\n\t./{exec_name}\n\n")
         return ''.join(content)
+
+    def get_journal(self, login) -> Optional[common.Journal]:
+        """Return the Journal or None"""
+        try:
+            with open(f'{self.dir_log}/{login}/journal.log', encoding='utf-8') as file:
+                return common.Journal(file.read())
+        except OSError:
+            return None
 
 def get_course(txt:str) -> str:
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""

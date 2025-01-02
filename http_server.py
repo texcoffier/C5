@@ -911,24 +911,24 @@ async def my_zip(request:Request) -> StreamResponse: # pylint: disable=too-many-
     data = io.BytesIO()
     with zipfile.ZipFile(data, mode="w", compression=zipfile.ZIP_DEFLATED) as zipper:
         for config in configs:
-            if config.checkpoint:
+            if config.get_feedback(session.login) == 0:
                 continue
-            answers, _blurs = get_answers(config.dir_log, session.login)
-            if not answers:
+            journa = config.get_journal(session.login)
+            if not journa:
                 continue
             makefile = config.get_makefile()
             if makefile:
                 zipper.writestr(f'C5/{config.course.replace("=", "_")}/Makefile', makefile)
-            for question, sources in answers.items():
-                if sources:
-                    source = sources[-1]
-                    mtime = time.localtime(source[2])
-                    timetuple = (mtime.tm_year, mtime.tm_mon, mtime.tm_mday,
-                                 mtime.tm_hour, mtime.tm_min, mtime.tm_sec)
-                    question = int(question)
-                    title = config.get_question_path(question)
-                    zipper.writestr(title, source[0])
-                    zipper.infolist()[-1].date_time = timetuple
+            for question, stats in journa.questions.items():
+                if question < 0:
+                    continue
+                source = stats.source
+                mtime = time.localtime(int(journa.timestamps[stats.head-1]))
+                timetuple = (mtime.tm_year, mtime.tm_mon, mtime.tm_mday,
+                                mtime.tm_hour, mtime.tm_min, mtime.tm_sec)
+                title = config.get_question_path(question)
+                zipper.writestr(title, source)
+                zipper.infolist()[-1].date_time = timetuple
 
     stream = web.StreamResponse()
     stream.content_type = 'application/zip'
