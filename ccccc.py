@@ -1496,6 +1496,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     return
                 if len(JOURNAL.pending_goto_history):
                     self.goto_line(JOURNAL.pending_goto_history.pop())
+                else:
+                    self.goto_line(JOURNAL.pending_goto + 1)
         elif event.key == 'f' and event.ctrlKey:
             self.do_not_register_this_blur = True
             return
