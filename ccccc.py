@@ -1946,7 +1946,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 tips.append("Sauvegarder un ZIP de toutes les questions sur la machine locale")
                 links.append('<a target="_blank" href="zip/' + COURSE + window.location.search
                     + '">' + self.options['icon_local'] + '</a>')
-            if self.options['display_local_git']:
+            if False and self.options['display_local_git']:
                 tips.append("Sauvegarder sur la machine locale avec l'historique dans GIT")
                 links.append('<a target="_blank" href="git/' + COURSE + window.location.search
                      + '">' + self.options['icon_git'] + '</a>')
