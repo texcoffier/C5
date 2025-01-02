@@ -1009,6 +1009,8 @@ def create_shared_worker(login='', hook=None):
                 reload_page("Désynchronisation avec le serveur. " + msg_id + ' != ' + len(journal.lines))
                 window.location.reload()
             print("Add line to journal: " + message)
+            if message.startswith('#bonus_time '):
+                ccccc.stop_timestamp = int(message.split(' ')[2])
             journal.append(message)
             journal.remote_update = True
             if hook:
