@@ -120,6 +120,7 @@ class QuestionStats:
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
 
 class Bubble:
+    last_comment_change = None # Line number of the last comment change
     def __init__(self, description):
         items = description.split(' ')
         self.login = items[0]
@@ -283,7 +284,7 @@ class Journal:
     def action_g(self, _value, _start):
         """Question passed test (no argument)"""
         self.questions[self.question].good = True
-    def action_b(self, value, _start):
+    def action_b(self, value, start):
         """Add a bubble or update it"""
         if value.startswith('+'):
             self.bubbles.append(Bubble(value[1:]))
@@ -299,6 +300,7 @@ class Journal:
             bubble.height = float(changes[2])
         elif value.startswith('C'):
             bubble.comment = unprotect_crlf(' '.join(changes[1:]))
+            bubble.last_comment_change = start
         elif value.startswith('-'):
             bubble.login = ''
         else:

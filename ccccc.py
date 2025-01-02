@@ -642,7 +642,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.fullscreen.style.display != 'none':
                 self.fullscreen.style.display = 'none'
                 self.first_F11 = False
-                if self.options['checkpoint']:
+                if not GRADING and self.options['checkpoint']:
                     SHARED_WORKER.focus()
 
         if self.do_update_cursor_position:
@@ -1562,12 +1562,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.do_not_register_this_blur:
             self.do_not_register_this_blur = False
             return
-        if self.options['checkpoint']:
+        if not GRADING and self.options['checkpoint']:
             self.record_pending_goto()
             SHARED_WORKER.blur()
     def onfocus(self, _event):
         """Window focus"""
-        if self.options['checkpoint'] and self.fullscreen.style.display == 'none':
+        if not GRADING and self.options['checkpoint'] and self.fullscreen.style.display == 'none':
             self.record_pending_goto()
             SHARED_WORKER.focus()
     def memorize_inputs(self):

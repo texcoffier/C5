@@ -1914,13 +1914,13 @@ class JournalLink:
             if not os.path.exists(self.course.dir_log):
                 os.mkdir(self.course.dir_log)
             os.mkdir(dirname)
-        path = pathlib.Path(dirname + '/journal.log')
-        if editor and not path.exists():
+        self.path = pathlib.Path(dirname + '/journal.log')
+        if editor and not self.path.exists():
             content = pathlib.Path(course.file_py).read_text(encoding='utf-8')
             content = content.replace('\n', '\0')
-            path.write_text(f'Q0\nI{content}\ntI\n', encoding='utf-8')
-        if path.exists():
-            content = path.read_text(encoding='utf-8')
+            self.path.write_text(f'Q0\nI{content}\ntI\n', encoding='utf-8')
+        if self.path.exists():
+            content = self.path.read_text(encoding='utf-8')
             if content:
                 self.content = content.split('\n')
                 self.content.pop() # Empty string
@@ -1928,7 +1928,7 @@ class JournalLink:
                 self.content = []
         else:
             self.content = []
-        self.journal = path.open('a', encoding='utf-8')
+        self.journal = self.path.open('a', encoding='utf-8')
         self.msg_id = str(len(self.content))
         self.connections = [] # List of Socket, port of connected browsers
         self.locked = False
@@ -2067,7 +2067,21 @@ async def live_link(request:Request) -> StreamResponse:
                 elif message.startswith('b+') and not message.startswith(f'b+{session.login}'):
                     log(f'Hacker «{message}»')
                 else:
-                    # log(f'record {message}')
+                    if message.startswith('bC'):
+                        # Erase comment history
+                        j = common.Journal('\n'.join(journa.content) + '\n')
+                        bubble_id = int(message[2:].split(' ')[0])
+                        last_comment_change = j.bubbles[bubble_id].last_comment_change
+                        if last_comment_change is not None:
+                            old_comment = common.protect_crlf(j.bubbles[bubble_id].comment)
+                            assert j.lines[last_comment_change] == f'bC{bubble_id} {old_comment}'
+                            file_position = len('\n'.join(j.lines[:last_comment_change]).encode("utf-8")) + 1
+                            new_line = f'bC{bubble_id} {"?"*len(old_comment.encode("utf-8"))}'
+                            journa.content[last_comment_change] = new_line
+                            with open(journa.path, 'r+', encoding='utf-8') as file:
+                                file.seek(file_position, 0)
+                                file.write(new_line)
+                            log(f'Erase bubble_id={bubble_id} position={file_position} old_content={j.lines[j.bubbles[bubble_id].last_comment_change]}')
                     await journa.write(message)
             else:
                 log(f'{journa.msg_id} != {msg_id}  for  {message}')
