@@ -34,6 +34,7 @@ class Server:
     """All communications between browser and server"""
     ticket = None
     socket = None
+    base = None
     wait_socket_open = False
     queue = []
     start_time = None
@@ -46,8 +47,8 @@ class Server:
 
         self.wait_socket_open = True
 
-        socket = eval('new WebSocket("/live_link/session' + self.ticket + '")') # pylint: disable=eval-used
-        self.print('socket=' + socket + '/' + self.wait_socket_open)
+        url = self.base + '/live_link/session' + self.ticket
+        socket = eval('new WebSocket("' + url + '")') # pylint: disable=eval-used
         SELF = self # pylint: disable=invalid-name
         def onopen():
             """The connection opened"""
@@ -117,6 +118,7 @@ def my_onconnect(event):
                 return # Not a session name
             port.session = event.data[2]
             SERVER.ticket = event.data[1]
+            SERVER.base = event.data[4]
             SERVER.send(port.my_index + ' ' + port.session + ' ' + event.data[3])
             return
         if event.data[0] == 'CLOSE':

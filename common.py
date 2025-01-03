@@ -1112,7 +1112,7 @@ def create_shared_worker(login='', hook=None):
         """bubble change comment"""
         shared_worker.post('bC' + index + ' ' + protect_crlf(comment))
     shared_worker.bubble_comment = shared_worker_bubble_comment
-    def shared_worker_bubble_delete(index):
+    def shared_worker_bubble_delete(index, comment):
         """bubble delete"""
         shared_worker.post('b-' + index)
     shared_worker.bubble_delete = shared_worker_bubble_delete
@@ -1132,7 +1132,7 @@ def create_shared_worker(login='', hook=None):
         login = '_FOR_EDITOR_' + login
     else:
         course = COURSE
-    shared_worker.port.postMessage(['TICKET', window.location.search, course, login])
+    shared_worker.port.postMessage(['TICKET', window.location.search, course, login, BASE])
     window.onbeforeunload = shared_worker_close
     return shared_worker, journal
 

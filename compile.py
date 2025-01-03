@@ -180,7 +180,12 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Do the regression tests"""
         current_question = self.current_question
         self.quest.all_tests_are_fine = True
-        self.quest.tester()
+        try:
+            self.quest.tester()
+        except:
+            print("Il y a un bug dans le testeur de la question " + current_question)
+            self.current_question = current_question # Keep same question
+            return
         if (current_question != self.current_question # Question has been solved now
                 and not self.question_yet_solved(current_question)
            ):

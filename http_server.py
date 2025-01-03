@@ -2037,9 +2037,14 @@ async def live_link(request:Request) -> StreamResponse:
     Protocol is defined in «live_link.py»
     """
     session = await Session.get_or_fail(request)
-
     socket = web.WebSocketResponse()
-    await socket.prepare(request)
+    try:
+        await socket.prepare(request)
+    except:
+        log('bug')
+        import traceback
+        traceback.print_exc()
+        raise
 
     journals:Dict[int,JournalLink] = {}
 
@@ -2110,7 +2115,7 @@ async def live_link(request:Request) -> StreamResponse:
             if allow_edit:
                 await journa.write(f'O{login} {session.client_ip} {port}')
     JournalLink.closed_socket(socket)
-    log('websocket connection closed')
+    log(f'WebSocket close: {id(socket)} {socket}')
 
 def log(message):
     print(f'{TIME.strftime("%Y-%m-%d %H:%M:%S")}     {message}', flush=True)

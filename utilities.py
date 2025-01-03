@@ -64,6 +64,7 @@ CONFIGURATIONS = (
     ('C5_LDAP_PASSWORD','LDAP reader password'                 , ''),
     ('C5_LDAP_BASE'    ,'LDAP user search base'                , ''),
     ('C5_LDAP_ENCODING','LDAP character encoding'              , 'utf-8'),
+    ('C5_COMPILE_UID'  ,'Starts of UID for compiling'          , 3000),
     ('C5_CUSTOMIZE'    ,'File with «common.py» overloading'    , 'local_my.py'),
 )
 
@@ -838,7 +839,7 @@ class Session:
         """Return a validated login"""
         if self.login:
             return self.login
-        service = service.replace(f'http://{C5_IP}:{C5_HTTP}/', f'https://{C5_URL}/')
+        service = f'https://{C5_URL}{service}'
         if C5_VALIDATE:
             if self.ticket:
                 async with aiohttp.ClientSession() as session:
@@ -892,8 +893,7 @@ class Session:
            ) or self.browser != browser or self.too_old():
             url = getattr(request, 'url', None)
             if url and request.method == 'GET':
-                url = str(url).replace(f'http://{C5_IP}:{C5_HTTP}/', f'https://{C5_URL}/')
-                raise web.HTTPFound(url.split('?', 1)[0])
+                raise web.HTTPFound(f'https://{C5_URL}{url.path}')
             return False
         return True
 
@@ -941,7 +941,7 @@ class Session:
             if ticket:
                 cls.session_cache[ticket] = session
         if not session.login:
-            await session.get_login(str(request.url).split('?', 1)[0])
+            await session.get_login(request.path)
         return session
 
     @classmethod

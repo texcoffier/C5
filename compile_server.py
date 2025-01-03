@@ -35,7 +35,8 @@ import utilities
 
 
 PROCESSES = []
-FREE_USERS = list(range(3000, 4000)) # Update Makefile if changed here
+UID_MIN = int(utilities.C5_COMPILE_UID)
+FREE_USERS = list(range(UID_MIN, UID_MIN+1000))
 
 ALWAYS_ALLOWED = {"fstat", "newfstatat", "write", "read",
                   "lseek", "futex", "exit_group", "exit",
@@ -97,7 +98,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         """Log"""
         if self.feedback:
             return
-        print((int(time.time()), self.login, self.course.course, self.conid, more))
+        print(f"{time.strftime('%Y%m%d%H%M%S')} {more}")
 
     def course_running(self) -> bool:
         """Check if the course is running for the user"""
@@ -371,9 +372,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
-        print(f"{time.strftime('%Y%m%d%H%M%S')} ./launcher "
-              f"{self.conid} {self.allowed} {self.launcher} {self.home}",
-              flush=True)
+        self.log(f'./launcher {self.conid} {self.allowed} {self.launcher} {self.home}')
         stdin_r, stdin_w = os.pipe()
         stdout_r, stdout_w = os.pipe()
 
@@ -506,6 +505,7 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
 async def main() -> None:
     """Answer compilation requests"""
     async with websockets.serve(echo, utilities.C5_IP, utilities.C5_SOCK, ssl=CERT): # pylint: disable=no-member
+        print(f'Start using UID from {UID_MIN}')
         print(f"compile_server running {utilities.C5_IP}:{utilities.C5_SOCK}", flush=True)
         await asyncio.Future()  # run forever
 
