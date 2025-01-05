@@ -1112,7 +1112,7 @@ def create_shared_worker(login='', hook=None):
         """bubble change comment"""
         shared_worker.post('bC' + index + ' ' + protect_crlf(comment))
     shared_worker.bubble_comment = shared_worker_bubble_comment
-    def shared_worker_bubble_delete(index, comment):
+    def shared_worker_bubble_delete(index):
         """bubble delete"""
         shared_worker.post('b-' + index)
     shared_worker.bubble_delete = shared_worker_bubble_delete

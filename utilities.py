@@ -1299,9 +1299,11 @@ With Firefox:
             echo \$! >http_server.pid
             ./compile_server.py >>compile_server.log 2>&1 &
             echo \$! >compile_server.pid
-            sleep 0.5
-            tail -1 http_server.log
-            tail -1 compile_server.log
+            sleep 1
+            echo ============================== Last 4 lines of http_server.log:
+            tail -5 http_server.log
+            echo ============================== Last 3 lines of compile_server.log:
+            tail -3 compile_server.log
         fi
         """,
     'stop': r"""#C5_LOGIN

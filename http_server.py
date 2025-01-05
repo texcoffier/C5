@@ -5,6 +5,7 @@ Simple web server with session management
 
 from typing import Dict, List, Tuple, Any, Optional, Union, Callable, Coroutine, Set
 import os
+import sys
 import time
 import json
 import collections
@@ -2121,6 +2122,19 @@ def log(message):
     print(f'{TIME.strftime("%Y-%m-%d %H:%M:%S")}     {message}', flush=True)
 
 if __name__ == '__main__':
+    # Check if an upgrade is needed
+    TIME = time
+    for filename in glob.glob('COMPILE_*/*/LOGS/*/http_server.log'):
+        translation = filename.replace('http_server', 'journal')
+        if os.path.exists(translation):
+            log('«http_server.log» has been translated to «journal.log»')
+            break
+        else:
+            log('='*60)
+            log('YOU MUST RUN « ./upgrade_logs.py » to translate all «http_server.log»+«comments.log» to «journal.log»')
+            log('='*60)
+            sys.exit(1)
+
     APP = web.Application()
     APP.add_routes([web.get('/', home),
                     web.get('/{filename}', handle()),
@@ -2172,7 +2186,6 @@ if __name__ == '__main__':
                     ])
     APP.on_startup.append(startup)
     logging.basicConfig(level=logging.DEBUG)
-    TIME = time
 
     class AccessLogger(AbstractAccessLogger): # pylint: disable=too-few-public-methods
         """Logger for aiohttp"""
