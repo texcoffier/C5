@@ -487,27 +487,86 @@ class Journal:
         """Draw tree in canvas.
         Return selected item"""
         tree = self.tree()
-        size = 16 # Font size
-        arrow = 3 # Arrow size
-        widths = {
-            'D': ['|', size * 0.1,          '#F88', 0, -size * 0.15],
-            'I': ['|', size * 0.1,          '#8F8', 0, -size * 0.15],
-            'Q': ['Q',         -1,          '#000', 0, 0],
-            'L': ['L',         -1,          '#000', 0, 0],
-            'P': ['P',         -1,          '#000', 0, 0],
-            'T': ['T',         -1,          '#000', 0, 0],
-            'H': ['H',         -1,          '#000', 0, 0],
-            '#': ['#',         -1,          '#000', 0, 0],
-            'b': ['#', size * 0.7,          '#000', -size * 0.2, 0],
-            'O': ['⏼', size * 0.9,          '#000', 0, 0],
-            'S': ['📩',size * 1.3,            None, 0, -size * 0.2],
-            'g': ['👍',size * 1.3,            None, 0, 0],
-            'c': ['•', size * 0.4, ['#080', '#FA0', '#F00'], -size * 0.1, 0],
-            '✍': ['✍', size      ,            None, 0, -size * 0.2],
-            't': ['t', size      ,          '#00F', 0, 0],
-            'G': ['G',         -1,            None, 0, 0], # The pending goto
-            'F': ['F',         -1,          '#000', 0, 0],
-            'B': ['B',         -1,          '#000', 0, 0],
+        zoom = max(1, min(int(2 * canvas.parentNode.offsetWidth / tree[1]), 6))
+        font_size = zoom * 12 # Font size
+        ascent = -font_size / 4
+        descent = font_size / 10
+        size = int(font_size + ascent + descent) # Full line height with font ascent and descent
+        middle = int(size / 2) + 1
+        center = zoom/2 - 0.5
+        arrow = zoom * 1 # Arrow size
+        padding = int(font_size / 2)
+        def draw_D(_action, x, y):
+            ctx.strokeStyle = '#F88'
+            ctx.beginPath()
+            ctx.moveTo(x+center, y - middle + 0.5)
+            ctx.lineTo(x+center, y - 0.5)
+            ctx.stroke()
+            return zoom
+        def draw_I(_action, x, y):
+            "Insert chars"
+            ctx.strokeStyle = '#8F8'
+            ctx.beginPath()
+            ctx.moveTo(x+center, y - middle + 0.5)
+            ctx.lineTo(x+center, y - 0.5)
+            ctx.stroke()
+            return zoom
+        def draw_c(action, x, y):
+            "Compilation"
+            value = int(action[1:])
+            if value == 0:
+                ctx.strokeStyle = '#0F0'
+            elif value < 100:
+                ctx.strokeStyle = '#FA0'
+            else:
+                ctx.strokeStyle = '#F00'
+            ctx.beginPath()
+            ctx.moveTo(x+center, y - middle + 0.5)
+            ctx.lineTo(x+center, y - size + 0.5)
+            ctx.stroke()
+            return zoom
+        def draw_O(_action, x, y):
+            "Connection"
+            ctx.strokeStyle = '#88F'
+            ctx.beginPath()
+            ctx.moveTo(x+center, y - 3*size/4 + 0.5)
+            ctx.lineTo(x+center, y - size/4 - 0.5)
+            ctx.stroke()
+            return zoom
+        def draw_t(action, x, y):
+            "Tag"
+            ctx.font = font_size + "px sans"
+            char = action[1:]
+            width = ctx.measureText(char).width
+            ctx.fillStyle = '#DDD'
+            ctx.beginPath()
+            ctx.rect(x - 0.5, y - size + 0.5, width + 1, size - 1)
+            ctx.fill()
+            ctx.fillStyle = '#00F'
+            ctx.fillText(char, x, y - descent)
+            return int(width) + 1
+        def draw_char(char, x, y):
+            """An icon"""
+            ctx.font = font_size + "px emoji"
+            ctx.fillStyle = '#000'
+            ctx.fillText(char, x, y - descent - 1)
+            return int(ctx.measureText(char).width)
+        def draw_b(_action, x, y):
+            return draw_char('#', x, y)
+        def draw_S(_action, x, y):
+            return draw_char('📩', x, y)
+        def draw_g(_action, x, y):
+            return draw_char('👍', x, y)
+        def draw_hand(_action, x, y):
+            return draw_char('✍', x, y)
+        def draw_nothing(_action, x, y):
+            return 0
+        draw = {
+            'D': draw_D, 'I': draw_I, 'c': draw_c, 't': draw_t,
+            'Q': draw_nothing, 'L': draw_nothing, 'P': draw_nothing, 'T': draw_nothing,
+            'H': draw_nothing, '#': draw_nothing, 'G': draw_nothing, 'F': draw_nothing,
+            'B': draw_nothing,
+            'b': draw_b, 'O': draw_O, 'S': draw_S, 'g': draw_g, '✍': draw_hand,
         }
         if canvas.width != canvas.offsetWidth:
             canvas.width = canvas.offsetWidth
@@ -516,9 +575,7 @@ class Journal:
         ctx = canvas.getContext("2d")
         ctx.fillStyle = '#FFF'
         ctx.strokeStyle = '#000'
-        ctx.font = size + "px emoji"
         ctx.fillRect(0, 0, 10000, 10000)
-        ctx.lineWidth = 1
         if event:
             buttons = event.buttons
         else:
@@ -543,45 +600,25 @@ class Journal:
             char = action[0]
             while len(tree) == 4 and char == (self.lines[tree[3][0]] or '✍')[0]:
                 tree = tree[3] # Jump over identical chars without branches
-            char, width, fillStyle, dx, dy = widths[char]
+            width = draw[char](action, x, y)
             if width > 0:
-                if fillStyle:
-                    if char == '•':
-                        value = int(action[1:])
-                        if value == 0:
-                            ctx.fillStyle = fillStyle[0]
-                        elif value < 100:
-                            ctx.fillStyle = fillStyle[1]
-                        else:
-                            ctx.fillStyle = fillStyle[2]
-                    elif char == 't':
-                        ctx.font = size + "px sans"
-                        char = action[1:]
-                        width = ctx.measureText(char).width
-                        ctx.fillStyle = '#DDD'
-                        ctx.beginPath()
-                        ctx.rect(x, y-size+3, width, size)
-                        ctx.fill()
-                        ctx.fillStyle = fillStyle
-                        ctx.fillText(char, x+dx, y+dy)
-                        ctx.font = size + "px emoji"
-                        char = None
-                    else:
-                        ctx.fillStyle = fillStyle
                 if mouse_y < y and mouse_y >= y-size+1 and mouse_x >= x and char != '✍':
-                    feedback[0] = (x+1, y+1, width, tree[0] + 1)
-                if char:
-                    ctx.fillText(char, x+dx, y+dy)
+                    feedback[0] = (x, y, width, tree[0] + 1)
                 x += width
             for i, child in enumerate(tree[3:]):
+                if i > 0:
+                    x += padding - width/2
+                    x = int(x) + 0.5
                 tree_canvas_(child, x, y)
                 dy = child[2] * size
                 if i > 0:
-                    startx = int(x - width/2 + 1) + 0.5
-                    endy = y - size/2 + 3
-                    endx = max(x, startx + 3)
+                    ctx.lineWidth = 1
+                    startx = int(x - padding) - 0.5
+                    endy = int(y - size/2) + 0.5
+                    endx = startx + padding
+                    ctx.strokeStyle = '#000'
                     ctx.beginPath()
-                    ctx.moveTo(startx, y_start + size/6)
+                    ctx.moveTo(startx, y_start)
                     ctx.lineTo(startx, endy)
                     ctx.lineTo(endx, endy)
                     ctx.lineTo(endx, endy)
@@ -589,16 +626,19 @@ class Journal:
                     ctx.lineTo(endx - arrow, endy + arrow)
                     ctx.lineTo(endx, endy)
                     ctx.stroke()
+                    ctx.lineWidth = zoom
                 else:
                     y_start = y
                 y += dy
 
+        ctx.lineWidth = zoom
         tree_canvas_(tree, 0.5, size + 0.5)
         if feedback[0]:
             x, y, width, line = feedback[0]
+            ctx.lineWidth = 1
             ctx.strokeStyle = '#000'
             ctx.beginPath()
-            ctx.rect(x-1, y-size+1, width+2, size+3)
+            ctx.rect(x-1, y-size, width+1, size)
             ctx.stroke()
             ccccc.version_feedback.innerHTML = self.explain(line-1) # + '<hr>' + html(self.lines[line-2]) + '<br>' + html(self.lines[line-1]) +  '<br>' + html(self.lines[line])
             ccccc.version_feedback.style.display = 'block'
