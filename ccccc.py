@@ -485,7 +485,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         # self.editor.dropzone = 'copy s:text/plain'
         self.editor.focus()
 
-        self.editor_title.innerHTML = '<h2>' + self.options['editor_title'] + '</h2>'
+        if self.options['display_version_toggle']:
+            tree = ('<span onclick="ccccc.display_version_toggle()">'
+                + self.options['icon_version_toggle'] + '</span>')
+        else:
+            tree = ''
+        self.editor_title.innerHTML = '<h2>' + tree + self.options['editor_title'] + '</h2>'
         self.indent_button = document.createElement('LABEL')
         self.indent_button.innerHTML = self.options['editor_indent']
         self.indent_button.onclick = bind(self.do_indent, self)
@@ -1950,10 +1955,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 tips.append("Sauvegarder sur la machine locale avec l'historique dans GIT")
                 links.append('<a target="_blank" href="git/' + COURSE + window.location.search
                      + '">' + self.options['icon_git'] + '</a>')
-            if self.options['display_version_toggle']:
-                tips.append("Afficher/cacher l'arbre des versions")
-                links.append('<span onclick="ccccc.display_version_toggle()">'
-                    + self.options['icon_version_toggle'] + '</span>')
             tips.append(' ')
             links.append(' ')
             content = ['<div class="questions"><div class="tips">']
