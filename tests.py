@@ -858,7 +858,7 @@ return sum ;
             (5, 0, {'innerHTML': Not(Contains('ccccc.js'))}),
             (5, 1, {'innerHTML': no_grades and no_grade and no_details}),
             (1, 5, {'innerHTML': no_grades and no_grade and no_details}),
-            (3, 5, {'innerHTML': no_grades and no_grade and no_details}),
+            # (3, 5, {'innerHTML': no_grades and no_grade and no_details}),
             (4, 5, {'innerHTML': ~no_grades and ~no_grade and no_details}),
             (5, 5, {'innerHTML': ~no_grades and ~no_grade and ~no_details}),
             (0, 0, {'innerHTML': Not(Contains('ccccc.js'))}),

@@ -1,9 +1,9 @@
 
 FEEDBACK_LEVEL = {
     0: "Rien",
-    1: "Code source",
+    1: "Code source commenté",
     # 2:  "+ correction"
-    3: "+ commentaires correcteur",
+    # 3: "+ commentaires correcteur",
     4: "+ note totale",
     5: "+ barème détaillé"
 }
