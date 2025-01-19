@@ -487,7 +487,9 @@ class Journal:
         """Draw tree in canvas.
         Return selected item"""
         tree = self.tree()
-        zoom = max(1, min(int(2 * canvas.parentNode.offsetWidth / tree[1]), 6))
+        zoom = max(1, min(int(canvas.parentNode.offsetWidth / tree[1]),
+                          int(canvas.parentNode.offsetHeight / tree[2] / 12),
+                          6))
         font_size = zoom * 12 # Font size
         ascent = -font_size / 4
         descent = font_size / 10
