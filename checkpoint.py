@@ -536,6 +536,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.fillStyle = "#000"
         selected_item = None
         for i, message in enumerate(model):
+            if message.startswith('*'):
+                ctx.font = "bold 24px sans-serif"
+                message = message[1:]
+            else:
+                ctx.font = "24px sans-serif"
             y_item = y_pos + menu_line * i
             if message in selected:
                 ctx.fillStyle = "#FDD"
@@ -912,6 +917,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             state = "Clôturer l'examen"
         else:
             state = "Rouvrir l'examen"
+        grade = "Noter l'étudiant"
+        if self.state == 'done':
+            grade = '*' + grade
+        spy = "Regarder en temps réel"
+        if self.state == 'running':
+            spy = '*' + spy
         temps = "Temps bonus"
         if student.bonus_time:
             temps += ' (' + int(student.bonus_time / 60) + ' min.)'
@@ -919,11 +930,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.selected_student = self.draw_menu(ctx, x_pos, y_pos, [],
             [
                 student.firstname + ' ' + student.surname,
-                "",
-                "Regarder en temps réel",
-                temps,
-                state,
-                "Noter l'étudiant",
+                "", spy, temps, state, grade,
                 student.mail or 'Adresse mail inconnue'
             ])
 
@@ -1080,7 +1087,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     self.move_student_to(self.moving, column, line)
             elif not self.moved:
                 # Simple click
-                self.student_menu = STUDENT_DICT[self.moving['login']]
+                student_menu = STUDENT_DICT[self.moving['login']]
+                if student_menu is self.student_menu:
+                    if self.state == 'running':
+                        create_realtime_spy(self.student_menu)
+                    elif self.state == 'done':
+                        window.open(BASE + '/grade/' + COURSE + '/'
+                                    + self.moving['login'] + '?ticket=' + TICKET)
+                    self.student_menu = None
+                else:
+                    self.student_menu = STUDENT_DICT[self.moving['login']]
                 self.selected_computer = None
                 scheduler.draw = "drag_stop_student"
         else:
@@ -1857,10 +1873,13 @@ def scheduler():
         now = nice_date(secs) + ':00'
         if now >= OPTIONS['stop']:
             message = "Examen terminé"
+            ROOM.state = 'done'
         elif now < OPTIONS['start']:
             message = 'Début dans ' + split_time(strptime(OPTIONS['start']) - secs)
+            ROOM.state = 'pending'
         else:
             message = 'Fin dans ' + split_time(strptime(OPTIONS['stop']) - secs)
+            ROOM.state = 'running'
         document.getElementById('TTL').innerHTML = message
     if Student.moving_student or Student.highlight_student:
         ROOM.draw(scheduler.draw_square_feedback)
