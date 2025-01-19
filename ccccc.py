@@ -168,7 +168,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     input_index = -1 # The input number needed
     current_question = -1 # The question on screen
     compile_now = False
-    last_compile = {}
     editor_lines = []
     do_not_register_this_blur = False
     init_done = False
@@ -674,7 +673,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.unlock_worker()
             self.state = 'started'
             self.worker.postMessage(self.source) # Start compile/execute/test
-            self.last_compile[self.current_question] = self.source
         if self.seconds != seconds:
             self.seconds = seconds
             timer = document.getElementById('timer')
@@ -880,12 +878,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if not line:
                 return
 
-            box = document.createRange()
-            box.setStart(line, column)
+            self.meter.setStart(line, column)
             if column_stop < 0:
                 column_stop = len(line.textContent)
-            box.setEnd(line, column_stop)
-            rect = self.get_rect(box)
+            self.meter.setEnd(line, column_stop)
+            rect = self.get_rect(self.meter)
             marker = document.createElement('DIV')
             marker.className = 'bubble_target'
             marker.style.left = rect['left'] + 'px'
@@ -993,7 +990,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.options['diff']:
             default_answer = {}
             sep = RegExp('[ \t]', 'g')
-            for line in self.question_original[self.current_question].split('\n'):
+            old = self.question_original[self.current_question]
+            if not REAL_GRADING:
+                old = JOURNAL.questions[JOURNAL.question].last_tagged_source or old
+            for line in old.split('\n'):
                 default_answer[line.replace(sep, '')] = True
             for number, line in zip(self.line_numbers.childNodes, self.source.split('\n')):
                 if default_answer[line.replace(sep, '')]:
@@ -1407,13 +1407,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             html.append('<option>' + i + '</option>')
         self.completion.innerHTML = ''.join(html)
 
-        box = document.createRange()
         line, column = self.get_line_column(self.cursor_position)
         line_elm = self.editor_lines[line-1]
-        box.selectNode(line_elm)
-        box.setStart(line_elm, column-1)
-        box.setEnd(line_elm, column)
-        rect = self.get_rect(box)
+        self.meter.selectNode(line_elm)
+        self.meter.setStart(line_elm, column-1)
+        self.meter.setEnd(line_elm, column)
+        rect = self.get_rect(self.meter)
         self.completion.style.left = rect['left'] + rect['width'] + self.layered.offsetLeft + self.editor.offsetLeft + 'px'
         self.completion.style.top = rect['top'] + rect['height'] + self.layered.offsetTop + self.editor.offsetTop - self.layered.scrollTop + 'px'
         self.completion.style.display = 'block'

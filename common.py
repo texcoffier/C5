@@ -115,7 +115,7 @@ class QuestionStats:
         self.head = None # <index> of the last version
         self.tags = [('', start+2)] # List[Tuple[<tag>, <index>]]
         self.good = False
-        self.source_old = self.source = ''
+        self.source_old = self.source = self.last_tagged_source = ''
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
 
@@ -195,6 +195,7 @@ class Journal:
     def action_t(self, tag, start):
         """Tag"""
         self.questions[self.question].tags.append((tag, start + 1)) # overwrite Save position
+        self.questions[self.question].last_tagged_source = self.content
     def action_I(self, value, _start):
         """Text insert"""
         string = unprotect_crlf(value)
