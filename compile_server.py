@@ -98,7 +98,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         """Log"""
         if self.feedback:
             return
-        print(f"{time.strftime('%Y%m%d%H%M%S')} {more}")
+        print(f"{time.strftime('%Y%m%d%H%M%S')} {self.conid} {more}")
 
     def course_running(self) -> bool:
         """Check if the course is running for the user"""
@@ -260,7 +260,8 @@ class Process: # pylint: disable=too-many-instance-attributes
             if size > 200000000: # Maximum allowed output
                 self.kill()
                 break
-            self.log(("RUN", line[:100]))
+            # self.log(("RUN", line[:100]))
+            self.log("RUN")
             if b'\001\002RACKETFini !\001' in line:
                 self.log(("EXIT", 0))
                 await self.websocket.send(json.dumps(['return', "\n"]))
@@ -288,7 +289,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         """Compile"""
         _course, _question, compiler, compile_options, ld_options, allowed, source = data
         self.compiler = compiler
-        self.log(("COMPILE", data))
+        self.log(("COMPILE", data[:6]))
         if compiler != 'racket':
             self.cleanup(erase_executable=True)
         with open(self.source_file, "w", encoding="utf-8") as file:
@@ -462,7 +463,7 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
     process = Process(websocket, login, course, FREE_USERS.pop())
     PROCESSES.append(process)
     try:
-        process.log(("START", ticket, process.launcher))
+        process.log(("START", ticket, login, course, process.launcher))
         async for message in websocket:
             action, data = json.loads(message)
             process.log(('ACTION', action))
