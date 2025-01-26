@@ -36,7 +36,11 @@ def get_answers_old(course, user, compiled=False): # pylint: disable=too-many-br
                 if not line:
                     continue
                 seconds = 0
-                for cell in json.loads(line):
+                try:
+                    cells = json.loads(line)
+                except json.decoder.JSONDecodeError:
+                    cells = ast.literal_eval(line)
+                for cell in cells:
                     if isinstance(cell, list):
                         what = cell[0]
                         if what == 'answer':
@@ -164,7 +168,11 @@ def get_answers(course, user):
             if not line:
                 continue
             seconds = 0
-            for cell in json.loads(line):
+            try:
+                cells = json.loads(line)
+            except json.decoder.JSONDecodeError:
+                cells = ast.literal_eval(line)
+            for cell in cells:
                 if seconds > next_compile.timestamp and journal.question >= 0:
                     # Insert a compilation before
                     if journal.question != next_compile.question:
