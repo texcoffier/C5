@@ -1062,6 +1062,7 @@ def create_shared_worker(login='', hook=None):
         """Send a message to the journal"""
         if GRADING and not (ccccc.add_comments and message[0] in 'GbTt'):
             print('Not recording ' + message)
+            return # To keep journals in sync
         else:
             print('Post ' + message)
             if not message.startswith('T'):
