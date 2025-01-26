@@ -2192,6 +2192,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         span.innerHTML = '\n'.join(text[1:]).replace(
             RegExp('^([^ ]*) (.*) (#&lt;continuation-mark-set&gt;.*)$', 's'),
                 '<i style="opacity:0.3">$1</i><br><b>$2</b><br><i style="opacity:0.3">$3</i>')
+        if text == ['', 'Fini !']:
+            span.style.marginTop = '1em'
         span.onmouseenter = highlight
         span.onmouseleave = unhighlight
         self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
