@@ -351,43 +351,52 @@ class Journal:
         """Return a version tree for human.
             [<index>, width, height, ...children...]
         """
-        # try:
-        #     print(JSON.stringify(self.children))
-        # except:
-        #     pass
-        # print(start,
-        #       start < len(self.children) and self.children[start] or '?',
-        #       start < len(self.lines) and self.lines[start] or '?')
-        if start < len(self.children):
-            children = self.children[start]
-        else:
-            return [start, 0, 1]
-        if len(children) == 0:
-            if self.lines[start].startswith('G'):
-                return None
-            return [start, 1, 1]
+        tree = [start, 0, 0]
+        todo = [tree]
+        nodes = [tree]
 
-        kids = []
-        for child in children:
-            kid = self.compute_tree(child)
-            if kid:
-                if kid[0] < len(self.lines) and self.lines[kid[0]][0] in 'GTBF':
-                    for great_children in kid[3:]:
-                        kids.append(great_children)
-                else:
-                    kids.append(kid)
-        if len(kids) == 0:
-            return [start, 1, 1]
-        height = 0
-        for i, child in enumerate(kids):
-            height += child[2]
-            if child[1] > kids[0][1]:
-                kids[0], kids[i] = kids[i], kids[0]
+        def add(index):
+            # Jump over not interesting things
+            if index < len(self.lines) and self.lines[index][0] in 'GTBF':
+                for i in self.children[index]:
+                    add(i)
+                return
+            if index == len(self.lines):
+                todo.append([index, 0, 1])
+            else:
+                todo.append([index, 1, 1])
+            item.append(todo[-1])
+            nodes.append(todo[-1])
 
-        result = [start, 1 + kids[0][1], height]
-        for child in kids:
-            result.append(child)
-        return result
+        while len(todo):
+            item = todo.pop()
+            if item[0] < len(self.children):
+                for j in self.children[item[0]]:
+                    add(j)
+
+        # Compute sizes
+        for node in nodes[::-1]: # From leaves to root
+            if len(node) > 3:
+                node[1] = 1 + node[3][1]
+                height = 0
+                for kid in node[3:]:
+                    height += kid[2]
+                node[2] = height
+
+        # longuest firsts
+        for node in nodes[::-1]: # From leaves to root
+            if len(node) > 3:
+                if len(node) > 4: # >= 2 children
+                    swaped = True
+                    while swaped:
+                        swaped = False
+                        for i in range(4, len(node)):
+                            if node[i-1][1] < node[i][1]:
+                                node[i], node[i-1] = node[i-1], node[i]
+                                swaped = True
+                node[1] = node[3][1] + 1
+
+        return tree
 
     def parent_position(self, position):
         """Get the parent position"""
