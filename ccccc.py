@@ -1851,10 +1851,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 JOURNAL.pending_goto_history = []
             self.do_not_clear = {}
             self.current_question = value
-            self.record_pending_goto() # Record pending goto because if ^Z
+            # self.record_pending_goto() # Record pending goto because if ^Z
             SHARED_WORKER.question(value)
             self.journal_question = JOURNAL.questions[value]
-
+            self.set_editor_content(JOURNAL.content)
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
             self.add_highlight_errors(value[0], value[1], what)

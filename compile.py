@@ -160,7 +160,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         if self.current_question > self.current_question_max:
             self.current_question_max = self.current_question
         self.quest = self.questions[self.current_question]
-        if self.quest and hasattr(self.quest, 'last_answer'):
+        retrieve_old_question = self.quest and hasattr(self.quest, 'last_answer')
+        if retrieve_old_question:
             self.source = self.quest.last_answer
         else:
             self.source = self.quest.default_answer()
@@ -169,7 +170,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('question', self.quest.question())
         self.post('index', self.index_initial_content())
         self.send_options()
-        self.post('editor', self.source)
+        if not retrieve_old_question:
+            self.post('editor', self.source)
         self.post('allow_edit', '1')
 
     def goto(self, question):
