@@ -485,7 +485,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.editor.focus()
 
         if self.options['display_version_toggle']:
-            tree = ('<span onclick="ccccc.display_version_toggle()">'
+            tree = ('<span onclick="ccccc.display_version_toggle()" style="cursor:pointer">'
                 + self.options['icon_version_toggle'] + '</span>')
         else:
             tree = ''
