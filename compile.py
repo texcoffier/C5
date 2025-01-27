@@ -312,7 +312,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             html_class = []
             if i == self.current_question:
                 html_class.append('current')
-                link = 'onclick="ccccc.record([\'click-same\'])"'
+                link = ''
             if self.question_yet_solved(i):
                 html_class.append('good')
             else:
