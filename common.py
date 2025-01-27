@@ -1252,3 +1252,44 @@ def compute_diffs(old, rep):
         rep = rep[insert_pos:]
         position += insert_pos
     return diffs
+
+def compute_diffs_regtest():
+    """Check if compute_diff works"""
+    initials = []
+    def strings(depth, prefix):
+        if depth == 0:
+            return
+        initials.append(prefix)
+        depth -= 1
+        strings(depth, prefix + 'a')
+        strings(depth, prefix + 'b')
+    strings(6, '')
+
+    def check_diff(initial, after):
+        for insert, pos, val in compute_diffs(initial, after):
+            if insert:
+                initial = initial[:pos] + val + initial[pos:]
+                if val == '':
+                    raise ValueError('empty_insert')
+            else:
+                initial = initial[:pos] + initial[pos+val:]
+        if initial != after:
+            raise ValueError('bug')
+
+    def change(initial, current, depth):
+        if depth == 0:
+            check_diff(initial, current)
+            return
+        depth -= 1
+        for i in range(len(current)):
+            change(initial, current[:i] + current[i:], depth)
+        for i in range(len(current)+1):
+            change(initial, current[:i] + 'a' + current[i:], depth)
+        for i in range(len(current)+1):
+            change(initial, current[:i] + 'b' + current[i:], depth)
+   
+    for initial in initials:
+        change(initial, initial, 4)
+    print('ok')
+
+# compute_diffs_regtest()
