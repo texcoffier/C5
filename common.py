@@ -1256,6 +1256,10 @@ def compute_diffs(old, rep):
             diffs.append([False, position, len(old)])
             diffs.append([True, position, rep])
             break
+        if rep[:insert_pos] == old[delete_pos:delete_pos+insert_pos]:
+            diffs.append([False, position, delete_pos])
+            old = old[delete_pos:]
+            continue
         diffs.append([True, position, rep[:insert_pos]])
         rep = rep[insert_pos:]
         position += insert_pos
