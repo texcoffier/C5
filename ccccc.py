@@ -776,9 +776,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             elif state.node.tagName == 'SPAN':
                 if not state.last:
                     state.last = state.node
-                state.text.append(state.node.innerText)
+                state.text.append(replace_all(state.node.innerText, '\r', ''))
             else:
-                state.text.append(state.node.nodeValue)
+                state.text.append(replace_all(state.node.nodeValue, '\r', ''))
                 state.last = state.node
         self.editor_lines = []
         state = {
