@@ -202,7 +202,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     first_F11 = True
     first_update = True
     dialog_on_screen = False
-    hide_completion_chooser = 0
+    completion_running = False
     to_complete = ''
     last_scroll = 0 # Last scroll position sent to journal in seconds
     old_scroll_top = 0
@@ -1090,6 +1090,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def onmousedown(self, event):
         """Mouse down"""
         self.mouse_pressed = event.button
+        self.stop_completion()
 
     def onmouseup(self, event):
         """Mouse up"""
@@ -1362,9 +1363,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def update_cursor_position(self):
         """Queue cursor update position"""
         self.do_update_cursor_position = "update_cursor_position"
-        if self.hide_completion_chooser <= 0:
-            self.completion.style.display = 'none'
-        self.hide_completion_chooser -= 1
 
     def do_indent(self):
         """Formate the source code"""
@@ -1419,7 +1417,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.completion.style.display = 'block'
         self.completion.firstChild.className = 'active_completion'
         self.active_completion = 0
-        self.hide_completion_chooser = 2
+        self.completion_running = True
 
     def bubble_save_change(self):
         """The bubble texte content must be saved"""
@@ -1436,6 +1434,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
         JOURNAL.see_past(line)
         self.set_editor_content(JOURNAL.content)
 
+    def stop_completion(self):
+        """Close completion menu"""
+        if self.completion_running:
+            self.completion.style.display = 'none'
+            self.completion_running = False
+
     def onkeydown(self, event): # pylint: disable=too-many-branches
         """Key down"""
         if not self.allow_edit:
@@ -1444,7 +1448,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.current_key = event.key
         if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9'):
             return
-        if self.hide_completion_chooser >= 0 and event.target is self.editor:
+        if self.completion_running and event.target is self.editor:
             if event.key == 'ArrowUp':
                 direction = -1
             elif event.key == 'ArrowDown':
@@ -1453,18 +1457,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 document.execCommand('insertText', False,
                     self.completion.childNodes[self.active_completion].innerHTML[
                         len(self.to_complete):])
+                self.stop_completion()
                 stop_event(event)
                 return
             else:
                 direction = 0
             if direction:
-                self.hide_completion_chooser += 1
                 self.completion.childNodes[self.active_completion].className = ''
                 self.active_completion += direction + len(self.completion.childNodes)
                 self.active_completion = self.active_completion % len(self.completion.childNodes)
                 self.completion.childNodes[self.active_completion].className = 'active_completion'
                 stop_event(event)
                 return
+            self.stop_completion()
         if event.target is self.editor and event.key not in (
                 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'):
             self.clear_highlight_errors()
