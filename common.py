@@ -604,10 +604,11 @@ class Journal:
             mouse_x = mouse_y = 0
         self.last_event = None
         feedback = [None]
+        ctx.lineWidth = zoom
 
-        def tree_canvas_(tree, x, y):
-            """Draw tree in canvas.
-            Return selected item"""
+        todo = [[tree, 0.5, size + 0.5]]
+        while len(todo):
+            tree, x, y = todo.pop()
             action = self.lines[tree[0]] or '✍'
             char = action[0]
             while len(tree) == 4 and char == (self.lines[tree[3][0]] or '✍')[0]:
@@ -621,7 +622,7 @@ class Journal:
                 if i > 0:
                     x += padding - width/2
                     x = int(x) + 0.5
-                tree_canvas_(child, x, y)
+                todo.append([child, x, y])
                 dy = child[2] * size
                 if i > 0:
                     ctx.lineWidth = 1
@@ -643,8 +644,6 @@ class Journal:
                     y_start = y
                 y += dy
 
-        ctx.lineWidth = zoom
-        tree_canvas_(tree, 0.5, size + 0.5)
         if feedback[0]:
             x, y, width, line = feedback[0]
             ctx.lineWidth = 1
