@@ -1861,6 +1861,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             SHARED_WORKER.question(value)
             self.journal_question = JOURNAL.questions[value]
             self.set_editor_content(JOURNAL.content)
+            self.compilation_run()
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
             self.add_highlight_errors(value[0], value[1], what)
