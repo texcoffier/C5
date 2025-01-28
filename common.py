@@ -116,6 +116,7 @@ class QuestionStats:
         self.tags = [('', start+2)] # List[Tuple[<tag>, <index>]]
         self.good = False
         self.source_old = self.source = self.last_tagged_source = ''
+        self.zoom = 6 # Maximum version tree zoom
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
 
@@ -496,10 +497,13 @@ class Journal:
     def tree_canvas(self, canvas, event=None):
         """Draw tree in canvas.
         Return selected item"""
+        if canvas.parentNode.offsetWidth == 0 or canvas.parentNode.offsetHeight == 0:
+            return
         tree = self.tree()
         zoom = max(1, min(int(canvas.parentNode.offsetWidth / tree[1]),
                           int(canvas.parentNode.offsetHeight / tree[2] / 12),
-                          6))
+                          self.questions[self.question].zoom))
+        self.questions[self.question].zoom = zoom
         font_size = zoom * 12 # Font size
         ascent = -font_size / 4
         descent = font_size / 10
