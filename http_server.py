@@ -912,7 +912,8 @@ async def my_zip(request:Request) -> StreamResponse: # pylint: disable=too-many-
     data = io.BytesIO()
     with zipfile.ZipFile(data, mode="w", compression=zipfile.ZIP_DEFLATED) as zipper:
         for config in configs:
-            if config.get_feedback(session.login) == 0:
+            if (config.get_feedback(session.login) == 0
+                    and config.checkpoint):
                 continue
             journa = config.get_journal(session.login)
             if not journa:
