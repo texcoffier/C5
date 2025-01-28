@@ -1949,7 +1949,9 @@ class JournalLink:
     async def write(self, message):
         ############## XXX ################## Must check message validity and add timestamp
         self.content.append(message)
-        self.journal.write(message + '\n')
+        # 'protect_crlf' does not work in some browser.
+        # So redo it server side.
+        self.journal.write(common.protect_crlf(message) + '\n')
 
         if self.editor:
             if message.startswith('t'):
