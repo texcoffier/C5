@@ -376,7 +376,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         if document.body.classList.contains('versions'):
             version_height = '4em'
-            version_height = '8em'
         else:
             version_height = '0px'
 
@@ -776,9 +775,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             elif state.node.tagName == 'SPAN':
                 if not state.last:
                     state.last = state.node
-                state.text.append(replace_all(state.node.innerText, '\r', ''))
+                if state.node.innerText:
+                    state.text.append(replace_all(state.node.innerText, '\r', ''))
             else:
-                state.text.append(replace_all(state.node.nodeValue, '\r', ''))
+                if state.node.nodeValue:
+                    state.text.append(replace_all(state.node.nodeValue, '\r', ''))
                 state.last = state.node
         self.editor_lines = []
         state = {
