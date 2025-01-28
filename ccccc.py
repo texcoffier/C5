@@ -1157,7 +1157,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             #     document.execCommand('insertText', False, text)
             # setTimeout(xxx, 500)
         else:
-            document.execCommand('insertText', False, text)
+            document.execCommand('insertText', False, replace_all(text, '\r', ''))
             stop_event(event)
         self.clear_highlight_errors()
         self.do_coloring = self.do_update_cursor_position = "insert_text"
