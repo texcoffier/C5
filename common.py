@@ -1057,6 +1057,7 @@ def create_shared_worker(login='', hook=None):
                 ccccc.set_editmode(1) # Keep commented version synchronized
                 ccccc.editmode.selectedIndex = 1
             if int(msg_id) != len(journal.lines):
+                ccccc.record_error('DESYNC')
                 reload_page("Désynchronisation avec le serveur. " + msg_id + ' != ' + len(journal.lines))
                 window.location.reload()
             print("Add line to journal: " + message)
