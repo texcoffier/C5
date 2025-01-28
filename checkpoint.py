@@ -1378,8 +1378,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.move_student_to(STUDENT_DICT[Student.moving_student], pos[0], pos[1])
         else:
             if Student.moving_student_position == [self.event_x, self.event_y]:
-                window.open(BASE + '/grade/' + COURSE + '/'
-                            + Student.moving_student + '?ticket=' + TICKET)
+                create_realtime_spy(STUDENT_DICT[Student.moving_student])
         document.body.onmousemove = document.body.ontouchmove = None
         window.onmouseup = document.body.ontouchend = None
         document.getElementById('top').style.background = TOP_INACTIVE
