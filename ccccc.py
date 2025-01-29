@@ -1885,7 +1885,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     continue
                 if value.startswith('\002EVAL'):
                     #print(value[5:])
-                    eval(value[5:]) # pylint: disable=eval-used
+                    try:
+                        eval(value[5:]) # pylint: disable=eval-used
+                    except: # pylint: disable=bare-except
+                        self.record_error('EVAL ' + value[5:])
                 elif value.startswith('\002RACKET'):
                     self.racket(value[7:])
                 elif value.startswith('\002WAIT'):
@@ -2019,7 +2022,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if what == 'question' and GRADING:
                 self.update_grading()
         elif what == 'eval':
-            eval(value) # pylint: disable=eval-used
+            try:
+                eval(value) # pylint: disable=eval-used
+            except: # pylint: disable=bare-except
+                self.record_error('eval ' + value)
         elif what == 'stop':
             self.popup_message(
                 "La compilation ne fonctionne plus :"
