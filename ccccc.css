@@ -288,6 +288,7 @@ DIV.layered {
 DIV.overlay, DIV.editor, DIV.line_numbers, DIV.comments {
     position: absolute;
     top: 0px;
+    overflow: hidden;
 }
 DIV.layered > DIV {
     left: 0px ;
