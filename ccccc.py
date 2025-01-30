@@ -765,7 +765,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     state.editor_lines.append(state.last)
                     state.text.append('\n')
                     state.last = None
-            elif state.node.tagName == 'BR':
+            elif (state.node.tagName == 'BR'
+                  or state.node.tagName == 'SPAN'
+                      and state.node.firstChild is state.node.lastChild
+                      and state.node.firstChild.tagName == 'BR'):
                 if state.last:
                     state.editor_lines.append(state.last)
                 else:
