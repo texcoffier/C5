@@ -1587,6 +1587,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             SHARED_WORKER.focus()
     def memorize_inputs(self):
         """Record all input values"""
+        if not self.inputs[self.current_question]:
+            # In some case INPUT are displayed for the bad question
+            # So they are unexpected
+            return
         inputs = self.executor.getElementsByTagName('INPUT')
         for value in inputs:
             if value == inputs[-1] and len(value.value) == 0:
