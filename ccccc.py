@@ -765,26 +765,25 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     state.editor_lines.append(state.last)
                     state.text.append('\n')
                     state.last = None
-            elif (state.node.tagName == 'BR'
-                  or state.node.tagName == 'SPAN'
-                      and state.node.firstChild is state.node.lastChild
-                      and state.node.firstChild.tagName == 'BR'):
+            elif state.node.tagName == 'BR':
                 if state.last:
                     state.editor_lines.append(state.last)
                 else:
                     state.editor_lines.append(state.node)
                 state.text.append('\n')
                 state.last = None
-            elif state.node.tagName == 'SPAN':
-                if not state.last:
-                    state.last = state.node
-                if state.node.innerText:
-                    state.text.append(replace_all(state.node.innerText, '\r', ''))
             else:
                 if state.node.nodeValue:
-                    state.text.append(replace_all(state.node.nodeValue, '\r', ''))
+                    state.text.append(state.node.nodeValue)
                 state.last = state.node
         self.editor_lines = []
+        original = self.editor.innerHTML
+        cleaned = replace_all(original, '\r', '')
+        cleaned = replace_all(cleaned, '\n', '<br>') # All element must be on a single line
+        cleaned = cleaned.replace(RegExp('<([a-zA-Z]+)[^>]*>', 'g'), '<$1>') # Remove tag attributes
+        cleaned = cleaned.replace(RegExp('</?span>', 'gi'), '') # Remove <span> tags
+        if cleaned != original:
+            self.editor.innerHTML = cleaned
         state = {
             'node': self.editor,
             'text': [],
