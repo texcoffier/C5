@@ -514,14 +514,14 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         return self.notation
 
     def get_comments(self, login:str) -> str:
-        """Get the comments"""
+        """Get the comments DEPRECATED"""
         comment_file = f'{self.dir_log}/{login}/comments.log'
         if os.path.exists(comment_file):
             with open(comment_file, "r", encoding='utf-8') as file:
                 return file.read()
         return ''
     def append_comment(self, login:str, comment:List) -> None:
-        """Append a comment to the file"""
+        """Append a comment to the file DEPRECATED"""
         comment_file = f'{self.dir_log}/{login}/comments.log'
         with open(comment_file, "a", encoding='utf-8') as file:
             file.write(json.dumps(comment) + '\n')
@@ -1107,6 +1107,16 @@ def create_start_script():
         file.write('./utilities.py $ARG\n')
     os.chmod('xxx-start-c5', 0o755)
 
+def start_server(name):
+    """Shell script to start the server"""
+    date = time.strftime('%Y%m%d')
+    return f"""
+        ./{name}.py >>LOGS/{date}-{name} 2>&1 &
+        echo \\$! >LOGS/{name}.pid
+        rm -f LOGS/{name} 2>/dev/null || true
+        ln -s {date}-{name} LOGS/{name}
+        """
+
 def print_help() -> None:
     """Print help and default configuration values"""
     print("""Arguments may be:
@@ -1133,7 +1143,7 @@ def print_help() -> None:
 """)
     print_state()
     os.system("ps -fe | grep -e http_server.py -e compile_server.py -e dns_server.py -e infos_server.py | grep -v grep")
-    print('for I in http compile infos dns; do pkill -f "$I"_server.py ; done ; rm *.log')
+    print('for I in http compile infos dns; do pkill -f "$I"_server.py ; done')
     sys.exit(1)
 
 ACTIONS = {
@@ -1276,7 +1286,7 @@ With Firefox:
         cd {C5_DIR} 2>/dev/null || true
         pkill --oldest -f compile_server.py || true
         sleep 1
-        ./compile_server.py >>compile_server.log 2>&1 &
+        {start_server("compile_server")}
         """,
     'restart_http_server': fr"""#C5_LOGIN
         set -e
@@ -1284,26 +1294,24 @@ With Firefox:
         cd {C5_DIR} 2>/dev/null || true
         pkill --oldest -f http_server.py || true
         sleep 1
-        ./http_server.py >>http_server.log 2>&1 &
+        {start_server("http_server")}
         """,
     'start': fr"""#C5_LOGIN
         set -e
         echo START SERVERS
         cd {C5_DIR} 2>/dev/null || true
         chmod 700 . # No access for students
-        mkdir TICKETS 2>/dev/null || true
+        mkdir TICKETS LOGS 2>/dev/null || true
         make prepare
         if [ '' != '{C5_URL}' ]
         then
-            ./http_server.py >>http_server.log 2>&1 &
-            echo \$! >http_server.pid
-            ./compile_server.py >>compile_server.log 2>&1 &
-            echo \$! >compile_server.pid
+            {start_server("http_server")}
+            {start_server("compile_server")}
             sleep 1
-            echo ============================== Last 4 lines of http_server.log:
-            tail -5 http_server.log
-            echo ============================== Last 3 lines of compile_server.log:
-            tail -3 compile_server.log
+            echo ============================== Last 4 lines of http_server logs:
+            tail -5 LOGS/http_server
+            echo ============================== Last 3 lines of compile_server logs:
+            tail -3 LOGS/compile_server
         fi
         """,
     'stop': r"""#C5_LOGIN

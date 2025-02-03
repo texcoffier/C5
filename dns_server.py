@@ -5,6 +5,7 @@ Translate IP as hostname.
 Never die except if 'stdin' file is no more readable.
 """
 
+import os
 import sys
 import json
 import time
@@ -12,7 +13,13 @@ import traceback
 import socket
 
 sys.stderr.close()
-sys.stderr = open('dns_server.log', 'a', encoding="utf-8") # pylint: disable=consider-using-with
+logname = f"{time.strftime('%Y%m%d')}-dns_server"
+sys.stderr = open('LOGS/' + logname, 'a', encoding='utf-8') # pylint: disable=consider-using-with
+try:
+    os.unlink('LOGS/dns_server')
+except: # pylint: disable=bare-except
+    pass
+os.symlink(logname, 'LOGS/dns_server')
 print(f"\nStart at {time.ctime()}", file=sys.stderr)
 
 def analyse():

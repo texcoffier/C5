@@ -88,7 +88,7 @@ class And(Or):
 
 def log(text):
     """Add one line par full test in the log file"""
-    with open("tests.log", "a", encoding='utf-8') as file:
+    with open("LOGS/tests.log", "a", encoding='utf-8') as file:
         file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {text}\n")
 
 def question(i):

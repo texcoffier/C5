@@ -21,7 +21,14 @@ C5_LDAP_BASE = os.getenv('C5_LDAP_BASE') # As DC=univ-lyon1,DC=fr
 C5_LDAP_ENCODING = os.getenv('C5_LDAP_ENCODING') or 'utf-8'
 
 sys.stderr.close()
-sys.stderr = open('infos_server.log', 'a', encoding='utf-8') # pylint: disable=consider-using-with
+logname = f"{time.strftime('%Y%m%d')}-infos_server"
+sys.stderr = open('LOGS/' + logname, 'a', encoding='utf-8') # pylint: disable=consider-using-with
+try:
+    os.unlink('LOGS/infos_server')
+except: # pylint: disable=bare-except
+    pass
+os.symlink(logname, 'LOGS/infos_server')
+
 print(f"\nStart at {time.ctime()}", file=sys.stderr)
 
 if C5_LDAP_LOGIN == 'admin' and C5_LDAP_PASSWORD == 'admin':
