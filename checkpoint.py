@@ -27,22 +27,36 @@ def filters(element):
 
 filters.logins = {}
 
-def highlight_buttons(value):
+def highlight_buttons():
+    start = nice_date(ROOM.time_span[0])
+    end = nice_date(ROOM.time_span[1])
     for child in document.getElementById("checkpoint_time_buttons").childNodes:
-        if child.getAttribute('value') == value or value == '':
+        date = child.getAttribute('value')
+        if date >= start and date <= end:
             child.style.background = '#8F8'
         else:
             child.style.background = '#DDD'
+        nr_students = 0
+        nr_total_students = 0
+        date = date.split(' ')[0]
+        for student in STUDENTS:
+            if nice_date(student[1][3]).split(' ')[0] == date:
+                nr_total_students += 1
+                if student[1][2].split(',')[0] == ROOM.building:
+                    nr_students += 1
+        child.innerHTML = (
+            child.innerHTML.split('<div>')[0]
+            + '<div>' + nr_students + '</div>'
+            + '<div>' + nr_total_students + '</div>')
 
 def update_checkpoint_time(element, keep=False):
     """Set a nice time_span"""
     timestamp = strptime(element.value + ':00')
     element.style.background = ''
     if isNaN(timestamp):
-        ROOM.time_span = [0, 1e99]
+        ROOM.time_span = [0, 1e10]
         if element.value != '':
             element.style.background = '#FDD'
-        highlight_buttons('')
         update_page()
         return
 
@@ -62,8 +76,9 @@ def update_checkpoint_time(element, keep=False):
             timestamp = after
     ROOM.time_span = [timestamp - 12*3600, timestamp + 12 * 3600]
     element.value = nice_date(timestamp)
-    highlight_buttons(element.value)
     update_page()
+    ROOM.force_update_waiting_room = True
+    ROOM.update_waiting_room()
 
 def button_checkpoint_time(element):
     checkpoint_time = document.getElementById('checkpoint_time')
@@ -264,6 +279,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.force_update_waiting_room = True
         scheduler.update_messages = True
         self.student_menu = self.selected_student = None # Why not computer menu?
+        self.time_span = [0, 1e10]
 
     def prepare_draw(self):
         """Compile information to draw quickly the map"""
@@ -1300,7 +1316,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                         continue
                 else:
                     style = 'background: #FFCA'
-                content.append(student.box(style))
+                if student.checkpoint_time >= self.time_span[0] and student.checkpoint_time <= self.time_span[1]:
+                    content.append(student.box(style))
         document.getElementById('waiting').innerHTML = ' '.join(content)
     def update_messages(self): # pylint: disable=no-self-use
         """Update HTML with the messages"""
@@ -1652,7 +1669,7 @@ def create_page(building_name):
         background = 'background:#8F8'
         for label in ["Auj.<br>", "Hier<br>", "A.H.<br>", "<br>", "<br>", "<br>", "<br>"]:
             buttons.append("""<button
-             style="padding:0;flex:1;font-size: 70%;""" + background
+             style="padding:0;flex:1;border-width:1px;font-size: 70%;""" + background
              + '" value="' + nice_date(now.getTime()/1000)
              + '" onclick="button_checkpoint_time(this)">'
              + label + now.toString().split(' ')[0] + '</button>')
@@ -1721,6 +1738,7 @@ def update_page():
         ROOM.zoom_student(student[1:])
         window.location.hash = ''
         ROOM.draw()
+    highlight_buttons()
 
 def close_exam(login):
     """Terminate the student exam"""
