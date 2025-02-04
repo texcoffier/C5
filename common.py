@@ -1057,7 +1057,7 @@ def create_shared_worker(login='', hook=None):
                     journal.clear_pending_goto()
             except ReferenceError:
                 pass # ccccc does not exist (checkpoint spy)
-            if window.GRADING and ccccc.add_comments == 0:
+            if window.GRADING and ccccc.add_comments == 0 and ccccc.editmode:
                 ccccc.set_editmode(1) # Keep commented version synchronized
                 ccccc.editmode.selectedIndex = 1
             if int(msg_id) != len(journal.lines):
@@ -1075,6 +1075,7 @@ def create_shared_worker(login='', hook=None):
         """Send a message to the journal"""
         if GRADING and not (ccccc.add_comments and message[0] in 'GbTt'):
             print('Not recording ' + message)
+            journal.append(message)
             return # To keep journals in sync
         else:
             print('Post ' + message)

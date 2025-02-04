@@ -254,6 +254,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         self.resize_observer = eval('new ResizeObserver(bubble_resize)')
         print("GUI: wait worker")
+        if options['state'] == 'Ready':
+            self.add_comments = 0
 
     def onSocketError(self):
         """Can't start the worker"""
@@ -512,7 +514,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if GRADING:
             self.editmode = document.createElement('SELECT')
             self.editmode.className = 'editmode'
-            self.editmode.innerHTML = '<option>Bidouiller le code source</option><option selected>Commenter en sélectionnant</option>'
+            if self.add_comments:
+                opt1 = ''
+                opt2 = ' selected'
+            else:
+                opt1 = ' selected'
+                opt2 = ''
+            self.editmode.innerHTML = (
+                '<option' + opt1 + '>Bidouiller le code source</option>'
+                + '<option' + opt2 + '>Commenter en sélectionnant</option>')
             self.editmode.onchange = bind(self.update_editmode, self)
             self.editor_title.firstChild.appendChild(self.editmode)
 
@@ -561,8 +571,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         EDITMODE[self.add_comments] = '\n'.join(JOURNAL.lines)
         self.add_comments = value
         JOURNAL.__init__(EDITMODE[self.add_comments] + '\n')
-        self.set_editor_content(JOURNAL.content)
-        self.update_gui()
+        self.unlock_worker()
+        self.worker.postMessage(['goto', JOURNAL.question])
 
     def update_editmode(self, event):
         """Toggle between edit source code and comment it"""
@@ -1064,6 +1074,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if char_nr > len(line.nodeValue or line.innerText) + 1:
                     self.record_error('BUG overflow ' + char_nr + ' ' + line.nodeValue
                         + ' ' + line.innerText + ' ' + line.nextSibling)
+                    try:
+                        self.record_error('line(from 1)=' + line_nr)
+                        self.record_error('EDITOR: ' + JSON.stringify(self.editor.innerHTML))
+                    except:
+                        pass
                     char_nr = len(line.nodeValue or line.innerText)
                 break
             char_nr -= len(line.nodeValue or line.innerText)
