@@ -1812,10 +1812,18 @@ def key_event_handler(event):
             col, row = ROOM.positions[hostname]
             ROOM.move_student_to(student, col, row)
             ROOM.force_update_waiting_room = True
+    if len(event.key) == 1:
+        spy = document.getElementById('SPY-' + event.key.upper())
+        if spy:
+            while spy.tagName != 'DIV':
+                spy = spy.parentNode
+            spy.shared_worker.close()
+            spy.remove()
     if event.key == 'Escape':
-        students = document.getElementById('live_spy')
-        if students.lastChild:
-            students.removeChild(students.lastChild)
+        while document.getElementById('live_spy').firstChild:
+            spy = document.getElementById('live_spy').firstChild
+            spy.shared_worker.close()
+            spy.remove()
 
 def set_time_bonus(element, login):
     """Recode and update student bonus time"""
@@ -2007,11 +2015,23 @@ def create_realtime_spy(student):
     """
     Choisir login
     """
+    letters = []
+    for spy in document.getElementById('live_spy').childNodes:
+        letters.append(spy.getElementsByTagName('I')[1].innerHTML)
+    letter = student.surname[0].upper()
+    if letter in letters:
+        letter = student.firstname[0].upper()
+    if letter in letters:
+        for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+            if letter not in letters:
+                break
+
     feedback = document.createElement('DIV')
     feedback_header = document.createElement('B')
     feedback.appendChild(feedback_header)
     feedback_header.innerHTML = (
-        '<b></b> <var style="font-weight: normal; color: #888">(Échap pour fermer)</var> '
+        '<i style="float:left;background:#FFF;color: #080;">?</i> <var style="font-weight: normal; color: #888">(«<i id="SPY-'
+        + letter + '">' + letter + '</i>» pour fermer)</var> '
         + student.surname + ' ' + student.firstname
         )
     feedback_div = document.createElement('DIV')
