@@ -2011,7 +2011,7 @@ def create_realtime_spy(student):
     feedback_header = document.createElement('B')
     feedback.appendChild(feedback_header)
     feedback_header.innerHTML = (
-        '<var style="font-weight: normal; color: #888">(Échap pour fermer)</var> '
+        '<b></b> <var style="font-weight: normal; color: #888">(Échap pour fermer)</var> '
         + student.surname + ' ' + student.firstname
         )
     feedback_div = document.createElement('DIV')
@@ -2026,6 +2026,7 @@ def create_realtime_spy(student):
         feedback_div.textContent = journal.content
         feedback.style.height = journal.height * line_height + 'px'
         feedback.scrollTo({'top': journal.scroll_line * line_height, 'behavior': 'smooth'})
+        feedback_header.firstChild.innerHTML = 'Q' + (journal.question+1)
 
     feedback.shared_worker, _journal = create_shared_worker(student.login, update_real_time)
 
