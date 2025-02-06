@@ -2067,8 +2067,11 @@ async def live_link(request:Request) -> StreamResponse:
                 continue
             # Allow grader comments
         if message == '-':
-            journa.close(socket, port)
-            journals.pop(port)
+            if journa:
+                journa.close(socket, port)
+            else:
+                log(f'Message «{msg.data}» close but no journal. bug={port in journals}')
+            journals.pop(port, None)
         elif journa:
             msg_id, message = message.split(' ', 1)
             if msg_id == journa.msg_id:
