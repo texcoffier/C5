@@ -1724,6 +1724,27 @@ async def course_config(request:Request) -> Response:
         f'update_course_config({json.dumps(config.config)})',
         content_type='application/javascript')
 
+async def adm_history(request:Request) -> Response:
+    """Plain history of session changes"""
+    session, config = await get_course_config(request)
+    if not session.is_admin(config):
+        raise web.HTTPUnauthorized(body='not_admin')
+    content = []
+    for i, line in enumerate(pathlib.Path(config.file_cf).read_text(encoding='utf-8').split('\n')):
+        if i % 100 == 0:
+            await asyncio.sleep(0)
+        if line.startswith("('active_teacher_room'"):
+            continue
+        if not line:
+            continue
+        date = line[-22:]
+        if re.match(' # [-0-9: ]*', date):
+            line = line[:-22]
+        else:
+            date = ' # ????-??-?? ??:??:??'
+        content.append(date[3:] + ' ' + line)
+    return answer('\n'.join(content[::-1]), content_type="text/plain")
+
 async def adm_session(request:Request) -> Response:
     """Session configuration for administrators"""
     session, config = await get_course_config(request)
@@ -2155,6 +2176,7 @@ if __name__ == '__main__':
                     web.get('/adm/session2/{course}/{action}/{value}', adm_config),
                     web.get('/adm/session2/{course}/{action}', adm_config),
                     web.get('/adm/course/{course}', adm_course),
+                    web.get('/adm/history/{course}', adm_history),
                     web.get('/adm/git_pull/{course}', adm_git_pull),
                     web.get('/adm/force_grading_done/{course}', adm_force_grading_done),
                     web.get('/adm/media/{course}/{action}/{media}', adm_media),
