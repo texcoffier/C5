@@ -622,7 +622,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Draw students names"""
         now = seconds()
         line_height = self.scale/4
-        ctx.font = line_height + "px sans-serif"
+        ctx.font = 'bold ' + line_height + "px sans-serif"
         if self.rotate_180:
             self.students.sort(cmp_student_position_reverse)
         else:
