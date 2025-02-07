@@ -2047,7 +2047,12 @@ def create_realtime_spy(student):
     def update_real_time(journal):
         if not journal.remote_update:
             return
-        feedback_div.textContent = journal.content
+        feedback_div.innerHTML = (
+            html(journal.content[:journal.position-1])
+            + '<span style="color:#FFF;background:#000">'
+            + html(journal.content[journal.position-1])
+            + '</span>'
+            + html(journal.content[journal.position:]))
         feedback.style.height = journal.height * line_height + 'px'
         feedback.scrollTo({'top': journal.scroll_line * line_height, 'behavior': 'smooth'})
         feedback_header.firstChild.innerHTML = 'Q' + (journal.question+1)
