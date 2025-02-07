@@ -1784,13 +1784,13 @@ server {
         </li>
     </ul>
     <p>
-        Les fichiers de logs se terminent tous par <tt>.log</tt> :
+        Les fichiers de logs sont dans le répertoire LOGS :
     </p>
     <ul>
-        <li> <tt>http_server.log</tt> toutes les requêtes web reçues.</li>
-        <li> <tt>compile_server.log</tt> toutes les demandes de compilation reçues.</li>
-        <li> <tt>dns_server.log</tt> toutes les requêtes DNS faites.</li>
-        <li> <tt>infos_server.log</tt> toutes les requêtes nom/prénom faites.</li>
+        <li> <tt>http_server</tt> toutes les requêtes web reçues.</li>
+        <li> <tt>compile_server</tt> toutes les demandes de compilation reçues.</li>
+        <li> <tt>dns_server</tt> toutes les requêtes DNS faites.</li>
+        <li> <tt>infos_server</tt> toutes les requêtes nom/prénom faites.</li>
         <li> <tt>tests.log</tt> Résumé des tests de régression.</li>
         <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/NOM_SESSION/LOGS/LOGIN/</tt>
             <ul>
@@ -1802,7 +1802,7 @@ server {
         </li>
         <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/NOM_SESSION/journal.log</tt>
             historique des modifications du <tt>questions.py</tt>
-        </ul>
+    </ul>
     <p>
         Divers fichiers générés à l'installation ou à l'utilisation :
     </p>
@@ -2026,24 +2026,10 @@ server {
         <li> Bouton et icones à ajouter pour l'étudiant :
             <ul>
                 <li> Choix du thème de coloriage syntaxique.</li>
-                <li> Détruire une sauvegarde (ou détruire les sauvegardes non taggés).</li>
-                <li> Complétion avec <tt class="key">Ctrl+Espace</tt></li>
-            </ul>
-        </li>
-        <li> Backoffice :
-            <ul>
-                <li> Gestion des versions des sources des sujets.
-                    Même s'ils sont modifiés par plusieurs personnes.
-                    Est-ce utile puisque C5 peut faire 'git pull' pour
-                    mettre à jour les sujets ?
-                </li>
             </ul>
         </li>
         <li> Bugs à corriger :
             <ul>
-                <li>
-                    Faire en sorte que <tt class="key">Ctrl+Z</tt> fonctionne après le reformatage du code.
-                </li>
                 <li>
                     Mettre en évidence le bloc plutôt que seulement les parenthèses ?
                 </li>
@@ -2051,49 +2037,9 @@ server {
         </li>
         <li> Conseils pour utiliser le clavier plutôt que la souris.</li>
         </li>
-        <li>
-            Insérer les commentaires des enseignants
-            dans le code source de l'étudiant.
-            <p>
-            Les avantages :
-            <ul>
-                <li> Si l'étudiant continue de modifier son code,
-                    les commentaires restent aux bons endroits.
-                </li>
-                <li>
-                    L'enseignant à la maîtrise de la présentation
-                    de ses commentaires.
-                </li>
-                <li>
-                    La fenêtre d'exécution n'est pas polluée par les commentaires.
-                </li>
-                <li>
-                    Cette fonctionnalité peut être en fait la même que celle
-                    indiquée au dessus «Gestion des versions des sources des sujets.
-                    Même s'ils sont modifiés par plusieurs personnes.»
-                    Il conviendra donc de concevoir les 2 en même temps.
-                </li>
-            </ul>
-            <p>
-            Les inconvénients :
-            <ul>
-                <li>
-                    L'enseignant modifie le code source de l'étudiant
-                    en pouvant éventuellement introduire des problèmes.
-                </li>
-                <li>
-                    Commentaires du système actuel sont impossibles à récupérer.
-                </li>
-            </ul>
-        </li>
     </ul>
     <p>Fonctionnalités manquantes dans le <b>checkpoint</b> (placement) :</p>
     <ul>
-        <li>
-            Affiche source étudiant via la carte :
-            bascule entre le mode ascenseur temporel et
-            les dernières réponses à toutes les questions.
-        </li>
         <li>
             ZIP des étudiants d'une salle.
         </li>
@@ -2103,12 +2049,6 @@ server {
         <li>
             Prédéfinir dans le paramétrage de la session la liste
             des étudiants attendus et dans quelles salles ils doivent composer.
-        </li>
-        <li>
-            Écrire en gras les noms des étudiants.
-        </li>
-        <li>
-            Mettre l'adresse mail de l'étudiant dans la popup.
         </li>
     </ul>
     <p>Fonctionnalités manquantes dans la <b>modélisation du sujet</b> :</p>
@@ -2138,14 +2078,11 @@ server {
     </ul>
     <p>Fonctionnalités manquantes de la <b>page d'accueil</b> :</p>
     <ul>
-        <li> Affichage de seulement ses sujets.</li>
+        <li> Choisir un ensemble de sujets en les cochant</li>
     </ul>
     <p>Fonctionnalités manquantes de la <b>page de notation</b> :</p>
     <ul>
         <li> Ajout du barème aux questions (en plus du barème global).</li>
-        <li> Déterminer la version du code qui a été corrigée (sans être commentée).
-            De manière automatique ou bien explicitement.
-        </li>
         <li>
             Afficher en HTML copiable dans un mail le code commenté de l'étudiant.
         </li>
