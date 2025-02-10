@@ -141,7 +141,7 @@ void print(int x, int y, int value) {
 }
 
 char current_key[99];
-int current_mouse = 0 ;
+int current_mouse = -1 ;
 int current_x = 0, current_y = 0;
 int images[999][2];
 
