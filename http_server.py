@@ -2205,7 +2205,7 @@ if __name__ == '__main__':
                     web.get('/stats/{param}', full_stats),
                     web.get('/live_link/session', live_link),
                     web.post('/error/{course}', error),
-                    web.post('/upload_course/{course}', upload_course),
+                    web.post('/upload_course/{compiler}/{course}', upload_course),
                     web.post('/upload_media/{compiler}/{course}', upload_media),
                     web.post('/record_grade/{course}', record_grade),
                     web.post('/adm/c5/{action}', adm_c5),
