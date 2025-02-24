@@ -424,6 +424,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.move_cursor('.editor')
         self.check('.editor').send_keys('\n§')
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
+        self.move_cursor('.editor') # Firefox want this
         self.check('.editor').send_keys(Keys.BACKSPACE)
         self.check('.compiler', {'innerHTML': Contains('sans')})
 
