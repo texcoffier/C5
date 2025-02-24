@@ -225,9 +225,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             for radius in range(1, 10):
                 for dir_x in range(-radius, radius + 1):
                     for dir_y in range(-radius, radius + 1):
-                        if abs(dir_x) < radius and abs(dir_y) < radius:
-                            continue # Yet done
-                        event_x2 = event_x + (dir_x + 0.7)*self.scale/2
+                        event_x2 = event_x + dir_x*self.scale/2
                         event_y2 = event_y + dir_y*self.scale/2
                         col2, lin2 = self.get_column_row(event_x2, event_y2)
                         if (lin2 >= 0 and col2 >= 0 and self.lines[lin2][col2] in ' cab'
