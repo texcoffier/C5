@@ -138,6 +138,11 @@ DEFAULT_COURSE_OPTIONS = [
     ['ld_options', [],      "Libraries to link with:<br>«-lm»"],
     ['language', '',        "Language to use for syntaxic coloring:<br> «cpp» «python» ..."],
     ['extension', '',       "Source code filename extension for ZIP and GIT: «cpp», «py»..."],
+
+    "Running parameters",
+
+    ['max_time', 1,         "Maximum CPU time allowed between 1 and 10 seconds"],
+    ['max_data', 200000,    "Maximum number of kilo-bytes transfered (no more than 200_000KB)"],
     ['filetree_in', [],     "Initialize file tree [['foo', 'content'], ['BAR/1', 'one']]"],
     ['filetree_out', [],    "File contents to get as ['foo', 'BAR/1']"],
     ['allowed', [], """

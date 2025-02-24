@@ -465,6 +465,9 @@ def default_answer(self):
         sa valeur par défaut et un texte d'explication.
     </p>
     <div START_OPTIONS DO_NOT_EDIT_HERE>
+make[1]: Entering directory '/home/exco/C5'
+make[1]: 'xxx_local.py' is up to date.
+make[1]: Leaving directory '/home/exco/C5'
 <table>
 <tr><th style="background: #FFF" colspan="3">Session options</tr>
 <tr><td>start<td><tt>&#x27;2000-01-01 00:00:00&#x27;</tt><td>Start date of the session</tr>
@@ -488,21 +491,28 @@ def default_answer(self):
 ┣━━━━━━━━╉────────────────────┼────────────────────┤
 ┃Archive ┃creator admin       │creator admin       │
 ┗━━━━━━━━┹────────────────────┴────────────────────┘</pre></tr>
-<tr><td>checkpoint<td>0<td>Requires students to be placed on the map (examination mode)</tr>
+<tr><td>checkpoint<td>1<td>Requires students to be placed on the map (examination mode)</tr>
 <tr><td>allow_copy_paste<td>0<td>Copy/paste allowed (if not allowed students must be in full screen mode)</tr>
 <tr><td>save_unlock<td>0<td>Saving a question unlock next</tr>
 <tr><td>automatic_compilation<td>1<td>Compilation is automatic</tr>
 <tr><td>feedback<td>0<td>Maximum level of student feedback allowed to teachers</tr>
 <tr><td>grading_done<td>1<td>Graders indicate «grading done» in place of the grading level</tr>
+<tr><td>force_grading_done<td>0<td>Consider all gradings done even if graders did not approve</tr>
+<tr><td>feedback_for_all<td>0<td>Allow an empty feedback (with the examination questions) to students who did not attend to the session</tr>
 <tr><td>allow_ip_change<td>0<td>Allow IP change (bad Internet connection)</tr>
 <tr><td>sequential<td>1<td>Questions must be answered from first to last</tr>
-<tr><td>highlight<td><tt>&#x27;#FFF&#x27;</tt><td>Background color in the student and teacher session list</tr>
+<tr><td>git_url<td><tt>&#x27;&#x27;</tt><td>The GIT url to fetch updates. <b>You must only commit 'questions.py' and 'MEDIA/*' nothing else.</b></tr>
 <tr><th style="background: #FFF" colspan="3">Checkpoint placement interface</tr>
 <tr><td>display_student_filter<td>0<td>Display an INPUT field containing a list of student IDs to highlight</tr>
 <tr><td>display_my_rooms<td>1<td>Add a toggle to display only the rooms I dragged student into</tr>
 <tr><td>display_session_name<td>0<td>Display the session name</tr>
 <tr><td>default_building<td><tt>&#x27;&#x27;</tt><td>Preselected building name</tr>
-<tr><th style="background: #FFF" colspan="3">Student interface</tr>
+<tr><th style="background: #FFF" colspan="3">Student session list</tr>
+<tr><td>highlight<td><tt>&#x27;#FFF&#x27;</tt><td>Background color in the student and teacher session list</tr>
+<tr><td>hide_before<td>360.0<td>The session will be visible in the list if it starts
+    in less than the number of indicated hours. 15 days = 360 hours, 6 minutes = 0.1 hours</tr>
+<tr><td>title<td><tt>&#x27;&#x27;</tt><td>Session title</tr>
+<tr><th style="background: #FFF" colspan="3">Student interface for the editor</tr>
 <tr><td>positions<td><pre>{
   'question': [1, 29, 0, 30, &#x27;#EFEF&#x27;],
   'tester': [1, 29, 30, 70, &#x27;#EFEF&#x27;],
@@ -526,9 +536,14 @@ def default_answer(self):
 <tr><td>display_history<td>1<td>display version history</tr>
 <tr><td>display_indent<td>1<td>display the F8 button</tr>
 <tr><td>display_line_numbers<td>1<td>display line numbers</tr>
+<tr><td>display_grading<td>1<td>display grading interface</tr>
+<tr><td>display_global_grading<td>0<td>display the buttons to set all grades to min or max</tr>
+<tr><td>diff<td>1<td>Green line numbers for student inserted lines (togglable by clicking on line numbers)</tr>
+<tr><td>version_for_teachers<td>1<td>Display version tree to teachers</tr>
+<tr><td>version_for_students<td>0<td>Display version tree to students</tr>
+<tr><td>display_version_toggle<td>1<td>Display the toggle to hide/display version tree</tr>
 <tr><th style="background: #FFF" colspan="3">Popup messages</tr>
 <tr><td>forbiden<td><tt>&quot;Coller du texte copié venant d&#x27;ailleurs n&#x27;est pas autorisé.&quot;</tt><td>Alert</tr>
-<tr><td>close<td><tt>&#x27;Voulez-vous vraiment quitter cette page ?&#x27;</tt><td>Alert</tr>
 <tr><td>stop_confirm<td><tt>&quot;Vous voulez vraiment terminer l&#x27;examen maintenant ?&quot;</tt><td>Alert</tr>
 <tr><td>stop_done<td><tt>&quot;&lt;h1&gt;C&#x27;est fini.&lt;/h1&gt;&quot;</tt><td>Alert</tr>
 <tr><td>good<td><pre>[
@@ -555,6 +570,7 @@ def default_answer(self):
 <tr><td>icon_git<td><tt>&#x27;&lt;b style=&quot;font-size:50%&quot;&gt;GIT&lt;/b&gt;&#x27;</tt><td>Button label</tr>
 <tr><td>icon_tag<td><tt>&#x27;TAG&#x27;</tt><td>Button label</tr>
 <tr><td>icon_stop<td><tt>&#x27;Terminer&lt;br&gt;Examen&#x27;</tt><td>Button label displayed if checkpoint</tr>
+<tr><td>icon_version_toggle<td><tt>&#x27;&lt;span style=&quot;font-family:emoji&quot;&gt;🌳&lt;/span&gt;&#x27;</tt><td>Button label</tr>
 <tr><th style="background: #FFF" colspan="3">Time countdown</tr>
 <tr><td>time_running<td><tt>&#x27;Fini dans&#x27;</tt><td>Time message</tr>
 <tr><td>time_done<td><tt>&#x27;Fini depuis&#x27;</tt><td>Time message</tr>
@@ -571,6 +587,9 @@ def default_answer(self):
 ]</pre><td>Libraries to link with:<br>«-lm»</tr>
 <tr><td>language<td><tt>&#x27;&#x27;</tt><td>Language to use for syntaxic coloring:<br> «cpp» «python» ...</tr>
 <tr><td>extension<td><tt>&#x27;&#x27;</tt><td>Source code filename extension for ZIP and GIT: «cpp», «py»...</tr>
+<tr><th style="background: #FFF" colspan="3">Running parameters</tr>
+<tr><td>max_time<td>1<td>Maximum CPU time allowed between 1 and 10 seconds</tr>
+<tr><td>max_data<td>200000<td>Maximum number of kilo-bytes transfered (no more than 200_000KB)</tr>
 <tr><td>filetree_in<td><pre>[
 ]</pre><td>Initialize file tree [['foo', 'content'], ['BAR/1', 'one']]</tr>
 <tr><td>filetree_out<td><pre>[

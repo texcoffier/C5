@@ -37,7 +37,7 @@ void chown_dir(const char *dir, int uid)
 int main(int argc, char **argv)
 {
     char filename[999], execname[999];
-    if (argc != 5)
+    if (argc != 6)
         exit(2);
     int uid = atoi(argv[3]);
     if (uid < 3000)
@@ -64,7 +64,8 @@ int main(int argc, char **argv)
     chown(filename, getuid(), getgid());
 
     // Limit resource usage
-    struct rlimit cpu = {1, 1};
+    int cpu_max = atoi(argv[5]);
+    struct rlimit cpu = {cpu_max, cpu_max};
     struct rlimit data = {100*1024*1024, 100*1024*1024};
     struct rlimit nproc = {11, 11};
     struct rlimit fsize = {1024*1024, 1014*1024};

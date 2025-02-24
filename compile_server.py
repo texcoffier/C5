@@ -249,6 +249,10 @@ class Process: # pylint: disable=too-many-instance-attributes
             if b'\001' in line and not line.endswith(b'\001'):
                 line, keep = line.rsplit(b'\001', 1)
                 line += b'\001'
+            if not keep and not line.endswith((b'\n', b'\001')):
+                # To not truncate a line in 2 DIV browser side.
+                line, keep = line.rsplit(b'\n', 1)
+                line += b'\n'
             if to_check is not self.process:
                 return
             await self.websocket.send(json.dumps(['executor', line.decode("utf-8", "replace")]))
@@ -257,7 +261,8 @@ class Process: # pylint: disable=too-many-instance-attributes
                 self.input_done.clear()
                 self.waiting = "done"
             size += len(line)
-            if size > 200000000: # Maximum allowed output
+            if size > self.max_data: # Maximum allowed output
+                await self.websocket.send(json.dumps(['executor', "\nTrop de données envoyées au navigateur web"]))
                 self.kill()
                 break
             # self.log(("RUN", line[:100]))
@@ -272,7 +277,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             if return_value < 0:
                 more = f'\n⚠️{signal.strsignal(-return_value)}'
                 if return_value in (-6, -9):
-                    more += "\nVotre programme utilise plus d'une seconde,\n" \
+                    more += f"\nVotre programme utilise plus de {self.max_time} sec. CPU,\n" \
                             "avez-vous fait une boucle/récursion infinie ?"
                 self.process = None
             else:
@@ -347,6 +352,9 @@ class Process: # pylint: disable=too-many-instance-attributes
         await self.websocket.send(json.dumps(['indented', indented.decode('utf-8')]))
     async def run(self, data) -> None:
         """Launch process"""
+        self.filetree_in, self.filetree_out, self.max_time, self.max_data = data
+        self.max_time = min(10, self.max_time)
+        self.max_data = min(200000, self.max_data) * 1024
         if not hasattr(self, 'compiler'):
             self.log("UNCOMPILED")
             await self.websocket.send(json.dumps(['return', "Non compilé"]))
@@ -373,15 +381,9 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
-        self.log(f'./launcher {self.conid} {self.allowed} {self.launcher} {self.home}')
+        self.log(f'./launcher {self.conid} {self.allowed} {self.launcher} {self.home} {self.max_time}')
         stdin_r, stdin_w = os.pipe()
         stdout_r, stdout_w = os.pipe()
-
-        if data:
-            self.filetree_in, self.filetree_out = data
-        else:
-            self.filetree_in, self.filetree_out = [(), ()]
-
         shutil.rmtree(self.home, ignore_errors=True)
         pathlib.Path(self.home).mkdir(exist_ok=True)
         for filename, content in self.filetree_in:
@@ -399,6 +401,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.allowed,
             str(self.launcher),
             self.home,
+            str(self.max_time),
             stdout=stdout_w,
             stdin=stdin_r,
             stderr=asyncio.subprocess.STDOUT,

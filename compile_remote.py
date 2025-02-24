@@ -153,8 +153,13 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
             return
         try:
             self.execution_returns = ''
-            self.socket.send(JSON.stringify([
-                'run', [self.options['filetree_in'], self.options['filetree_out']]])) # pylint: disable=undefined-variable
+            self.socket.send(JSON.stringify([ # pylint: disable=undefined-variable
+                'run', [
+                    self.options['filetree_in'],
+                    self.options['filetree_out'],
+                    self.options['max_time'],
+                    self.options['max_data']
+                    ]]))
         except Error as err: # pylint: disable=undefined-variable
             self.post(
                 'executor', '<error>'
