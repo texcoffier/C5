@@ -13,6 +13,7 @@ TOP_ACTIVE = '#8F8D'
 ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
 BEFORE_FIRST = 60 # Time scroll bar padding left in seconds
+LONG_CLICK = 500
 
 BUILDINGS_SORTED = list(BUILDINGS)
 BUILDINGS_SORTED.sort()
@@ -1056,7 +1057,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if (self.moving == True # Student no moving
             and not self.moved # Nothing yet moved
             and not self.zooming
-            and time_since_click > 250 # Long clic
+            and time_since_click > LONG_CLICK # Long clic
+            and not self.student_menu
             and distance2(self.drag_x_start, self.drag_y_start,
                           self.event_x, self.event_y) > 5
         ):
@@ -1956,6 +1958,19 @@ def scheduler():
         ROOM.update_messages()
     scheduler.draw_square_feedback = False
     scheduler.draw = ROOM.highlight_disk
+
+    # Display circle to indicate time before allowed to be moved
+    if ROOM.moving == True and ROOM.student_clicked and not ROOM.moved and not ROOM.student_menu:
+        ctx = document.getElementById('canvas').getContext("2d")
+        x_pos, y_pos, x_size, y_size = ROOM.xys(ROOM.student_clicked.column, ROOM.student_clicked.line)
+        ctx.strokeStyle = "#FF00FF80"
+        ctx.lineWidth = 0.2 * ROOM.scale
+        angle = (millisecs() - ROOM.drag_millisec_start) / LONG_CLICK
+        if angle > 1:
+            angle = 1
+        ctx.beginPath()
+        ctx.arc(x_pos, y_pos, x_size/1.8, 0, Math.PI*2*angle)
+        ctx.stroke()
 
 IP_TO_PLACE = {}
 
