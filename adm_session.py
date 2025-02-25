@@ -367,7 +367,7 @@ A subject and B subject if they are different.
                         + ' <input type="radio" name="highlight" id="' + color + '"> </span>')
                 tag = ''.join(tag)
                 comment = '<div style="float:right">' + comment + '</div>'
-            elif default_value in (0, 1):
+            elif default_value in (0, 1) and key != 'max_time':
                 tag = ('<label><input type="checkbox" id="' + key + '">'
                     + comment + '</label>')
                 comment = ''
