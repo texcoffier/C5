@@ -12,7 +12,6 @@ TOP_INACTIVE = '#FFFD'
 TOP_ACTIVE = '#8F8D'
 ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
-BEFORE_FIRST = 60 # Time scroll bar padding left in seconds
 LONG_CLICK = 500
 
 BUILDINGS_SORTED = list(BUILDINGS)
@@ -279,7 +278,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         scheduler.update_messages = True
         self.student_menu = self.selected_student = None # Why not computer menu?
         self.time_span = [0, 1e10]
-
     def prepare_draw(self):
         """Compile information to draw quickly the map"""
         self.walls = []
@@ -575,7 +573,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 selected_item = message
             ctx.fillText(message, x_pos, y_item + menu_line - descent)
         return selected_item
-
     def draw_computer_menu(self, ctx):
         """The computer problems menu"""
         messages = self.draw_computer_problems(ctx)
@@ -746,13 +743,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fill()
                 ctx.globalAlpha = 1
 
-        if self.moving:
-            ctx.strokeStyle = "#000000"
-            ctx.beginPath()
-            pos_x, pos_y, scalex, _scaley = self.xys(
-                self.moving['column'], self.moving['line'])
-            ctx.arc(pos_x, pos_y, 1*scalex, 0, 2*Math.PI)
-            ctx.stroke()
+        if self.moving and self.moving != True:
+            self.draw_move_timer()
 
         ctx.lineCap = 'round'
         ctx.lineWidth = self.scale / 4
@@ -857,7 +849,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             "#000 Concernant les ordinateurs :",
             "Plus il est rouge, plus il y a des pannes.",
             "Cliquez dessus pour indiquer une panne."])
-
     def draw_teachers(self, ctx):
         """Display teacher names in front of rooms"""
         ctx.fillStyle = "#000"
@@ -921,7 +912,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             else:
                 ctx.fillStyle = "#000"
             ctx.fillText(ip, x_pos, y_pos + y_size/2)
-
     def draw_student_menu(self, ctx):
         if not self.student_menu:
             return
@@ -948,7 +938,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 "", spy, temps, state, grade,
                 student.mail or 'Adresse mail inconnue'
             ])
-
     def draw(self, square_feedback=False):
         """Display on canvas"""
         start = Date().getTime()
@@ -1236,7 +1225,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.student_menu = self.selected_student = None
         scheduler.draw = "drag_stop not moved student_menu"
         return True
-
     def drag_stop(self, event):
         """Stop moving the map"""
         if self.zooming:
@@ -1408,7 +1396,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if pos[0] == -1:
             self.force_update_waiting_room = True
             scheduler.update_page = True
-
     def zoom_student(self, login):
         "Zoom on this student"
         student = STUDENT_DICT[login]
@@ -1424,6 +1411,18 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.left = self.real_left - left + (self.width - self.real_left) / 2
         self.top = self.real_top - top + (self.height - self.real_top) / 2
         scheduler.draw = "zoom_student"
+    def draw_move_timer(self):
+        """Circle indicating the time before the student move is allowed"""
+        ctx = document.getElementById('canvas').getContext("2d")
+        x_pos, y_pos, x_size, y_size = self.xys(self.student_clicked.column, self.student_clicked.line)
+        ctx.strokeStyle = "#FF00FF80"
+        ctx.lineWidth = 0.2 * self.scale
+        angle = (millisecs() - self.drag_millisec_start) / LONG_CLICK
+        if angle > 1:
+            angle = 1
+        ctx.beginPath()
+        ctx.arc(x_pos, y_pos, x_size/1.8, 0, Math.PI*2*angle)
+        ctx.stroke()
 
 def hide_messages(first, last):
     """Hide the indicated message indexes (last not included)"""
@@ -1433,10 +1432,11 @@ def hide_messages(first, last):
 
 def highlight_student(element):
     """Display its place"""
-    if element and not Student.moving_student:
+    if element and not Student.moving_student and ROOM.moving != True and ROOM.moving != ROOM.student_clicked:
         Student.highlight_student = element.getAttribute('login')
     else:
         Student.highlight_student = None
+        scheduler.draw = "erase «press space»"
 
 STUDENT_DICT = {}
 
@@ -1923,9 +1923,9 @@ def scheduler():
             if millisecs() % 1000 > 500:
                 ctx.strokeStyle = "#000"
             else:
-                ctx.strokeStyle = "#FF0"
+                ctx.strokeStyle = "#0F0"
             ctx.beginPath()
-            ctx.arc(x_pos, y_pos + 0.15*y_size, x_size/1.8, 0, Math.PI*2, True)
+            ctx.arc(x_pos, y_pos - 0.1*y_size, x_size/1.8, 0, Math.PI*2, True)
             ctx.closePath()
             ctx.stroke()
             if not Student.moving_student:
@@ -1959,16 +1959,7 @@ def scheduler():
 
     # Display circle to indicate time before allowed to be moved
     if ROOM.moving == True and ROOM.student_clicked and not ROOM.moved and not ROOM.student_menu:
-        ctx = document.getElementById('canvas').getContext("2d")
-        x_pos, y_pos, x_size, y_size = ROOM.xys(ROOM.student_clicked.column, ROOM.student_clicked.line)
-        ctx.strokeStyle = "#FF00FF80"
-        ctx.lineWidth = 0.2 * ROOM.scale
-        angle = (millisecs() - ROOM.drag_millisec_start) / LONG_CLICK
-        if angle > 1:
-            angle = 1
-        ctx.beginPath()
-        ctx.arc(x_pos, y_pos, x_size/1.8, 0, Math.PI*2*angle)
-        ctx.stroke()
+        ROOM.draw_move_timer()
 
 IP_TO_PLACE = {}
 
@@ -2060,11 +2051,14 @@ def create_realtime_spy(student):
     def update_real_time(journal):
         if not journal.remote_update:
             return
+        if journal.position > 0:
+            before = html(journal.content[:journal.position-1])
+            cursor = html(journal.content[journal.position-1])
+        else:
+            before = ''
+            cursor = ''
         feedback_div.innerHTML = (
-            html(journal.content[:journal.position-1])
-            + '<span style="color:#FFF;background:#000">'
-            + html(journal.content[journal.position-1])
-            + '</span>'
+            before + '<span style="color:#FFF;background:#000">' + cursor + '</span>'
             + html(journal.content[journal.position:]))
         feedback.style.height = journal.height * line_height + 'px'
         feedback.scrollTo({'top': journal.scroll_line * line_height, 'behavior': 'smooth'})
