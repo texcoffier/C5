@@ -28,6 +28,8 @@ def filters(element):
 filters.logins = {}
 
 def highlight_buttons():
+    if not document.getElementById("checkpoint_time_buttons"):
+        return
     start = nice_date(ROOM.time_span[0])
     end = nice_date(ROOM.time_span[1])
     for child in document.getElementById("checkpoint_time_buttons").childNodes:
