@@ -559,7 +559,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             y_item = y_pos + menu_line * i
             if message in selected:
                 ctx.fillStyle = "#FDD"
-                ctx.fillRect(x_pos + self.scale, y_item, menu_width - 2 * padding, menu_line)
+                ctx.fillRect(x_pos, y_item, menu_width - 2 * padding, menu_line)
                 ctx.fillStyle = "#000"
             # print(self.event_x, x_pos, x_pos + menu_width, y_item, self.event_y , y_item + menu_line)
             if (i > 1 # pylint: disable=too-many-boolean-expressions
