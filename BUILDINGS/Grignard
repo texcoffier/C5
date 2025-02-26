@@ -1,24 +1,25 @@
 +ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww-ww-ww+ww+ww-ww-ww+ww--ww--ww+ww-dd-ww+ww-dd-ww+ww-dd-ww+ww-dd-ww+
-+--+--+        |        |        d        d        |        |        |  |        | a bs c bs|        |        |cacbca  |cacbca  |
-+--+--+  cacbca|  cacbca|cacbca  d        d        |cacbca  |  cacbca|  |cacbca  |sc c sa c |        |  cacbca| s s s  | s s s  |
-+--+--+   s s s|   s s s| s s s  |cacbca  |  cacbca| s s s  |   s s s|  | s s s  | b as c as|        |   s s s|        |        |
-+--+--+        |        |        | s s s  |   s s s|        |        |  |        |sc c sb c |        |        |cacbca  |cacbca  |
-+--+--+  cacbca|  cacbca|cacbca  |        |        |cacbca  |  cacbca|  |cacbca  | a bs c bs|        |  cacbca| s s s  | s s s  |
-+--+--+   s s s|   s s s| s s s  |cacbca  |  cacbca| s s s  |   s s s|  | s s s  |sc c sa c |        |   s s s|        |        |
++--+--+        |        |        d        d        |        |        |  |        | c bs c bs|        |        |cacbca  |cacbca  |
++--+--+  cacbca|  cacbca|cacbca  d        d        |cacbca  |  cacbca|  |cacbca  |sa c sa c |        |  cacbca| s s s  | s s s  |
++--+--+   s s s|   s s s| s s s  |cacbca  |  cacbca| s s s  |   s s s|  | s s s  | c as c as|        |   s s s|        |        |
++--+--+        |        |        | s s s  |   s s s|        |        |  |        |sb c sb c |        |        |cacbca  |cacbca  |
++--+--+  cacbca|  cacbca|cacbca  |        |        |cacbca  |  cacbca|  |cacbca  | c bs c bs|        |  cacbca| s s s  | s s s  |
++--+--+   s s s|   s s s| s s s  |cacbca  |  cacbca| s s s  |   s s s|  | s s s  |sa c sa c |        |   s s s|        |        |
 |  |  |        |        |        | s s s  |   s s s|        |        |  |        |   as c as|        |        |cacbca  |cacbca  |
 +dd+--+  cacbca|  cacbca|cacbca  |        |        |cacbca  |  cacbca|  |cacbca  |   c sb c |        |  cacbca| s s s  | s s s  |
 d     |   s s s|   s s s| s s s  |cacbca  |  cacbca| s s s  |   s s s|  | s s s  |   bs c   |        |   s s s|        |        |
 d     |        d        |        | s s s  |   s s s|        d        |  d        d   c sa   |        |        |cacbca  |cacbca  |
-|     |        d        |        |        |        |        d        |  d        d          |        |        | s s s  | s s s  |
-|     |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|  |  cacbca| c TPI g  |        |cacbca  d        d        |
-|     |   s s s| s s s  |   s s s| s s s  |   s s s| s s s  |   s s s|  |   s s s|sa        d        | s s s  d        d        |
-|     |        |        |        |        |        |        |        |  |        |[TPI]     d        |        |        |        |
-|     |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|  |  cacbca+-++++++++++--+   +-+cacbca  |  cacbca|cacbca  |
-|     |   s s s| s s s  |   s s s| s s s  |   s s s| s s s  |   s s s|  |   s s s  ||||||||||  d   | | s s s  |   s s s| s s s  |
+|     |        d        |        |        |        |        d        |  d        d     s    |        |        | s s s  | s s s  |
+|     |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|  |  cacbca| c   a    |        |cacbca  d        d        |
+|     |   s s s| s s s  |   s s s| s s s  |   s s s| s s s  |   s s s|  |   s s s|sa        |        | s s s  d        d        |
+|     |        |        |        |        |        |        |        |  |        |   TPI    d        |        |        |        |
+|     |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|  |  cacbca|[TPI]    gd      +-+cacbca  |  cacbca|cacbca  |
+|     |   s s s| s s s  |   s s s| s s s  |   s s s| s s s  |   s s s|  |   s s s+-++++++++++--+   | | s s s  |   s s s| s s s  |
 |     |        |        |        |        |        |        |        |  |          ||||||||||  d   | |        |        |        |
-|     |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|  |  cacbcacb|+++++++++  |   +-+cacbca  |  cacbca|cacbca  |
-|     |   s s s| s s s  |   s s s| s s s  |   s s s| s s s  |   s s s|  |   s s s s||||||||||  |   dl| s s s  |   s s s| s s s  |
-|     |TPA g   |TPB g   |TPC g   |TPD g   |TPE g   |TPF g   |TPG g   |  |TPH g     ||||||||||  |   d |TPJ g   |TPK g   |TPL g   |
+|     |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|cacbca  |  cacbca|  |  cacbcacb||||||||||  d   +-+cacbca  |  cacbca|cacbca  |
+|     |   s s s| s s s  |   s s s| s s s  |   s s s| s s s  |   s s s|  |   s s s s|+++++++++  |   dl| s s s  |   s s s| s s s  |
+|     |    s   |    s   |    s   |    s   |    s   |    s   |    s   |  |    s     ||||||||||  |   d |    s   |    s   |    s   |
+|     |TPA a  g|TPB a  g|TPC a  g|TPD a  g|TPE a  g|TPF a  g|TPG a  g|  |TPH a    g||||||||||  |   d |TPJ a  g|TPK a  g|TPL a  g|
 +     +dd------+------dd+dd------+------dd+dd------+------dd+dd------+dd+dd------+-++++++++++--+   +-+------dd+dd------+------dd+
 d     [TPA]    [TPB]    [TPC]    [TPD]    [TPE]    [TPF]    [TPG]       [TPH]    d                   [TPJ]    [TPK]    [TPL]
 d     G R I G N A R D   S O U S _ S O L                                          d                             
