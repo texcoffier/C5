@@ -17,6 +17,8 @@ LONG_CLICK = 500
 BUILDINGS_SORTED = list(BUILDINGS)
 BUILDINGS_SORTED.sort()
 
+MAPPER = COURSE in ("=IPS", "=MAPS")
+
 def filters(element):
     """Update student filter"""
     logins = {}
@@ -260,14 +262,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.lines = BUILDINGS[building].split('\n')
         self.x_max = max(*[len(line) for line in self.lines]) + 1
         self.real_left = self.menu.offsetWidth
-        self.real_top = 0
+        self.real_top = document.getElementById('canvas').offsetTop
         self.left = self.real_left
         self.top = self.real_top
         self.drag_x_current = self.drag_x_start = None
         self.drag_y_current = self.drag_y_start = None
         self.moving = False
-        if document.getElementById('my_rooms') and document.getElementById('my_rooms').checked:
-            self.scale = 0
+        self.scale = 0
         self.update_sizes(0.5)
         self.update_visible()
         self.search_rooms()
@@ -475,6 +476,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         translate = {'c': '⑁', 's': '💻', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
                      'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' ', 'a': 'Ⓐ', 'b': 'Ⓑ',
                      'g': '📝'}
+        if MAPPER:
+            translate['g'] = ' '
         self.chars = {}
         for line, chars in enumerate(self.lines):
             for column, char in enumerate(chars):
@@ -868,18 +871,25 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillText(room['teachers'], x_pos, y_pos)
     def draw_ips(self, ctx):
         """Display used IP in room"""
-        if COURSE != "=IPS":
+        if not MAPPER:
             return
         ctx.font = self.scale/3 + "px sans-serif"
-        if self.ctrl:
-            ctx.fillStyle = "#080"
+        if self.ctrl or COURSE == "=MAPS":
             for room, hosts in CONFIG.ips_per_room.Items():
                 if room.split(',')[0] == self.building:
                     for host in hosts.split(RegExp(' +')):
                         place = host.split(',')
                         if len(place) == 3:
-                            x_pos, y_pos, _x_size, _y_size = self.xys(place[1], place[2])
-                            ctx.fillText(place[0].split('.')[0], x_pos, y_pos)
+                            x_pos, y_pos, _x_size, y_size = self.xys(place[1]-0.5, place[2])
+                            ip = place[0].split('.')[0]
+                            ctx.fillStyle = "#FFF"
+                            ctx.globalAlpha = 0.8
+                            ctx.beginPath()
+                            ctx.rect(x_pos, y_pos - y_size/2, ctx.measureText(ip).width, y_size)
+                            ctx.fill()
+                            ctx.fillStyle = "#000"
+                            ctx.globalAlpha = 1
+                            ctx.fillText(ip, x_pos, y_pos)
             return
         for room, ips in self.all_ips.Items():
             if room not in self.rooms:
@@ -955,12 +965,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             else:
                 self.update_sizes(0.5)
             self.update_visible()
+            if MAPPER:
+                help_lines = 2
+            else:
+                help_lines = HELP_LINES
             self.scale = self.min_scale = min(
                 (self.width - self.real_left) / max(self.columns_x[0], self.columns_x[2 * self.x_max - 1]),
-                (self.height - self.real_top) / max(self.lines_y[0], self.lines_y[2 * len(self.lines) - 1 - HELP_LINES]))
+                (self.height - self.real_top) / max(self.lines_y[0], self.lines_y[2 * len(self.lines) - 1 - help_lines]))
             self.top = self.real_top
             if not my_rooms:
-                self.top += HELP_LINES * self.scale
+                self.top += help_lines * self.scale
         ctx = canvas.getContext("2d")
         self.left_column, self.top_line = self.get_column_row(0, self.real_top+1)
         self.right_column, self.bottom_line = self.get_column_row(self.width, self.height)
@@ -977,10 +991,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.draw_students(ctx)
         ctx.font = self.scale/2 + "px sans-serif"
         self.draw_teachers(ctx)
-        self.draw_computer_menu(ctx)
         if square_feedback:
             self.draw_square_feedback(ctx)
-        self.draw_help(ctx)
+        if not MAPPER:
+            self.draw_help(ctx)
         self.draw_times.append(Date().getTime() - start)
         ctx.font = "16px sans-serif"
         if LOGIN == 'thierry.excoffier' and len(self.draw_times) > 10:
@@ -989,6 +1003,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                          self.width - 70, 50)
         self.draw_student_menu(ctx)
         self.draw_ips(ctx)
+        self.draw_computer_menu(ctx)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
         self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
@@ -1142,7 +1157,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         return False
     def drag_stop_click_on_grade(self, column, line):
         """Click on computer"""
-        if column != -1 and self.lines[line][column] == 'g':
+        if column != -1 and self.lines[line][column] == 'g' and not MAPPER:
             room = self.rooms[self.get_room_name(column, line)]
             if len(room.students) == 0:
                 alert('Aucun étudiant dans cette salle')
@@ -1325,8 +1340,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 + nice_date(date)
                 + ' ' + login + ' <b>' + html(message) + '</b>')
         messages = document.getElementById('messages')
-        messages.innerHTML = ' '.join(content)
-        messages.scrollTop = 1000000 # messages.offsetHeight does not works
+        if messages:
+            messages.innerHTML = ' '.join(content)
+            messages.scrollTop = 1000000 # messages.offsetHeight does not works
     def start_move_student(self, event):
         """Move student bloc"""
         if event.button != 0:
@@ -1548,6 +1564,16 @@ def cmp_student_position_reverse(student_a, student_b):
     """Compare 2 students column"""
     return student_b.column - student_a.column
 
+def create_room_selector(building_name):
+    return (
+        '''<select style="width:100%;margin-top:0.7em" id="buildings"
+                   onchange="ROOM.change(this.value); scheduler.update_page = true;">'''
+        + ''.join(['<option'
+                   + (building == building_name and ' selected' or '')
+                   + '>' + building.replace('empty', LOGIN) + '</option>'
+                   for building in BUILDINGS_SORTED])
+        + '</select>')
+
 def create_page(building_name):
     """Fill the page content"""
     content = ['<title>ⒶⒷ', COURSE.split('=')[1], '</title>',
@@ -1643,16 +1669,7 @@ def create_page(building_name):
         '<span class="course" id="display_session_name">'
         + COURSE.split('=')[1].replace(RegExp('_', 'g'), ' ')
         + '</span>')
-    content.append(
-        '''<select style="width:100%;margin-top:0.7em" id="buildings"
-               onchange="ROOM.change(this.value); scheduler.update_page = true;">''')
-    content.append(
-        ''.join(['<option'
-                 + (building == building_name and ' selected' or '')
-                 + '>' + building.replace('empty', LOGIN) + '</option>'
-                 for building in BUILDINGS_SORTED])
-        )
-    content.append('</select>')
+    content.append(create_room_selector(building_name))
     content.append(
         '<label id="display_my_rooms">'
         + '<input id="my_rooms" onchange="ROOM.scale = 0; scheduler.draw=\'onchange\'"'
@@ -2068,26 +2085,40 @@ def create_realtime_spy(student):
 
     feedback.shared_worker, _journal = create_shared_worker(student.login, update_real_time)
 
-create_page(OPTIONS.default_building or "Nautibus")
-ROOM = Room(document.getElementById('buildings').value)
-scheduler.update_page = True
-REAL_COURSE = COURSE
-
-
-def reload_on_error(event):
-    if isinstance(event, ProgressEvent):
-        return
-    print('Connexion closed')
-    print(event)
-    window.location.reload()
-
-if COURSE == "=IPS":
-    clean_up_bad_placements()
+if COURSE == "=MAPS":
+    default_building = BUILDINGS_SORTED[0]
+    document.body.innerHTML = ('<title>Hostmap</title><span id="top"></span>'
+        + create_room_selector(default_building).replace("margin", "position:absolute;z-index:2;NOmargin")
+        + '''<style>BODY { margin: 0px }</style><canvas
+            id="canvas"
+            style="position:absolute; left:0px; width:100vw; top:0px; height: 100vh;"
+            onwheel="ROOM.zoom(event)"
+            onmousedown="ROOM.drag_start(event)"
+            ontouchstart="ROOM.drag_start(event)"
+        ></canvas><div id="waiting" style="display:none"></div><div id="checkpoint_time_buttons"></div>'''
+    )
+    ROOM = Room(default_building)
+    scheduler.update_page = True
 else:
-    XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
-    XHR.addEventListener('readystatechange', reader)
-    XHR.addEventListener('error', reload_on_error)
-    XHR.open("GET", 'journal/' + COURSE + '?ticket=' + TICKET)
-    XHR.send()
+    create_page(OPTIONS.default_building or "Nautibus")
+    ROOM = Room(document.getElementById('buildings').value)
+    scheduler.update_page = True
+    REAL_COURSE = COURSE
+
+    def reload_on_error(event):
+        if isinstance(event, ProgressEvent):
+            return
+        print('Connexion closed')
+        print(event)
+        window.location.reload()
+
+    if COURSE == "=IPS":
+        clean_up_bad_placements()
+    else:
+        XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
+        XHR.addEventListener('readystatechange', reader)
+        XHR.addEventListener('error', reload_on_error)
+        XHR.open("GET", 'journal/' + COURSE + '?ticket=' + TICKET)
+        XHR.send()
 
 setInterval(scheduler, 20)

@@ -1500,6 +1500,7 @@ async def checkpoint_list(request:Request) -> Response:
                 nr_doing_grading += 1
 
     content.append(f'</div><script>init_interface({nr_doing_grading});</script>')
+    content.append('<p><a href="/checkpoint/MAPS/*">Display building maps with hostnames</a>.')
 
     return answer(''.join(content))
 
@@ -1522,27 +1523,28 @@ async def checkpoint(request:Request) -> Response:
         <script src="HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         ''')
 
-async def checkpoint_hosts(request:Request) -> Response:
+async def checkpoint_hosts(request:Request, real_course="=IPS") -> Response:
     """Display the unexpected IP in rooms"""
     session = await Session.get_or_fail(request)
     if session.is_student():
         raise session.exception('not_teacher')
     buildings = utilities.get_buildings()
     ips:Dict[str,Dict[str,int]] = collections.defaultdict(lambda: collections.defaultdict(int))
-    for course in utilities.CourseConfig.configs.values():
-        if not course.checkpoint:
-            continue
-        await asyncio.sleep(0)
-        for infos in course.active_teacher_room.values():
-            where = infos.room.split(',')
-            if len(where) < 3:
+    if real_course == "=IPS":
+        for course in utilities.CourseConfig.configs.values():
+            if not course.checkpoint:
                 continue
-            if where[0] in buildings:
-                ips[','.join(where[:3])][infos.hostname] += 1
+            await asyncio.sleep(0)
+            for infos in course.active_teacher_room.values():
+                where = infos.room.split(',')
+                if len(where) < 3:
+                    continue
+                if where[0] in buildings:
+                    ips[','.join(where[:3])][infos.hostname] += 1
     return answer(
         session.header() + f'''
         <script>
-        COURSE = '=IPS';
+        COURSE = '{real_course}';
         STUDENTS = [];
         MESSAGES = [];
         OPTIONS = {json.dumps({"default_building": ""})};
@@ -1551,6 +1553,9 @@ async def checkpoint_hosts(request:Request) -> Response:
         <script src="checkpoint/BUILDINGS?ticket={session.ticket}"></script>
         <script src="checkpoint.js?ticket={session.ticket}"></script>
         ''')
+
+async def checkpoint_maps(request:Request) -> Response:
+    return await checkpoint_hosts(request, real_course="=MAPS")
 
 async def update_browser_data(course:CourseConfig) -> Response:
     """Send update values"""
@@ -2192,6 +2197,7 @@ if __name__ == '__main__':
                     web.get('/checkpoint/MESSAGE/{course}/{message:.*}', checkpoint_message),
                     web.get('/checkpoint/TIME_BONUS/{course}/{student}/{bonus}', checkpoint_bonus),
                     web.get('/checkpoint/HOSTS/*', checkpoint_hosts),
+                    web.get('/checkpoint/MAPS/*', checkpoint_maps),
                     web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
                     web.get('/journal/{course}', journal),
                     web.get('/computer/{course}/{building}/{column}/{line}/{message:.*}', computer),
