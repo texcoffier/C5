@@ -2042,6 +2042,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
             if what == 'question' and GRADING:
                 self.update_grading()
+            if what == 'question' and self.journal_question:
+                self.question.onscroll = "" # To not change scrollTop when erased
+                def spy_onscroll():
+                    def onscroll():
+                        self.journal_question.scrollTop = self.question.scrollTop
+                    self.question.onscroll = onscroll
+                setTimeout(spy_onscroll, 100)
+                self.question.scrollTop = self.journal_question.scrollTop or 0
         elif what == 'eval':
             try:
                 eval(value) # pylint: disable=eval-used
