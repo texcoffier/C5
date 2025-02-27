@@ -1176,6 +1176,8 @@ def create_shared_worker(login='', hook=None):
     shared_worker.bubble_delete = shared_worker_bubble_delete
 
     def shared_worker_close():
+        if window.ccccc and not ccccc.options['allow_copy_paste']:
+            shared_worker.blur()
         shared_worker.port.postMessage(['CLOSE'])
     shared_worker.close = shared_worker_close
     def shared_worker_debug(text):
