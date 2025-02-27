@@ -1284,7 +1284,7 @@ With Firefox:
         set -e
         echo RESTART compile_server
         cd {C5_DIR} 2>/dev/null || true
-        pkill --oldest -f compile_server.py || true
+        pkill --oldest -u \$(id -u) -f compile_server.py || true
         sleep 1
         {start_server("compile_server")}
         """,
