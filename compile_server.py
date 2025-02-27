@@ -249,7 +249,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             if b'\001' in line and not line.endswith(b'\001'):
                 line, keep = line.rsplit(b'\001', 1)
                 line += b'\001'
-            if not keep and not line.endswith((b'\n', b'\001')):
+            if not keep and not line.endswith((b'\n', b'\001')) and b'\n' in line:
                 # To not truncate a line in 2 DIV browser side.
                 line, keep = line.rsplit(b'\n', 1)
                 line += b'\n'
