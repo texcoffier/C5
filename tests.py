@@ -972,12 +972,7 @@ return sum ;
             self.move_cursor('.editor')
             self.check('.editor').send_keys(' /*2*/')
             time.sleep(duration)
-            self.check('.save_button', {'state': Equal('ok')}).click()
-            self.check('#popup_input').send_keys(Keys.ENTER)
-            # The identity change failed
-            # So this regtests is testing nothing
-            # self.check_dialog('examen est terminé', accept=True, required=True)
-            self.check('.save_button', {'state': Equal('ok')})
+            self.check('BODY', {'innerHTML': Contains('fini')})
 
             self.ticket = admin
             self.goto('adm/session/REMOTE=test')

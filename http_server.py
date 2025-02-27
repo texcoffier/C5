@@ -2104,6 +2104,9 @@ async def live_link(request:Request) -> StreamResponse:
         elif journa:
             msg_id, message = message.split(' ', 1)
             if msg_id == journa.msg_id:
+                if not journa.course.running(session.login):
+                    journa.close(socket, port)
+                    continue
                 if message.startswith('#'):
                     log(f'Not allowed via web interface «{message}»')
                 elif message.startswith('b+') and not message.startswith(f'b+{session.login}'):

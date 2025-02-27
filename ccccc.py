@@ -693,8 +693,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         stop_button = document.getElementById('stop_button')
                         if stop_button:
                             stop_button.style.display = 'none'
-                    message = self.options['time_done']
                     delta = -delta
+                    if LOGIN == STUDENT:
+                        message = self.options['time_done']
+                        self.do_stop()
                 else:
                     message = self.options['time_running']
                 secs = two_digit(delta % 60)
