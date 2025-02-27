@@ -1996,10 +1996,11 @@ class JournalLink:
                 self.course.set_parameter(
                     'active_teacher_room', infos.nr_blurs + 1, self.login, 4)
             elif message.startswith('F'):
-                if infos.nr_blurs:
+                if self.last_blur:
                     duration = infos.last_time - self.last_blur
                     self.course.set_parameter(
                         'active_teacher_room', infos.blur_time + duration, self.login, 9)
+                    self.last_blur = 0
             elif message.startswith('g'):
                 self.course.set_parameter(
                     'active_teacher_room', infos.nr_answers + 1, self.login, 5)
