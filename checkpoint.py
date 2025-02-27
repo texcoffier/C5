@@ -1916,7 +1916,7 @@ def scheduler():
     if document.getElementById('buildings').value != ROOM.building:
         ROOM.change(document.getElementById('buildings').value)
         scheduler.update_page = True
-    secs = Math.floor(millisecs()/1000)
+    secs = Math.floor(millisecs()/1000) - SERVER_TIME_DELTA
     if OPTIONS['state'] == 'Ready' and OPTIONS['checkpoint'] and secs != scheduler.secs:
         scheduler.secs = secs # To not recompute multiple time per seconds
         now = nice_date(secs) + ':00'
@@ -2121,4 +2121,5 @@ else:
         XHR.open("GET", 'journal/' + COURSE + '?ticket=' + TICKET)
         XHR.send()
 
+SERVER_TIME_DELTA = int(millisecs()/1000 - SERVER_TIME)
 setInterval(scheduler, 20)

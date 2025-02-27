@@ -1512,6 +1512,7 @@ async def checkpoint(request:Request) -> Response:
     return answer(
         session.header() + f'''
         <script>
+        SERVER_TIME = {time.time()};
         COURSE = {json.dumps(course.course)};
         STUDENTS = {json.dumps(await course.get_students())};
         MESSAGES = {json.dumps(course.messages)};
@@ -1549,6 +1550,7 @@ async def checkpoint_hosts(request:Request, real_course="=IPS") -> Response:
         MESSAGES = [];
         OPTIONS = {json.dumps({"default_building": ""})};
         IPS = {json.dumps(ips)};
+        SERVER_TIME = {time.time()};
         </script>
         <script src="checkpoint/BUILDINGS?ticket={session.ticket}"></script>
         <script src="checkpoint.js?ticket={session.ticket}"></script>
