@@ -121,6 +121,8 @@ class Tests: # pylint: disable=too-many-public-methods
             course.set_parameter('state', "Ready")
             if os.path.exists(course_name + '/journal.log'):
                 os.unlink(course_name + '/journal.log')
+            for i in glob.glob(course_name + '/LOGS/*/journal.log'):
+                os.unlink(i)
 
         start = time.time()
         self.wait_start()
@@ -152,6 +154,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_rename,
                     self.test_zip,
                     self.test_media,
+                    self.test_completion,
                     # self.test_git,
                     ):
                 print('*'*99)
@@ -1305,6 +1308,95 @@ class Q1(Question):
             assert 'a_not_existing_variable' not in content
 
         self.delete_session_xxx()
+
+    def test_completion(self):
+        """Test completion"""
+        self.load_page('=JS=introduction')
+        self.goto_initial_version()
+        base = 'aa aaa aab ab abb bbb dd\n'
+        def check(expected):
+            retry(lambda: self.driver.execute_script("return ccccc.source")
+                          if self.driver.execute_script("return ccccc.source") != expected
+                          else False)
+        def options(expected):
+            completion = self.check('.completion')
+            if 'display: none' in completion.get_attribute('style'):
+                opt = ''
+            else:
+                opt = completion.get_attribute('innerHTML')
+                opt = opt.replace('</option>', '')
+                opt = opt.replace('<option class="">', ',')
+                opt = opt.replace('<option>', ',')
+                opt = opt.replace('<option class="active_completion">', ',*')
+                opt = opt[1:]
+            if opt == expected:
+                return False
+            return opt
+
+        for text, menu, expected in (
+                ('b', ''                 , 'bbb'),
+                ('d', ''                 , 'dd' ),
+                ('a', 'aa,aaa,aab,ab,abb', 'a'  ),
+                ):
+            editor = self.move_cursor('.editor')
+            editor.click()
+            self.control('a')
+            self.control('x')
+            editor.send_keys(base.strip())
+            editor.send_keys(Keys.ENTER) # To please Firefox
+            editor.send_keys(text)
+            check(base + text)
+
+            self.control(' ')
+            check(base + expected)
+            retry(lambda: options('*' + menu))
+
+            if not menu:
+                retry(lambda: options(''))
+                continue
+
+            # Cursor move in menu
+            menu2 = menu.replace(',', ',*', 1)
+            editor.send_keys(Keys.ARROW_DOWN) # Second line
+            retry(lambda: options(menu2))
+            editor.send_keys(Keys.ARROW_UP) # First line
+            retry(lambda: options('*' + menu))
+
+            # Other keys hide the menu
+            editor.send_keys('a')
+            retry(lambda: options(''))
+            check(base + text + 'a')
+
+            # Use Enter in the menu
+            editor.send_keys(Keys.BACKSPACE)
+            check(base + expected)
+            self.control(' ')
+            retry(lambda: options('*' + menu))
+            editor.send_keys(Keys.ENTER)
+            first_item = menu.split(',')[0]
+            check(base + first_item) # First item
+
+            # Use click in the menu
+            # Impossible to make work, clicking on datalist option is forbidden
+            # for _ in range(len(first_item)-1):
+            #     editor.send_keys(Keys.BACKSPACE)
+            # check(base + expected)
+            # self.control(' ')
+            # retry(lambda: options('*' + menu))
+            # second_item = menu.split(',')[1]
+            # # Selenium bug: selector «.completion OPTION:nth-child(2)» is rejected
+            # # self.move_cursor('.completion OPTION:nth-child(2)', 3, 3)
+            # for i in self.driver.find_elements_by_css_selector('OPTION:nth-child(2)'):
+            #     if i.get_attribute('innerHTML') == second_item:
+            #         action = selenium.webdriver.ActionChains(self.driver)
+            #         action.move_to_element(i)
+            #         action.click_and_hold()
+            #         action.release()
+            #         action.perform()
+            #         break
+            # # sys.stdin.readline()
+            # retry(lambda: options(''))
+            # check(base + second_item)
 
     def screenshots(self):
         """Dump screen shots"""
