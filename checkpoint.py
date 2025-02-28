@@ -144,7 +144,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     ctrl = False # Control key pressed
     time_span = [0, 1e50]
     rotate_180 = False
-    def __init__(self, building):
+    def __init__(self, info):
         self.menu = document.getElementById('top')
         self.ips = {}
         self.positions = {}
@@ -154,7 +154,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     host, pos_x, pos_y = (hostname + ',,').split(',')[:3]
                     self.ips[host] = room_name
                     self.positions[host] = [pos_x, pos_y]
-        self.change(building)
+        self.change(info)
         window.onblur = mouse_leave
         window.onfocus = mouse_enter
         window.onresize = update_page
@@ -254,21 +254,22 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ):
                 return room_name
         return None
-    def change(self, building):
+    def change(self, info):
         """Initialise with a new building"""
-        self.building = building
-        if building not in BUILDINGS: # It is a teacher login
-            building = 'empty'
-        self.lines = BUILDINGS[building].split('\n')
+        document.getElementById('buildings').value = info.building
+        self.building = info.building
+        if info.building not in BUILDINGS: # It is a teacher login
+            info.building = 'empty'
+        self.lines = BUILDINGS[info.building].split('\n')
         self.x_max = max(*[len(line) for line in self.lines]) + 1
         self.real_left = self.menu.offsetWidth
         self.real_top = document.getElementById('canvas').offsetTop
-        self.left = self.real_left
-        self.top = self.real_top
+        self.left = info.left or self.real_left
+        self.top = info.top or self.real_top
         self.drag_x_current = self.drag_x_start = None
         self.drag_y_current = self.drag_y_start = None
         self.moving = False
-        self.scale = 0
+        self.scale = info.scale or 0
         self.update_sizes(0.5)
         self.update_visible()
         self.search_rooms()
@@ -975,6 +976,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.top = self.real_top
             if not my_rooms:
                 self.top += help_lines * self.scale
+            self.write_location()
         ctx = canvas.getContext("2d")
         self.left_column, self.top_line = self.get_column_row(0, self.real_top+1)
         self.right_column, self.bottom_line = self.get_column_row(self.width, self.height)
@@ -1012,6 +1014,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.compute_rooms_on_screen()
         self.update_waiting_room()
         scheduler.draw = "do_zoom"
+        self.write_location()
     def zoom(self, event):
         """Zooming on the map"""
         self.do_zoom(event.clientX, event.clientY,
@@ -1242,8 +1245,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.student_menu = self.selected_student = None
         scheduler.draw = "drag_stop not moved student_menu"
         return True
+    def write_location(self):
+        """Add the current location in the URL"""
+        location.hash = '#' + JSON.stringify(
+            {'building':self.building,
+             'scale': Math.round(self.scale),
+             'left': Math.round(self.left),
+             'top': Math.round(self.top)})
     def drag_stop(self, event):
         """Stop moving the map"""
+        self.write_location()
         if self.zooming:
             window.onmousemove = None
             window.ontouchmove = None
@@ -1420,7 +1431,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if not student.building:
             return
         if student.building != self.building:
-            self.change(student.building)
+            self.change({"building": student.building})
             scheduler.update_page = True
             document.getElementById('buildings').value = student.building
         self.scale = self.width / 5
@@ -1567,7 +1578,7 @@ def cmp_student_position_reverse(student_a, student_b):
 def create_room_selector(building_name):
     return (
         '''<select style="width:100%;margin-top:0.7em" id="buildings"
-                   onchange="ROOM.change(this.value); scheduler.update_page = true;">'''
+                   onchange="ROOM.change({'building':this.value}); scheduler.update_page = true;">'''
         + ''.join(['<option'
                    + (building == building_name and ' selected' or '')
                    + '>' + building.replace('empty', LOGIN) + '</option>'
@@ -1757,7 +1768,7 @@ def update_page():
     ROOM.compute_rooms_on_screen()
     ROOM.update_waiting_room()
     student = window.location.hash
-    if student and len(student) > 1:
+    if student and len(student) > 1 and STUDENT_DICT[student[1:]]:
         ROOM.zoom_student(student[1:])
         window.location.hash = ''
         ROOM.draw()
@@ -1914,7 +1925,7 @@ def split_time(secs):
 def scheduler():
     """To not redraw needlessly"""
     if document.getElementById('buildings').value != ROOM.building:
-        ROOM.change(document.getElementById('buildings').value)
+        ROOM.change({'building': document.getElementById('buildings').value})
         scheduler.update_page = True
     secs = Math.floor(millisecs()/1000) - SERVER_TIME_DELTA
     if OPTIONS['state'] == 'Ready' and OPTIONS['checkpoint'] and secs != scheduler.secs:
@@ -2100,8 +2111,13 @@ if COURSE == "=MAPS":
     ROOM = Room(default_building)
     scheduler.update_page = True
 else:
-    create_page(OPTIONS.default_building or "Nautibus")
-    ROOM = Room(document.getElementById('buildings').value)
+    try:
+        INFO = JSON.parse(decodeURI(location.hash[1:]))
+    except SyntaxError:
+        INFO = {'building': OPTIONS.default_building or "Nautibus"}
+
+    create_page(INFO.building)
+    ROOM = Room(INFO)
     scheduler.update_page = True
     REAL_COURSE = COURSE
 
