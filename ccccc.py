@@ -556,7 +556,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         Mettez le curseur sur <span>⏱</span> pour voir le temps restant.
         <p>
         Cliquez sur
-        <button onclick="document.body.requestFullscreen({navigationUI:'hide'})"
+        <button onclick="ccccc.start_fullscreen()"
         >plein écran</button>
         pour commencer à travailler.
         <p style="font-size:80%">
@@ -1683,6 +1683,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 setTimeout(bind(self.editor.focus, self.editor), 100)
             self.prompt("Nommez votre sauvegarde :", do_tag, len(self.journal_question.tags))
 
+    def start_fullscreen(self):
+        """TRY TO start full screen mode"""
+        if document.body.requestFullscreen:
+            document.body.requestFullscreen({'navigationUI':'hide'})
+        else:
+            self.popup_message("Votre ordinateur n'autorise pas le plein écran.")
     def do_stop(self):
         """Really stop the session"""
         record('checkpoint/' + self.course + '/' + LOGIN + '/STOP', send_now=True)
