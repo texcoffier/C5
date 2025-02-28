@@ -645,7 +645,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 continue
             width = max(ctx.measureText(student.firstname).width,
                         ctx.measureText(student.surname).width)
-            if student.data.blurred:
+            if student.data.blurred and student.active:
                 ctx.fillStyle = "#F0F"
                 ctx.fillRect(x_pos - width/4, y_pos - y_size/2 - width/4,
                              width + 2 + width/4, y_size + 2 + width/2)
