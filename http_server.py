@@ -1964,7 +1964,7 @@ class JournalLink:
         self.connections = [] # List of Socket, port of connected browsers
         self.locked = False
         self.last_set_parameter = 0
-        self.last_blur = 0
+        self.last_blur = None
 
     async def __aenter__(self):
         while self.locked:
@@ -1998,12 +1998,24 @@ class JournalLink:
                 self.course.set_parameter(
                     'active_teacher_room', infos.nr_blurs + 1, self.login, 4)
             elif message.startswith('F'):
+                if self.last_blur is None:
+                    # Here to not compute last_blur if not an exam session.
+                    # Needed only when student close and reopen tab,
+                    # because JournalLink is recreated and last_blur lost.
+                    last_blur_found = False
+                    for line in self.content[::-1]:
+                        if last_blur_found:
+                            if line.startswith('T'):
+                                self.last_blur = int(line[1:])
+                                break
+                        elif line.startswith('B'):
+                            last_blur_found = True
                 if self.last_blur:
                     # Duration must change to indicate Focus to checkpoint window
                     duration = max(infos.last_time - self.last_blur, 1)
                     self.course.set_parameter(
                         'active_teacher_room', infos.blur_time + duration, self.login, 9)
-                    self.last_blur = 0
+                    self.last_blur = 0 # Needed if 2 Focus without Blur (should not happen)
             elif message.startswith('g'):
                 self.course.set_parameter(
                     'active_teacher_room', infos.nr_answers + 1, self.login, 5)
