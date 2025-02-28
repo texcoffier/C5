@@ -839,7 +839,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             "Cliquez sur le sol d'un salle pour zoomer."])
         column += draw_messages(column, [
             "Le carré jaune des étudiants :",
-            "Tirez-le pour déplacer l'étudiant.",
+            "Appuyez longtemps et tirez-le pour déplacer l'étudiant.",
             "Tirez-le tout à gauche pour le remettre en salle d'attente.",
             "Il passe en violet quand la fenêtre perd le focus.",
             "Il se remplit de rouge à chaque perte de focus.",
@@ -849,7 +849,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             "#888 Avec un autre enseignant.",
             "#000 Travaille avec vous.",
             "#00F N'a rien fait depuis " + BOLD_TIME_ACTIVE/60 + " minutes.",
-            "#080 Examen terminé avant la fin.",
+            "#080 Examen terminé.",
             "#800 Dans la mauvaise salle."])
         column += draw_messages(column, [
             "#000 Concernant les ordinateurs :",
