@@ -2028,6 +2028,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         elif what in ('tester', 'compiler', 'question', 'time'):
             if not value:
                 return
+            if not self[what]: # pylint: disable=unsubscriptable-object
+                return # Display bloc does not exists
             self.clear_if_needed(what)
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
