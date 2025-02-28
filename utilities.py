@@ -292,7 +292,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                                 state.append(1) # Feedback default: Student work
                             config[data[0]][data[1]] = State(state)
                         else:
-                            config[data[0]][data[1]] = data[2]
+                            if data[1] == '+':
+                                config[data[0]].append(data[2])
+                            else:
+                                config[data[0]][data[1]] = data[2]
                     else:
                         config[data[0]][data[1]][data[2]] = data[3]
             # except (KeyError, IndexError):
@@ -370,7 +373,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
     def set_parameter(self, parameter:str, value:Any, key:str=None, index:int=None):
         """Set one of the parameters"""
         if key:
-            if index is None:
+            if key == '+':
+                self.config[parameter].append(value)
+            elif index is None:
                 if self.config[parameter].get(key, None) == value:
                     return
                 self.config[parameter][key] = value

@@ -872,6 +872,7 @@ return sum ;
             while len(self.driver.find_elements_by_css_selector(
                 '.grade_unselected:first-child')) == 0:
                 time.sleep(0.1)
+            time.sleep(0.1)
             for grade in self.driver.find_elements_by_css_selector(
                 '.grade_unselected:first-child'):
                 grade.click()

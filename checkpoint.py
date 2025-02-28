@@ -1894,9 +1894,12 @@ def reader(event): # pylint: disable=too-many-branches
         print(expression)
         data = JSON.parse(expression)
         if data[0] == 'messages':
-            for message in data[1][len(MESSAGES):]:
-                MESSAGES.append(message)
-                scheduler.update_messages = True
+            if data[2] == '+':
+                MESSAGES.append(data[1])
+            else:
+                for message in data[1][len(MESSAGES):]:
+                    MESSAGES.append(message)
+            scheduler.update_messages = True
         elif data[0] == "active_teacher_room":
             if STUDENT_DICT[data[2]]:
                 student = STUDENT_DICT[data[2]].data

@@ -1692,7 +1692,8 @@ async def checkpoint_message(request:Request) -> Response:
         return utilities.js_message("not_proctor")
     course.set_parameter(
         'messages',
-        course.messages + [[session.login, int(time.time()), request.match_info['message']]]
+        [session.login, int(time.time()), request.match_info['message']],
+        key='+'
         )
     return answer('')
 
