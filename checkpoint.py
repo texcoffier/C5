@@ -1344,12 +1344,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if i in MESSAGES_TO_HIDE:
                 continue
             login, date, message = infos
+            message = html(message)
+            message = message.replace(
+                RegExp('(@[a-zA-Z]+)','g'),
+                '<span style="background:#FF8">$1</span>')
             content.append(
                 "<p>"
                 + '<button onclick="hide_messages(0,'+i+')">×↑</button>'
                 + '<button onclick="hide_messages('+i+','+i+')">×</button> '
                 + nice_date(date)
-                + ' ' + login + ' <b>' + html(message) + '</b>')
+                + ' ' + login + ' <b>' + message + '</b>')
         messages = document.getElementById('messages')
         if messages:
             messages.innerHTML = ' '.join(content)
