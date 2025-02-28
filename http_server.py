@@ -1999,7 +1999,8 @@ class JournalLink:
                     'active_teacher_room', infos.nr_blurs + 1, self.login, 4)
             elif message.startswith('F'):
                 if self.last_blur:
-                    duration = infos.last_time - self.last_blur
+                    # Duration must change to indicate Focus to checkpoint window
+                    duration = max(infos.last_time - self.last_blur, 1)
                     self.course.set_parameter(
                         'active_teacher_room', infos.blur_time + duration, self.login, 9)
                     self.last_blur = 0
