@@ -2103,10 +2103,14 @@ def create_realtime_spy(student):
 
     feedback.shared_worker, _journal = create_shared_worker(student.login, update_real_time)
 
+try:
+    INFO = JSON.parse(decodeURI(location.hash[1:]))
+except SyntaxError:
+    INFO = {'building': OPTIONS.default_building or "Nautibus"}
+
 if COURSE == "=MAPS":
-    default_building = BUILDINGS_SORTED[0]
     document.body.innerHTML = ('<title>Hostmap</title><span id="top"></span>'
-        + create_room_selector(default_building).replace("margin", "position:absolute;z-index:2;NOmargin")
+        + create_room_selector(INFO.building).replace("margin", "position:absolute;z-index:2;NOmargin")
         + '''<style>BODY { margin: 0px }</style><canvas
             id="canvas"
             style="position:absolute; left:0px; width:100vw; top:0px; height: 100vh;"
@@ -2115,14 +2119,9 @@ if COURSE == "=MAPS":
             ontouchstart="ROOM.drag_start(event)"
         ></canvas><div id="waiting" style="display:none"></div><div id="checkpoint_time_buttons"></div>'''
     )
-    ROOM = Room(default_building)
+    ROOM = Room(INFO)
     scheduler.update_page = True
 else:
-    try:
-        INFO = JSON.parse(decodeURI(location.hash[1:]))
-    except SyntaxError:
-        INFO = {'building': OPTIONS.default_building or "Nautibus"}
-
     create_page(INFO.building)
     ROOM = Room(INFO)
     scheduler.update_page = True
