@@ -14,6 +14,9 @@ ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
 LONG_CLICK = 500
 
+if COURSE in ('=MAPS', '=IPS'):
+    del BUILDINGS['empty']
+
 BUILDINGS_SORTED = list(BUILDINGS)
 BUILDINGS_SORTED.sort()
 
