@@ -1022,7 +1022,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def tree_canvas(self):
         """Display the version tree"""
-        JOURNAL.tree_canvas(self.canvas)
+        return JOURNAL.tree_canvas(self.canvas)
 
     def get_layer_x(self, x):
         """From screen coordinate to layer coordinates"""
@@ -1891,6 +1891,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.journal_question = JOURNAL.questions[value]
             self.set_editor_content(JOURNAL.content)
             self.compilation_run()
+            self.canvas.parentNode.scrollLeft = max(
+                0, self.tree_canvas() - self.canvas.parentNode.offsetWidth + 40)
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
             self.add_highlight_errors(value[0], value[1], what)

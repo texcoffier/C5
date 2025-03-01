@@ -663,6 +663,7 @@ class Journal:
                 ccccc.goto_line(line)
         else:
             ccccc.version_feedback.style.display = 'none'
+        return x
 
     def see_past(self, index):
         """Look in the past, but will come back to present"""
