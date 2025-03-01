@@ -500,7 +500,7 @@ class Journal:
         if canvas.parentNode.offsetWidth == 0 or canvas.parentNode.offsetHeight == 0:
             return
         tree = self.tree()
-        zoom = max(1, min(int(canvas.parentNode.offsetWidth / tree[1]),
+        zoom = max(2, min(int(canvas.parentNode.offsetWidth / tree[1]),
                           int(canvas.parentNode.offsetHeight / tree[2] / 12),
                           self.questions[self.question].zoom))
         self.questions[self.question].zoom = zoom
