@@ -1181,9 +1181,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         return False
     def drag_stop_click_on_room(self, event, column, line):
         """Click on a room to zoom"""
-        if (column != -1
-                and self.lines[line][column] != 's'
-                and self.scale < self.min_scale * 2):
+        if column != -1 and self.lines[line][column] != 's':
             # Zoom on room
             (_col_start, _line_start, room_width, room_height, center_x, center_y
             ) = self.get_room(column, line)
