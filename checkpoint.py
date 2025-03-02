@@ -1172,23 +1172,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             mails = []
             for student in room.students:
                 logins.append(student.login)
-                mails.append(student.mail or (student.login + '@?.?'))
-            div = document.getElementById('spy')
-            div.innerHTML = (
-                '<div class="spytop">'
-                + '<button class="closepopup" onclick="spy_close()">×</button> '
-                + '<button id="open_tabs">Ouvrir ' + len(logins)
-                + ' onglets</button> pour noter :<ol><li>'
-                + '<li>'.join(mails)
-                + '</ol>'
-                + '</div>'
-            )
-            div.style.display = 'block'
-            def open_tabs():
+                mails.append('   * ' + (student.mail or (student.login + '@?.?')) + '\n')
+            if confirm('Ouvrir ' + len(logins) + ' onglets pour noter :\n' + ''.join(mails)):
                 for login in logins:
                     window.open(BASE + '/grade/' + COURSE + '/' + login
                         + '?ticket=' + TICKET)
-            document.getElementById('open_tabs').onclick = open_tabs            
             return True
         return False
     def drag_stop_click_on_room(self, event, column, line):
