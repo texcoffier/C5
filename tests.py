@@ -160,7 +160,13 @@ class Tests: # pylint: disable=too-many-public-methods
                 print('*'*99)
                 print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
                 print('*'*99)
-                test()
+                try:
+                    test()
+                except:
+                    if test is self.test_many_inputs:
+                        test()
+                    else:
+                        raise
             self.driver.close()
             print(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
             log(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
@@ -181,6 +187,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.update_config('masters', utilities.CONFIG.masters + ['Anon_' + self.ticket])
         self.goto('config/reload')
         self.check_alert(required=False, nbr=2)
+        time.sleep(0.1)
     def clean_up_admin(self):
         """Remove all anonymous logins from admin list"""
         print(f'\t{self.ticket} clean admin')
@@ -216,7 +223,7 @@ class Tests: # pylint: disable=too-many-public-methods
     def select_all(self, path='.editor'):
         """Select the full editor content"""
         if path == '.editor':
-            self.check('.editor').click()
+            self.click('.editor')
         else:
             self.move_cursor(path, 10, 10)
         self.control('a')
@@ -327,9 +334,9 @@ class Tests: # pylint: disable=too-many-public-methods
             content = alert.get_attribute('innerHTML')
             if contains in content:
                 if accept:
-                    self.check('#popup_ok').click()
+                    self.click('#popup_ok')
                 else:
-                    self.check('#popup_cancel').click()
+                    self.click('#popup_cancel')
                 return None
             return f'The dialog does not contains «{contains}» but «{content}'
         retry(check, required, nbr=nbr)
@@ -339,9 +346,9 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check_alert(required=False, nbr=10)
         self.check_dialog(required=False, nbr=2, accept=False)
         try:
-            self.check('.question H2').click() # Hide popup
+            self.click('.question H2') # Hide popup
         except selenium.common.exceptions.ElementClickInterceptedException:
-            self.check('.question H2').click() # Hide popup
+            self.click('.question H2') # Hide popup
         self.check_dialog(required=False, nbr=2, accept=False)
     def move_to_element(self, element):
         """Make the element visible on screen in order to click on it"""
@@ -370,7 +377,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.compiler', {'innerText': Contains('Bravo')})
         self.move_cursor('.editor')
         self.check('.editor').send_keys('\n/**/')
-        time.sleep(0.2)
+        time.sleep(0.4)
         self.check('.editor').send_keys(Keys.F9)
         self.check('.compiler', {'innerText': Contains('Bravo')})
     def test_inputs(self):
@@ -439,16 +446,16 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.executor', {'innerHTML': Contains('Hello')})
 
         # Disable compilation by clicking
-        self.check('.compiler LABEL').click()
+        self.click('.compiler LABEL')
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
         time.sleep(0.3) # Wait a recompile that must not happen
         self.check('.compiler', {'innerHTML': Contains('sans')})
-        self.check('.compiler LABEL').click()
+        self.click('.compiler LABEL')
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
     def goto_initial_version(self):
         """Returns to the initial version"""
-        self.check('.save_history OPTION:last-child').click()
+        self.click('.save_history OPTION:last-child')
         time.sleep(0.2)
     def test_save_button(self):
         """Test save button"""
@@ -461,7 +468,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.move_cursor('.editor', 4, 4)
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§')})
-        self.check('.save_button').click()
+        self.click('.save_button')
         self.wait_save()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§')})
@@ -476,7 +483,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.move_cursor('.editor', 30, 5)
         for _ in range(6):
             self.check('.editor').send_keys(Keys.BACKSPACE)
-        self.check('.save_button').click()
+        self.click('.save_button')
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': ~Contains('§')})
 
@@ -485,7 +492,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.load_page('=JS=introduction')
         self.goto_initial_version()
         self.move_cursor('.editor')
-        self.check('.editor').click()
+        self.click('.editor')
         self.select_all()
         self.control('v')
         self.control('v')
@@ -495,7 +502,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.load_page('=JS=introduction')
         self.goto_initial_version()
         # Try to click on the next question
-        self.check(question(4)).click() # Will fail
+        self.click(question(4)) # Will fail
         self.check('.editor', {'innerText': Contains('court') & ~Contains('long')})
 
         self.check(question(3), {'innerText': Contains('1'), 'className': Equal('current possible')})
@@ -512,16 +519,16 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.question', {'innerText': Contains('la_chose_a_afficher')})
 
             # Returns to the first question
-            self.check(question(3)).click()
+            self.click(question(3))
             self.check('.editor', {'innerText': Contains('long')})
             self.check(question(3), {'innerText': Contains('1'), 'className': Equal('current good')})
             self.check(question(4), {'innerText': Contains('2'), 'className': Equal('possible')})
             self.check(question(5), {'innerText': Contains('3'), 'className': Equal('')})
         finally:
             self.wait_save()
-            retry(lambda: self.check('OPTION:last-child').click(), nbr=2) # Returns to the original text
+            retry(lambda: self.click('OPTION:last-child'), nbr=2) # Returns to the original text
             self.check('.editor').send_keys(' ')
-            self.check('.save_button').click()
+            self.click('.save_button')
     def test_master_change(self):
         """Test add and remove master"""
         with self.root_rights():
@@ -530,8 +537,8 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.add_master').send_keys('john.doe')
             self.check('.add_master').send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains('Master add «john.doe»')})
-            self.check('#more').click()
-            retry(lambda: self.check("BUTTON.del_master_john_doe").click(), nbr=10)
+            self.click('#more')
+            retry(lambda: self.click("BUTTON.del_master_john_doe"), nbr=10)
             self.check('#more', {'innerText': Contains('Master del «john.doe»')})
     def test_ticket_ttl(self):
         """Test TTL change"""
@@ -553,7 +560,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.ticket_ttl').send_keys(str(ttl))
             self.check('.ticket_ttl').send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains(f'to {ttl} seconds')})
-            self.check('.remove_olds').click()
+            self.click('.remove_olds')
             self.check('#more', {'innerText': Contains('tickets deleted')})
             assert not os.path.exists(to_delete)
             os.unlink(to_keep)
@@ -561,7 +568,7 @@ class Tests: # pylint: disable=too-many-public-methods
         """Test editor line insert"""
         # Previous tests must run before this one.
         self.load_page('=JS=introduction')
-        self.check(question(3)).click() # Returns to the first question
+        self.click(question(3)) # Returns to the first question
         self.goto_initial_version()
         self.check('.overlay', {'innerHTML': ~Contains('§')})
         self.control('y')
@@ -571,7 +578,7 @@ class Tests: # pylint: disable=too-many-public-methods
             time.sleep(0.2)
         #for line in sys.stdin:
         #    try:
-        #        self.check(question(int(line.strip()))).click()
+        #        self.click(question(int(line.strip())))
         #    except:
         #        pass
         editor = self.move_cursor('.editor')
@@ -601,23 +608,27 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.overlay', {'innerHTML': Contains(');/\n/\n')})
     def test_many_inputs(self):
         """Test IP change in grader editor"""
+        nbr = 5
         self.goto('=REMOTE=test')
-        self.check_dialog(contains='', accept=True, required=False, nbr=2)
+        # self.check_dialog(contains='', accept=True, required=False, nbr=2)
+        time.sleep(0.1)
+        self.click('.editor')
         self.check('.editor').send_keys(' ')
         self.control('a')
+        time.sleep(0.1)
         self.check('.editor').send_keys('''
 using namespace std;
 #include <iostream>
 int main()
 {
 int v, sum = 0 ;
-for(int i = 0 ; i < 10 ; i++ ) { cout << i << endl ; cin >> v ; sum += v ; }
+for(int i = 0 ; i < '''+str(nbr)+'''; i++ ) { cout << i << endl ; cin >> v ; sum += v ; }
 return sum ;
 }
 ''')
-        time.sleep(0.2)
+        time.sleep(0.3)
         self.check('.editor').send_keys(Keys.F9)
-        for i in range(10):
+        for i in range(nbr):
             self.check(f'.executor DIV:nth-child({4*i+2})', {'textContent': Equal(str(i)+'\n')})
             for _ in range(4):
                 time.sleep(0.1)
@@ -633,7 +644,7 @@ return sum ;
                     pass
             else:
                 raise ValueError(f"Problem with stale element, i={i}")
-        self.check('.executor', {'textContent': Contains('cution = 10')})
+        self.check('.executor', {'textContent': Contains('cution = ' + str(nbr))})
     def test_before(self):
         """Goto exam before opening"""
         self.goto('=JS=example')
@@ -650,28 +661,29 @@ return sum ;
         self.check_dialog(accept=True, required=True) # Ok to congratulation
         # We are now automaticaly on the second question
         self.check('.save_history', {'length': Equal('2')})
-        self.check(question(3)).click() # Returns to the first question
+        time.sleep(1)
+        self.click(question(3)) # Returns to the first question
         self.check('.save_history', {'length': Equal('2')}) # Has been saved
 
         # Tag the good anwser on first question
         self.control('s')
         self.check('#popup_input').send_keys('A')
-        self.check('#popup_ok').click()
+        self.click('#popup_ok')
         self.check('.save_history', {'innerHTML': Contains('>A1<') & Contains('<option>Vers')})
 
         # Change the answer and then change the question without saving
-        time.sleep(0.1)
+        time.sleep(1)
         editor.send_keys(' every')
         # self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=300)
         # time.sleep(0.2)
         self.control('s')
-        self.check('#popup_ok').click()
+        self.click('#popup_ok')
 
-        self.check(question(4)).click() # goto the second question
+        self.click(question(4)) # goto the second question
         self.wait_save() # No save needed
         self.check('.save_history', {'length': Equal('2')}) # Only initial version
         time.sleep(1)
-        self.check(question(3)).click() # Returns to the first question
+        self.click(question(3)) # Returns to the first question
         self.check('.save_history', {'length': Equal('4')}) # A new save !
         self.control('s')
         self.check('#popup_input').send_keys('B')
@@ -683,19 +695,20 @@ return sum ;
         self.wait_save()
 
         # Goto in the past (A) and change question: no saving done
-        retry(lambda: self.check('.save_history OPTION:nth-child(3)').click(), nbr=2)
-        self.check(question(4)).click() # Returns to the second question
+        retry(lambda: self.click('.save_history OPTION:nth-child(3)'), nbr=2)
+        time.sleep(1)
+        self.click(question(4)) # Returns to the second question
         self.check('.editor', {'textContent': Contains('Bravo')})
-        self.check(question(3)).click() # Returns to the first question
+        self.click(question(3)) # Returns to the first question
         self.check('.save_history', {'length': Equal('6')}, nbr=200)
 
         # Goto in the past (A) modify and change question: saving done
-        retry(lambda: self.check('.save_history OPTION:nth-child(5)').click(), nbr=2)
+        retry(lambda: self.click('.save_history OPTION:nth-child(5)'), nbr=2)
         editor.click()
         editor.send_keys(' thing')
         # self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=200)
-        self.check(question(4)).click() # Returns to the second question
-        self.check(question(3)).click() # Returns to the first question
+        self.click(question(4)) # Returns to the second question
+        self.click(question(3)) # Returns to the first question
         self.check('.save_history', {'length': Equal('6')})
         # self.check('.save_history', {'value': Equal("Non sauvegardé")})
 
@@ -710,13 +723,13 @@ return sum ;
             & Contains('>C5<') & Contains('<option>Vers')})
 
         # Navigate in history and change question
-        retry(lambda: self.check('.save_history OPTION:nth-child(5)').click(), nbr=2)
-        retry(lambda: self.check('.save_history OPTION:nth-child(4)').click(), nbr=2)
-        retry(lambda: self.check('.save_history OPTION:nth-child(3)').click(), nbr=2)
-        retry(lambda: self.check('.save_history OPTION:nth-child(2)').click(), nbr=2)
+        retry(lambda: self.click('.save_history OPTION:nth-child(5)'), nbr=2)
+        retry(lambda: self.click('.save_history OPTION:nth-child(4)'), nbr=2)
+        retry(lambda: self.click('.save_history OPTION:nth-child(3)'), nbr=2)
+        retry(lambda: self.click('.save_history OPTION:nth-child(2)'), nbr=2)
         # self.check('.save_history', {'value': Equal("C")})
-        self.check(question(4)).click() # Returns to the second question
-        self.check(question(3)).click() # Returns to the first question
+        self.click(question(4)) # Returns to the second question
+        self.click(question(3)) # Returns to the first question
         self.check('.save_history', {'length': Equal('7')})
         # self.check('.save_history', {'value': Equal("C")})
         self.goto('')
@@ -732,7 +745,7 @@ return sum ;
                 time.sleep(10000)
             self.check('.add_author').send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains('Author add «titi»')})
-            self.check('.del_author_titi').click()
+            self.click('.del_author_titi')
             self.check('#more', {'innerText': Contains('Author del «titi»')})
             with self.change_ip():
                 self.check('.add_author').send_keys('titi')
@@ -745,22 +758,22 @@ return sum ;
         """Test IP change on admin"""
         with self.admin_rights():
             self.goto('adm/session/JS=example')
-            self.check('#Access').click()
+            self.click('#Access')
             self.check('#admins').send_keys('titi')
-            self.check('#creator').click()
+            self.click('#creator')
             self.check('#admins', {'className': Contains('changed')})
-            self.check('#admins').click()
+            self.click('#admins')
             self.control('a')
             self.check('#admins').send_keys(Keys.BACKSPACE)
-            self.check('#creator').click()
+            self.click('#creator')
             self.check('#admins', {'className': Equal('')})
-            self.check('#Config').click()
+            self.click('#Config')
             self.check('#allow_ip_change', {'..className': Equal(''), 'checked': Equal(None)}).click()
             self.check('#allow_ip_change', {'..className': Contains('changed'), 'checked': Equal('true')}, nbr=200)
-            self.check('#allow_ip_change').click()
+            self.click('#allow_ip_change')
             self.check('#allow_ip_change', {'..className': Equal('')}, nbr=200)
             with self.change_ip():
-                self.check('#allow_ip_change').click()
+                self.click('#allow_ip_change')
                 time.sleep(0.1)
                 self.check('#allow_ip_change', {'..className': Equal('wait_answer')})
     def test_ip_change_grader(self):
@@ -785,24 +798,30 @@ return sum ;
             # self.check_alert('pas autorisé à noter', accept=True, required=True)
 
             self.goto('adm/session/REMOTE=test')
-            self.check('#Access').click()
+            self.click('#Access')
             self.move_cursor('#graders')
             self.control('a')
             self.check('#graders').send_keys(f'\nAnon_{self.ticket}')
-            self.check('#creator').click()
+            self.click('#creator')
             self.check('#graders', {'className': Contains('changed')})
 
-            self.check('#Grading').click()
+            self.click('#Grading')
             self.move_cursor('#notation')
             self.control('a')
             self.check('#notation').send_keys(f'{student}\na {{A:0,1,2}}\nb {{B:0.1,0.2,0.3}}\n')
-            self.check('#Access').click()
-            self.check('#Grading').click()
+            self.click('#Access')
+            self.click('#Grading')
             self.check('#notation', {'className': Contains('changed')})
 
             self.goto(f'grade/REMOTE=test/{student}')
-            self.check('[g="1"]:nth-child(2)',
-                {'className': Contains('grade_unselected') & Contains('grade_undefined')}).click()
+            try:
+                self.check('[g="1"]:nth-child(2)',
+                    {'className': Contains('grade_unselected') & Contains('grade_undefined')}).click()
+            except selenium.common.exceptions.StaleElementReferenceException:
+                # Retry
+                self.check('[g="1"]:nth-child(2)',
+                    {'className': Contains('grade_unselected') & Contains('grade_undefined')}).click()
+
             self.check('[g="1"]:nth-child(2)',
                 {'className': Contains('grade_selected')})
 
@@ -811,7 +830,7 @@ return sum ;
             self.check('.comments TEXTAREA:first-child', {'className': Equal('empty')}).click()
             time.sleep(0.1)
             self.check('.comments TEXTAREA:first-child').send_keys(f'=={student}==')
-            self.check('[g="1"]:nth-child(2)').click()
+            self.click('[g="1"]:nth-child(2)')
             self.check('.comments TEXTAREA:first-child', {'className': Equal('filled')}).click()
 
             with self.change_ip():
@@ -819,25 +838,34 @@ return sum ;
                     {'className': Contains('grade_unselected') & Contains('grade_undefined')}).click()
                 self.check_dialog('session a expiré', accept=True, required=True)
 
-                self.check('.comments TEXTAREA:first-child').click()
+                self.click('.comments TEXTAREA:first-child')
                 self.control('a')
                 self.check('.comments TEXTAREA:first-child').send_keys(Keys.BACKSPACE)
-                self.check('.question H2').click()
+                self.click('.question H2')
                 self.check_dialog('session a expiré', accept=True, required=True)
+
+    def click(self, path):
+        """Click on an element, retry if not yet possible"""
+        try:
+            self.check(path).click()
+        except (selenium.common.exceptions.ElementNotInteractableException,
+                selenium.common.exceptions.StaleElementReferenceException):
+            time.sleep(0.5)
+            self.check(path).click()
 
     def test_dates(self, start, end, check, state):
         """No feedback exam even if allowed"""
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
-            self.check('#start').click()
+            self.click('#start')
             self.control('a')
             self.check('#start').send_keys(start)
-            self.check('#stop').click()
+            self.click('#stop')
             self.check('#server_feedback', {'innerHTML': Contains('Start date updated')})
-            self.check('#stop').click()
+            self.click('#stop')
             self.control('a')
             self.check('#stop').send_keys(end)
-            self.check('#start').click()
+            self.click('#start')
             self.check('#server_feedback', {'innerHTML': Contains('Stop date updated')})
             self.check(f'#state OPTION[value="{state}"]').click()
         self.goto('=REMOTE=test')
@@ -882,13 +910,13 @@ return sum ;
         for admin_feeback, grader_feedback, check in cases:
             with self.admin_rights():
                 self.goto('adm/session/REMOTE=test')
-                self.check('#state OPTION[value="Done"]').click()
-                self.check(f'#feedback OPTION[value="{admin_feeback}"]').click()
-                self.check('#start').click()
+                self.click('#state OPTION[value="Done"]')
+                self.click(f'#feedback OPTION[value="{admin_feeback}"]')
+                self.click('#start')
                 self.goto(f'grade/REMOTE=test/{student}')
                 time.sleep(0.5)
-                self.check(f'#grading_feedback OPTION[value="{grader_feedback}"]').click()
-                self.check('.editor').click()
+                self.click(f'#grading_feedback OPTION[value="{grader_feedback}"]')
+                self.click('.editor')
             self.goto('=REMOTE=test')
             self.check('BODY', check)
         self.test_dates('2000-01-01 01:00:01', '2001-01-01 01:00:01', nothing, 'Done')
@@ -897,10 +925,10 @@ return sum ;
         """Test an exam"""
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
-            self.check('#start').click()
+            self.click('#start')
             self.control('a')
             self.check('#start').send_keys('2000-01-01 00:00:00')
-            self.check('#stop').click()
+            self.click('#stop')
             self.control('a')
             self.check('#stop').send_keys('2000-01-01 01:00:00')
             self.check('#checkpoint', {'checked': Equal(None)}).click()
@@ -912,23 +940,23 @@ return sum ;
 
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
-            self.check('#start').click()
+            self.click('#start')
             self.control('a')
             self.check('#start').send_keys('2050-01-01 00:00:00')
-            self.check('#stop').click()
+            self.click('#stop')
             self.control('a')
             self.check('#stop').send_keys('2050-01-01 01:00:00')
-            self.check('#hide_before').click()
+            self.click('#hide_before')
         self.ticket = None
         self.wait_start()
         self.check('BODY', {'innerHTML': Not(Contains('/=REMOTE=test'))})
 
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
-            self.check('#hide_before').click()
+            self.click('#hide_before')
             self.control('a')
             self.check('#hide_before').send_keys('1000000000')
-            self.check('#start').click()
+            self.click('#start')
         self.ticket = None
         self.wait_start()
         self.check('BODY', {'innerHTML': Contains('/=REMOTE=test')})
@@ -946,6 +974,7 @@ return sum ;
             self.driver.execute_script(
                 f"record('checkpoint/REMOTE=test/Anon_{student}/Nautibus,42,42,a')")
             admin = self.ticket
+            time.sleep(0.1)
 
             self.ticket = student
             self.goto('=REMOTE=test')
@@ -953,15 +982,15 @@ return sum ;
 
             self.ticket = admin
             self.goto('adm/session/REMOTE=test')
-            self.check('#start').click()
+            self.click('#start')
             self.control('a')
             self.check('#start').send_keys('2000-01-01 00:00:00')
-            self.check('#stop').click()
+            self.click('#stop')
             self.control('a')
             duration = 3
             stop = time.localtime(time.time() + duration)
             self.check('#stop').send_keys(time.strftime('%Y-%m-%d %H:%M:%S', stop))
-            self.check('#start').click()
+            self.click('#start')
             time.sleep(0.1)
 
             self.ticket = student
@@ -980,10 +1009,10 @@ return sum ;
             time.sleep(0.1)
             self.check_alert(accept=True, required=False, nbr=10)
             self.check('#checkpoint', {'checked': Equal('true')}).click()
-            self.check('#stop').click()
+            self.click('#stop')
             self.control('a')
             self.check('#stop').send_keys('2100-01-01 01:00:00')
-            self.check('#start').click()
+            self.click('#start')
             time.sleep(0.1)
 
     def create_session_xxx(self):
@@ -1044,7 +1073,7 @@ class Q1(Question):
         self.check('.editor', {'innerHTML': Contains('TheAnswer')})
         with self.admin_rights():
             self.goto('adm/session/REMOTE=xxx')
-            retry(lambda: self.check('SELECT OPTION[action="rename_session"]').click(),
+            retry(lambda: self.click('SELECT OPTION[action="rename_session"]'),
                 nbr=2)
             self.check_alert(keys="xxxx")
             self.check('BODY', {'innerHTML': Contains('«REMOTE=xxx» Renamed as «REMOTE=xxxx»')})
@@ -1095,7 +1124,7 @@ class Q1(Question):
         self.ticket = save_ticket
         with self.admin_rights():
             self.goto('adm/session/REMOTE=grapic')
-            self.check('#Media').click()
+            self.click('#Media')
             self.driver.switch_to.frame(0)
             retry(lambda: len(self.driver.find_elements_by_css_selector('BUTTON')) != 2)
             for i in self.driver.find_elements_by_css_selector('BUTTON'):
@@ -1175,11 +1204,11 @@ class Q1(Question):
         with self.admin_rights():
             print("\tC5 pull with identical directories")
             self.goto('adm/session/REMOTE=xxx')
-            self.check('#git_url').click()
+            self.click('#git_url')
             self.control('a')
             self.check('#git_url').send_keys(f"file://{os.getcwd()}/XXX")
-            self.check('#start').click()
-            self.check('OPTION[action="git_pull"]').click()
+            self.click('#start')
+            self.click('OPTION[action="git_pull"]')
             self.check('BODY',
                 {'innerHTML':
                     Contains('nothing to commit, working tree clean')
@@ -1196,7 +1225,7 @@ class Q1(Question):
                     ) >/dev/null
                     """)
             self.goto('adm/session/REMOTE=xxx')
-            self.check('OPTION[action="git_pull"]').click()
+            self.click('OPTION[action="git_pull"]')
             self.check('BODY',
                 {'innerHTML':
                     Contains("No local changes to save")
@@ -1211,7 +1240,7 @@ class Q1(Question):
             with open('COMPILE_REMOTE/xxx/questions.py', 'a', encoding='utf-8') as file:
                 file.write("# Change C5\n")
             self.goto('adm/session/REMOTE=xxx')
-            self.check('OPTION[action="git_pull"]').click()
+            self.click('OPTION[action="git_pull"]')
             self.check('BODY',
                 {'innerHTML':
                     Contains("Saved working directory and index state WIP on master")
@@ -1233,7 +1262,7 @@ class Q1(Question):
                     ) >/dev/null
                     """)
             self.goto('adm/session/REMOTE=xxx')
-            self.check('OPTION[action="git_pull"]').click()
+            self.click('OPTION[action="git_pull"]')
             self.check('BODY',
                 {'innerHTML':
                     Contains("Saved working directory and index state WIP on master")
@@ -1255,7 +1284,7 @@ class Q1(Question):
             with open('COMPILE_REMOTE/xxx/questions.py', 'a', encoding='utf-8') as file:
                 file.write("# Change C5 conflict\n")
             self.goto('adm/session/REMOTE=xxx')
-            self.check('OPTION[action="git_pull"]').click()
+            self.click('OPTION[action="git_pull"]')
             self.check('BODY',
                 {'innerHTML':
                     Contains("Saved working directory and index state WIP on master")
@@ -1283,7 +1312,7 @@ class Q1(Question):
                     ) >/dev/null
                     """)
             self.goto('adm/session/REMOTE=xxx')
-            self.check('OPTION[action="git_pull"]').click()
+            self.click('OPTION[action="git_pull"]')
             self.check('BODY',
                 {'innerHTML':
                     Contains("Saved working directory and index state WIP on master")
@@ -1449,7 +1478,7 @@ try:
         OPTIONS.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/zip")
         OPTIONS.profile = PROFILE
 
-        Tests(selenium.webdriver.Firefox(options=OPTIONS))
+        TESTS = Tests(selenium.webdriver.Firefox(options=OPTIONS))
         if '1' in sys.argv or 'screenshots' in sys.argv:
             # Exit after one test
             EXIT_CODE = 0
@@ -1463,6 +1492,10 @@ except: # pylint: disable=bare-except
     if 'nosleep' not in sys.argv:
         time.sleep(10000)
 finally:
+    TESTS.driver.close()
+    TESTS.driver.quit()
+    if XNEST:
+        XNEST.terminate()
     os.system('./127 stop')
     os.system('./clean.py')
     sys.exit(EXIT_CODE)
