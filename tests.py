@@ -167,6 +167,9 @@ class Tests: # pylint: disable=too-many-public-methods
                         test()
                     else:
                         raise
+                alert = self.get_alert()
+                if alert:
+                    raise ValueError(f"Unexpected alert: {alert.text}")
             self.driver.close()
             print(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
             log(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
@@ -303,12 +306,20 @@ class Tests: # pylint: disable=too-many-public-methods
         retry(get_errors, nbr=nbr)
         print()
         return get_errors.element
+    def get_alert(self):
+        """Return the alert or None"""
+        alert = Alert(self.driver)
+        try:
+            alert.text
+            return alert
+        except selenium.common.exceptions.NoAlertPresentException:
+            return
     def check_alert(self, contains='', accept=True, required=True, nbr=20, keys=None):
         """Check if an alert is on screen and accept or cancel it"""
         def check():
-            try:
-                print(f'\tALERT Contains=«{contains}» Accept=«{accept}»')
-                alert = Alert(self.driver)
+            print(f'\tALERT Contains=«{contains}» Accept=«{accept}»')
+            alert = self.get_alert()
+            if alert:
                 if contains in alert.text:
                     if accept:
                         if keys:
@@ -318,7 +329,7 @@ class Tests: # pylint: disable=too-many-public-methods
                         alert.dismiss()
                     return None
                 return f'The alert does not contains «{contains}» but «{alert.text}'
-            except selenium.common.exceptions.NoAlertPresentException:
+            else:
                 return 'No alert on screen'
         retry(check, required, nbr=nbr)
     def check_dialog(self, contains='', accept=True, required=True, nbr=20):
@@ -526,7 +537,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check(question(5), {'innerText': Contains('3'), 'className': Equal('')})
         finally:
             self.wait_save()
-            retry(lambda: self.click('OPTION:last-child'), nbr=2) # Returns to the original text
+            self.click('OPTION:last-child') # Returns to the original text
             self.check('.editor').send_keys(' ')
             self.click('.save_button')
     def test_master_change(self):
@@ -538,7 +549,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.add_master').send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains('Master add «john.doe»')})
             self.click('#more')
-            retry(lambda: self.click("BUTTON.del_master_john_doe"), nbr=10)
+            self.click("BUTTON.del_master_john_doe")
             self.check('#more', {'innerText': Contains('Master del «john.doe»')})
     def test_ticket_ttl(self):
         """Test TTL change"""
@@ -611,11 +622,11 @@ class Tests: # pylint: disable=too-many-public-methods
         nbr = 5
         self.goto('=REMOTE=test')
         # self.check_dialog(contains='', accept=True, required=False, nbr=2)
-        time.sleep(0.1)
+        time.sleep(1)
         self.click('.editor')
         self.check('.editor').send_keys(' ')
         self.control('a')
-        time.sleep(0.1)
+        time.sleep(1)
         self.check('.editor').send_keys('''
 using namespace std;
 #include <iostream>
@@ -630,20 +641,11 @@ return sum ;
         self.check('.editor').send_keys(Keys.F9)
         for i in range(nbr):
             self.check(f'.executor DIV:nth-child({4*i+2})', {'textContent': Equal(str(i)+'\n')})
-            for _ in range(4):
-                time.sleep(0.1)
-                try:
-                    element = self.check(f'.executor INPUT:nth-child({4*i+3})')
-                    element.click()
-                    time.sleep(0.2)
-                    element.send_keys('1')
-                    element.send_keys(Keys.ENTER)
-                    break
-                except (selenium.common.exceptions.StaleElementReferenceException,
-                        selenium.common.exceptions.ElementNotInteractableException):
-                    pass
-            else:
-                raise ValueError(f"Problem with stale element, i={i}")
+            time.sleep(0.1)
+            element = self.click(f'.executor INPUT:nth-child({4*i+3})')
+            time.sleep(0.2)
+            element.send_keys('1')
+            element.send_keys(Keys.ENTER)
         self.check('.executor', {'textContent': Contains('cution = ' + str(nbr))})
     def test_before(self):
         """Goto exam before opening"""
@@ -655,13 +657,12 @@ return sum ;
         self.load_page('=TEXT=demo')
         self.check('.save_history', {'length': Equal('2')})
         editor = self.move_cursor('.editor')
-        time.sleep(1)
         # self.check('.editor', {'textContent': Contains('Bravo')})
         editor.send_keys('univers vie')
         self.check_dialog(accept=True, required=True) # Ok to congratulation
         # We are now automaticaly on the second question
         self.check('.save_history', {'length': Equal('2')})
-        time.sleep(1)
+        time.sleep(1) # Really needed
         self.click(question(3)) # Returns to the first question
         self.check('.save_history', {'length': Equal('2')}) # Has been saved
 
@@ -672,7 +673,6 @@ return sum ;
         self.check('.save_history', {'innerHTML': Contains('>A1<') & Contains('<option>Vers')})
 
         # Change the answer and then change the question without saving
-        time.sleep(1)
         editor.send_keys(' every')
         # self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=300)
         # time.sleep(0.2)
@@ -682,7 +682,6 @@ return sum ;
         self.click(question(4)) # goto the second question
         self.wait_save() # No save needed
         self.check('.save_history', {'length': Equal('2')}) # Only initial version
-        time.sleep(1)
         self.click(question(3)) # Returns to the first question
         self.check('.save_history', {'length': Equal('4')}) # A new save !
         self.control('s')
@@ -695,15 +694,14 @@ return sum ;
         self.wait_save()
 
         # Goto in the past (A) and change question: no saving done
-        retry(lambda: self.click('.save_history OPTION:nth-child(3)'), nbr=2)
-        time.sleep(1)
+        self.click('.save_history OPTION:nth-child(3)')
         self.click(question(4)) # Returns to the second question
         self.check('.editor', {'textContent': Contains('Bravo')})
         self.click(question(3)) # Returns to the first question
         self.check('.save_history', {'length': Equal('6')}, nbr=200)
 
         # Goto in the past (A) modify and change question: saving done
-        retry(lambda: self.click('.save_history OPTION:nth-child(5)'), nbr=2)
+        self.click('.save_history OPTION:nth-child(5)')
         editor.click()
         editor.send_keys(' thing')
         # self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=200)
@@ -723,10 +721,10 @@ return sum ;
             & Contains('>C5<') & Contains('<option>Vers')})
 
         # Navigate in history and change question
-        retry(lambda: self.click('.save_history OPTION:nth-child(5)'), nbr=2)
-        retry(lambda: self.click('.save_history OPTION:nth-child(4)'), nbr=2)
-        retry(lambda: self.click('.save_history OPTION:nth-child(3)'), nbr=2)
-        retry(lambda: self.click('.save_history OPTION:nth-child(2)'), nbr=2)
+        self.click('.save_history OPTION:nth-child(5)')
+        self.click('.save_history OPTION:nth-child(4)')
+        self.click('.save_history OPTION:nth-child(3)')
+        self.click('.save_history OPTION:nth-child(2)')
         # self.check('.save_history', {'value': Equal("C")})
         self.click(question(4)) # Returns to the second question
         self.click(question(3)) # Returns to the first question
@@ -847,11 +845,14 @@ return sum ;
     def click(self, path):
         """Click on an element, retry if not yet possible"""
         try:
-            self.check(path).click()
+            element = self.check(path)
+            element.click()
         except (selenium.common.exceptions.ElementNotInteractableException,
                 selenium.common.exceptions.StaleElementReferenceException):
             time.sleep(0.5)
-            self.check(path).click()
+            element = self.check(path)
+            element.click()
+        return element
 
     def test_dates(self, start, end, check, state):
         """No feedback exam even if allowed"""
@@ -929,9 +930,12 @@ return sum ;
             self.control('a')
             self.check('#start').send_keys('2000-01-01 00:00:00')
             self.click('#stop')
+            self.check('#start', {'className': Equal('changed')})
             self.control('a')
             self.check('#stop').send_keys('2000-01-01 01:00:00')
             self.check('#checkpoint', {'checked': Equal(None)}).click()
+            self.click('#start')
+            self.check('#stop', {'className': Equal('changed')})
         self.ticket = None
         self.wait_start()
         self.check('BODY', {'innerHTML': ~Contains('/=REMOTE=test')})
@@ -1073,8 +1077,7 @@ class Q1(Question):
         self.check('.editor', {'innerHTML': Contains('TheAnswer')})
         with self.admin_rights():
             self.goto('adm/session/REMOTE=xxx')
-            retry(lambda: self.click('SELECT OPTION[action="rename_session"]'),
-                nbr=2)
+            self.click('SELECT OPTION[action="rename_session"]')
             self.check_alert(keys="xxxx")
             self.check('BODY', {'innerHTML': Contains('«REMOTE=xxx» Renamed as «REMOTE=xxxx»')})
         self.delete_session_xxx()
