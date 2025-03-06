@@ -136,7 +136,7 @@ def go_student():
     student = document.getElementById('student').value
     localStorage['student'] = student
     student = normalize_login(student)
-    window.open('/?ticket=' + TICKET + '&login=' + student)
+    window.open(BASE + '/?ticket=' + TICKET + '&login=' + student)
 
 def init_interface(nr_doing_grading):
     """Use location to get filter"""
