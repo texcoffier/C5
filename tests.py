@@ -963,7 +963,7 @@ return sum ;
             self.click('#start')
         self.ticket = None
         self.wait_start()
-        self.check('BODY', {'innerHTML': Contains('/=REMOTE=test')})
+        self.check('BODY', {'innerHTML': Contains('=REMOTE=test')})
 
         self.goto('=REMOTE=test')
         self.check('BODY', {'textContent': Contains("Donnez votre nom à l'enseignant")})

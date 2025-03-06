@@ -204,7 +204,7 @@ def onchange(event):
         else:
             value = target.value
     target.className = 'wait_answer'
-    post('/adm/session/' + COURSE + '/' + attr + '?ticket=' + TICKET, value, True)
+    post(BASE + '/adm/session/' + COURSE + '/' + attr + '?ticket=' + TICKET, value, True)
     event.stopPropagation()
 
 
@@ -403,7 +403,7 @@ def init():
      <div id="server_feedback">Problems and server feedbacks will be written here.</div>
     </h1>
     <title>""" + html(COURSE.replace(RegExp('.*=', ''), ' ')) + """</title>
-    <link rel="stylesheet" href="adm_session.css?ticket=""" + TICKET + """">
+    <link rel="stylesheet" href="adm_session.css?ticket=""" + TICKET + '''">
     <div id="tabs" onclick="select_tab(event.target.id)">
     <div id="Config">Config</div>
     <div id="Access">Access</div>
@@ -432,11 +432,11 @@ def init():
     </div>
     <div id="content"></div>
     <form method="POST" enctype="multipart/form-data" style="display:none" target="script"
-          action="/upload_course/""" + COURSE.replace('=', '/') + "?ticket=" + TICKET + """">
+          action="''' + BASE + "/upload_course/" + COURSE.replace('=', '/') + "?ticket=" + TICKET + '''">
           <input id="file" type="file" name="course" onchange="do_submit(this)">
     </form>
     <form method="POST" enctype="multipart/form-data" style="display:none" target="script"
-          action="/upload_media/""" + COURSE.replace('=', '/') + "?ticket=" + TICKET + """">
+          action="''' + BASE + "/upload_media/" + COURSE.replace('=', '/') + "?ticket=" + TICKET + """">
           <input id="media" type="file" name="course" onchange="do_submit(this)">
     </form>
     """)
