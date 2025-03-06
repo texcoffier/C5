@@ -1314,3 +1314,36 @@ def compute_diffs_regtest():
     print('ok')
 
 # compute_diffs_regtest()
+
+def session_tree(sessions, remove=0):
+    """
+    sessions : List[session, ...]
+    returns  : List[node_name, List[nodes], List[sessions]]
+    """
+    keys = {'': []}
+    for session in sessions:
+        key = session[0][remove:]
+        if '_' not in key:
+            key = ''
+        else:
+            key = key.split('_')[0]
+        if key not in keys:
+            keys[key] = []
+        keys[key].append(session)
+
+    for key in keys:
+        if key != '' and len(keys[key]) == 1:
+            keys[''].append(keys[key][0])
+            del keys[key]
+
+    sorted_keys = list(keys)
+    sorted_keys.sort()
+    keys[''].sort()
+    return [
+        sessions[0][0][:max(0, remove-1)],
+        [session_tree(keys[key], remove=remove+len(key)+1)
+         for key in sorted_keys
+         if key
+        ],
+        keys['']
+        ]
