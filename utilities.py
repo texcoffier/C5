@@ -610,7 +610,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
         # Load configs
         for course in sorted(glob.glob('COMPILE_*/*')):
-            cls.get(course)
+            try:
+                cls.get(course)
+            except ValueError as err:
+                print(err)
 
     def is_admin(self, login:str) -> bool:
         """Is admin or creator"""
