@@ -1413,6 +1413,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 continue
             uniqs.append(i)
         uniqs.sort()
+        self.record_error('to_complete=«' + self.to_complete + '» uniq=' + str(uniqs))
         if len(uniqs) == 0:
             return
         if len(uniqs) == 1:
@@ -2199,22 +2200,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.completion.className = 'completion'
         self.completion.style.display = 'none'
         self.update_gui()
-
-    def add_comment(self, event):
-        """Clic on a comment"""
-        if event.target.tagName == 'TEXTAREA':
-            event.target.onchange = bind(self.save_comment, self)
-    def save_comment(self, event):
-        """Save a comment"""
-        do_post_data(
-            {
-                'question': self.current_question,
-                'line': event.target.line,
-                'comment': event.target.value,
-                'student': STUDENT,
-                'version': self.version,
-            }, 'record_comment/' + COURSE + '?ticket=' + TICKET)
-        event.target.className = "saving"
 
     def racket(self, text):
         """Parse messages from the Racket remote compiler"""
