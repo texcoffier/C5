@@ -614,8 +614,13 @@ class Journal:
         while len(todo):
             tree, x, y = todo.pop()
             action = self.lines[tree[0]] or '✍'
+            if len(tree) == 4:
+                timestamp = self.timestamps[tree[3][0]]
             char = action[0]
-            while len(tree) == 4 and char == (self.lines[tree[3][0]] or '✍')[0]:
+            while len(tree) == 4 and (
+                    char == (self.lines[tree[3][0]] or '✍')[0]
+                    or self.timestamps[tree[3][0]] == timestamp and self.lines[tree[3][0]]
+                    ):
                 tree = tree[3] # Jump over identical chars without branches
             width = draw[char](action, x, y)
             if width > 0:
