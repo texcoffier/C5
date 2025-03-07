@@ -881,13 +881,19 @@ class CCCCC: # pylint: disable=too-many-public-methods
             marker.style.height = rect['height'] - self.line_height + 'px'
             self.overlay.appendChild(marker)
 
+        def set_hovered(bubble, value):
+            line = bubble.bubble
+            while line and line.className == 'bubble_target':
+                line.setAttribute('hovered', value)
+                line = line.previousSibling
+            bubble.setAttribute('hovered', value)
+
         def enter_bubble(event):
             if self.hover_bubble:
-                self.hover_bubble.bubble.setAttribute('hovered', '0')
-                self.hover_bubble.setAttribute('hovered', '0')
+                set_hovered(self.hover_bubble, '0')
             self.hover_bubble = event.target
-            self.hover_bubble.bubble.setAttribute('hovered', '1')
-            self.hover_bubble.setAttribute('hovered', '1')
+            set_hovered(self.hover_bubble, '1')
+
         def add_marker(column, line, column_stop):
             line = self.editor_lines[line-1]
             if not line:
@@ -904,7 +910,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             marker.style.top = rect['top'] + 'px'
             marker.style.width = rect['width'] + 'px'
             marker.style.height = rect['height'] + 'px'
-            marker.onmouseenter = enter_bubble
+            # marker.onmouseenter = enter_bubble # Does not works: event not received
             marker.bubble = bubble_elm
             self.comments.appendChild(marker)
 
