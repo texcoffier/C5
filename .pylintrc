@@ -1,16 +1,16 @@
 [VARIABLES]
 # C5 provided
-additional-builtins=MORE,COURSE,TICKET,LOGIN,STUDENTS,STUDENT_DICT,CONFIG,MESSAGES,BUILDINGS,GRADING,STUDENT,NOTATION,NOTATIONB,ADMIN,SOCK,STOP,WHERE,INFOS,IPS,SERVER_TIME,FEEDBACK_LEVEL,GRADE,COMMENTS,GRADES,DEFAULT_COURSE_OPTIONS,OPTIONS,JOURNAL,SHARED_WORKER,COURSE_CONFIG,REAL_COURSE,ccccc,create_shared_worker,compute_diffs,BASE,WSS,SESSION_LOGIN,Journal,replace_all,session_tree,
+additional-builtins=MORE,COURSE,TICKET,LOGIN,STUDENTS,STUDENT_DICT,CONFIG,MESSAGES,BUILDINGS,GRADING,STUDENT,NOTATION,NOTATIONB,ADMIN,SOCK,STOP,WHERE,INFOS,IPS,SERVER_TIME,FEEDBACK_LEVEL,GRADE,COMMENTS,GRADES,DEFAULT_COURSE_OPTIONS,OPTIONS,JOURNAL,SHARED_WORKER,COURSE_CONFIG,REAL_COURSE,ccccc,create_shared_worker,compute_diffs,BASE,WSS,SESSION_LOGIN,Journal,replace_all,session_tree,normalize_login,student_id,
 # compile.py
 	Compile,Question,Session,
 # compatibility.py
 	update_page,html,bind,hljs,record,nice_date,two_digit,parse_grading,millisecs,is_int,parse_notation,post,strptime,
 # Javascript functions
-	confirm,prompt,alert,Math,setInterval,setTimeout,setTimeout,encodeURIComponent,decodeURIComponent,isNaN,importScripts,escape,
+	confirm,prompt,alert,Math,setInterval,setTimeout,setTimeout,encodeURIComponent,decodeURIComponent,isNaN,importScripts,escape,decodeURI,
 # Javascript classes
-	Math,JSON,RegExp,Date,Number,Object,Array,String,
+	Math,JSON,RegExp,Date,Number,Object,Array,String,ProgressEvent,
 # Javascript objects
-	screen,document,window,history,navigator,localStorage,this,
+	screen,document,window,history,navigator,localStorage,this,location,
 # Rapydscript
 	external
 

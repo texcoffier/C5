@@ -685,8 +685,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 def get_course(txt:str) -> str:
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""
     compilator, course = txt.split('=')
-    if course.endswith('.zip'):
-        course = course[:-4]
     return f'COMPILE_{compilator}/{course}'
 
 class Config: # pylint: disable=too-many-instance-attributes

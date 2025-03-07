@@ -1121,9 +1121,14 @@ async def adm_answers(request:Request) -> StreamResponse: # pylint: disable=too-
     _session, config = await get_teacher_login_and_course(request)
     fildes, filename = tempfile.mkstemp()
     extension, comment = config.get_language()[:2]
+    students = request.match_info['students']
+    if students != '*':
+        students = set(students.split(','))
     try:
         with zipfile.ZipFile(os.fdopen(fildes, "wb"), mode="w") as zipper:
             for user in sorted(os.listdir(config.dir_log)):
+                if students != '*' and user not in students:
+                    continue
                 await asyncio.sleep(0)
                 answers, blurs = get_answers(config.dir_log, user, compiled=True)
                 infos = config.active_teacher_room.get(user)
@@ -2179,7 +2184,6 @@ if __name__ == '__main__':
     for filename in glob.glob('COMPILE_*/*/LOGS/*/http_server.log'):
         translation = filename.replace('http_server', 'journal')
         if os.path.exists(translation):
-            log('«http_server.log» has been translated to «journal.log»')
             break
         else:
             log('='*60)
@@ -2195,7 +2199,7 @@ if __name__ == '__main__':
                     web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
                     web.get('/adm/get/{filename:.*}', adm_get),
                     web.get('/adm/get_exclude/{exclude}/{filename:.*}', adm_get),
-                    web.get('/adm/answers/{course:.*}', adm_answers),
+                    web.get('/adm/answers/{course}/{students:.*}/{filename:.*}', adm_answers),
                     web.get('/adm/root', adm_root),
                     web.get('/adm/session/{course}', adm_session), # Edit page
                     web.get('/adm/session2/{course}/{action}/{value}', adm_config),
