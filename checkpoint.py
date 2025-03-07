@@ -1006,9 +1006,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.draw_times = self.draw_times[1:]
             ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms',
                          self.width - 70, 50)
-        self.draw_student_menu(ctx)
         self.draw_ips(ctx)
         self.draw_computer_menu(ctx)
+        self.draw_student_menu(ctx)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
         self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
