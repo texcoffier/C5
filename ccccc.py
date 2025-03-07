@@ -997,6 +997,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             bubble_close.style.top = top + 'px'
             bubble_close.innerHTML = '×'
             bubble_close.onclick = bubble_delete
+            if not bubble.comment and JOURNAL.lines[JOURNAL.lines.length-1].startswith('b+'):
+                bubble_elm.focus()
             self.comments.appendChild(bubble_close)
 
         for i in range(i+1, len(self.line_numbers.childNodes)):
