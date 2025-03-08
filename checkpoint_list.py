@@ -5,7 +5,6 @@ Tools the sessions list
 class INTERFACE:
     filter = None            # The filter value
     filter_element = None    # The INPUT containing the filter
-    filter_menu = None       # The SELECT containing filters
     nr_sessions_filtered = 0 # Number of sessions displayed on screen
 
 def edit():
@@ -30,41 +29,44 @@ def get_regexp_from_filter(value):
     return value
 
 def filter_change(event):
-    """Option selected"""
-    INTERFACE.filter = event.target.value.strip()
-    if INTERFACE.filter_element and event.target != INTERFACE.filter_element:
-        INTERFACE.filter_element.value = INTERFACE.filter
-    elif event.target != INTERFACE.filter_menu:
-        INTERFACE.filter_menu.options[0].textContent = INTERFACE.filter
-        INTERFACE.filter_menu.value = INTERFACE.filter
+    """DATALIST Option selected or key stroked"""
+    hide_filter_menu() # User is typing into the INPUT
+    INTERFACE.filter = INTERFACE.filter_element.value.strip()
     update(INTERFACE.filter)
     localStorage['checkpoint_list'] = INTERFACE.filter
 
+def filter_focus():
+    INTERFACE.filter_element.select()
+
 def init_filters(the_filter):
     """Fill the options of the select filter"""
-    INTERFACE.filter_menu.onchange = filter_change
-    options = []
-    rows = document.getElementsByTagName('TR')
-    for row in rows:
+    INTERFACE.filter_element.onkeyup = filter_change
+    INTERFACE.filter_element.onfocus = filter_focus
+    sessions = []
+    for row in document.getElementsByTagName('TR'):
         if row.cells and row.cells[0]:
             key = row.cells[0].textContent
-            if '_' not in key:
-                continue
-            key = key.split('_')[0]
-            if key in options:
-                continue
-            options.append(key)
-    options.sort()
-    options.append('Mes sessions')
-    options.append('Toutes les sessions')
-    if the_filter in options:
-        first = ''
-    else:
-        first = the_filter
-    options[:0] = [first]
-    options = ''.join(['<option>' + option + '</option>' for option in options])
+            sessions.append(key)
+    sessions.sort()
+    tree = session_tree([[i] for i in sessions])
+    options = []
+    def flat(node, remove=0):
+        if remove==0 or len(node[1]) + len(node[2]) > 4:
+            if node[0] != '':
+                options.append((node[0], '                        '[:remove] + node[0][remove:]))
+            remove = len(node[0])
+            if remove:
+                remove += 1
+            for i in node[1]:
+                flat(i, remove=remove)
+    flat(tree)
+    options.append(('Mes sessions', 'Mes sessions'))
+    options.append(('Toutes les sessions', 'Toutes les sessions'))
+    options = ''.join(['<option value="' + value + '" onclick="select_filter_menu(this)">'
+                       + text + '</option>'
+                       for value, text in options])
     INTERFACE.filter_menu.innerHTML = options
-    INTERFACE.filter_menu.value = the_filter
+    INTERFACE.filter_element.value = the_filter
 
 def change_header_visibility(header, visible):
     """Hide or show headers"""
@@ -138,6 +140,16 @@ def go_student():
     student = normalize_login(student)
     window.open(BASE + '/?ticket=' + TICKET + '&login=' + student)
 
+def show_filter_menu():
+    INTERFACE.filter_menu.className = 'filter_menu'
+
+def select_filter_menu(option):
+    INTERFACE.filter_element.value = option.value
+    INTERFACE.filter_element.onkeyup()
+
+def hide_filter_menu():
+    INTERFACE.filter_menu.className = ''
+
 def init_interface(nr_doing_grading):
     """Use location to get filter"""
     INTERFACE.nr_doing_grading = nr_doing_grading
@@ -169,13 +181,17 @@ def init_interface(nr_doing_grading):
     document.body.appendChild(element)
 
     top = ['''<title>SESSIONS</title>
-<select id="filters"></select> ← filter only what matters to you.
+<input id="filter" onclick="show_filter_menu()"> ← filter only what matters to you.
+<datalist id="filter_menu"></datalist>''']
+    if IS_AUTHOR:
+        top.append('<button onclick="edit()">Edit all sessions</button>')
+    top.append('''
 <div style="float: right">
 <span id="nr_doing_grading"></span> active graders</span>,
 <span id="nr_actives"></span> active students</span>
 </div>
 <div id="column_toggles"  style="font-size:80%;white-space:nowrap"  onclick="column_toggle(event)">Columns:'''
-          ]
+        )
     for i, header in enumerate(['Compiler', 'Title', 'Students', 'Waiting', 'Actives', 'With me',
                    'Start date', 'Stop date', 'Duration', 'Options', 'Edit', '👁', 'Waiting Room',
                    'Creator', 'Admins', 'Graders', 'Proctors', 'Media']):
@@ -195,11 +211,11 @@ def init_interface(nr_doing_grading):
     document.getElementById('header').innerHTML = ''.join(top)
 
     update(INTERFACE.filter)
-    INTERFACE.filter_menu = document.getElementById('filters')
-    init_filters(INTERFACE.filter)
-    INTERFACE.filter_element = document.getElementById('edit')
+    INTERFACE.filter_element = document.getElementById('filter')
     if INTERFACE.filter_element:
         INTERFACE.filter_element.value = INTERFACE.filter
+    INTERFACE.filter_menu = document.getElementById('filter_menu')
+    init_filters(INTERFACE.filter_element.value)
     update_body_class()
 
 def column_toggle(event):

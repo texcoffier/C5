@@ -146,6 +146,18 @@ BUTTON {
     top: 4.2em;
 }
 
+.filter_menu {
+    display: inline-block;
+    position: absolute;
+    background: #FFF;
+    border: 1px solid black;
+    left: 3em;
+    top: 1.3em;
+}
+.filter_menu OPTION:hover {
+    background: #DDD;
+}
+
 #column_toggles SPAN:hover { background: #EEE }
 
 #column_toggles SPAN[checked="1"] { border: 1px solid #FFF }

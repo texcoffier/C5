@@ -1476,11 +1476,8 @@ async def checkpoint_list(request:Request) -> Response:
     hide_header()
     content.append('</table>')
     if session.is_author():
-        content.append('''
-        <p>Edit all the session with a name (without the compiler)
-        starting with this regular expression:
-        <input id="edit" onkeyup="filter_change(event)"><button onclick="edit()">Edit</button>''')
-        content.append("<div>Download a Python file to add a new session for the compiler: ")
+        content.append("""<script>IS_AUTHOR=true;</script><p>
+        <div>Download a Python file to add a new session for the compiler: """)
         for compiler in COMPILERS:
             content.append(f'''
             <form method="POST" enctype="multipart/form-data"
