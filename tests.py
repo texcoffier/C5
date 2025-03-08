@@ -94,13 +94,15 @@ def log(text):
 def question(i):
     """Question selector"""
     return f'.index .questions:last-child > DIV:nth-child({i})'
-
 class Tests: # pylint: disable=too-many-public-methods
     """Test for one browser"""
     ticket = None
     def __init__(self, driver):
         self.driver = driver
-        driver.set_window_size(1024, 1024)
+
+    def run(self):
+        """Run the tests"""
+        self.driver.set_window_size(1024, 1024)
         for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction', 'COMPILE_JS/example'):
             course = utilities.CourseConfig(course_name)
             course.set_parameter('proctors', 'REGTESTS\n') # Marker for 'clean.py'
@@ -158,7 +160,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     # self.test_git,
                     ):
                 print('*'*99)
-                print(f'{driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
+                print(f'{self.driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
                 print('*'*99)
                 try:
                     test()
@@ -171,11 +173,11 @@ class Tests: # pylint: disable=too-many-public-methods
                 if alert:
                     raise ValueError(f"Unexpected alert: {alert.text}")
             self.driver.close()
-            print(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
-            log(f'OK {driver.name.upper()} ({time.time()-start:.1f} secs)')
+            print(f'OK {self.driver.name.upper()} ({time.time()-start:.1f} secs)')
+            log(f'OK {self.driver.name.upper()} ({time.time()-start:.1f} secs)')
         except selenium.common.exceptions.WebDriverException:
-            print(f'DEADDRIVER {driver.name.upper()} ({time.time()-start:.1f} secs) {test}')
-            log(f'DEADDRIVER {driver.name.upper()} ({time.time()-start:.1f} secs) {test}')
+            print(f'DEADDRIVER {self.driver.name.upper()} ({time.time()-start:.1f} secs) {test}')
+            log(f'DEADDRIVER {self.driver.name.upper()} ({time.time()-start:.1f} secs) {test}')
             if 'Failed to decode response from marionette' not in traceback.format_exc():
                 raise
 
@@ -1455,6 +1457,7 @@ except FileNotFoundError:
     print(f"«{X11}» not found: run directly on your screen")
     XNEST = None
 
+TESTS = None
 try:
     EXIT_CODE = 1
     while True:
@@ -1463,7 +1466,9 @@ try:
             OPTIONS.add_argument('ignore-certificate-errors')
             OPTIONS.add_argument('--password-store=basic')
             OPTIONS.add_argument('--use-mock-keychain')
-            Tests(selenium.webdriver.Chrome(options=OPTIONS))
+            TESTS = Tests(selenium.webdriver.Chrome(options=OPTIONS))
+            TESTS.run()
+            TESTS = None
 
         PROFILE = selenium.webdriver.FirefoxProfile()
         PROFILE.set_preference("browser.download.dir", "/path/to/download_directory")  # Set your download directory
@@ -1482,6 +1487,8 @@ try:
         OPTIONS.profile = PROFILE
 
         TESTS = Tests(selenium.webdriver.Firefox(options=OPTIONS))
+        TESTS.run()
+        TESTS = None
         if '1' in sys.argv or 'screenshots' in sys.argv:
             # Exit after one test
             EXIT_CODE = 0
@@ -1495,8 +1502,12 @@ except: # pylint: disable=bare-except
     if 'nosleep' not in sys.argv:
         time.sleep(10000)
 finally:
-    TESTS.driver.close()
-    TESTS.driver.quit()
+    if TESTS:
+        try:
+            TESTS.driver.close()
+            TESTS.driver.quit()
+        except:
+            pass
     if XNEST:
         XNEST.terminate()
     os.system('./127 stop')
