@@ -18,9 +18,11 @@ try:
     def replace_all(txt, regexp, value):
         regexp = regexp.replace(RegExp("\\\\", "g"), "\\\\")
         return txt.replace(RegExp(regexp, "g"), value)
+    PYTHON = False
 except NameError:
     def replace_all(txt, regexp, value):
         return txt.replace(regexp, value)
+    PYTHON = True
 
 def normalize_login(login):
     """In order to have a uniq login string"""
@@ -52,20 +54,19 @@ def unprotect_crlf(text):
 
 POSSIBLE_GRADES = ":([?],)?[-0-9,.]+$"
 
-try:
+if PYTHON:
     import re
     re_match = re.match
     def re_sub(pattern, replacement, string):
         """Only first replacement"""
         return re.sub(pattern, replacement, string, 1)
-except: # pylint: disable=bare-except
+else:
     def re_match(pattern, string):
         """As in Python"""
         return string.match(RegExp('^' + pattern))
     def re_sub(pattern, replacement, string):
         """Only first replacement"""
         return string.replace(RegExp(pattern), replacement)
-
 
 def parse_notation(notation):
     """Returns a list or [text, grade_label, [grade_values]]"""
