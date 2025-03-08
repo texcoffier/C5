@@ -306,11 +306,6 @@ def select_tab(label):
     Example of grading definition for the «hello world» C program.<br>
     The grading part is right aligned and green with one button for each grade.
     <p>
-    If the <b>exact text</b> found left to the '▶'
-    is found in the student source code,<br>
-    then '▶' is blue and clickable to scroll the source code to the first matching line.
-    </p>
-    <p>
     If the grading part is «{printf:SomeKey:-1,0,1,2,3}» then «SomeKey» will be
     hidden to the grader but used to compute the competence export table
     for TOMUSS.
@@ -318,7 +313,7 @@ def select_tab(label):
      <b>If it is a competence the value will not be used to compute the grade</b>.
     <pre>
 #include &lt;stdio.h&gt;               {stdio.h:0,1}
-int main()▶                      {main declaration:0,1}
+int main()                       {main declaration:0,1}
 {        /* ? = Not evaluated */ {bloc:?,0,1}
    printf("Hello World\\n");     {printf:0,0.5,1,1.5,2}
 }

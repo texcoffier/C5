@@ -590,7 +590,18 @@ BODY.dograding .grading PRE BUTTON:hover, .grading PRE BUTTON.grade_selected:hov
     border: 1px solid #040;
 }
 
-.grading SPAN {
+
+.grading .link:hover {
+    text-decoration: underline;
+}
+.grading .link {
+    cursor: pointer;
+    width: 100%;
+    display: inline-block;
+    border-left: 4px solid #00F;
+}
+
+.grading SPAN.competence, .grading SPAN.grade_value, #grading_sum {
     font-family: sans-serif;
     position: absolute;
     right: 0.2em; /* Some space for firefox scrollbar */

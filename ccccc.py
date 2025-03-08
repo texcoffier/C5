@@ -200,7 +200,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     meter = document.createRange()
     span_highlighted = None # Racket eval result line highlighted
     first_F11 = True
-    first_update = True
+    need_grading_update = True
     dialog_on_screen = False
     completion_running = False
     to_complete = ''
@@ -1778,6 +1778,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def add_grading(self):
         """HTML of the grading interface"""
+        print("GRAGIND=========================")
         self.version = 0 # (ANSWERS[self.current_question] or [0, 0])[1]
         content = ['<div><h2>',
             GRADING and 'Noter' or '',
@@ -1808,7 +1809,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                           padding: 0.2em;font-size:''' + (size+20) + '''%">'''
                 + (self.grading_sum or GRADE[0]) + '/' + self.options.notation_max + '</x>')
         content.append('</h2></div>')
-
         if GRADING or NOTATION:
             if GRADING and self.options.display_global_grading:
                 content.append("Cocher les ")
@@ -1818,33 +1818,25 @@ class CCCCC: # pylint: disable=too-many-public-methods
             content.append('<pre>')
             i = 0
             for text, grade_label, values in parse_notation(NOTATION):
-                if ':' in grade_label:
-                    span = ' class="competence"'
-                else:
-                    span = ''
                 for line in text.split('\r\n'):
-                    content.append(html(line.trimEnd()))
-                    line = line.trim()
-                    if line[-1] == '▶':
-                        line = line[:-1]
-                        if len(self.source.split(line)) == 2:
-                            content[-1] = content[-1].replace('▶',
-                                '<span' + span
-                                + ' onclick="ccccc.goto_source_line(decodeURIComponent('
-                                + "'"
-                                + encodeURIComponent(line).replace(RegExp("'", "g"), "\\'")
-                                + """'))" style="cursor: pointer;">▶</span>""")
+                    line = line.trimEnd()
+                    if len(line) > 5 and line in self.source:
+                        line = '''<span
+                            onclick="ccccc.goto_source_line(this.textContent)"
+                            class="link">''' + html(line) + "</span>"
+                    else:
+                        line = html(line)
+                    content.append(line)
                     content.append('\n')
                 content.pop()
                 if len(grade_label):
                     competence = ':' in grade_label and 1 or 0
                     # Remove competence key at the end of the grade label
                     grade_label = html(grade_label.replace(RegExp(':[a-z0-9+]*$'), ''))
-                    if '>▶<' in content[-1]:
-                        grade_label += '▶'
-                        content.append(content.pop().split(">")[0] + '>')
+                    if '?' in values:
+                        content.append('<span class="competence">')
                     else:
-                        content.append('<span' + span + '>')
+                        content.append('<span class="grade_value">')
                     content.append(grade_label)
                     for choice in values:
                         content.append('<button g="' + i + '" v="'
@@ -1852,7 +1844,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                                        + competence
                                        + '">' + choice + '</button>')
                     content.append('</span>')
-                #content.append('\n')
+                content.append('\n')
                 i += 1
             content.append('</pre>')
             self.nr_grades = i - 1
@@ -1902,6 +1894,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.compilation_run()
             self.canvas.parentNode.scrollLeft = max(
                 0, self.tree_canvas() - self.canvas.parentNode.offsetWidth + 40)
+            self.need_grading_update = True # Need to recompute links in grading pane
+            if (GRADING or self.options['feedback']) and self.source != '':
+                self.add_grading()
+                self.need_grading_update = False
+                if self.options['feedback'] >= 5 and GRADES:
+                    self.update_grading(GRADES)
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
             self.add_highlight_errors(value[0], value[1], what)
@@ -2044,12 +2042,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.clear_if_needed(what)
             if what == 'time':
                 value += ' ' + self.state + ' ' + LOGIN
-            if what == 'question' and (GRADING or self.options['feedback']) and self[what].childNodes.length == 0: # pylint: disable=unsubscriptable-object
-                self.add_grading()
-                if self.first_update:
-                    self.first_update = False
-                if self.options['feedback'] >= 5 and GRADES:
-                    self.update_grading(GRADES)
             span = document.createElement('DIV')
             span.innerHTML = value
             if '<error' in value:
@@ -2061,8 +2053,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 SHARED_WORKER.compile('<error' in value)
                 self.tree_canvas() # Here because scheduler do not call coloring
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
-            if what == 'question' and GRADING:
-                self.update_grading()
             if what == 'question' and self.journal_question:
                 self.question.onscroll = "" # To not change scrollTop when erased
                 def spy_onscroll():
