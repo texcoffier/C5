@@ -1056,10 +1056,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Add the error or warning"""
         if not what:
             return
-        box = document.createRange()
         def insert(element, class_name, move_right=0):
             """Set the element to the same place than the range"""
-            rect = self.get_rect(box)
+            rect = self.get_rect(self.meter)
             if move_right:
                 move_right = rect['width']
             element.style.top = rect['top'] + 'px'
@@ -1094,9 +1093,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             char_nr -= len(line.nodeValue or line.innerText)
             line = line.nextSibling
         try:
-            box.selectNode(line)
+            self.meter.selectNode(line)
         except: # pylint: disable=bare-except
-            self.record_error('BUG box.selectNode ' + str(line))
+            self.record_error('BUG self.meter.selectNode ' + str(line))
             return
         error = document.createElement('DIV')
         if not what.startswith('cursor'):
@@ -1107,8 +1106,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 move_right = 1
             else:
                 move_right = 0
-            box.setStart(line, char_nr-1)
-            box.setEnd(line, char_nr)
+            self.meter.setStart(line, char_nr-1)
+            self.meter.setEnd(line, char_nr)
             char = document.createElement('DIV')
             insert(char, what + ' char ERROR', move_right)
         except: # pylint: disable=bare-except
@@ -1821,9 +1820,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 for line in text.split('\r\n'):
                     line = line.trimEnd()
                     if len(line) > 5 and line in self.source:
-                        line = '''<span
-                            onclick="ccccc.goto_source_line(this.textContent)"
-                            class="link">''' + html(line) + "</span>"
+                        if len(self.source.split('\n' + line + '\n')) == 2:
+                            line = '''<span
+                                onclick="ccccc.goto_source_line(this.textContent)"
+                                class="link">''' + html(line) + "</span>"
+                        else:
+                            line = html(line)
                     else:
                         line = html(line)
                     content.append(line)
@@ -1844,7 +1846,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                                        + competence
                                        + '">' + choice + '</button>')
                     content.append('</span>')
-                content.append('\n')
+                else:
+                    content.append('\n')
                 i += 1
             content.append('</pre>')
             self.nr_grades = i - 1
@@ -1852,6 +1855,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if GRADING:
                 self.grading.onclick = grade
             self.grading.innerHTML = ''.join(content)
+            self.update_grading(GRADES)
         else:
             self.question.innerHTML = ''.join(content)
         if GRADING:
@@ -2090,9 +2094,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def goto_source_line(self, target_line):
         """Scroll the indicated source line to the window top"""
-        for i, line in enumerate(self.source.split('\n')):
-            if line.indexOf(target_line) != -1:
-                self.layered.scrollTo({'top': i * self.line_height, 'behavior': 'smooth'})
+        for element in self.editor_lines:
+            if (element.nodeValue or element.textContent) == target_line:
+                self.meter.setStart(element, 0)
+                self.meter.setEnd(element, 0)
+                self.layered.scrollTo({'top':self.get_rect(self.meter).top, 'behavior': 'smooth'})
                 break
 
     def set_editor_content(self, message): # pylint: disable=too-many-branches,too-many-statements
