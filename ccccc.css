@@ -221,6 +221,7 @@ DIV.executor > DIV:first-child
     border: 1px solid #880;
     border-top-width: var(--bubble_handle_size);
     border-radius: 0.8em;
+    border-bottom-right-radius: 0px;
     font-family: sans-serif;
     resize: both;
     pointer-events: all;
