@@ -639,9 +639,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 and seconds != self.last_scroll # No more than one position per second
                 ):
             # Send scroll position to server
-            line = int(self.layered.scrollTop / self.line_height + 0.5)
-            if line != JOURNAL.scroll_line and not JOURNAL.pending_goto:
-                SHARED_WORKER.scroll_line(line, int(self.layered.offsetHeight / self.line_height))
+            if not JOURNAL.pending_goto:
+                for line_number in self.line_numbers.childNodes:
+                    if line_number.offsetTop > self.layered.scrollTop:
+                        line = int(line_number.textContent)
+                        if line != JOURNAL.scroll_line:
+                            SHARED_WORKER.scroll_line(
+                                line, int(self.layered.offsetHeight / self.line_height))
+                        break
                 JOURNAL.old_scroll_line = JOURNAL.scroll_line
                 self.last_scroll = seconds
                 self.old_scroll_top = self.layered.scrollTop
@@ -2099,13 +2104,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
             #self.worker.postMessage(['source', self.current_question, JOURNAL.content])
             self.worker.postMessage(['goto', index])
 
+    def get_element_box(self, element):
+        self.meter.setStart(element, 0)
+        self.meter.setEnd(element, 0)
+        return self.get_rect(self.meter)
+
     def goto_source_line(self, target_line):
         """Scroll the indicated source line to the window top"""
         for element in self.editor_lines:
             if (element.nodeValue or element.textContent) == target_line:
-                self.meter.setStart(element, 0)
-                self.meter.setEnd(element, 0)
-                self.layered.scrollTo({'top':self.get_rect(self.meter).top, 'behavior': 'smooth'})
+                self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
                 break
 
     def set_editor_content(self, message): # pylint: disable=too-many-branches,too-many-statements
@@ -2113,7 +2121,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.overlay_hide()
         self.editor.innerText = message
 
-        scrollpos = JOURNAL.scroll_line * self.line_height
         cursorpos = JOURNAL.position
         left = JOURNAL.content[:JOURNAL.position]
         if message[:cursorpos] != left:
@@ -2159,7 +2166,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 i += 1
             cursorpos = i
 
-        self.old_scroll_top = self.layered.scrollTop = scrollpos
+        self.old_scroll_top = self.layered.scrollTop = self.get_element_box(
+            self.editor.childNodes[JOURNAL.scroll_line])['top']
+
         for line in self.editor.childNodes:
             if line.tagName:
                 cursorpos -= 1
