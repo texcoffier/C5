@@ -2106,6 +2106,7 @@ async def live_link(request:Request) -> StreamResponse:
             break
         port, message = msg.data.split(' ', 1)
         journa, allow_edit = journals.get(port, (None, True))
+        # log(f'{port} {message} {journa} {len(journa.msg_id) if journa else "?"} {allow_edit}')
         if not allow_edit:
             log(f'{session.is_grader(journa.course)} {message.split(" ", 1)[1]}')
             if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'GbT':
@@ -2168,7 +2169,8 @@ async def live_link(request:Request) -> StreamResponse:
             await socket.send_str(
                 port + ' J' + '\n'.join(journa.content) + '\n')
             if allow_edit:
-                await journa.write(f'O{login} {session.client_ip} {port}')
+                await journa.write(f'O{session.login} {session.client_ip} {port}')
+            # log(f'New journalLink {asked_login}/{login} {for_editor} msg_id:{journa.msg_id}')
     JournalLink.closed_socket(socket)
     log(f'WebSocket close: {id(socket)} {socket}')
 
