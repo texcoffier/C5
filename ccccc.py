@@ -1003,7 +1003,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
             bubble_close = document.createElement('DIV')
             bubble_close.className = 'bubble_close'
-            bubble_close.style.left = left + width - 2 * self.char_width + 'px'
+            bubble_close.style.left = left + width - 20 + 'px'
+            bubble_close.style.right = left + width + 'px'
             bubble_close.style.top = top + 'px'
             bubble_close.innerHTML = '×'
             bubble_close.onclick = bubble_delete
