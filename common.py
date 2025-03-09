@@ -1249,6 +1249,7 @@ def create_shared_worker(login='', hook=None):
     shared_worker.bubble_delete = shared_worker_bubble_delete
 
     def shared_worker_close():
+        ccccc.editor.focus() # To blur focused comment to save it
         if window.ccccc and not ccccc.options['allow_copy_paste']:
             shared_worker.blur()
         shared_worker.port.postMessage(['CLOSE'])
