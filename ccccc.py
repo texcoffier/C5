@@ -1777,7 +1777,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def add_grading(self):
         """HTML of the grading interface"""
-        print("GRAGIND=========================")
         self.version = 0 # (ANSWERS[self.current_question] or [0, 0])[1]
         content = ['<div><h2>',
             GRADING and 'Noter' or '',
@@ -1815,19 +1814,22 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 content.append('<button onclick="ccccc.set_all_grades(1)">premières cases sauf malus</button> ')
                 content.append('<button onclick="ccccc.set_all_grades(-1)">dernières cases</button>')
             content.append('<pre>')
+            use_triangle = '▶' in NOTATION
             i = 0
             for text, grade_label, values in parse_notation(NOTATION):
                 for line in text.split('\r\n'):
                     line = line.trimEnd()
-                    if len(line) > 5 and line in self.source:
-                        if len(self.source.split('\n' + line + '\n')) == 2:
-                            line = '''<span
-                                onclick="ccccc.goto_source_line(this.textContent)"
-                                class="link">''' + html(line) + "</span>"
-                        else:
-                            line = html(line)
-                    else:
+                    line_clean = line.replace('▶', '')
+                    if (len(line) <= 5 # Too short line
+                            or use_triangle and '▶' not in line # ▶ is required
+                            or line_clean not in self.source # Not in source
+                            or len(self.source.split('\n' + line_clean + '\n')) != 2 # Duplicate line
+                            ):
                         line = html(line)
+                    else:
+                        line = '''<span
+                            onclick="ccccc.goto_source_line(this.textContent.replace('▶', ''))"
+                            class="link">''' + html(line) + "</span>"
                     content.append(line)
                     content.append('\n')
                 content.pop()

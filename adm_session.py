@@ -306,6 +306,11 @@ def select_tab(label):
     Example of grading definition for the «hello world» C program.<br>
     The grading part is right aligned and green with one button for each grade.
     <p>
+    Every line of the grading definition found in the student source code
+    become a link to the student source code.
+    To disable this, add a '▶' in the lines you want to be a link.
+    </p>
+    <p>
     If the grading part is «{printf:SomeKey:-1,0,1,2,3}» then «SomeKey» will be
     hidden to the grader but used to compute the competence export table
     for TOMUSS.
