@@ -539,6 +539,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             JOURNAL.tree_canvas(this, event)
         self.canvas.onmousemove = canvas_event
         self.canvas.onmousedown = canvas_event
+        def leave_version_tree():
+            self.version_feedback.style.display = 'none'
+        self.canvas.onmouseout = leave_version_tree
+
         canvas.appendChild(self.canvas)
         self.editor_title.insertBefore(canvas, self.editor_title.firstChild)
 
