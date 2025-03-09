@@ -146,6 +146,10 @@ BUTTON {
     top: 4.2em;
 }
 
+#filter {
+    background: #FF0;
+}
+
 .filter_menu {
     display: inline-block;
     position: absolute;
@@ -153,6 +157,8 @@ BUTTON {
     border: 1px solid black;
     left: 3em;
     top: 1.3em;
+    max-height: calc(100vh - 2em);
+    overflow: scroll;
 }
 .filter_menu OPTION:hover {
     background: #DDD;

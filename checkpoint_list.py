@@ -42,6 +42,7 @@ def init_filters(the_filter):
     """Fill the options of the select filter"""
     INTERFACE.filter_element.onkeyup = filter_change
     INTERFACE.filter_element.onfocus = filter_focus
+    INTERFACE.filter_element.onblur = hide_filter_menu_later
     sessions = []
     for row in document.getElementsByTagName('TR'):
         if row.cells and row.cells[0]:
@@ -149,6 +150,9 @@ def select_filter_menu(option):
 
 def hide_filter_menu():
     INTERFACE.filter_menu.className = ''
+
+def hide_filter_menu_later():
+    setTimeout(hide_filter_menu, 200)
 
 def init_interface(nr_doing_grading):
     """Use location to get filter"""
