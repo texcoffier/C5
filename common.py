@@ -53,6 +53,7 @@ def unprotect_crlf(text):
     return replace_all(text, '\000', '\n')
 
 POSSIBLE_GRADES = ":([?],)?[-0-9,.]+$"
+DELTA_T = 10
 
 if PYTHON:
     import re
@@ -462,38 +463,67 @@ class Journal:
         for child in tree[3:]:
             self.tree_dump(child, texts, indent)
 
-    def explain(self, line_number):
+    def explain(self, used_lines):
         """Explain the journal content for version feedback"""
-        line = self.lines[line_number]
-        if line.startswith('I'):
-            text = 'Insertion de ' + (len(line)-1) + ' caractères'
-        elif line.startswith('D'):
-            text = 'Destruction de ' + line[1:] + ' caractères'
-        elif line.startswith('b+'):
-            text = 'Commentaire créé par «' + line[2:].split(' ')[0] + '»'
-        elif line.startswith('bP'):
-            text = 'Commentaire deplacé'
-        elif line.startswith('bS'):
-            text = 'Changement taille commentaire'
-        elif line.startswith('b-'):
-            text = 'Commentaire détruit'
-        elif line.startswith('bC'):
-            text = 'Changement du commentaire : «' + html(line[2:].replace(RegExp('[0-9]* '), '')) + '»'
-        elif line.startswith('g'):
-            text = "Objectif de l'exercice atteint"
-        elif line.startswith('t') or line.startswith('S'):
-            text = 'Sauvegarde'
-        elif line.startswith('O'):
-            infos = line[1:].split(' ')
-            text = 'Connexion de «' + infos[0] + '»'
-        elif line.startswith('c0'):
-            text = 'Compilation sans aucun problème'
-        elif line.startswith('c'):
-            i = int(line[1:])
-            text = 'Compilation avec ' + int(i/100) + ' erreurs et ' + i%100 + ' warnings'
-        else:
-            text = html(line)
-        return '<div style="text-align:right">' + nice_date(self.timestamps[line_number]) + '</div>' + text
+        lines = []
+        for line in used_lines:
+            line = self.lines[line]
+            if not line:
+                continue
+            if line.startswith('I'):
+                text = 'Insertion de ' + (len(line)-1) + ' caractères'
+            elif line.startswith('D'):
+                text = 'Destruction de ' + line[1:] + ' caractères'
+            elif line.startswith('b+'):
+                text = 'Commentaire créé par «' + line[2:].split(' ')[0] + '»'
+            elif line.startswith('bP'):
+                text = 'Commentaire deplacé'
+            elif line.startswith('bS'):
+                text = 'Changement taille commentaire'
+            elif line.startswith('b-'):
+                text = 'Commentaire détruit'
+            elif line.startswith('bC'):
+                text = 'Changement du commentaire : «' + html(line[2:].replace(RegExp('[0-9]* '), '')) + '»'
+            elif line.startswith('g'):
+                text = "Objectif de l'exercice atteint"
+            elif line.startswith('t') or line.startswith('S'):
+                text = 'Sauvegarde'
+            elif line.startswith('O'):
+                infos = line[1:].split(' ')
+                text = 'Connexion de «' + infos[0] + '»'
+            elif line.startswith('c0'):
+                text = 'Compilation sans aucun problème'
+            elif line.startswith('c'):
+                i = int(line[1:])
+                text = 'Compilation avec ' + int(i/100) + ' erreurs et ' + i%100 + ' warnings'
+            else:
+                continue
+            lines.append(text)
+        lines = ['<br>'.join(lines)]
+        if SESSION_LOGIN in CONFIG['roots']:
+            lines.append('<pre style="font-size: 50%">')
+            done = {}
+            def line_text(i):
+                done[i] = True
+                return (str(i) + ' '
+                    + self.timestamps[i] + ' '
+                    + self.children[i] + ' '
+                    + html(self.lines[i] or '')
+                    + '\n')
+            next_one = used_lines[0]
+            for i in used_lines:
+                if next_one != i:
+                    lines.append(line_text(next_one))
+                    if next_one+1 != i:
+                        lines.append('...\n')
+                if not done[i-1]:
+                    lines.append(line_text(i-1))
+                lines.append('<b>' + line_text(i) + '</b>')
+                next_one = int(i)+1
+            lines.append(line_text(next_one))
+        return ('<div style="text-align:right">'
+            + nice_date(self.timestamps[used_lines[0]], secs=True)
+            + '</div>' + ''.join(lines))
 
     def tree_canvas(self, canvas, event=None):
         """Draw tree in canvas.
@@ -501,7 +531,7 @@ class Journal:
         if canvas.parentNode.offsetWidth == 0 or canvas.parentNode.offsetHeight == 0:
             return
         tree = self.tree()
-        zoom = max(2, min(int(canvas.parentNode.offsetWidth / tree[1]),
+        zoom = max(3, min(int(canvas.parentNode.offsetWidth / tree[1]),
                           int(canvas.parentNode.offsetHeight / tree[2] / 12),
                           self.questions[self.question].zoom))
         self.questions[self.question].zoom = zoom
@@ -513,19 +543,29 @@ class Journal:
         center = zoom/2 - 0.5
         arrow = zoom * 1 # Arrow size
         padding = int(font_size / 2)
-        def draw_D(_action, x, y):
+        def draw_ID(_action, x, y):
+            """Some Insert and deletes"""
+            znb_i = nb_i * zoom
+            znb_d = nb_d * zoom
+            nb_id = znb_i + znb_d
+            if nb_id > middle:
+                nb_id = zoom / nb_id * 2
+                znb_i *= nb_id
+                znb_d *= nb_id
+
+            x += center
+            y -= 0.5
             ctx.strokeStyle = '#F88'
             ctx.beginPath()
-            ctx.moveTo(x+center, y - middle + 0.5)
-            ctx.lineTo(x+center, y - 0.5)
+            ctx.moveTo(x, y)
+            y -= znb_d
+            ctx.lineTo(x, y)
             ctx.stroke()
-            return zoom
-        def draw_I(_action, x, y):
-            "Insert chars"
             ctx.strokeStyle = '#8F8'
             ctx.beginPath()
-            ctx.moveTo(x+center, y - middle + 0.5)
-            ctx.lineTo(x+center, y - 0.5)
+            ctx.moveTo(x, y)
+            y -= znb_i
+            ctx.lineTo(x, y)
             ctx.stroke()
             return zoom
         def draw_c(action, x, y):
@@ -579,7 +619,7 @@ class Journal:
         def draw_nothing(_action, x, y):
             return 0
         draw = {
-            'D': draw_D, 'I': draw_I, 'c': draw_c, 't': draw_t,
+            'D': draw_ID, 'I': draw_ID, 'c': draw_c, 't': draw_t,
             'Q': draw_nothing, 'L': draw_nothing, 'P': draw_nothing, 'T': draw_nothing,
             'H': draw_nothing, '#': draw_nothing, 'G': draw_nothing, 'F': draw_nothing,
             'B': draw_nothing,
@@ -616,17 +656,43 @@ class Journal:
             tree, x, y = todo.pop()
             action = self.lines[tree[0]] or '✍'
             if len(tree) == 4:
-                timestamp = self.timestamps[tree[3][0]]
+                # BEWARE timestamp are recorded every DELTA_T seconds
+                # So checking a 1 second delta has no sense.
+                # See: 'shared_worker_post'
+                timestamp = self.timestamps[tree[0]]
+            else:
+                timestamp = 0
             char = action[0]
-            while len(tree) == 4 and (
-                    char == (self.lines[tree[3][0]] or '✍')[0]
-                    or self.timestamps[tree[3][0]] == timestamp and self.lines[tree[3][0]]
-                    ):
-                tree = tree[3] # Jump over identical chars without branches
+            lines = [tree[0]]
+            if char == 'I':
+                nb_i = 1
+            else:
+                nb_i = 0
+            if char == 'D':
+                nb_d = 1
+            else:
+                nb_d = 0
+            if char in ('I', 'D', 'P', 'L', 'H'):
+                while len(tree) == 4: # Merge only if there is no branch
+                    next_line = tree[3][0]
+                    if not self.lines[next_line]:
+                        break
+                    if self.timestamps[next_line] != timestamp:
+                        break # Not same (DELTA_T) second
+                    next_char = self.lines[next_line][0]
+                    if next_char not in ('I', 'D', 'P', 'L', 'H'):
+                        break # Only merge D and I and P
+                    char = next_char
+                    if char == 'I':
+                        nb_i += 1
+                    elif char == 'D':
+                        nb_d += 1
+                    tree = tree[3]
+                    lines.append(tree[0])
             width = draw[char](action, x, y)
             if width > 0:
                 if mouse_y < y and mouse_y >= y-size+1 and mouse_x >= x and char != '✍':
-                    feedback[0] = (x, y, width, tree[0] + 1)
+                    feedback[0] = (x, y, width, tree[0] + 1, lines)
                 x += width
             for i, child in enumerate(tree[3:]):
                 if i > 0:
@@ -655,13 +721,13 @@ class Journal:
                 y += dy
 
         if feedback[0]:
-            x, y, width, line = feedback[0]
+            x, y, width, line, lines = feedback[0]
             ctx.lineWidth = 1
             ctx.strokeStyle = '#000'
             ctx.beginPath()
             ctx.rect(x-1, y-size, width+1, size)
             ctx.stroke()
-            ccccc.version_feedback.innerHTML = self.explain(line-1) # + '<hr>' + html(self.lines[line-2]) + '<br>' + html(self.lines[line-1]) +  '<br>' + html(self.lines[line])
+            ccccc.version_feedback.innerHTML = self.explain(lines)
             ccccc.version_feedback.style.display = 'block'
             if buttons:
                 # if (mouse_x < x+width or len(tree[3:])==0):
@@ -1088,7 +1154,7 @@ def create_shared_worker(login='', hook=None):
             print('Post ' + message)
             if not message.startswith('T'):
                 t = int(millisecs() / 1000)
-                if t - journal.timestamp > 10: # Record a timestamp sometime
+                if t - journal.timestamp > DELTA_T: # Record a timestamp sometime
                     shared_worker.timestamp(t)
             shared_worker.port.postMessage(len(journal.lines) + ' ' + message)
         journal.append(message)

@@ -83,7 +83,7 @@ def two_digit(number):
     """ 6 → 06 """
     return ('0' + str(int(number)))[-2:]
 
-def nice_date(seconds):
+def nice_date(seconds, sec=False):
     """Returns a string from seconds"""
     js_date = Date()
     js_date.setTime(seconds*1000)
@@ -92,6 +92,7 @@ def nice_date(seconds):
             + '-' + two_digit(js_date.getDate())
             + ' ' + two_digit(js_date.getHours())
             + ':' + two_digit(js_date.getMinutes())
+            + (sec and ':' + two_digit(js_date.getSeconds()) or '')
            )
 
 def strptime(yyyymmddhhmmss):
