@@ -682,6 +682,22 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         except OSError:
             return None
 
+    def get_waiting_withme_done(self, login):
+        """Stats for checkpoint list"""
+        waiting = []
+        with_me = []
+        done = []
+        for student, active_teacher_room in self.active_teacher_room.items():
+            if active_teacher_room.teacher == login:
+                with_me.append(student)
+            if not active_teacher_room.active:
+                # Student is not working
+                if active_teacher_room.room:
+                    done.append(student) # Exam closed
+                else:
+                    waiting.append(student) # Not yet placed
+        return waiting, with_me, done
+
 def get_course(txt:str) -> str:
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""
     compilator, course = txt.split('=')

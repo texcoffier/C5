@@ -13,24 +13,22 @@ import tempfile
 import zipfile
 import asyncio
 import logging
-import ast
 import re
 import traceback
 import html
 import io
 import pathlib
 import glob
-import urllib.request
 import csv
 import signal
-import options
-import common
-import xxx_local
 from aiohttp import web, WSMsgType
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response,StreamResponse
 
 from aiohttp.abc import AbstractAccessLogger
+import options
+import common
+import xxx_local
 import utilities
 from utilities import Session, CourseConfig
 
@@ -243,7 +241,9 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                         status = course.status(login_as) # Should not modify anything
                     else:
                         status = course.status(login, session.hostname)
-                # print('session=', session.login, "is_student=", session.is_student(), "is_admin=", is_admin, utilities.CONFIG.is_admin(session.login), "status=", status, "login_as=", login_as)
+                # print('session=', session.login, "is_student=", session.is_student(),
+                #       "is_admin=", is_admin, utilities.CONFIG.is_admin(session.login),
+                #       "status=", status, "login_as=", login_as)
                 if status == 'draft':
                     return session.message('draft')
                 feedback = course.get_feedback(login_as or login)
@@ -319,10 +319,9 @@ async def startup(app:web.Application) -> None:
     """For student names and computer names"""
     if utilities.C5_VALIDATE:
         app['load_student_infos'] = asyncio.create_task(load_student_infos())
-    if False:
-        app['simulate_active_student'] = asyncio.create_task(simulate_active_student())
+    # app['simulate_active_student'] = asyncio.create_task(simulate_active_student())
     log("DATE HOUR STATUS TIME METHOD(POST/GET) TICKET/URL")
-    def close_all(*args, **kargs):
+    def close_all(*_args, **_kargs):
         JournalLink.close_all_sockets()
     signal.signal(signal.SIGTERM, close_all)
 
@@ -576,16 +575,17 @@ async def adm_media(request:Request) -> Response:
     return answer(session.header() + ''.join(medias))
 
 def fix_date(value):
+    """Parse a date/hour entered by a human"""
     value = re.split('[- :]+', value)
     while len(value) < 6:
         value.append(0)
     value = [int(i or '0') for i in value]
-    value = '{:4d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}'.format(*value)
+    value = '{:4d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}'.format(*value) # pylint: disable=consider-using-f-string
     try:
         time.strptime(value, '%Y-%m-%d %H:%M:%S')
         return value
     except ValueError:
-        return
+        return None
 
 async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union[Response,str]: # pylint: disable=too-many-branches,too-many-statements
     """Configure a course"""
@@ -707,7 +707,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         if '.' in value or '/' in value:
             return f"«{value}» invalid name because it contains «/», «.»"
         if os.path.exists(new_dirname):
-                return f"«{value}» exists!"
+            return f"«{value}» exists!"
         os.rename(config.dir_session, new_dirname)
         del CourseConfig.configs[config.dir_session] # Delete old
         CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
@@ -729,7 +729,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         else:
             feedback = f"«{course}» «{value}» not in {buildings}!"
     elif action in DEFAULT_COURSE_OPTIONS_DICT:
-        default_value, comment = DEFAULT_COURSE_OPTIONS_DICT[action]
+        default_value, _comment = DEFAULT_COURSE_OPTIONS_DICT[action]
         if isinstance(default_value, int):
             if value == 'on':
                 value = 1
@@ -742,7 +742,8 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         feedback = f"«{course}» {action}={value}"
 
     return answer(
-        f'<script>window.parent.update_course_config({json.dumps(config.config)}, {json.dumps(feedback)})</script>')
+        f'''<script>window.parent.update_course_config(
+            {json.dumps(config.config)}, {json.dumps(feedback)})</script>''')
 
 async def adm_config(request:Request) -> Response: # pylint: disable=too-many-branches
     """Course details page for administrators"""
@@ -1044,27 +1045,27 @@ def get_answers(course:str, user:str, compiled:bool=False) -> Tuple[Answers, Blu
     filename = f'{course}/{user}/journal.log'
     if not os.path.exists(filename):
         return answers, blurs
-    journal = common.Journal()
+    journa = common.Journal()
     with open(f'{course}/{user}/journal.log', newline='\n', encoding='utf-8') as file:
         for line in file:
             line = line[:-1]
             if not line:
                 continue
-            journal.append(line)
-            timestamp = int(journal.timestamp)
-            final[journal.question] = (journal.content, 3, timestamp, '')
+            journa.append(line)
+            timestamp = int(journa.timestamp)
+            final[journa.question] = (journa.content, 3, timestamp, '')
             if line.startswith('Sanswer'):
-                answers[journal.question].append((journal.content, 1, timestamp, ''))
+                answers[journa.question].append((journa.content, 1, timestamp, ''))
             elif line.startswith('Ssave'):
-                answers[journal.question].append((journal.content, 0, timestamp, ''))
+                answers[journa.question].append((journa.content, 0, timestamp, ''))
             elif line.startswith('Ssnapshot'):
-                answers[journal.question].append((journal.content, 3, timestamp, ''))
+                answers[journa.question].append((journa.content, 3, timestamp, ''))
             elif line.startswith('t'):
-                answers[journal.question].append((journal.content, 0, timestamp, line[1:-1]))
+                answers[journa.question].append((journa.content, 0, timestamp, line[1:-1]))
             elif line.startswith('B'):
-                blurs[journal.question] += 1
+                blurs[journa.question] += 1
             elif compiled and line.startswith('c'):
-                answers[journal.question].append((journal.content, 2, timestamp, ''))
+                answers[journa.question].append((journa.content, 2, timestamp, ''))
     # XXX These lines are only useful for journals generated by upgrade_logs.py
     for question, responses in enumerate(answers.values()):
         for response in responses:
@@ -1131,18 +1132,19 @@ async def adm_answers(request:Request) -> StreamResponse: # pylint: disable=too-
                     continue
                 await asyncio.sleep(0)
                 answers, blurs = get_answers(config.dir_log, user, compiled=True)
+                if not answers:
+                    continue
                 infos = config.active_teacher_room.get(user)
                 building, pos_x, pos_y, version = ((infos.room or '?') + ',?,?,?').split(',')[:4]
                 version = version.upper()
                 where = f'Surveillant: {infos.teacher}, {building} {pos_x}×{pos_y}, Version: {version}'
-                if answers:
-                    zipper.writestr(
-                        f'{config.dir_log}/{user}#answers.{extension}',
-                        ''.join(
-                            question_source(config, comment, where, user,
-                                            question, answers[question], blurs)
-                            for question in answers
-                        ))
+                zipper.writestr(
+                    f'{config.dir_log}/{user}#answers.{extension}',
+                    ''.join(
+                        question_source(config, comment, where, user,
+                                        question, answers[question], blurs)
+                        for question in answers
+                    ))
         with open(filename, 'rb') as file:
             data = file.read()
     finally:
@@ -1151,8 +1153,9 @@ async def adm_answers(request:Request) -> StreamResponse: # pylint: disable=too-
 
     return answer(data, content_type='application/zip')
 
-async def update_file(request:Request, session:Session, compiler:str, replace:str): # pylint: disable=too-many-return-statements
+async def update_file(request:Request, session:Session, compiler:str, replace:str):
     """Update questionnary on disc if allowed"""
+    # pylint: disable=too-many-return-statements,too-many-branches
     post = await request.post()
     filehandle = post['course']
 
@@ -1220,7 +1223,7 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
 async def upload_course(request:Request) -> Response:
     """Add a new course"""
     session = await Session.get_or_fail(request)
-    error = ''
+    message = ''
     compiler = request.match_info['compiler']
     replace = request.match_info['course']
     if replace == '_new_':
@@ -1228,26 +1231,26 @@ async def upload_course(request:Request) -> Response:
     if replace:
         course = CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace}')
         if not session.is_admin(course):
-            error = "Session change is not allowed!"
+            message = "Session change is not allowed!"
         replace += '.py'
     else:
         if not session.is_author():
-            error = "Session adding is not allowed!"
-    if not error:
-        error = await update_file(request, session, compiler, replace)
-    if '!' not in error and '<pre' not in error and not replace:
+            message = "Session adding is not allowed!"
+    if not message:
+        message = await update_file(request, session, compiler, replace)
+    if '!' not in message and '<pre' not in message and not replace:
         raise web.HTTPFound(f'https://{utilities.C5_URL}/checkpoint/*?ticket={session.ticket}')
     style = 'background:#FAA;'
-    if '!' not in error:
+    if '!' not in message:
         try:
             # Create session.cf
             CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace[:-3]}')
             style = ''
         except ValueError:
-            error = "ERROR: Le fichier Python ne contient pas un questionnaire."
+            message = "ERROR: Le fichier Python ne contient pas un questionnaire."
     return answer('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
         + '<div style="height:100%;' + style + '">'
-        + error + '</div>')
+        + message + '</div>')
 
 async def store_media(request:Request, course:CourseConfig) -> str:
     """Store a file to allow its use in questionnaries"""
@@ -1271,23 +1274,23 @@ async def store_media(request:Request, course:CourseConfig) -> str:
 async def upload_media(request:Request) -> Response:
     """Add a new media"""
     session = await Session.get_or_fail(request)
-    error = ''
+    message = ''
     compiler = request.match_info['compiler']
     course_name = request.match_info['course']
     course = CourseConfig.get(f'COMPILE_{compiler.upper()}/{course_name}')
     if session.is_admin(course):
-        error = await store_media(request, course)
+        message = await store_media(request, course)
         course.update()
     else:
-        error = "Not allowed to add media!"
+        message = "Not allowed to add media!"
 
-    if '!' in error:
+    if '!' in message:
         style = 'background:#FAA;'
     else:
         style = ''
     return answer('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
         + '<div style="height:100%;' + style + '">'
-        + error + '</div>')
+        + message + '</div>')
 
 async def config_reload(request:Request) -> Response:
     """For regression tests"""
@@ -1304,51 +1307,9 @@ def tipped(logins_spaced:str) -> str:
         return '<td class="clipped names"><div>' + logins[0] + '</div>'
     return '<td class="tipped names"><div>' + ' '.join(logins) + '</div>'
 
-def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> None:
-    """A line in the checkpoint table"""
-    waiting = []
-    with_me = []
-    done = []
-    for student, active_teacher_room in course.active_teacher_room.items():
-        if active_teacher_room.teacher == session.login:
-            with_me.append(student)
-        if not active_teacher_room.active:
-            # Student is not working
-            if active_teacher_room.room:
-                done.append(student) # Exam closed
-            else:
-                waiting.append(student) # Not yet placed
-
-    bools = ''
-    for attr, letter, tip in (
-        # ('coloring', '🎨', 'Syntaxic source code coloring'),
-        ('allow_copy_paste', '✂', 'Copy/Paste allowed'),
-        ('checkpoint', '🚦', 'Checkpoint required'),
-        ('sequential', 'S', 'Sequential question access'),
-        ('save_unlock', '🔓', 'Save unlock next question'),
-        ('allow_ip_change', 'IP', 'Allow IP change'),
-        ('expected_students_required', '🪪', 'Only expected students'),
-    ):
-        value = course.config.get(attr, 0)
-        if str(value).isdigit():
-            value = int(value)
-        if value:
-            if attr == 'coloring':
-                tip += ' «' + course.theme + '»'
-            bools += '<span>' + letter + '<var>' + tip + '</var></span>'
-
-
-    # if session.login in course.teachers:
-    status = course.status('')
-    medias = []
-    for media in course.media:
-        medias.append(f'<a target="_blank" href="media/{course.course}/{media}?ticket={session.ticket}">{media}</a>')
-    medias = ' '.join(medias)
-    if session.is_grader(course):
-        run = 'Try'
-    else:
-        run = 'Take'
-    minutes = int(course.stop_timestamp - course.start_timestamp)//60
+def nice_duration(seconds):
+    """Human readable duration"""
+    minutes = int(seconds)//60
     hours = minutes // 60
     days = hours // 24
     weeks = days // 7
@@ -1368,6 +1329,39 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
             duration += f'{minutes % 60:02d}'
     else:
         duration = f'{minutes}m'
+    return duration
+
+
+def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> None:
+    """A line in the checkpoint table"""
+    waiting, with_me, _done = course.get_waiting_withme_done(session.login)
+    bools = ''
+    for attr, letter, tip in (
+        # ('coloring', '🎨', 'Syntaxic source code coloring'),
+        ('allow_copy_paste', '✂', 'Copy/Paste allowed'),
+        ('checkpoint', '🚦', 'Checkpoint required'),
+        ('sequential', 'S', 'Sequential question access'),
+        ('save_unlock', '🔓', 'Save unlock next question'),
+        ('allow_ip_change', 'IP', 'Allow IP change'),
+        ('expected_students_required', '🪪', 'Only expected students'),
+    ):
+        value = course.config.get(attr, 0)
+        if str(value).isdigit():
+            value = int(value)
+        if value:
+            if attr == 'coloring':
+                tip += ' «' + course.theme + '»'
+            bools += '<span>' + letter + '<var>' + tip + '</var></span>'
+
+    medias = []
+    for media in course.media:
+        medias.append(f'<a target="_blank" href="media/{course.course}/{media}'
+                      f'?ticket={session.ticket}">{media}</a>')
+    medias = ' '.join(medias)
+    if session.is_grader(course):
+        run = 'Try'
+    else:
+        run = 'Take'
     content.append(f'''
     <tr>
     <td class="clipped course"><div>{course.course.split('=')[1]}</div></td>
@@ -1379,7 +1373,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     <td>{len(with_me) or ''}
     <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
     <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
-    <td style="white-space: nowrap">{duration}
+    <td style="white-space: nowrap">{nice_duration(course.stop_timestamp - course.start_timestamp)}
     <td style="white-space: nowrap; background:{course.config['highlight']}">{bools}
     <td> {
         f'<a target="_blank" href="adm/session/{course.course}?ticket={session.ticket}">Edit</a>'
@@ -1387,7 +1381,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     }
     <td> {
         f'<a target="_blank" href="={course.course}?ticket={session.ticket}">{run}</a>'
-        if status.startswith('running') or session.is_grader(course)
+        if course.status('').startswith('running') or session.is_grader(course)
         else ''
     }
     <td> {
@@ -1559,6 +1553,7 @@ async def checkpoint_hosts(request:Request, real_course="=IPS") -> Response:
         ''')
 
 async def checkpoint_maps(request:Request) -> Response:
+    """The hostname maps"""
     return await checkpoint_hosts(request, real_course="=MAPS")
 
 async def update_browser_data(course:CourseConfig) -> Response:
@@ -1620,7 +1615,8 @@ async def checkpoint_bonus(request:Request) -> Response:
         return utilities.js_message("not_proctor")
     # Information is stored twice
     course.set_parameter('active_teacher_room', int(bonus), student, 7)
-    await JournalLink.new(course, student, None, None, False).write(f'#bonus_time {bonus} {course.get_stop(student)}')
+    await JournalLink.new(course, student, None, None, False).write(
+        f'#bonus_time {bonus} {course.get_stop(student)}')
     return await update_browser_data(course)
 
 async def home(request:Request) -> Response:
@@ -1826,6 +1822,7 @@ async def write_lines(stream, lines):
 
 async def js_errors(request:Request) -> Response:
     """Display javascript errors"""
+    # pylint: disable=too-many-branches,too-many-nested-blocks
     session = await Session.get_or_fail(request)
     if not session.is_root():
         return session.message('not_root')
@@ -1872,7 +1869,6 @@ async def js_errors(request:Request) -> Response:
     return stream
 
 
-# utilities.CourseConfig.get("COMPILE_REMOTE/LIFAPI_TP01_Prise_en_mains").streams[1].enable_chunked_encoding()
 async def journal(request:Request) -> StreamResponse:
     """Get a file or a ZIP"""
     session, course = await get_teacher_login_and_course(request)
@@ -1933,14 +1929,15 @@ async def full_stats(request:Request) -> Response:
     <script src="stats.js?ticket={session.ticket}"></script>
     ''')
 
-class JournalLink:
-    journals:Dict[Tuple[str,str],"JournalLink"] = {} # session+login → JournalLink (containing sockets)
+class JournalLink: # pylint: disable=too-many-instance-attributes
+    """To synchronize multiple connections to the same student session"""
+    journals:Dict[Tuple[str,str],"JournalLink"] = {} # Key is (session, login)
 
-    def __init__(self, course, login, editor):
+    def __init__(self, course, login, is_editor):
         self.login = login
         self.course = course
-        self.editor = editor
-        if editor:
+        self.editor = is_editor
+        if is_editor:
             dirname = f'{self.course.dir_session}'
         else:
             dirname = f'{self.course.dir_log}/{login}'
@@ -1949,7 +1946,7 @@ class JournalLink:
                 os.mkdir(self.course.dir_log)
             os.mkdir(dirname)
         self.path = pathlib.Path(dirname + '/journal.log')
-        if editor and not self.path.exists():
+        if is_editor and not self.path.exists():
             content = pathlib.Path(course.file_py).read_text(encoding='utf-8')
             content = content.replace('\n', '\0')
             self.path.write_text(f'Q0\nI{content}\ntI\n', encoding='utf-8')
@@ -1970,15 +1967,24 @@ class JournalLink:
         self.last_blur = None
 
     async def __aenter__(self):
+        """Lock the JournalLink instance"""
         while self.locked:
             await asyncio.sleep(0)
         self.locked = True
 
     async def __aexit__(self, *_args):
+        """Unock the JournalLink instance"""
         self.locked = False
 
     async def write(self, message):
-        ############## XXX ################## Must check message validity and add timestamp
+        """Append an action to the journal.
+              * update the session state (blurring, activity).
+              * update the journal.log of the student.
+              * update the JournalLink content.
+              * Synchronize all the connected users
+        """
+        # pylint: disable=too-many-branches,too-many-nested-blocks
+        # XXX Must check message validity and add timestamp
         self.content.append(message)
         # 'protect_crlf' does not work in some browser.
         # So redo it server side.
@@ -2037,6 +2043,7 @@ class JournalLink:
                     JournalLink.closed_socket(socket)
 
     def close(self, socket, port=None):
+        """Close all the connection or the connection of the indicated port."""
         # Remove socket/port from the list
         self.connections = [connection
                             for connection in self.connections
@@ -2047,32 +2054,56 @@ class JournalLink:
             JournalLink.journals.pop((self.course.course, self.login))
 
     @classmethod
-    def new(cls, course, login, socket, port, editor):
-        if editor:
+    def new(cls, course, login, socket, port, is_editor): # pylint: disable=too-many-arguments
+        """JournalLink is common to all the user connected to the session
+        in order to synchronize their screens."""
+        if is_editor:
             login = ''
         journa = JournalLink.journals.get((course.course, login), None)
         if not journa:
-            journa = JournalLink.journals[course.course, login] = JournalLink(course, login, editor)
+            journa = JournalLink(course, login, is_editor)
+            JournalLink.journals[course.course, login] = journa
         if socket is not None:
             journa.connections.append((socket, port))
         return journa
 
     @classmethod
     def closed_socket(cls, socket):
+        """Close socket (shared worker stop), so all the ports using this socket)"""
         # tuple() because journals may be removed while looping.
         for journa in tuple(JournalLink.journals.values()):
             journa.close(socket)
 
     @classmethod
     def close_all_sockets(cls):
+        """Only called on server stop"""
         log("JournalLink.close_all_sockets()")
         for journa in JournalLink.journals.values():
             for socket, _port in journa.connections:
                 try:
-                    socket._writer.transport.close()
+                    socket._writer.transport.close() # pylint: disable=protected-access
                 except IOError:
                     pass
         log("JournalLink.close_all_socket() done")
+
+    def erase_comment_history(self, bubble_id):
+        """Replace old comment text by ?????? without changing its size
+        in order to not rewrite the file.
+        So the students can't see old comments"""
+        j = common.Journal('\n'.join(self.content) + '\n')
+        last_comment_change = j.bubbles[bubble_id].last_comment_change
+        if last_comment_change is None:
+            return # First comment
+        old_comment = common.protect_crlf(j.bubbles[bubble_id].comment)
+        assert j.lines[last_comment_change] == f'bC{bubble_id} {old_comment}'
+        file_position = len('\n'.join(j.lines[:last_comment_change]).encode("utf-8")) + 1
+        new_line = f'bC{bubble_id} {"?"*len(old_comment.encode("utf-8"))}'
+        self.content[last_comment_change] = new_line
+        with open(self.path, 'r+', encoding='utf-8') as file:
+            file.seek(file_position, 0)
+            file.write(new_line)
+        log(f'Erase bubble_id={bubble_id} position={file_position} '
+            f'old_content={j.lines[j.bubbles[bubble_id].last_comment_change]}')
 
 async def live_link(request:Request) -> StreamResponse:
     """Live link beetween the browser and the server.
@@ -2085,13 +2116,13 @@ async def live_link(request:Request) -> StreamResponse:
 
     Protocol is defined in «live_link.py»
     """
+    # pylint: disable=too-many-branches,too-many-statements
     session = await Session.get_or_fail(request)
     socket = web.WebSocketResponse()
     try:
         await socket.prepare(request)
     except:
         log('bug')
-        import traceback
         traceback.print_exc()
         raise
 
@@ -2107,9 +2138,9 @@ async def live_link(request:Request) -> StreamResponse:
         port, message = msg.data.split(' ', 1)
         journa, allow_edit = journals.get(port, (None, True))
         # log(f'{port} {message} {journa} {len(journa.msg_id) if journa else "?"} {allow_edit}')
-        if not allow_edit:
+        if journa and session.login != journa.login:
             log(f'{session.is_grader(journa.course)} {message.split(" ", 1)[1]}')
-            if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'GbT':
+            if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'bGTtLH':
                 continue
             # Allow grader comments
         if message == '-':
@@ -2130,20 +2161,7 @@ async def live_link(request:Request) -> StreamResponse:
                     log(f'Hacker «{message}»')
                 else:
                     if message.startswith('bC'):
-                        # Erase comment history
-                        j = common.Journal('\n'.join(journa.content) + '\n')
-                        bubble_id = int(message[2:].split(' ')[0])
-                        last_comment_change = j.bubbles[bubble_id].last_comment_change
-                        if last_comment_change is not None:
-                            old_comment = common.protect_crlf(j.bubbles[bubble_id].comment)
-                            assert j.lines[last_comment_change] == f'bC{bubble_id} {old_comment}'
-                            file_position = len('\n'.join(j.lines[:last_comment_change]).encode("utf-8")) + 1
-                            new_line = f'bC{bubble_id} {"?"*len(old_comment.encode("utf-8"))}'
-                            journa.content[last_comment_change] = new_line
-                            with open(journa.path, 'r+', encoding='utf-8') as file:
-                                file.seek(file_position, 0)
-                                file.write(new_line)
-                            log(f'Erase bubble_id={bubble_id} position={file_position} old_content={j.lines[j.bubbles[bubble_id].last_comment_change]}')
+                        journa.erase_comment_history(int(message[2:].split(' ')[0]))
                     await journa.write(message)
             else:
                 log(f'{journa.msg_id} != {msg_id}  for  {message}')
@@ -2175,23 +2193,24 @@ async def live_link(request:Request) -> StreamResponse:
     log(f'WebSocket close: {id(socket)} {socket}')
 
 def log(message):
-    print(f'{TIME.strftime("%Y-%m-%d %H:%M:%S")}     {message}', flush=True)
+    """Formatte http_server messages (same beginning than aiohttp messages)"""
+    print(f'{time.strftime("%Y-%m-%d %H:%M:%S")}     {message}', flush=True)
 
-if __name__ == '__main__':
+def main():
+    """Run http server"""
     # Check if an upgrade is needed
-    TIME = time
     for filename in glob.glob('COMPILE_*/*/LOGS/*/http_server.log'):
         translation = filename.replace('http_server', 'journal')
         if os.path.exists(translation):
             break
-        else:
-            log('='*60)
-            log('YOU MUST RUN « ./upgrade_logs.py » to translate all «http_server.log»+«comments.log» to «journal.log»')
-            log('='*60)
-            sys.exit(1)
+        log('='*60)
+        log('YOU MUST RUN « ./upgrade_logs.py »')
+        log('TO TRANSLATE ALL «http_server.log»+«comments.log» to «journal.log»')
+        log('='*60)
+        sys.exit(1)
 
-    APP = web.Application()
-    APP.add_routes([web.get('/', home),
+    app = web.Application()
+    app.add_routes([web.get('/', home),
                     web.get('/{filename}', handle()),
                     web.get('/{filename}/V{version}', handle()),
                     web.get('/node_modules/{filename:.*}', handle('node_modules')),
@@ -2241,12 +2260,12 @@ if __name__ == '__main__':
                     web.post('/adm/building/{building}', adm_building_store),
                     web.post('/adm/session/{course}/{action}', adm_config),
                     ])
-    APP.on_startup.append(startup)
+    app.on_startup.append(startup)
     logging.basicConfig(level=logging.DEBUG)
 
     class AccessLogger(AbstractAccessLogger): # pylint: disable=too-few-public-methods
         """Logger for aiohttp"""
-        def log(self, request, response, time): # pylint: disable=redefined-outer-name
+        def log(self, request, response, rtime): # pylint: disable=redefined-outer-name
             path = request.path.replace('\n', '\\n')
             session = Session.session_cache.get(
                 request.query_string.replace('ticket=', ''), None)
@@ -2254,13 +2273,16 @@ if __name__ == '__main__':
                 login = session.login
             else:
                 login = ''
-            print(f"{TIME.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
-                f"{time:5.3f} {request.method[0]} "
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
+                f"{rtime:5.3f} {request.method[0]} "
                 f"{request.query_string.replace('ticket=ST-', '').split('-')[0]} "
                 f"{login} "
                 f"{path}",
                 flush=True)
 
-    web.run_app(APP, host=utilities.C5_IP, port=utilities.C5_HTTP,
+    web.run_app(app, host=utilities.C5_IP, port=utilities.C5_HTTP,
                 access_log_format="%t %s %D %r", access_log_class=AccessLogger,
                 ssl_context=utilities.get_certificate(False))
+
+if __name__ == '__main__':
+    main()
