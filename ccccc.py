@@ -2166,8 +2166,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 i += 1
             cursorpos = i
 
-        self.old_scroll_top = self.layered.scrollTop = self.get_element_box(
-            self.editor.childNodes[JOURNAL.scroll_line])['top']
+        if message != '':
+            top = self.get_element_box(self.editor.childNodes[JOURNAL.scroll_line])['top']
+        else:
+            top = 0
+        self.old_scroll_top = self.layered.scrollTop = top
 
         for line in self.editor.childNodes:
             if line.tagName:
