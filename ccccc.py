@@ -626,11 +626,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # Send scroll position to server
             if not JOURNAL.pending_goto:
                 for line_number in self.line_numbers.childNodes:
-                    if line_number.offsetTop > self.layered.scrollTop:
-                        line = int(line_number.textContent)
+                    if line_number.offsetTop >= self.layered.scrollTop:
+                        line = int(line_number.textContent) - 1
                         if line != JOURNAL.scroll_line:
                             SHARED_WORKER.scroll_line(
-                                line, int(self.layered.offsetHeight / self.line_height))
+                                line, 1+int(self.layered.offsetHeight / self.line_height))
                         break
                 JOURNAL.old_scroll_line = JOURNAL.scroll_line
                 self.last_scroll = seconds
