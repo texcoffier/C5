@@ -493,11 +493,13 @@ H2:hover .timer SPAN DIV {
 .timer SPAN DIV {
     visibility: hidden;
 }
+.timer SPAN.done DIV {
+    visibility: visible;
+}
 
 .timer .done {
     background: #F00;
     color: #FFF;
-    visibility: visible;
 }
 .timer SPAN.minus60 DIV {
     font-size: 300%;

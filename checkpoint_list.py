@@ -28,7 +28,7 @@ def get_regexp_from_filter(value):
         return ''
     return value
 
-def filter_change(event):
+def filter_change(_event):
     """DATALIST Option selected or key stroked"""
     hide_filter_menu() # User is typing into the INPUT
     INTERFACE.filter = INTERFACE.filter_element.value.strip()
@@ -178,10 +178,8 @@ def init_interface(nr_doing_grading):
     element = document.createElement('DIV')
     element.innerHTML = '''
     <p>
-    <button onclick="go_student()">Display</button> <INPUT id="student" value="''' + value + '''"> student page.
-    Beware: if you go into a session, modify the code and save it, it will
-    modify <b>your history</b> not the student one.
-    '''
+    <button onclick="go_student()">Display</button>
+    <INPUT id="student" value="''' + value + '"> student page.'
     document.body.appendChild(element)
 
     top = ['''<title>SESSIONS</title>
@@ -194,7 +192,9 @@ def init_interface(nr_doing_grading):
 <span id="nr_doing_grading"></span> active graders</span>,
 <span id="nr_actives"></span> active students</span>
 </div>
-<div id="column_toggles"  style="font-size:80%;white-space:nowrap"  onclick="column_toggle(event)">Columns:'''
+<div id="column_toggles"
+     style="font-size:80%;white-space:nowrap"
+     onclick="column_toggle(event)">Columns:'''
         )
     for i, header in enumerate(['Compiler', 'Title', 'Students', 'Waiting', 'Actives', 'With me',
                    'Start date', 'Stop date', 'Duration', 'Options', 'Edit', '👁', 'Waiting Room',

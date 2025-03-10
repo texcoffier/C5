@@ -209,6 +209,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     wait_indentation = False
     user_compilation = False
     journal_question = None
+    old_delta = None
 
     def init(self):
         self.options = options = COURSE_CONFIG
@@ -595,22 +596,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Send a new job if free and update the screen"""
         if not self.allow_edit:
             return
-        if LOGIN == 'thierry.excoffier*':
-            self.time.style.inset = '40% 0% 10% 0%'
-            self.time.style.background = '#FFF8'
-            self.time.style.color = '#F00'
-            self.time.style.opacity = 1
-            self.time.style.zIndex = 10
-            self.time.innerHTML = (
-                'pending_goto=' +  JOURNAL.pending_goto + ' : ' + JOURNAL.pending_goto_history + '<br>'
-                + '[' + str(len(JOURNAL.lines)-4) + ']=' + JOURNAL.lines[-4] + '<br>'
-                + '[' + str(len(JOURNAL.lines)-3) + ']=' + JOURNAL.lines[-3] + '<br>'
-                + '[' + str(len(JOURNAL.lines)-2) + ']=' + JOURNAL.lines[-2] + '<br>'
-                + '[' + str(len(JOURNAL.lines)-1) + ']=' + JOURNAL.lines[-1] + '<br>'
-                + '<pre>'
-                + '\n'.join(JOURNAL.tree_text())
-                + '</pre>'
-                )
 
         remote_scroll = False
         if JOURNAL.remote_update:
@@ -702,9 +687,12 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         stop_button = document.getElementById('stop_button')
                         if stop_button:
                             stop_button.style.display = 'none'
+                    message = self.options['time_done']
                     delta = -delta
-                    if LOGIN == STUDENT:
-                        message = self.options['time_done']
+                    if (SESSION_LOGIN != self.options['creator']
+                        and SESSION_LOGIN not in self.options['admins'].split(' ')
+                        and SESSION_LOGIN not in self.options['graders'].split(' ')
+                        and SESSION_LOGIN not in self.options['proctors'].split(' ')):
                         self.do_stop()
                 else:
                     message = self.options['time_running']
@@ -731,7 +719,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     delta = days + opts['time_d'] + hours + opts['time_h']
                 else:
                     delta = days + opts['time_days']
-                timer.innerHTML = message + '<br><div>' + delta + '</div>'
+                if delta != self.old_delta:
+                    timer.innerHTML = message + '<br><div>' + delta + '</div>'
+                    self.old_delta = delta
 
     def compilation_toggle(self, element):
         """Toggle the automatic compilation flag"""
