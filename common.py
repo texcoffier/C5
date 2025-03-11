@@ -360,7 +360,7 @@ class Journal:
 
         def add(index):
             # Jump over not interesting things
-            if index < len(self.lines) and self.lines[index][0] in 'GTBF':
+            if index < len(self.lines) and self.lines[index][0] in 'GTBFLPH':
                 for i in self.children[index]:
                     add(i)
                 return
@@ -531,7 +531,7 @@ class Journal:
         if canvas.parentNode.offsetWidth == 0 or canvas.parentNode.offsetHeight == 0:
             return
         tree = self.tree()
-        zoom = max(1, min(int(canvas.parentNode.offsetWidth / tree[1]),
+        zoom = max(2, min(int(canvas.parentNode.offsetWidth / tree[1]),
                           int(canvas.parentNode.offsetHeight / tree[2] / 12),
                           self.questions[self.question].zoom))
         self.questions[self.question].zoom = zoom
@@ -577,7 +577,7 @@ class Journal:
                 ctx.fillStyle = '#FA0'
             else:
                 ctx.fillStyle = '#F00'
-            ctx.fillRect(x+center - 0.5, y - size + 0.5, 4*zoom, middle)
+            ctx.fillRect(x+center - 0.5*zoom, y - size + 0.5, 4*zoom, middle)
             return 4*zoom
         def draw_O(_action, x, y):
             "Connection"
@@ -981,14 +981,11 @@ def journal_regtest():
   ],
  ]],
 [["Q0", "Ia", "Ib", "Ic", "P0", "G4", "P0", "G3", "If", "P0", "G9", "P0", "G2", "Ii", "Ij", "P0", "G15", "P0", "G14", "Im", "P0"], [
-  [[0, 5, 7, [1, 4, 7, [2, 3, 4, [3, 2, 2, [4, 1, 1], [6, 1, 1]], [8, 2, 2, [9, 1, 1], [11, 1, 1]]], [13, 3, 3, [14, 2, 2, [15, 1, 1], [17, 1, 1]], [19, 2, 1, [20, 1, 1, [21, 0, 1]]]]]],
-   "QIIIP\n" +
-   " ||└P\n" +
-   " |└IP\n" +
-   " | └P\n" +
-   " └IIP\n" +
-   "  |└P\n" +
-   "  └IP*\n"
+  [[0, 4, 4, [1, 3, 4, [2, 2, 2, [3, 1, 1], [8, 1, 1]], [13, 2, 2, [14, 1, 1], [19, 1, 1, [21, 0, 1]]]]],
+   "QIII\n" +
+   " |└I\n" +
+   " └II\n" +
+   "  └I*\n"
   ],
  ]],
 [["Q0", "Ia", "Ib", "Ic", "Id", "G2", "Ie", "G4", "If"], [
