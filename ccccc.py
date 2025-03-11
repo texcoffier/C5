@@ -1507,7 +1507,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return
         if self.add_comments and   event.key not in (
                 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'F9'
-                ) and not (event.ctrlKey and event.key in  ('r', 'y', 'z', 'a', 'c')):
+                ) and not (event.ctrlKey and event.key in  ('r', 'y', 'z', 'a', 'c', 'f')):
             stop_event(event)
             return
 
