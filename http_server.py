@@ -2187,6 +2187,7 @@ async def live_link(request:Request) -> StreamResponse:
             await socket.send_str(
                 port + ' J' + '\n'.join(journa.content) + '\n')
             if allow_edit:
+                await journa.write(f'T{int(time.time())}')
                 await journa.write(f'O{session.login} {session.client_ip} {port}')
             # log(f'New journalLink {asked_login}/{login} {for_editor} msg_id:{journa.msg_id}')
     JournalLink.closed_socket(socket)
