@@ -977,6 +977,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 min(column1, column2),
                 1 + self.line_numbers.childNodes[line2-1].offsetTop / self.line_height]
             left = (bubble_elm.relative_to[0] + bubble.column) * self.char_width
+            left = min(left % self.editor.offsetWidth, self.editor.offsetWidth - 100)
             top = (bubble_elm.relative_to[1] + bubble.line) * self.line_height
             width = bubble.width * self.char_width
             bubble_elm.style.left = left + 'px'
