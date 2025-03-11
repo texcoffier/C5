@@ -5,7 +5,7 @@ BODY {
     --line_height: 1.18vw;
     --line_number_width: 40px;
     --header_height: 2.4em;
-    --bubble_handle_size: 1.2vh;
+    --bubble_handle_size: 0.8vh;
     overflow: hidden;
 }
 
@@ -216,30 +216,54 @@ DIV.executor > DIV:first-child
 
 .bubble_content {
     position: absolute;
-    background: #FF8;
+    background: #000;
     opacity: 0.9;
     border: 1px solid #880;
-    border-top-width: var(--bubble_handle_size);
-    border-radius: 0.8em;
-    border-bottom-right-radius: 0px;
+    border-top-left-radius: 0.8em;
+    border-top-right-radius: 0.8em;
     font-family: sans-serif;
-    resize: both;
     pointer-events: all;
-    overflow: auto;
     white-space: pre-wrap;
-    font-size: 0.8vw;
+    font-size: 1vw;
     box-sizing: border-box;
 }
 
-.bubble_close {
-    pointer-events: all;
-    position: absolute;
-    color: #FFF;
-    font-weight: bold;
-    font-size: 1vw;
-    margin-top: -0.3em;
+
+.bubble_content DIV {
+    border-top-width: var(--bubble_handle_size);
     cursor: pointer;
-    text-align: right;
+    height: var(--bubble_handle_size);
+    font-size: 0.4vw;
+    white-space: nowrap;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+.bubble_content DIV SPAN {
+    font-size: 0.8vw;
+    margin-top: -0.4em;
+    font-weight: bold;
+    float: right;
+    height: var(--bubble_handle_size);
+}
+
+.bubble_content:hover DIV {
+    color: #CCC;
+}
+.bubble_content:hover DIV SPAN {
+    color: #FFF;
+}
+
+.bubble_content TEXTAREA {
+    font-size: 0.8vw;
+    resize: both;
+    border: 0px;
+    left: 1px;
+    right: 1px;
+    bottom: 0px;
+    position: absolute;
+    top: var(--bubble_handle_size);
+    background: #FF8;
 }
 
 .bubble_target[hovered="1"], .bubble_content[hovered="1"] {

@@ -125,22 +125,11 @@ def walk_regtests():
 
 walk_regtests()
 
-def bubble_resize_do(event):
-    ccccc.bubble_save_change()
-    SHARED_WORKER.bubble_size(event.target.bubble_index,
-                              (event.target.offsetWidth / ccccc.char_width).toFixed(2),
-                              (event.target.offsetHeight / ccccc.line_height).toFixed(2))
-    event.target.onmouseup = ''
-    ccccc.do_coloring = 'bubble_resize'
-
-def bubble_resize(entries):
-    """Send bubble size change"""
-    if not ccccc.resize_observer_active:
-        return
-    for entry in entries:
-        if entry.target.nextSibling and entry.target.nextSibling.className == 'bubble_close':
-            entry.target.nextSibling.remove()
-        entry.target.onmouseup = bubble_resize_do
+def get_bubble(event):
+    bubble = event.target
+    while bubble.className != 'bubble_content':
+        bubble = bubble.parentNode
+    return bubble
 
 def stop_event(event):
     """Stop the event"""
@@ -186,7 +175,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     worker_url = None
     hover_bubble = None
     moving_bubble = None
-    resize_observer_active = False
     add_comments = GRADING
      # These options are synchronized between GUI and compiler/session
     options = {}
@@ -253,7 +241,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # Will be updated after
             self.options['positions']['grading'] = [0, 1, 0, 75, '#FFF8']
 
-        self.resize_observer = eval('new ResizeObserver(bubble_resize)')
         print("GUI: wait worker")
         if options['state'] == 'Ready':
             self.add_comments = 0
@@ -914,15 +901,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.comments.appendChild(marker)
 
         def bubble_move(event):
+            if event.target.tagName == 'SPAN':
+                event.target.disable_delete = True
+                return
             self.moving_bubble.style.left = self.get_layer_x(event.clientX) - self.moving_bubble.dx + 'px'
             self.moving_bubble.style.top = self.get_layer_y(event.clientY) - 8 + 'px'
-            if self.moving_bubble.nextSibling and self.moving_bubble.nextSibling.className == 'bubble_close':
-                self.moving_bubble.nextSibling.remove()
             stop_event(event)
         def bubble_move_stop(event):
             event.target.onmouseup = ''
             self.layered.onmousemove = ''
-            x, y = event.target.relative_to
+            if event.target.tagName == 'SPAN':
+                bubble_delete(event)
+                stop_event(event)
+                return
+            x, y = self.moving_bubble.relative_to
             self.record_pending_goto()
             SHARED_WORKER.bubble_position(
                 self.moving_bubble.bubble_index,
@@ -934,34 +926,52 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if event.target.disable_next_change:
                 event.target.disable_next_change = False # See 'goto_line'
             else:
-                bubble_index = event.target.bubble_index
+                bubble_index = get_bubble(event).bubble_index
                 if event.target.value != JOURNAL.bubbles[bubble_index].comment:
                     self.record_pending_goto()
                     SHARED_WORKER.bubble_comment(bubble_index, event.target.value)
 
         def bubble_move_start(event):
-            self.resize_observer_active = True
-            if self.get_layer_y(event.clientY) - event.target.offsetTop < 16:
-                self.bubble_save_change()
-                self.layered.onmousemove = bubble_move
-                event.target.onmouseup = bubble_move_stop
-                event.target.dx = self.get_layer_x(event.clientX) - event.target.offsetLeft
-                self.moving_bubble = event.target
-                stop_event(event)
+            self.bubble_save_change()
+            self.layered.onmousemove = bubble_move
+            event.target.onmouseup = bubble_move_stop
+            self.moving_bubble = get_bubble(event)
+            self.moving_bubble.dx = self.get_layer_x(event.clientX) - self.moving_bubble.offsetLeft
+            stop_event(event)
 
         def bubble_delete(event):
-            print('Delete bubble ', event.target.previousSibling.bubble_index)
-            SHARED_WORKER.bubble_delete(event.target.previousSibling.bubble_index)
+            if event.target.disable_delete:
+                event.target.disable_delete = False
+                return
+            SHARED_WORKER.bubble_delete(get_bubble(event).bubble_index)
             self.moving_bubble = None # Not necessary?
             self.record_pending_goto()
             self.do_coloring = 'bubble_delete'
 
-        self.resize_observer_active = False
+        def textarea_size(event):
+            return [
+                (event.target.offsetWidth / self.char_width).toFixed(2),
+                (event.target.offsetHeight / self.line_height).toFixed(2)
+                ]
+
+        def textarea_mouse_up(event):
+            new_size = textarea_size(event)
+            if new_size[0] == event.target.old_size[0] and new_size[1] == event.target.old_size[1] :
+                return
+            self.bubble_save_change()
+            SHARED_WORKER.bubble_size(get_bubble(event).bubble_index, new_size[0], new_size[1])
+            self.do_coloring = 'bubble_resize'
+
+        def textarea_mouse_down(event):
+            event.target.old_size = textarea_size(event)
+
         self.comments.innerHTML = ''
         for j, bubble in enumerate(JOURNAL.bubbles):
             if not bubble.login:
                 continue # Deleted bubble
-            bubble_elm = document.createElement('TEXTAREA')
+            bubble_elm = document.createElement('DIV')
+            bubble_elm.className = 'bubble_content'
+            bubble_elm.innerHTML = '<DIV>Drag me<SPAN>×</SPAN></DIV><TEXTAREA placeholder="Indiquez votre commentaire ici."></TEXTAREA>'
             line1, column1 = self.get_line_column(bubble.pos_start)
             line2, column2 = self.get_line_column(bubble.pos_end)
             if line1 == line2:
@@ -972,7 +982,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     add_marker(0, line, -1)
                 add_marker(0, line2, column2)
 
-            bubble_elm.className = 'bubble_content'
             bubble_elm.relative_to = [
                 min(column1, column2),
                 1 + self.line_numbers.childNodes[line2-1].offsetTop / self.line_height]
@@ -986,27 +995,22 @@ class CCCCC: # pylint: disable=too-many-public-methods
             bubble_elm.style.height = bubble.height * self.line_height + 'px'
             bubble_elm.bubble_index = j
             bubble_elm.bubble = self.comments.lastChild
-            bubble_elm.onmousedown = bubble_move_start
             bubble_elm.onmouseenter = enter_bubble
-            bubble_elm.onchange = comment_change
-            bubble_elm.placeholder = "Indiquez votre commentaire ici."
+            # Title bar
+            bubble_elm.firstChild.onmousedown = bubble_move_start
+            # TEXTAREA configure
+            textarea = bubble_elm.lastChild
+            textarea.onchange = comment_change
             if bubble.login != SESSION_LOGIN:
-                bubble_elm.setAttribute('readonly', 1)
+                textarea.setAttribute('readonly', 1)
             if bubble.comment:
-                bubble_elm.innerHTML = html(bubble.comment)
-            self.comments.appendChild(bubble_elm)
-            self.resize_observer.observe(bubble_elm)
+                textarea.innerHTML = html(bubble.comment)
+            textarea.onmousedown = textarea_mouse_down
+            textarea.onmouseup = textarea_mouse_up
 
-            bubble_close = document.createElement('DIV')
-            bubble_close.className = 'bubble_close'
-            bubble_close.style.left = left + width - 20 + 'px'
-            bubble_close.style.right = left + width + 'px'
-            bubble_close.style.top = top + 'px'
-            bubble_close.innerHTML = '×'
-            bubble_close.onclick = bubble_delete
+            self.comments.appendChild(bubble_elm)
             if not bubble.comment and JOURNAL.lines[JOURNAL.lines.length-1].startswith('b+'):
-                bubble_elm.focus()
-            self.comments.appendChild(bubble_close)
+                textarea.focus()
 
         for i in range(i+1, len(self.line_numbers.childNodes)):
             self.line_numbers.childNodes[i].style.top = '-10em'
