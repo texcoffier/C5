@@ -531,7 +531,7 @@ class Journal:
         if canvas.parentNode.offsetWidth == 0 or canvas.parentNode.offsetHeight == 0:
             return
         tree = self.tree()
-        zoom = max(3, min(int(canvas.parentNode.offsetWidth / tree[1]),
+        zoom = max(1, min(int(canvas.parentNode.offsetWidth / tree[1]),
                           int(canvas.parentNode.offsetHeight / tree[2] / 12),
                           self.questions[self.question].zoom))
         self.questions[self.question].zoom = zoom
@@ -572,16 +572,13 @@ class Journal:
             "Compilation"
             value = int(action[1:])
             if value == 0:
-                ctx.strokeStyle = '#0F0'
+                ctx.fillStyle = '#0F0'
             elif value < 100:
-                ctx.strokeStyle = '#FA0'
+                ctx.fillStyle = '#FA0'
             else:
-                ctx.strokeStyle = '#F00'
-            ctx.beginPath()
-            ctx.moveTo(x+center, y - middle + 0.5)
-            ctx.lineTo(x+center, y - size + 0.5)
-            ctx.stroke()
-            return zoom
+                ctx.fillStyle = '#F00'
+            ctx.fillRect(x+center - 0.5, y - size + 0.5, 4*zoom, middle)
+            return 4*zoom
         def draw_O(_action, x, y):
             "Connection"
             ctx.strokeStyle = '#88F'
