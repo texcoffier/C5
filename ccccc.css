@@ -1,10 +1,10 @@
 BODY {
     font-family: sans-serif;
     font-size: 1vw;
-    --pad: 0.5em;
+    --pad: 0.5vw;
     --line_height: 1.18vw;
-    --line_number_width: 40px;
-    --header_height: 2.4em;
+    --line_number_width: 4vw;
+    --header_height: 2.4vw;
     --bubble_handle_size: 0.8vh;
     overflow: hidden;
 }
@@ -15,20 +15,23 @@ BODY::backdrop {
 
 DIALOG {
     border-width: 1vw;
-    border-radius: 1em;
+    border-radius: 1vw;
 }
+
 DIALOG BUTTON {
     display: block;
-    margin-top: 4em ;
+    margin-top: 4vw;
     float: right;
     font-size: 130%;
 }
+
 DIALOG BUTTON#popup_cancel {
     float: left;
 }
+
 DIALOG INPUT {
     font-size: 100%;
-    margin: 1em ;
+    margin: 1vw;
 }
 
 DIV.question {
@@ -51,14 +54,17 @@ DIV.overlay {
 DIV.editor_title H2 {
     margin-bottom: 0px;
 }
+
 DIV.editor_title SELECT.save_history {
     font-size: 70%;
-    max-width: 16em;
+    max-width: 16vw;
 }
+
 BODY.versions DIV.editor_title H2 {
     padding-top: 0px;
     padding-left: 0px;
 }
+
 BODY.versions DIV.editor_title .canvas {
     display: block;
 }
@@ -70,8 +76,8 @@ BODY.versions DIV.editor_title .canvas {
     background: #000;
     color: #FFF;
     z-index: 100;
-    padding: 0.2em;
-    max-width: 20em;
+    padding: 0.2vw;
+    max-width: 20vw;
 }
 
 DIV.editor_title .canvas {
@@ -93,24 +99,25 @@ DIV.grading {
 }
 
 #grading_select {
-    width: 11.5em;
+    width: 11.5vw;
 }
 
 #grading_feedback {
-    width: 15em;
+    width: 15vw;
     font-size: 85%;
-    line-height: 1em;
+    line-height: 1vw;
     float: left;
 }
 
 #grading_sum SMALL {
     font-size: 70%;
-    line-height: 1em;
+    line-height: 1vw;
 }
+
 #grading_sum {
-    margin-top: -0.2em;
+    margin-top: -0.2vw;
     font-size: 90%;
-    width: 18.5em;
+    width: 18.5vw;
 }
 
 DIV.editor {
@@ -118,12 +125,11 @@ DIV.editor {
     pointer-events: initial;
 }
 
-DIV.grading > DIV:first-child,
-DIV.question > DIV:first-child,
-DIV.tester > DIV:first-child,
-DIV.compiler > DIV:first-child,
-DIV.executor > DIV:first-child
-{
+DIV.grading>DIV:first-child,
+DIV.question>DIV:first-child,
+DIV.tester>DIV:first-child,
+DIV.compiler>DIV:first-child,
+DIV.executor>DIV:first-child {
     position: sticky;
     top: 0px;
     z-index: 2;
@@ -157,6 +163,7 @@ DIV.executor > DIV:first-child
     background: #FF0;
     opacity: 0.5;
 }
+
 .cursor_after {
     background: #0FF;
     opacity: 0.5;
@@ -173,10 +180,14 @@ DIV.executor > DIV:first-child
 }
 
 .char {
-    border: 2px solid #000
+    border: 0.2vw solid #000
 }
 
-.char.cursor, .char.cursor_after, .char.cursorbad, .char.eval, .char.cursorword {
+.char.cursor,
+.char.cursor_after,
+.char.cursorbad,
+.char.eval,
+.char.cursorword {
     border: 0px solid #000
 }
 
@@ -189,15 +200,15 @@ DIV.executor > DIV:first-child
     opacity: 0.5;
 }
 
-.executor > DIV {
+.executor>DIV {
     word-break: break-all;
 }
 
-.executor > DIV > VAR {
+.executor>DIV>VAR {
     font-size: 80%;
     background: #FFF;
-    margin-left: 1em;
-    border: 1px solid #000;
+    margin-left: 1vw;
+    border: 0.1vw solid #000;
     white-space: nowrap;
 }
 
@@ -211,16 +222,15 @@ DIV.executor > DIV:first-child
     position: absolute;
     background: #FF0;
     opacity: 0.5;
-    border: 1px solid #0000;
+    border: 0.1vw solid #0000;
 }
 
 .bubble_content {
     position: absolute;
-    background: #000;
+    background: #888;
     opacity: 0.9;
-    border: 1px solid #880;
-    border-top-left-radius: 0.8em;
-    border-top-right-radius: 0.8em;
+    border-top-left-radius: 0.5vw;
+    border-top-right-radius: 0.5vw;
     font-family: sans-serif;
     pointer-events: all;
     white-space: pre-wrap;
@@ -228,28 +238,34 @@ DIV.executor > DIV:first-child
     box-sizing: border-box;
 }
 
+.bubble_content:hover {
+    background: #000;
+    opacity: 1;
+}
 
 .bubble_content DIV {
+    color: #888;
     border-top-width: var(--bubble_handle_size);
     cursor: pointer;
     height: var(--bubble_handle_size);
     font-size: 0.4vw;
     white-space: nowrap;
-    padding-left: 1em;
-    padding-right: 1em;
+    padding-left: 1vw;
+    padding-right: 0.5vw;
 }
 
 .bubble_content DIV SPAN {
     font-size: 0.8vw;
-    margin-top: -0.4em;
+    margin-top: -0.25vw;
     font-weight: bold;
     float: right;
     height: var(--bubble_handle_size);
 }
 
 .bubble_content:hover DIV {
-    color: #CCC;
+    color: #FFF;
 }
+
 .bubble_content:hover DIV SPAN {
     color: #FFF;
 }
@@ -258,15 +274,16 @@ DIV.executor > DIV:first-child
     font-size: 0.8vw;
     resize: both;
     border: 0px;
-    left: 1px;
-    right: 1px;
+    left: 0.1vw;
+    right: 0.1vw;
     bottom: 0px;
     position: absolute;
     top: var(--bubble_handle_size);
     background: #FF8;
 }
 
-.bubble_target[hovered="1"], .bubble_content[hovered="1"] {
+.bubble_target[hovered="1"],
+.bubble_content[hovered="1"] {
     border-color: #000;
 }
 
@@ -280,10 +297,12 @@ DIV.executor > DIV:first-child
     padding-right: 0px;
     cursor: pointer;
 }
+
 .line_numbers DIV {
     position: absolute;
     width: 100%;
 }
+
 .comments {
     z-index: 1000;
     overflow: hidden;
@@ -313,24 +332,31 @@ DIV.layered {
     z-index: 10;
 }
 
-DIV.overlay, DIV.editor, DIV.line_numbers, DIV.comments {
+DIV.overlay,
+DIV.editor,
+DIV.line_numbers,
+DIV.comments {
     position: absolute;
     top: 0px;
     overflow: hidden;
 }
-DIV.layered > DIV {
-    left: 0px ;
+
+DIV.layered>DIV {
+    left: 0px;
 }
-DIV.layered[display_line_numbers=yes] > DIV.overlay,
-DIV.layered[display_line_numbers=yes] > DIV.editor,
-DIV.layered[display_line_numbers=yes] > DIV.comments {
+
+DIV.layered[display_line_numbers=yes]>DIV.overlay,
+DIV.layered[display_line_numbers=yes]>DIV.editor,
+DIV.layered[display_line_numbers=yes]>DIV.comments {
     left: var(--line_number_width);
 }
+
 DIV.line_numbers {
     display: none;
     left: 0px;
-    width: calc(var(--line_number_width) - 10px);
+    width: calc(var(--line_number_width) - 0.5vw);
 }
+
 DIV.layered[display_line_numbers=yes] DIV.line_numbers {
     display: block;
 }
@@ -338,19 +364,30 @@ DIV.layered[display_line_numbers=yes] DIV.line_numbers {
 DIV.overlay {
     background: #0000;
 }
+
 .executor INPUT {
-    width: calc(100% - 1.4em);
+    width: calc(100% - 1.4vw);
     font-size: 100%;
 }
+
 .executor BUTTON {
     position: absolute;
     right: 0px;
     font-size: 100%;
 }
 
-.checked:before, .unchecked:before { font-size: 140% }
-.checked:before { content: '☑' }
-.unchecked:before { content: '☐' }
+.checked:before,
+.unchecked:before {
+    font-size: 140%
+}
+
+.checked:before {
+    content: '☑'
+}
+
+.unchecked:before {
+    content: '☐'
+}
 
 ERROR {
     color: #800;
@@ -361,28 +398,29 @@ TT {
     font-family: monospace, monospace;
 }
 
-.question PRE, .tester PRE {
-    border: 1px solid #880;
+.question PRE,
+.tester PRE {
+    border: 0.1vw solid #880;
     background: #FFD;
     margin: var(--pad);
-    padding: 0.5em;
+    padding: 0.5vw;
 }
 
 H2 {
     text-align: left;
     font-size: 120%;
-    margin-top: 0em;
-    margin-bottom: 0.3em;
-    padding-left: 0.5em;
-    padding-top: 0.3em;
-    padding-bottom: 0.3em;
+    margin-top: 0vw;
+    margin-bottom: 0.3vw;
+    padding-left: 0.5vw;
+    padding-top: 0.3vw;
+    padding-bottom: 0.3vw;
     background: linear-gradient(#0002, #FFFF, #0002);
-    border-radius: 1em;
+    border-radius: 1vw;
 }
 
 .test_ok,
 .test_bad {
-    margin-left: 2em;
+    margin-left: 2vw;
 }
 
 .test_ok {
@@ -417,18 +455,21 @@ H2 {
 }
 
 .questions>DIV.good {
-    background:#0F0;
-    border-top-right-radius: 0.5em;
-    border-bottom-right-radius: 0.5em;
-    padding-right: 1.8em;
+    background: #0F0;
+    border-top-right-radius: 0.5vw;
+    border-bottom-right-radius: 0.5vw;
+    padding-right: 1.8vw;
 }
 
-.questions>DIV.current.good, .questions>DIV.current.possible {
+.questions>DIV.current.good,
+.questions>DIV.current.possible {
     background: #000;
 }
+
 .questions>DIV.current.good {
     color: #0F0
 }
+
 .questions>DIV.current.possible {
     color: #FF0
 }
@@ -437,13 +478,13 @@ H2 {
     opacity: 0;
     position: fixed;
     background: #EEF;
-    border: 1px solid #00F;
-    margin-left: 1.5em;
-    padding: 0.2em;
+    border: 0.1vw solid #00F;
+    margin-left: 1.5vw;
+    padding: 0.2vw;
     transition: opacity 0.5s, visibility 0.5s;
     visibility: hidden;
     padding-top: 0px;
-    margin-top: -1px;
+    margin-top: -0.1vw;
     z-index: 100;
 }
 
@@ -452,63 +493,72 @@ H2 {
     visibility: visible;
 }
 
-.timer, .compiler LABEL {
-    padding-left: 0.5em;
-    padding-right: 0.5em;
-    margin-right: 0.5em;
+.timer,
+.compiler LABEL {
+    padding-left: 0.5vw;
+    padding-right: 0.5vw;
+    margin-right: 0.5vw;
 }
 
 .timer {
     float: right;
 }
 
-.timer, LABEL {
+.timer,
+LABEL {
     display: inline-block;
     font-size: 60%;
     vertical-align: top;
     background: #DDF;
-    border: 1px solid #00F;
+    border: 0.1vw solid #00F;
     font-weight: normal;
-    border-radius: 1em;
-    margin-left: 0.5em;
+    border-radius: 1vw;
+    margin-left: 0.5vw;
 }
 
-LABEL:hover, .save_button:hover {
+LABEL:hover,
+.save_button:hover {
     filter: brightness(0.9);
 }
 
 .stop_button {
     position: absolute;
-    right: 10em;
+    right: 10vw;
     font-family: emoji;
-    display:inline-block;
-    line-height: 1em;
-    cursor:pointer;
-    border: 1px solid #800;
-    font-family:sans-serif;
-    font-weight:bold;
-    font-size:60%;
-    color:#F00;
-    background:#FFF;
-    border-radius:0.5em;
-    padding:0.1em;
-    margin-top:-3px;
+    display: inline-block;
+    line-height: 1vw;
+    cursor: pointer;
+    border: 0.1vw solid #800;
+    font-family: sans-serif;
+    font-weight: bold;
+    font-size: 60%;
+    color: #F00;
+    background: #FFF;
+    border-radius: 0.5vw;
+    padding: 0.1vw;
+    margin-top: -3px;
 }
 
 LABEL SPAN {
     font-size: 80%;
 }
 
-LABEL *, .timer * { vertical-align: middle }
+LABEL *,
+.timer * {
+    vertical-align: middle
+}
 
 .timer {
     display: inline-block;
     background: #DFD;
-    border: 1px solid #0F0;
-    height: 2.5em;
-    margin-top: -0.3em
+    border: 0.1vw solid #0F0;
+    height: 1.8vw;
+    margin-top: -0.3vw
 }
-.timer SPAN { display: inline-block; }
+
+.timer SPAN {
+    display: inline-block;
+}
 
 H2:hover .timer SPAN DIV {
     visibility: visible;
@@ -517,6 +567,7 @@ H2:hover .timer SPAN DIV {
 .timer SPAN DIV {
     visibility: hidden;
 }
+
 .timer SPAN.done DIV {
     visibility: visible;
 }
@@ -525,14 +576,18 @@ H2:hover .timer SPAN DIV {
     background: #F00;
     color: #FFF;
 }
+
 .timer SPAN.minus60 DIV {
     font-size: 300%;
     background: #FFF;
 }
-.timer SPAN.minus120 DIV, .timer SPAN.minus60 DIV {
+
+.timer SPAN.minus120 DIV,
+.timer SPAN.minus60 DIV {
     color: #F00;
     visibility: visible;
 }
+
 .timer SPAN.minus300 DIV {
     visibility: visible;
 }
@@ -546,45 +601,80 @@ H2:hover .timer SPAN DIV {
     background: #F00;
     color: #FFF;
     font-size: 200%;
-    padding: 0.5em;
+    padding: 0.5vw;
     z-index: 10000;
 }
+
 .fullscreen SPAN {
     color: #000;
     background: #DFD;
-    border-radius: 0.5em;
-    border: 1px solid #0F0;
-    padding: 0.2em;
+    border-radius: 0.5vw;
+    border: 0.1vw solid #0F0;
+    padding: 0.2vw;
 }
+
 .fullscreen BUTTON {
     font-size: 100%
 }
 
-.truncate_sn, .truncate_fn {
+.truncate_sn,
+.truncate_fn {
     display: inline-block;
-    max-width: 6em;
-    height: 1em;
+    max-width: 6vw;
+    height: 1vw;
     overflow: hidden;
     vertical-align: top;
 }
-SPAN:hover .truncate_sn, SPAN:hover .truncate_fn {
+
+SPAN:hover .truncate_sn,
+SPAN:hover .truncate_fn {
     height: auto;
 }
 
-LABEL, .index DIV, .save_button, .local_button, .indent_button { cursor: pointer }
+LABEL,
+.index DIV,
+.save_button,
+.local_button,
+.indent_button {
+    cursor: pointer
+}
 
 .editmode {
-    margin-left: 0.5em;
+    margin-left: 0.5vw;
 }
+
 .editmode {
     font-size: 64%
 }
 
-.save_button, .save_history { float: right; margin-right: 0.5em }
-.save_button { transition: background 1s }
-.save_button[state="wait"] { background: #F00; transition: background 0s }
+.save_button,
+.save_history {
+    float: right;
+    margin-right: 0.5vw;
 
-.index > .version {
+}
+
+.save_history {
+    border: 0.1vw outset #888;
+    border-radius: 0.5vw;
+    background: #EEE;
+    width: 8em;
+}
+.save_history:hover {
+    background: #DDD;
+    border: 0.1vw inset #888;
+}
+
+.save_button {
+    transition: background 1s
+}
+
+.save_button[state="wait"] {
+    background: #F00;
+    transition: background 0s
+}
+
+.index>.version {
     background: #0F0;
     font-size: 100%;
 }
@@ -592,37 +682,45 @@ LABEL, .index DIV, .save_button, .local_button, .indent_button { cursor: pointer
 .grading {
     font-size: 80%;
 }
+
 SELECT {
     font-size: 100%;
     padding: 0px;
 }
 
 .grading PRE {
-    position:relative;
-    padding-right: 0.5em;
+    position: relative;
+    padding-right: 0.5vw;
 }
 
 .grading PRE BUTTON {
     font-size: 100%;
-    border: 1px solid #FFF;
+    border: 0.1vw solid #FFF;
+    padding: 0.1vw;
 }
+
 .grading PRE BUTTON.grade_unselected {
     background: #EEE;
 }
+
 .grading PRE BUTTON.grade_selected {
     background: #0F0;
 }
+
 .grading PRE SPAN.grade_undefined {
     background: #FF0;
 }
-BODY.dograding .grading PRE BUTTON:hover, .grading PRE BUTTON.grade_selected:hover {
-    border: 1px solid #040;
+
+BODY.dograding .grading PRE BUTTON:hover,
+.grading PRE BUTTON.grade_selected:hover {
+    border: 0.1vw solid #040;
 }
 
 
 .grading .link:hover {
     text-decoration: underline;
 }
+
 .grading .link {
     cursor: pointer;
     width: 100%;
@@ -630,27 +728,36 @@ BODY.dograding .grading PRE BUTTON:hover, .grading PRE BUTTON.grade_selected:hov
     border-left: 4px solid #00F;
 }
 
-.grading SPAN.competence, .grading SPAN.grade_value, #grading_sum {
+.grading SPAN.competence,
+.grading SPAN.grade_value,
+#grading_sum {
     font-family: sans-serif;
     position: absolute;
-    right: 0.2em; /* Some space for firefox scrollbar */
+    right: 0.2vw;
+    /* Some space for firefox scrollbar */
     color: #00F;
 }
+
 .grading PRE SPAN.competence BUTTON[v="-1"] {
     --color: #DDD;
 }
+
 .grading PRE SPAN.competence BUTTON[v="0"] {
     --color: #EB707F;
 }
+
 .grading PRE SPAN.competence BUTTON[v="1"] {
     --color: #EEE592;
 }
+
 .grading PRE SPAN.competence BUTTON[v="2"] {
     --color: #BAE291;
 }
+
 .grading PRE SPAN.competence BUTTON[v="3"] {
     --color: #84A661;
 }
+
 .grading PRE SPAN.competence BUTTON[v="4"] {
     --color: #3E601B;
 }
@@ -658,14 +765,14 @@ BODY.dograding .grading PRE BUTTON:hover, .grading PRE BUTTON.grade_selected:hov
 .grading PRE SPAN.competence BUTTON {
     background: var(--color);
     color: transparent;
-    width: 1.3em;
-    height: 1.3em;
+    width: 1.3vw;
+    height: 1.3vw;
 }
 
 .grading PRE SPAN.competence BUTTON.grade_selected {
     background: linear-gradient(45deg, transparent 45%, black 45%, black 55%, transparent 55%),
-    linear-gradient(135deg, transparent 45%, black 45%, black 55%, transparent 55%),
-    var(--color);
+        linear-gradient(135deg, transparent 45%, black 45%, black 55%, transparent 55%),
+        var(--color);
 }
 
 .grading #grading_sum {
@@ -679,7 +786,7 @@ BODY.dograding .grading PRE BUTTON:hover, .grading PRE BUTTON.grade_selected:hov
     font-family: sans-serif;
     font-size: 70%;
     z-index: 1000;
-    pointer-events: none;   
+    pointer-events: none;
 }
 
 .active_completion {
