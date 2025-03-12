@@ -531,9 +531,10 @@ class Journal:
         if canvas.parentNode.offsetWidth == 0 or canvas.parentNode.offsetHeight == 0:
             return
         tree = self.tree()
-        zoom = max(2, min(int(canvas.parentNode.offsetWidth / tree[1]),
-                          int(canvas.parentNode.offsetHeight / tree[2] / 12),
-                          self.questions[self.question].zoom))
+        # zoom = max(2, min(int(canvas.parentNode.offsetWidth / tree[1]),
+        #                   int(canvas.parentNode.offsetHeight / tree[2] / 12),
+        #                   self.questions[self.question].zoom))
+        zoom = 2
         self.questions[self.question].zoom = zoom
         font_size = zoom * 12 # Font size
         ascent = -font_size / 4
@@ -599,14 +600,14 @@ class Journal:
             ctx.fillStyle = '#00F'
             ctx.fillText(char, x, y - descent)
             return int(width) + 1
-        def draw_char(char, x, y):
+        def draw_char(char, x, y, font="px emoji"):
             """An icon"""
-            ctx.font = font_size + "px emoji"
+            ctx.font = font_size + font
             ctx.fillStyle = '#000'
             ctx.fillText(char, x, y - descent - 1)
             return int(ctx.measureText(char).width)
         def draw_b(_action, x, y):
-            return draw_char('#', x, y)
+            return draw_char('#', x, y, font="px sans")
         def draw_S(_action, x, y):
             return draw_char('📩', x, y)
         def draw_g(_action, x, y):
@@ -716,13 +717,12 @@ class Journal:
                 else:
                     y_start = y
                 y += dy
-
         if feedback[0]:
-            x, y, width, line, lines = feedback[0]
+            pos_x, pos_y, width, line, lines = feedback[0]
             ctx.lineWidth = 1
             ctx.strokeStyle = '#000'
             ctx.beginPath()
-            ctx.rect(x-1, y-size, width+1, size)
+            ctx.rect(pos_x-1, pos_y-size, width+1, size)
             ctx.stroke()
             ccccc.version_feedback.innerHTML = self.explain(lines)
             ccccc.version_feedback.style.display = 'block'
