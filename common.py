@@ -514,8 +514,10 @@ class Journal:
             for i in used_lines:
                 if next_one != i:
                     lines.append(line_text(next_one))
-                    if next_one+1 != i:
+                    if next_one+3 < i:
                         lines.append('...\n')
+                    elif next_one+3 == i:
+                        lines.append(line_text(next_one+1))
                 if not done[i-1]:
                     lines.append(line_text(i-1))
                 lines.append('<b>' + line_text(i) + '</b>')
