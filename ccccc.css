@@ -3,9 +3,10 @@ BODY {
     font-size: 1vw;
     --pad: 0.5vw;
     --line_height: 1.18vw;
-    --line_number_width: 4vw;
+    --line_number_width: 1.5vw;
     --header_height: 2.4vw;
-    --bubble_handle_size: 0.8vh;
+    --bubble_handle_size: 0.5vw;
+    --target_feedback_width: 0.15vw;
     overflow: hidden;
 }
 
@@ -222,7 +223,7 @@ DIV.executor>DIV:first-child {
     position: absolute;
     background: #FF0;
     opacity: 0.5;
-    border: 0.1vw solid #0000;
+    border: var(--target_feedback_width) solid #0000;
 }
 
 .bubble_content {
@@ -345,6 +346,10 @@ DIV.layered>DIV {
     left: 0px;
 }
 
+.editor, .overlay {
+    padding-left: var(--target_feedback_width);
+}
+
 DIV.layered[display_line_numbers=yes]>DIV.overlay,
 DIV.layered[display_line_numbers=yes]>DIV.editor,
 DIV.layered[display_line_numbers=yes]>DIV.comments {
@@ -354,7 +359,7 @@ DIV.layered[display_line_numbers=yes]>DIV.comments {
 DIV.line_numbers {
     display: none;
     left: 0px;
-    width: calc(var(--line_number_width) - 0.5vw);
+    width: calc(var(--line_number_width) - 0.2vw);
 }
 
 DIV.layered[display_line_numbers=yes] DIV.line_numbers {

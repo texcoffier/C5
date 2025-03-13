@@ -893,10 +893,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             rect = self.get_rect(self.meter)
             marker = document.createElement('DIV')
             marker.className = 'bubble_target'
-            marker.style.left = rect['left'] + 'px'
+            marker.style.left = 'calc(' + rect['left'] + 'px - var(--target_feedback_width))'
             marker.style.top = rect['top'] + 'px'
             marker.style.width = rect['width'] + 'px'
-            marker.style.height = rect['height'] + 'px'
+            marker.style.height = 'calc(' + rect['height'] + 'px - var(--target_feedback_width))'
             # marker.onmouseenter = enter_bubble # Does not works: event not received
             marker.bubble = bubble_elm
             self.comments.appendChild(marker)
@@ -957,6 +957,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 ]
 
         def textarea_mouse_up(event):
+            if not event.target.old_size:
+                return
             new_size = textarea_size(event)
             if new_size[0] == event.target.old_size[0] and new_size[1] == event.target.old_size[1] :
                 return
@@ -986,7 +988,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
             bubble_elm.relative_to = [
                 min(column1, column2) * self.char_width,
-                self.line_numbers.childNodes[line2-1].offsetTop
+                self.line_numbers.childNodes[line2].offsetTop
             ]
             left = (bubble_elm.relative_to[0] + bubble.column * self.char_width) % self.editor.offsetWidth
             left = min(left, self.editor.offsetWidth - 100)

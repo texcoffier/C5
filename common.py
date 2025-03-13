@@ -130,6 +130,9 @@ class Bubble:
         self.pos_start, self.pos_end, self.line, self.column, self.width, self.height = [float(i) for i in items[1:7]]
         self.comment = unprotect_crlf(' '.join(items[7:]))
     def str(self):
+        if PYTHON:
+            return ''
+            # return self.login+' '+str(self.pos_start)+' '+str(self.pos_end)+' '+str(self.line)+' '+str(self.column)+' '+str(self.width)+' '+str(self.height)+' '+self.comment
         return self.login+' '+self.pos_start+' '+self.pos_end+' '+self.line+' '+self.column+' '+self.width+' '+self.height+' '+self.comment
 class Journal:
     position = content = scroll_line = height = remote_update = question = None
@@ -672,15 +675,15 @@ class Journal:
                 nb_d = 1
             else:
                 nb_d = 0
-            if char in ('I', 'D', 'P', 'L', 'H'):
+            if char in ('I', 'D', 'P', 'L', 'H', 'b'):
                 while len(tree) == 4: # Merge only if there is no branch
                     next_line = tree[3][0]
                     if not self.lines[next_line]:
                         break
-                    if self.timestamps[next_line] != timestamp:
+                    if self.timestamps[next_line] != timestamp and char != 'b':
                         break # Not same (DELTA_T) second
                     next_char = self.lines[next_line][0]
-                    if next_char not in ('I', 'D', 'P', 'L', 'H'):
+                    if next_char not in ('I', 'D', 'P', 'L', 'H', 'b'):
                         break # Only merge D and I and P
                     char = next_char
                     if char == 'I':
