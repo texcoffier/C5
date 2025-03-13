@@ -185,7 +185,7 @@ def init_interface(nr_doing_grading):
     top = ['''<title>SESSIONS</title>
 <input id="filter" onclick="show_filter_menu()"> ← filter only what matters to you.
 <datalist id="filter_menu"></datalist>''']
-    if IS_AUTHOR:
+    if window.IS_AUTHOR:
         top.append('<button onclick="edit()">Edit all sessions</button>')
     top.append('''
 <div style="float: right">
