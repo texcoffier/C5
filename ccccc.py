@@ -2120,69 +2120,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Set the editor content (question change or reset)"""
         self.overlay_hide()
         self.editor.innerText = message
-
-        cursorpos = JOURNAL.position
-        left = JOURNAL.content[:JOURNAL.position]
-        if message[:cursorpos] != left:
-            def nr_letters(txt):
-                return len(txt.replace(RegExp('[ \t\n]', 'g'), ''))
-            nr_letters_old = nr_letters(left)
-            nr_letters_new = nr_letters(message[:cursorpos])
-            i = cursorpos
-            size = len(message)
-            while True: # Search position not using white space
-                if nr_letters_old > nr_letters_new:
-                    if message[i] not in ' \t\n':
-                        nr_letters_new += 1
-                    i += 1
-                elif nr_letters_old < nr_letters_new:
-                    i -= 1
-                    if i < size and message[i] not in ' \t\n':
-                        nr_letters_new -= 1
-                else:
-                    break
-            while i > 0 and message[i-1] in ' \t\n':
-                i -= 1
-            # Search the good line
-            nr_newline_before = 0
-            for char in left[::-1]:
-                if char == '\n':
-                    nr_newline_before += 1
-                elif char not in ' \t':
-                    break
-            while nr_newline_before and i < size and message[i] in ' \t\n':
-                if message[i] == '\n':
-                    nr_newline_before -= 1
-                i += 1
-            # Search the good space
-            nr_space_before = 0
-            for char in left[::-1]:
-                if char in ' \t':
-                    nr_space_before += 1
-                else:
-                    break
-            while nr_space_before and i < size and message[i] in ' \t':
-                nr_space_before -= 1
-                i += 1
-            cursorpos = i
+        self.update_source()
         if message != '':
-            top = self.get_element_box(self.editor.childNodes[2*JOURNAL.scroll_line])['top']
+            top = self.get_element_box(self.editor_lines[JOURNAL.scroll_line])['top']
         else:
             top = 0
         self.old_scroll_top = self.layered.scrollTop = top
-
-        for line in self.editor.childNodes:
-            if line.tagName:
-                cursorpos -= 1
-                if cursorpos < 0:
-                    document.getSelection().collapse(line, 0)
-                    break
-                continue
-            cursorpos -= len(line.textContent)
-            if cursorpos < 0:
-                document.getSelection().collapse(line, cursorpos + len(line.textContent))
-                break
-        # document.getSelection().collapse(self.editor, self.editor.childNodes.length)
+        line, column = self.get_line_column(JOURNAL.position)
+        document.getSelection().collapse(self.editor_lines[line-1], column)
         self.highlight_errors = {}
         self.do_coloring = "set_editor_content"
         self.source = message
