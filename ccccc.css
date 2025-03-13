@@ -103,10 +103,14 @@ DIV.grading {
     width: 11.5vw;
 }
 
+BUTTON.grade_unselected[onclick] {
+    font-size: 0.7vw;
+}
+
 #grading_feedback {
     width: 15vw;
     font-size: 85%;
-    line-height: 1vw;
+    line-height: 0.6vw;
     float: left;
 }
 
@@ -659,15 +663,20 @@ LABEL,
 
 }
 
-.save_history {
+.save_history, BUTTON.grade_unselected[onclick] {
     border: 0.1vw outset #888;
     border-radius: 0.5vw;
     background: #EEE;
-    width: 8em;
+    padding: 0.1vw;
+    margin: 0.1vw;
 }
-.save_history:hover {
+.save_history:hover, BUTTON.grade_unselected[onclick]:hover {
     background: #DDD;
     border: 0.1vw inset #888;
+}
+
+.save_history {
+    width: 8em;
 }
 
 .save_button {

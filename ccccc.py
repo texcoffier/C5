@@ -1813,8 +1813,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                           margin-left:0.3em; margin-right:0.1em; display:inline-block; 
                           text-align:right; line-height:1em;vertical-align:middle">
                 Note<br>temporaire</x>
-                <x style="border:0.2em solid #000; background:#FFF;
-                          padding: 0.2em;font-size:''' + (size+20) + '''%">'''
+                <x style="border:0.02vw solid #000; background:#FFF;
+                          padding: 0.02vw;font-size:''' + (size+20) + '''%">'''
                 + (self.grading_sum or GRADE[0]) + '/' + self.options.notation_max + '</x>')
         content.append('</h2></div>')
         if GRADING or NOTATION:
