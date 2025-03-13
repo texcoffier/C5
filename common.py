@@ -194,10 +194,12 @@ class Journal:
         self.position = int(value)
     def action_L(self, scroll_line, _start):
         """The line number at the screen top"""
-        self.scroll_line = int(scroll_line)
+        if scroll_line.isdigit():
+            self.scroll_line = int(scroll_line)
     def action_H(self, height, _start):
         """Number of displayed source line"""
-        self.height = int(height)
+        if height.isdigit():
+            self.height = int(height)
     def action_t(self, tag, start):
         """Tag"""
         self.questions[self.question].tags.append((tag, start + 1)) # overwrite Save position

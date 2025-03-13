@@ -1168,7 +1168,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 for student in room.students:
                     create_realtime_spy(student)
             elif item.startswith('Récupérer'):
-                window.location.pathname = ('/adm/answers/' + COURSE + '/'
+                window.open(BASE + '/adm/answers/' + COURSE + '/'
                     + ','.join(logins) + '/' + COURSE + '__'
                     + self.building + '_' + self.get_room_name(column, line) + '.zip')
             elif item.startswith('Copier'):

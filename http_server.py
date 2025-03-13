@@ -2218,7 +2218,7 @@ def main():
                     web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
                     web.get('/adm/get/{filename:.*}', adm_get),
                     web.get('/adm/get_exclude/{exclude}/{filename:.*}', adm_get),
-                    web.get('/adm/answers/{course}/{students:.*}/{filename:.*}', adm_answers),
+                    web.get('/adm/answers/{course}/{students}/{filename:.*}', adm_answers),
                     web.get('/adm/root', adm_root),
                     web.get('/adm/session/{course}', adm_session), # Edit page
                     web.get('/adm/session2/{course}/{action}/{value}', adm_config),

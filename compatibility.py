@@ -21,12 +21,18 @@ def dict_items():
     """Dict items"""
     THIS = eval('this') # pylint: disable=eval-used
     return [[i, THIS[i]] for i in THIS] # pylint: disable=undefined-variable
+def isdigit():
+    """Not compatible with Python"""
+    THIS = eval('this')
+    return not isNaN(THIS)
 Object.defineProperty(Object.prototype, 'Items',
                       {'enumerable': False, 'value': dict_items})
 Object.defineProperty(String.prototype, 'lower',
                       {'enumerable': False, 'value': String.prototype.toLowerCase})
 Object.defineProperty(String.prototype, 'upper',
                       {'enumerable': False, 'value': String.prototype.toUpperCase})
+Object.defineProperty(String.prototype, 'isdigit',
+                      {'enumerable': False, 'value': isdigit})
 String.prototype.strip = String.prototype.trim
 
 def startswith(txt):

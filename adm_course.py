@@ -156,7 +156,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         if what == 'status':
             text.append('''
 <td rowspan="2">Sources:
-<button onclick="window.location.pathname = '/adm/answers/' + COURSE + '/*/' + COURSE + '.zip'"
+<button onclick="window.open(BASE + '/adm/answers/' + COURSE + '/*/' + COURSE + '.zip')"
 >Sources<br>txt ZIP</button>''')
 
     text.append('</tr>')
