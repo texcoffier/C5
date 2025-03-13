@@ -2165,9 +2165,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 nr_space_before -= 1
                 i += 1
             cursorpos = i
-
         if message != '':
-            top = self.get_element_box(self.editor.childNodes[JOURNAL.scroll_line])['top']
+            top = self.get_element_box(self.editor.childNodes[2*JOURNAL.scroll_line])['top']
         else:
             top = 0
         self.old_scroll_top = self.layered.scrollTop = top

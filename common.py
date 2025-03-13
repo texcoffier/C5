@@ -408,7 +408,7 @@ class Journal:
         """Get the parent position"""
         for i, children in enumerate(self.children):
             if position in children:
-                if self.lines[i][0] in 'GOTFB':
+                if self.lines[i][0] in 'GOTFBLHP':
                     return self.parent_position(i)
                 if self.lines[i][0] == 'Q':
                     return position
