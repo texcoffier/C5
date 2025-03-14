@@ -1137,6 +1137,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def onmousedown(self, event):
         """Mouse down"""
+        if self.options['forbid_question_copy'] and self.question.contains(event.target):
+            stop_event(event)
         self.mouse_pressed = event.button
         self.stop_completion()
 
