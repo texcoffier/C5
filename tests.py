@@ -493,7 +493,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.wait_save()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§¤')})
-        self.move_cursor('.editor', 30, 5)
+        self.move_cursor('.editor', 30, 500)
         for _ in range(6):
             self.check('.editor').send_keys(Keys.BACKSPACE)
         self.click('.save_button')
