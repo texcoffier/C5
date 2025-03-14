@@ -32,7 +32,7 @@ def remove_tickets():
 def remove_log_dirs():
     """Remove log dirs"""
     print('Remove log dirs: ', end='')
-    for dirname in glob.glob('COMPILE_*/*/Anon_*'):
+    for dirname in glob.glob('COMPILE_*/*/LOGS/Anon_*'):
         print('*', end='')
         shutil.rmtree(dirname)
     print()
@@ -40,7 +40,7 @@ def remove_log_dirs():
 def cleanup_session_config():
     """Cleanup session configs"""
     print('Clear session configs: ', end='')
-    for cfname in glob.glob('COMPILE_*/*.cf'):
+    for cfname in glob.glob('COMPILE_*/*/session.cf'):
         with open(cfname, 'r+', encoding='utf-8') as file:
             pos = 0
             line = 'start'
