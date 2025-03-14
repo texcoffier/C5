@@ -376,6 +376,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         scheduler.update_messages = True
         self.the_menu.close()
         self.time_span = [0, 1e10]
+        self.write_location()
     def prepare_draw(self):
         """Compile information to draw quickly the map"""
         self.walls = []
@@ -1421,6 +1422,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.left = self.real_left - left + (self.width - self.real_left) / 2
         self.top = self.real_top - top + (self.height - self.real_top) / 2
         scheduler.draw = "zoom_student"
+        self.write_location()
     def draw_move_timer(self):
         """Circle indicating the time before the student move is allowed"""
         ctx = document.getElementById('canvas').getContext("2d")
@@ -1746,11 +1748,6 @@ def update_page():
     ROOM.draw()
     ROOM.compute_rooms_on_screen()
     ROOM.update_waiting_room()
-    student = window.location.hash
-    if student and len(student) > 1 and STUDENT_DICT[student[1:]]:
-        ROOM.zoom_student(student[1:])
-        window.location.hash = ''
-        ROOM.draw()
     highlight_buttons()
 
 def close_exam(login):
@@ -2081,7 +2078,9 @@ def create_realtime_spy(student):
 try:
     INFO = JSON.parse(decodeURI(location.hash[1:]))
 except SyntaxError:
-    INFO = {'building': OPTIONS.default_building or "Nautibus"}
+    INFO = {}
+if 'building' not in INFO:
+    INFO['building'] = OPTIONS.default_building or "Nautibus"
 
 if COURSE == "=MAPS":
     document.body.innerHTML = ('<title>Hostmap</title><span id="top"></span>'
@@ -2099,6 +2098,9 @@ if COURSE == "=MAPS":
 else:
     create_page(INFO.building)
     ROOM = Room(INFO)
+    update_page()
+    if STUDENT_DICT[INFO['student']]:
+        ROOM.zoom_student(INFO['student'])
     scheduler.update_page = True
     REAL_COURSE = COURSE
 

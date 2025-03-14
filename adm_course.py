@@ -123,8 +123,8 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         stats = cache[login]
         text.append('<tr><td>')
         if student.status != 'checkpoint':
-            text.append('<a href="checkpoint/' + COURSE + '?ticket=' + TICKET + '#' + login
-                + '" target="_blank">' + login + '</a>')
+            text.append('<a href="checkpoint/' + COURSE + '?ticket=' + TICKET + '#{&quot;student&quot;:&quot;' + login
+                + '&quot;}" target="_blank">' + login + '</a>')
         else:
             text.append(login)
         text.append('<td><div>')
