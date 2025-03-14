@@ -198,6 +198,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     user_compilation = False
     journal_question = None
     old_delta = None
+    eval_error_recorded = False
 
     def init(self):
         self.options = options = COURSE_CONFIG
@@ -1942,8 +1943,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     #print(value[5:])
                     try:
                         eval(value[5:]) # pylint: disable=eval-used
-                    except: # pylint: disable=bare-except
-                        self.record_error('EVAL ' + value[5:])
+                    except Error as e: # pylint: disable=bare-except
+                        if not self.eval_error_recorded:
+                            self.record_error('EVAL ' + value[5:] + ' § ' + e + '\n'
+                                + e.stack.toString())
+                            self.eval_error_recorded = True
                 elif value.startswith('\002RACKET'):
                     self.racket(value[7:])
                 elif value.startswith('\002WAIT'):
