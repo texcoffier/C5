@@ -2126,8 +2126,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.overlay_hide()
         self.editor.innerText = message
         self.update_source()
-        if message != '':
-            top = self.get_element_box(self.editor_lines[JOURNAL.scroll_line])['top']
+        current_line = self.editor_lines[JOURNAL.scroll_line]
+        if current_line:
+            top = self.get_element_box(current_line)['top']
         else:
             top = 0
         self.old_scroll_top = self.layered.scrollTop = top
