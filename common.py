@@ -135,10 +135,11 @@ class Bubble:
             # return self.login+' '+str(self.pos_start)+' '+str(self.pos_end)+' '+str(self.line)+' '+str(self.column)+' '+str(self.width)+' '+str(self.height)+' '+self.comment
         return self.login+' '+self.pos_start+' '+self.pos_end+' '+self.line+' '+self.column+' '+self.width+' '+self.height+' '+self.comment
 class Journal:
-    position = content = scroll_line = height = remote_update = question = None
-    _tree = _tree_question = last_event = None
-    timestamp = 0
     def __init__(self, journal=''):
+        self.position = self.content = self.scroll_line = self.height = None
+        self.remote_update = self.question = None
+        self._tree = self._tree_question = self.last_event = None
+        self.timestamp = 0
         self.actions = {
             'G': bind(self.action_G, self),
             'T': bind(self.action_T, self),
