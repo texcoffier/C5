@@ -700,7 +700,10 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
 def get_course(txt:str) -> str:
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""
-    compilator, course = txt.split('=')
+    try:
+        compilator, course = txt.split('=')
+    except ValueError:
+        raise ValueError(f'Invalid course name: «{txt}»') # pylint: disable=raise-missing-from
     return f'COMPILE_{compilator}/{course}'
 
 class Config: # pylint: disable=too-many-instance-attributes
