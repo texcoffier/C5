@@ -299,8 +299,7 @@ async def record_grade(request:Request) -> Response:
 
 async def load_student_infos() -> None:
     """Load all student info in order to answer quickly"""
-    CourseConfig.load_all_configs()
-    for config in CourseConfig.configs.values():
+    for config in CourseConfig.load_all_configs():
         for login in config.active_teacher_room:
             await utilities.LDAP.infos(login)
 
@@ -1429,7 +1428,6 @@ async def checkpoint_list(request:Request) -> Response:
         content.append('<tr class="sticky">')
         content.append(f'<th class="header" colspan="{titles.count("th")}">{label}</tr>')
         content.append(titles)
-    CourseConfig.load_all_configs()
     now = time.time()
     courses = [
         course
@@ -1633,7 +1631,6 @@ async def home(request:Request) -> Response:
         if not session.is_student():
             return await checkpoint_list(request)
     # Student
-    CourseConfig.load_all_configs()
 
     now = time.time()
     courses = sorted(CourseConfig.configs.items())

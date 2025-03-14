@@ -74,7 +74,7 @@ class Stat:
 def compile_stats(courses) -> None:
     """Create a resume for each session stats"""
     full = {}
-    for session in courses.values():
+    for session in courses:
         resume_file = f'{session.dir_session}/session.stats'
         if (os.path.exists(resume_file)
             and os.path.getmtime(resume_file) > os.path.getmtime(session.file_cf) - 86400):

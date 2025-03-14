@@ -611,7 +611,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         # Load configs
         for course in sorted(glob.glob('COMPILE_*/*')):
             try:
-                cls.get(course)
+                yield cls.get(course)
             except ValueError as err:
                 print(err)
 
@@ -1380,8 +1380,7 @@ def main() -> None:
         create_start_script()
         return
     if '__cleanup_session_cf__' in sys.argv:
-        CourseConfig.load_all_configs()
-        for course in CourseConfig.configs.values():
+        for course in CourseConfig.load_all_configs():
             try:
                 os.rename(course.file_cf, course.file_cf + '~')
                 course.record_config()
@@ -1396,8 +1395,7 @@ def main() -> None:
         return
     if '__create_stats__' in sys.argv:
         import create_stats
-        CourseConfig.load_all_configs()
-        create_stats.compile_stats(CourseConfig.configs)
+        create_stats.compile_stats(CourseConfig.load_all_configs())
         return
 
     if 'options.html' in sys.argv:
