@@ -975,7 +975,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 continue # Deleted bubble
             bubble_elm = document.createElement('DIV')
             bubble_elm.className = 'bubble_content'
-            bubble_elm.innerHTML = '<DIV>Drag me<SPAN>×</SPAN></DIV><TEXTAREA placeholder="Indiquez votre commentaire ici."></TEXTAREA>'
+            bubble_elm.innerHTML = '''<DIV>Drag me<SPAN>×</SPAN></DIV><TEXTAREA placeholder="Indiquez votre commentaire ici.
+Tirez le bas droite pour agrandir."></TEXTAREA>'''
             line1, column1 = self.get_line_column(bubble.pos_start)
             line2, column2 = self.get_line_column(bubble.pos_end)
             if line1 == line2:
@@ -1141,7 +1142,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             pos_start = pos_end - len(selection.toString())
             if pos_start != pos_end:
                 self.record_pending_goto()
-                SHARED_WORKER.bubble(SESSION_LOGIN, pos_start, pos_end, 0, 0, 20, 2, '')
+                SHARED_WORKER.bubble(SESSION_LOGIN, pos_start, pos_end, 0, 0, 30, 2, '')
     def onmousemove(self, event):
         """Mouse move"""
         if event.target.tagName == 'CANVAS':
