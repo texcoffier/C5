@@ -199,6 +199,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     journal_question = None
     old_delta = None
     eval_error_recorded = False
+    content_old = None
 
     def init(self):
         self.options = options = COURSE_CONFIG
@@ -624,6 +625,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 JOURNAL.old_scroll_line = JOURNAL.scroll_line
                 self.last_scroll = seconds
                 self.old_scroll_top = self.layered.scrollTop
+                if document.body.nextSibling:
+                    element = document.body.nextSibling
+                    content = ''
+                    while element:
+                        content += JSON.stringify(element.outerHTML)
+                        element = element.nextsibling
+                    if content != self.content_old:
+                        self.content_old = content
+                        self.record_error('BuG ' + content)
 
         if (not GRADING
                 and not self.options['allow_copy_paste']
