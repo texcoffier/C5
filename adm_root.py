@@ -100,22 +100,7 @@ def display(): # pylint: disable=too-many-statements
     </ul>
     ''')
     add_textarea('/adm/c5/eval', '')
-    text.append('<hr>Javascript errors for the last:<ul>')
-    def link(txt, delta):
-        """Link"""
-        return (' <a href="adm/js_errors/'
-                + int(millisecs()/1000 - delta) + '?ticket=' + TICKET + '">'
-                + txt + '</a>')
-    text.append('<li>')
-    for i in range(5, 60, 5):
-        text.append(link(i + 'min', i * 60))
-    text.append('<li>')
-    for i in range(1, 10):
-        text.append(link(i + 'hour', i * 3600))
-    text.append('<li>')
-    for i in range(1, 10):
-        text.append(link(i + 'day', i * 86400))
-    text.append('</ul>')
+    text.append('<hr><a href="adm/js_errors">Javascript errors</a>')
 
     document.body.innerHTML = text.join('') # pylint: disable=no-member
     def anime():

@@ -1826,46 +1826,20 @@ async def js_errors(request:Request) -> Response:
     session = await Session.get_or_fail(request)
     if not session.is_root():
         return session.message('not_root')
-    date = int(request.match_info['date'])
-    filenames = await asyncio.get_event_loop().run_in_executor(
-        None, glob.glob, 'COMPILE_*/*/LOGS/*/http_server.log')
     stream = web.StreamResponse()
-    stream.content_type = 'text/csv'
+    stream.content_type = 'text/plain'
     await stream.prepare(request)
-    await write_lines(stream,
-        (('When', 'Session', 'Student', 'Error', 'URL', 'Line', 'UserAgent', 'Stack'),))
-    for filename in filenames:
-        await asyncio.sleep(0)
-        try:
-            content = pathlib.Path(filename).read_text(encoding='utf-8')
-        except UnicodeDecodeError:
-            await write_lines(stream,(('BAD FILENAME', filename),))
-            continue
-        if '"JS"' not in content and '"BUG"' not in content:
-            continue
-        lines = []
-        for line in content.split('\n'):
-            if '"JS"' in line or '"BUG"' in line:
-                line = json.loads(line)
-                if line[0] < date:
-                    continue
-                compilator, session, _logs, student, _  = filename.split('/')
-                for item in line[1:]:
-                    if isinstance(item, list):
-                        if item[0] == 'JS':
-                            lines.append((
-                                time.ctime(line[0]),
-                                compilator.replace('COMPILE_', '') + '=' + session,
-                                student,
-                                *item[1:]
-                            ))
-                        elif item[0] == 'BUG':
-                            lines.append((
-                                time.ctime(line[0]),
-                                compilator.replace('COMPILE_', '') + '=' + session,
-                                student,
-                                *item))
-        await write_lines(stream, lines)
+    process = await asyncio.create_subprocess_exec(
+        'awk', '/     ERROR / { if ($0 != P && $0 != Q) { print($0) ; Q=P ; P=$0 ;} }',
+        *sorted(glob.glob('LOGS/*-http_server'), reverse=True),
+        stdout=asyncio.subprocess.PIPE,
+        )
+    while True:
+        line = await process.stdout.readline()
+        if not line:
+            break
+        await stream.write(line)
+    process.terminate()
     return stream
 
 
@@ -2229,7 +2203,7 @@ def main():
                     web.get('/adm/force_grading_done/{course}', adm_force_grading_done),
                     web.get('/adm/media/{course}/{action}/{media}', adm_media),
                     web.get('/adm/editor/{course}', adm_editor),
-                    web.get('/adm/js_errors/{date}', js_errors),
+                    web.get('/adm/js_errors', js_errors),
                     web.get('/adm/building/{building}', adm_building),
                     web.get('/config/reload', config_reload),
                     web.get('/course_config/{course}', course_config),
