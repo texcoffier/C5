@@ -2111,8 +2111,9 @@ async def live_link(request:Request) -> StreamResponse:
         # log(f'{port} {message} {journa} {len(journa.msg_id) if journa else "?"} {allow_edit}')
         if journa and session.login != journa.login:
             log(f'{session.is_grader(journa.course)} {message.split(" ", 1)[1]}')
-            if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'bGTtLH':
-                continue
+            if not allow_edit:
+                if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'bGTtLH':
+                    continue
             # Allow grader comments
         if message == '-':
             if journa:
