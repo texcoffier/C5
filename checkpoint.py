@@ -121,7 +121,7 @@ class Menu:
     def open(self, line, column, model, reds, activate):
         self.line = line
         self.column = column
-        self.model = model
+        self.model = [item for item in model if item is not None]
         self.reds = reds
         self.activate = activate
         self.opened = True
@@ -165,6 +165,7 @@ class Menu:
         ctx.strokeStyle = "#000"
         ctx.lineWidth = 2
         ctx.lineCap = 'round'
+        ctx.beginPath()
         ctx.moveTo(x_pos, y_pos)
         ctx.lineTo(x_pos + scale + menu_width, y_pos)
         ctx.lineTo(x_pos + scale + menu_width, y_pos + menu_height)
@@ -191,6 +192,7 @@ class Menu:
                 ctx.fillStyle = "#000"
             if (i > 1 # pylint: disable=too-many-boolean-expressions
                     and message != ''
+                    and not message.startswith(' ')
                     and self.room.event_x > x_pos
                     and self.room.event_x < x_pos + menu_width
                     and self.room.event_y > y_item
@@ -623,12 +625,16 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Draw students names"""
         now = seconds()
         line_height = self.scale/4
-        ctx.font = 'bold ' + line_height + "px sans-serif"
+        ctx.font = line_height + "px sans-serif"
         if self.rotate_180:
             self.students.sort(cmp_student_position_reverse)
         else:
             self.students.sort(cmp_student_position)
         char_size = ctx.measureText('x')
+        max_question_done = 0
+        for student in self.students:
+            max_question_done = max(max_question_done, student.question_done)
+
         for student in self.students:
             if (student.column < self.left_column or student.column > self.right_column
                     or student.line < self.top_line or student.line > self.bottom_line):
@@ -636,75 +642,88 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
             x_pos, y_pos, x_size, y_size = self.xys(student.column, student.line)
             x_pos -= self.scale / 2
-            ctx.globalAlpha = 0.7
-            if student.active:
-                ctx.fillStyle = "#FF0"
-                ctx.fillRect(x_pos, y_pos - y_size/2, x_size, y_size)
-            if (self.lines_height[2*student.line] < 0.5
-                    or self.columns_width[2*student.column] < 0.5):
-                continue
-            width = max(ctx.measureText(student.firstname).width,
-                        ctx.measureText(student.surname).width)
+
+            # Lighten the draw zone
+            ctx.globalAlpha = 0.8
+            ctx.fillStyle = "#FFF"
+            ctx.fillRect(x_pos, y_pos - y_size/2, x_size, y_size)
+            ctx.globalAlpha = 0.6
+
+            # Square border
+            if student.with_me():
+                ctx.lineWidth = 0.1 * self.scale
+            else:
+                ctx.lineWidth = 0.05 * self.scale
+
+            # Draw square border
+            if student.good_room:
+                if student.active:
+                    color = "0123456789ABCDEF"[
+                        min(15, max(0, (now - student.checkpoint_time)/BOLD_TIME_ACTIVE))]
+                    border_color = "#" + color + color + color
+                else:
+                    border_color = "#0F0" # Examen done
+            else:
+                border_color = "#F00" # Not good room
+            ctx.strokeStyle = border_color
+            ctx.beginPath()
+            ctx.rect(x_pos + ctx.lineWidth/2, y_pos - y_size/2 + ctx.lineWidth/2,
+                     x_size - ctx.lineWidth, y_size - ctx.lineWidth)
+            ctx.closePath()
+            ctx.stroke()
+
+            # Following graphics must be in the square
+            left = x_pos + ctx.lineWidth
+            top = y_pos - y_size/2 + ctx.lineWidth
+            width = x_size - 2*ctx.lineWidth
+            height = y_size - 2*ctx.lineWidth
+
+            # Draw focus lost time
+            if student.blur_time > 2: # student.blur contains the number of blur
+                ctx.fillStyle = "#F44"
+                ctx.fillRect(left, top, min(2*width, student.blur_time), height/2)
+
+            # Draw question done correctly
+            if student.nr_questions_done and max_question_done:
+                ctx.fillStyle = "#0DD"
+                ctx.fillRect(left, top + height/2,
+                             width/2, student.nr_questions_done / max_question_done * height/2)
+
+            # Draw grading (2 triangles: done and visible)
+            if student.grade[1]:
+                ctx.fillStyle = "#0F0"
+                if student.grade[1] == self.nr_max_grade:
+                    ctx.beginPath()
+                    ctx.moveTo(left + width/2, top + height)
+                    ctx.lineTo(left + width  , top + height)
+                    ctx.lineTo(left + width  , top + height/2)
+                    ctx.closePath()
+                    ctx.fill()
+                    if student.feedback >= 3:
+                        ctx.beginPath()
+                        ctx.moveTo(left + width/2, top + height)
+                        ctx.lineTo(left + width/2, top + height/2)
+                        ctx.lineTo(left + width  , top + height/2)
+                        ctx.closePath()
+                        ctx.fill()
+
+            # Draw instant focus lost
             if student.data.blurred and student.active:
                 ctx.fillStyle = "#F0F"
-                ctx.fillRect(x_pos - width/4, y_pos - y_size/2 - width/4,
-                             width + 2 + width/4, y_size + 2 + width/2)
-            else:
-                ctx.fillStyle = "#FFF"
-                ctx.fillRect(x_pos, y_pos - y_size/2, width + 2, y_size + 2)
-            if student.blur:
-                ctx.fillStyle = "#F00"
-                ctx.fillRect(x_pos, y_pos - y_size/2,
-                             student.blur / 10 * x_size, y_size/2)
-            if student.nr_questions_done:
-                ctx.fillStyle = "#0C0"
-                ctx.fillRect(x_pos, y_pos + 1,
-                             student.nr_questions_done / 10 * x_size, y_size/2)
-            if student.with_me():
-                if student.active:
-                    if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
-                        ctx.fillStyle = "#000"
-                    else:
-                        ctx.fillStyle = "#00F"
-                else:
-                    ctx.fillStyle = "#080"
-            else:
-                if student.active:
-                    if now - student.checkpoint_time < BOLD_TIME_ACTIVE:
-                        ctx.fillStyle = "#888"
-                    else:
-                        ctx.fillStyle = "#88F"
-                else:
-                    ctx.fillStyle = "#484"
-            if not student.good_room:
-                ctx.fillStyle = "#F88"
+                ctx.fillRect(x_pos - x_size/2, y_pos - y_size, 2*x_size, 2*y_size)
+
+            # Draw student name
+            if (self.lines_height[2*student.line] < 0.5
+                    or self.columns_width[2*student.column] < 0.5):
+                continue # Only my rooms are displayed.
+            width = max(ctx.measureText(student.firstname).width,
+                        ctx.measureText(student.surname).width)
+
             ctx.globalAlpha = 1
+            ctx.fillStyle = "#000"
             ctx.fillText(student.firstname, x_pos, y_pos - char_size.fontBoundingBoxDescent)
             ctx.fillText(student.surname, x_pos, y_pos + line_height - char_size.fontBoundingBoxDescent)
-            grading = ''
-            if student.grade != '':
-                grading += student.grade[0]
-                if student.feedback >= 4:
-                    grading += '👁'
-                grading += '(' + student.grade[1] + 'notes'
-                if student.feedback >= 5:
-                    grading += '👁'
-                grading += ')'
-            if student.feedback >= 3:
-                grading += '#👁'
-            if grading != '':
-                if student.grade[1] == self.nr_max_grade:
-                    if student.feedback >= 5:
-                        ctx.fillStyle = "#0A0"
-                    else:
-                        ctx.fillStyle = "#880"
-                else:
-                    ctx.fillStyle = "#000"
-                ctx.fillText(grading, x_pos, y_pos + 2*line_height)
-            if student.blur_time > 2:
-                ctx.fillStyle = "#000"
-                ctx.fillText(student.blur_time + ' secs', x_pos, y_pos - line_height)
-        ctx.globalAlpha = 1
+
     def draw_map(self, ctx, canvas): # pylint: disable=too-many-locals
         """Draw the character map"""
         canvas.setAttribute('width', self.width)
@@ -820,6 +839,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 if text.startswith('#'):
                     ctx.fillStyle = text[:4]
                     text = text[4:]
+                else:
+                    ctx.fillStyle = "#000"
                 ctx.fillText(text, column, line)
                 width = ctx.measureText(text).width
                 if width > max_width:
@@ -828,7 +849,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     column += indent
                     first = False
                 line += size
-            return max_width + size/2
+            return max_width + 2*size
 
         column = self.left
         column += draw_messages(column, [
@@ -838,19 +859,21 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             "Cliquez sur le sol d'un salle pour zoomer.",
             "📝 : actions sur la salle"])
         column += draw_messages(column, [
-            "Le carré jaune des étudiants :",
-            "Appuyez longtemps et tirez-le pour déplacer l'étudiant.",
-            "Tirez-le tout à gauche pour le remettre en salle d'attente.",
-            "Il passe en violet quand la fenêtre perd le focus.",
-            "Il se remplit de rouge à chaque perte de focus.",
-            "Il se remplit de vert pour chaque bonne réponse."])
+            "Les carrés des étudiants :",
+            " Appuyez longtemps et tirez pour déplacer l'étudiant.",
+            " Tirez tout à gauche pour remettre en salle d'attente.",
+            "#800 Rouge en haut : nombre de secondes sans focus.",
+            "#088 Cyan en bas gauche : nombre de bonnes réponses.",
+            "#080 Vert en bas droit : triangle si noté, carré si affiché.",
+            ])
         column += draw_messages(column, [
-            "Couleurs des noms d'étudiants : ",
-            "#888 Avec un autre enseignant.",
-            "#000 Travaille avec vous.",
-            "#00F N'a rien fait depuis " + BOLD_TIME_ACTIVE/60 + " minutes.",
-            "#080 Examen terminé.",
-            "#800 Dans la mauvaise salle."])
+            "Cadre autour de l'étudiant : ",
+            " Épais : vous l'avez placé.",
+            "#080 Vert : examen terminé.",
+            "#800 Rouge : dans la mauvaise salle.",
+            " Blanc : n'a rien fait depuis " + BOLD_TIME_ACTIVE/60 + " minutes.",
+            "#888 Gris → noir s'il est actif récemment.",
+            ])
         column += draw_messages(column, [
             "#000 Concernant les ordinateurs :",
             "Plus il est rouge, plus il y a des pannes.",
@@ -1223,11 +1246,29 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         temps = "Temps bonus"
         if student.bonus_time:
             temps += ' (' + int(student.bonus_time / 60) + ' min.)'
+
+        blur = grades = feedback = None
+        if student.blur:
+            blur = ' ' + student.blur + ' pertes de focus (' + student.blur_time + ' secs)'
+
+        if student.grade != '':
+            grades = ' Somme des ' + student.grade[1] + '/' + self.nr_max_grade + ' notes → ' + student.grade[0]
+            feedback = ' ' + [
+                "Rien d'affiché à l'étudiant",
+                "Code source commenté",
+                "bug1",
+                "bug2",
+                "Code source commenté et note totale",
+                "Code source commenté et barème détaillé"
+            ][student.feedback] + " affiché à l'étudiant"
+
         self.the_menu.open(line, column,
             [
                 student.firstname + ' ' + student.surname,
                 "", spy, temps, state, grade,
-                student.mail or 'Adresse mail inconnue'
+                student.mail or 'Adresse mail inconnue',
+                "",
+                blur, grades, feedback
             ], [], select)
 
     def drag_stop(self, event):
