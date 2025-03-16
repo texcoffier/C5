@@ -1466,6 +1466,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.write_location()
     def draw_move_timer(self):
         """Circle indicating the time before the student move is allowed"""
+        if STUDENT_DICT[self.student_clicked['login']].grade:
+            return # Do not move graded student
         ctx = document.getElementById('canvas').getContext("2d")
         x_pos, y_pos, x_size, _y_size = self.xys(self.student_clicked['column'], self.student_clicked['line'])
         ctx.strokeStyle = "#FF00FF80"
