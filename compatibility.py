@@ -145,3 +145,5 @@ def post(url, value, iframe=False):
     #def remove_form(event):
     #    print(event)
     #form.onload = remove_form
+
+inf = Infinity
