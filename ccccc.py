@@ -2165,6 +2165,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.top.oncut = bind(self.oncut, self)
         self.top.onpaste = bind(self.onpaste, self)
         self.top.ondrop = bind(self.onpaste, self)
+        document.getElementsByTagName('BODY')[0].appendChild(self.top)
+        self.create_gui()
         window.onkeydown = bind(self.onkeydown, self)
         window.onkeyup = bind(self.onkeyup, self)
         window.onkeypress = bind(self.onkeypress, self)
@@ -2174,8 +2176,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.update_gui()
             self.do_coloring = "onresize"
         window.onresize = do_coloring
-        document.getElementsByTagName('BODY')[0].appendChild(self.top)
-        self.create_gui()
         setInterval(bind(self.scheduler, self), 200)
         if GRADING:
             # Get grades
