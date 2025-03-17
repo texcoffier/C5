@@ -44,7 +44,8 @@ class Server:
         if self.socket:
             self.print('Yet opened')
             return not self.wait_socket_open
-
+        if self.wait_socket_open:
+            return
         self.wait_socket_open = True
 
         url = self.base + '/live_link/session' + self.ticket
