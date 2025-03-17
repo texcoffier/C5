@@ -35,6 +35,13 @@ Object.defineProperty(String.prototype, 'isdigit',
                       {'enumerable': False, 'value': isdigit})
 String.prototype.strip = String.prototype.trim
 
+def rjust(nr):
+    """Compatible with Python"""
+    THIS = eval('this')
+    return ('                       '+THIS)[-nr:]
+Object.defineProperty(String.prototype, 'rjust',
+                      {'enumerable': False, 'value': rjust})
+
 def startswith(txt):
     """Only if txt is a string"""
     return this.substr(0, txt.length) == txt # pylint: disable=undefined-variable

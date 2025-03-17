@@ -13,6 +13,7 @@ TOP_ACTIVE = '#8F8D'
 ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
 LONG_CLICK = 500
+MENU_FONT = "18px sans-serif"
 
 if COURSE in ('=MAPS', '=IPS'):
     del BUILDINGS['empty']
@@ -140,6 +141,15 @@ class Menu:
         """
         if not self.opened:
             return
+        def set_font(message):
+            if message.startswith('*'):
+                ctx.font = "bold " + MENU_FONT
+                message = message[1:]
+            elif message.startswith('→'):
+                ctx.font = MENU_FONT.replace('sans-serif', 'monospace')
+            else:
+                ctx.font = MENU_FONT
+            return message
         scale = self.room.scale
         x_pos, y_pos, _x_size, _y_size = self.room.xys(self.column - 0.5, self.line - 0.5)
         if self.room.rotate_180:
@@ -148,8 +158,8 @@ class Menu:
         padding = 10
         menu_width = 0
         y_size = 0
-        ctx.font = "24px sans-serif"
         for message in self.model:
+            set_font(message)
             box = ctx.measureText(message)
             menu_width = max(box.width, menu_width)
             descent = box.fontBoundingBoxDescent
@@ -180,11 +190,7 @@ class Menu:
         ctx.fillStyle = "#000"
         self.selected = None
         for i, message in enumerate(self.model):
-            if message.startswith('*'):
-                ctx.font = "bold 24px sans-serif"
-                message = message[1:]
-            else:
-                ctx.font = "24px sans-serif"
+            message = set_font(message)
             y_item = y_pos + menu_line * i
             if message in self.reds:
                 ctx.fillStyle = "#FDD"
@@ -1206,17 +1212,31 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 def bad():
                     alert(mails)
                 navigator.clipboard.writeText(mails).then(ok).catch(bad)
-        self.the_menu.open(line, column,
-            [
-                "Pour les " + len(room.students) + " étudiants de cette pièce",
-                "",
-                "Espionner en temps réel",
-                "Noter et commenter leur travail",
-                "Noter et commenter leur travail (sujet : A)",
-                "Noter et commenter leur travail (sujet : B)",
-                "Récupérer un ZIP de leur travail",
-                "Copier toutes les adresses mails"
-            ], [], select)
+            elif item.startswith('→'):
+                window.open(BASE + '/grade/' + COURSE + '/' + item.split(' ')[0][1:]
+                        + '?ticket=' + TICKET)
+        items = [
+            "Pour les " + len(room.students) + " étudiants de cette pièce",
+            "",
+            "Espionner en temps réel",
+            "Noter et commenter leur travail",
+            "Noter et commenter leur travail (sujet : A)",
+            "Noter et commenter leur travail (sujet : B)",
+            "Récupérer un ZIP de leur travail",
+            "Copier toutes les adresses mails",
+            ""
+            ]
+        items.append(' Login BonusTime Grade[#Grades] BlurTime[#Blur] FeedBack')
+        for student in room.students:
+            items.append('→' + student.login + ' '
+                + str(student.bonus_time).rjust(2) + ' '
+                + str(student.grade[0] and student.grade[0].toFixed(2) or '?').rjust(5) + '['
+                + str(student.grade[1] or '?').rjust(2) + '] '
+                + str(student.blur_time).rjust(3) + '['
+                + str(student.blur).rjust(2) + '] '
+                + str(student.feedback).rjust(1) + ' '
+                + student.firstname + ' ' + student.surname)
+        self.the_menu.open(line, column, items, [], select)
     def open_student_menu(self, line, column, student):
         login = student.login
         def select(item):
