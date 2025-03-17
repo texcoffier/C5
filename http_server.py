@@ -2109,19 +2109,20 @@ async def live_link(request:Request) -> StreamResponse:
         port, message = msg.data.split(' ', 1)
         journa, allow_edit = journals.get(port, (None, True))
         # log(f'{port} {message} {journa} {len(journa.msg_id) if journa else "?"} {allow_edit}')
-        if journa and session.login != journa.login:
-            log(f'{session.is_grader(journa.course)} {message.split(" ", 1)[1]}')
-            if not allow_edit:
-                if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'bGTtLH':
-                    continue
-            # Allow grader comments
         if message == '-':
             if journa:
                 journa.close(socket, port)
             else:
                 log(f'Message «{msg.data}» close but no journal. bug={port in journals}')
             journals.pop(port, None)
-        elif journa:
+            continue
+        if journa and session.login != journa.login:
+            log(f'{session.is_grader(journa.course)} {message.split(" ", 1)[1]}')
+            if not allow_edit:
+                if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'bGTtLH':
+                    continue
+            # Allow grader comments
+        if journa:
             msg_id, message = message.split(' ', 1)
             if msg_id == journa.msg_id:
                 if not journa.course.running(session.login):
