@@ -1150,7 +1150,7 @@ def create_shared_worker(login='', hook=None):
                 hook(journal)
     def shared_worker_post(message):
         """Send a message to the journal"""
-        if GRADING and not (ccccc.add_comments and message[0] in 'GbTtLH'):
+        if GRADING and not (ccccc.add_comments and message[0] in 'GbTtLH') or ccccc.options['feedback']:
             print('Not recording ' + message)
             journal.append(message)
             return # To keep journals in sync
