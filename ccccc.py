@@ -1538,7 +1538,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             document.execCommand('insertHTML', False, '    ')
             stop_event(event)
         elif event.key == 's' and event.ctrlKey:
-            self.save()
+            if GRADING or self.options['feedback']:
+                self.popup_message("Vous n'avez pas le droit de sauvegarder un examen terminé.")
+            else:
+                self.save()
             stop_event(event)
         elif event.key in 'yz' and event.ctrlKey:
             stop_event(event)
