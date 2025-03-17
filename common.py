@@ -366,10 +366,12 @@ class Journal:
 
         def add(index):
             # Jump over not interesting things
-            if index < len(self.lines) and self.lines[index][0] in 'GTBFLPH':
-                for i in self.children[index]:
-                    add(i)
-                return
+            while index < len(self.lines) and self.lines[index][0] in 'GTBFLPH':
+                if len(self.children[index]) != 1:
+                    for i in self.children[index]:
+                        add(i)
+                    return
+                index = self.children[index][0]
             if index == len(self.lines):
                 todo.append([index, 0, 1])
             else:
