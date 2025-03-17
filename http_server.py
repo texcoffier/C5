@@ -1947,7 +1947,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         """Unock the JournalLink instance"""
         self.locked = False
 
-    async def write(self, message):
+    async def write_unsafe(self, message):
         """Append an action to the journal.
               * update the session state (blurring, activity).
               * update the journal.log of the student.
@@ -1957,17 +1957,22 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         # pylint: disable=too-many-branches,too-many-nested-blocks
         # XXX Must check message validity and add timestamp
         self.content.append(message)
+        original_message = self.msg_id + ' ' + message
+        self.msg_id = str(len(self.content))
         # 'protect_crlf' does not work in some browser.
         # So redo it server side.
         self.journal.write(common.protect_crlf(message) + '\n')
+        self.journal.flush()
 
         if self.editor:
             if message.startswith('t'):
                 os.rename(self.course.file_py, self.course.file_py + '~')
                 with open(self.course.file_py, 'w', encoding="utf-8") as file:
                     file.write(common.Journal('\n'.join(self.content)).content)
+                await asyncio.sleep(0)
                 with os.popen(f'make {self.course.file_js} 2>&1', 'r') as file:
                     errors = file.read()
+                await asyncio.sleep(0)
                 if 'ERROR' in errors or 'FAIL' in errors:
                     os.rename(self.course.file_py + '~', self.course.file_py)
         elif self.login in self.course.active_teacher_room:
@@ -2003,15 +2008,16 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                 self.course.set_parameter('active_teacher_room', infos.last_time, self.login, 3)
                 self.last_set_parameter = infos.last_time
 
-        message = self.msg_id + ' ' + message
-        self.journal.flush()
-        self.msg_id = str(len(self.content))
-        async with self: # Locked to garantee the order of events
-            for socket, port in self.connections:
-                try:
-                    await socket.send_str(f'{port} {message}')
-                except: # pylint: disable=bare-except
-                    JournalLink.closed_socket(socket)
+        for socket, port in self.connections:
+            try:
+                await socket.send_str(f'{port} {original_message}')
+            except: # pylint: disable=bare-except
+                JournalLink.closed_socket(socket)
+
+    async def write(self, message):
+        """Ensure that session update are serialized"""
+        async with self:
+            await self.write_unsafe(message)
 
     def close(self, socket, port=None):
         """Close all the connection or the connection of the indicated port."""
