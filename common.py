@@ -1116,6 +1116,8 @@ def create_shared_worker(login='', hook=None):
             print("SHARED WORKER SAYS:", event.data[1:])
         elif event.data.startswith('R'):
             reload_page("Le serveur a été arrêté pour une maintenance.")
+        elif event.data.startswith('A'):
+            ccccc.popup_message('<pre>' + html(event.data[1:]) + '</pre>')
         else:
             try:
                 ccccc.save_button.setAttribute('state', 'ok')

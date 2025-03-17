@@ -1975,6 +1975,8 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                 await asyncio.sleep(0)
                 if 'ERROR' in errors or 'FAIL' in errors:
                     os.rename(self.course.file_py + '~', self.course.file_py)
+                for socket, port in self.connections:
+                    await socket.send_str(f'{port} A{errors}')
         elif self.login in self.course.active_teacher_room:
             infos = self.course.active_teacher_room[self.login]
             infos.last_time = int(time.time())
