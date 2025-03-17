@@ -128,12 +128,15 @@ class Menu:
         self.opened = True
         scheduler.draw = "menu open"
     def close(self):
-        self.opened = False
-        self.selected = None
-        scheduler.draw = "menu close"
+        if self.opened:
+            self.opened = False
+            self.selected = None
+            scheduler.draw = "menu close"
     def select_and_close(self):
         self.activate(self.selected)
         self.close()
+    def opened_at(self, line, column):
+        return self.opened and self.line == line and self.column == column
     def draw(self, ctx):
         """
         Draw menu and highlighted hovered item.
@@ -1321,9 +1324,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Simple click
             if self.the_menu.selected:
                 self.the_menu.select_and_close()
-            elif self.the_menu.opened:
-                self.the_menu.close()
-            elif column != -1 and not MAPPER:
+            elif column != -1 and not MAPPER and not self.the_menu.opened_at(line, column):
                 if self.lines[line][column] == 's':
                     self.open_computer_menu(line, column)
                 elif self.lines[line][column] == 'g':
@@ -1332,7 +1333,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     self.open_student_menu(line, column,
                         STUDENT_DICT[self.student_clicked['login']])
                 else:
+                    self.the_menu.close()
                     self.drag_stop_click_on_room(event, column, line)
+            else:
+                self.the_menu.close()
         else:
             # Panning: recompute waiting room list
             self.compute_rooms_on_screen()
