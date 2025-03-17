@@ -1186,6 +1186,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         def select(item):
             if item.startswith('Noter'):
                 for login in logins:
+                    if ': A' in item and STUDENT_DICT[login].version != 'a':
+                        continue
+                    if ': B' in item and STUDENT_DICT[login].version != 'b':
+                        continue
                     window.open(BASE + '/grade/' + COURSE + '/' + login
                         + '?ticket=' + TICKET)
             elif item.startswith('Espionner'):
@@ -1208,6 +1212,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 "",
                 "Espionner en temps réel",
                 "Noter et commenter leur travail",
+                "Noter et commenter leur travail (sujet : A)",
+                "Noter et commenter leur travail (sujet : B)",
                 "Récupérer un ZIP de leur travail",
                 "Copier toutes les adresses mails"
             ], [], select)
