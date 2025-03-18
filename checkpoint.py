@@ -1510,6 +1510,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.beginPath()
         ctx.arc(x_pos, y_pos, x_size/1.8, 0, Math.PI*2*angle)
         ctx.stroke()
+    def pointer_enter_student_list(self):
+        document.getElementById('pointer_on_student_list').style.display = 'block'
+        self.pointer_on_student_list = True
+    def pointer_leave_student_list(self):
+        document.getElementById('pointer_on_student_list').style.display = 'none'
+        self.pointer_on_student_list = False
 
 def hide_messages(first, last):
     """Hide the indicated message indexes (last not included)"""
@@ -1724,10 +1730,17 @@ def create_page(building_name):
         #time SPAN.cc { color: #000 ; }
         #time SPAN.cs { color: #00F ; }
         #time .blur_span { position: absolute; background: #FAA;  height: 100% ; top: 0px }
+        #pointer_on_student_list {
+            display: none;
+            position: fixed;
+            background: #AFAD;
+            top: 10em;
+            left: var(--menu-width);
+        }
         </style>
         <div id="top"
-             onmouseenter="ROOM.pointer_on_student_list=true"
-             onmouseleave="ROOM.pointer_on_student_list=false"
+             onmouseenter="ROOM.pointer_enter_student_list()"
+             onmouseleave="ROOM.pointer_leave_student_list()"
         >
         <span class="icon" onclick="send_alert()">🚨</span>
         <span class="icon" onclick="search_student()">🔍</span>
@@ -1775,6 +1788,9 @@ def create_page(building_name):
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
         <div id="messages"></div>
+        <div id="pointer_on_student_list">Mettez le curseur sur le plan<br>
+        pour activer la mise à jour<br>
+        de la liste des étudiants.</div>
         </div>
         <canvas
             id="canvas"
