@@ -1036,7 +1036,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             default_answer = {}
             sep = RegExp('[ \t]', 'g')
             old = self.question_original[self.current_question]
-            if not REAL_GRADING:
+            if not REAL_GRADING and not self.options['diff_original']:
                 old = JOURNAL.questions[JOURNAL.question].last_tagged_source or old
             for line in old.split('\n'):
                 default_answer[line.replace(sep, '')] = True

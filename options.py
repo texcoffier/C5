@@ -89,6 +89,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['display_grading',      1, "display grading interface"],
     ['display_global_grading',0, "display the buttons to set all grades to min or max"],
     ['diff',                 1, "Green line numbers for student inserted lines (togglable by clicking on line numbers)"],
+    ['diff_original',        0, "The above diff is with the original version not the last saved."],
     ['version_for_teachers', 1, "Display version tree to teachers"],
     ['version_for_students', 0, "Display version tree to students"],
     ['display_version_toggle',1,"Display the toggle to hide/display version tree"],
