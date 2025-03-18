@@ -1484,7 +1484,7 @@ async def checkpoint_list(request:Request) -> Response:
         content.append('<p>Edit building map: ')
         for building in sorted(utilities.get_buildings()):
             content.append(f'''
-            <button onclick="window.open(\'/adm/building/{building}?ticket={session.ticket}\')"
+            <button onclick="window.open(\'adm/building/{building}?ticket={session.ticket}\')"
             >{building}</button>''')
     nr_doing_grading = 0
     now = time.time() - 5 * 60
@@ -1791,7 +1791,7 @@ async def adm_building(request:Request) -> Response:
     width = max(len(line) for line in content.split('\n')) + 1
     return answer(f'''{session.header()}
     <title>{building}</title>
-    <form action="/adm/building/{building}?ticket={session.ticket}" method="POST">
+    <form action="adm/building/{building}?ticket={session.ticket}" method="POST">
     <input type="submit">
     <b>Legend</b> <span style="font-family: emoji">
     |-+:walls d:doors w:window s→💻 c→⑁ p→🖨 r→🚻 l→↕ h→♿ g→📝 a→Ⓐ b→Ⓑ</span><br>
