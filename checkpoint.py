@@ -432,7 +432,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 name = chars[start+1:column]
                 position = self.get_room_by_name(name)
                 if position:
-                    self.rooms[name] = {'label': [start-1, line],
+                    self.rooms[name] = {'label': [start, line],
                                         'position': position[:4]
                                        }
                 else:
