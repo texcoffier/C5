@@ -673,7 +673,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 else:
                     border_color = "#0F0" # Examen done
             else:
-                border_color = "#F00" # Not good room
+                # Not good room
+                if student.active:
+                    border_color = "#F00"
+                else:
+                    border_color = "#F90"
             ctx.strokeStyle = border_color
             ctx.beginPath()
             ctx.rect(x_pos + ctx.lineWidth/2, y_pos - y_size/2 + ctx.lineWidth/2,
@@ -1235,7 +1239,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 + str(student.bonus_time).rjust(2) + ' '
                 + str(student.grade[0] and student.grade[0].toFixed(2) or '?').rjust(5) + '['
                 + str(student.grade[1] or '?').rjust(2) + '] '
-                + str(student.blur_time).rjust(3) + '['
+                + str(student.blur_time).rjust(4) + '['
                 + str(student.blur).rjust(2) + '] '
                 + str(student.feedback).rjust(1) + ' '
                 + student.firstname + ' ' + student.surname)
