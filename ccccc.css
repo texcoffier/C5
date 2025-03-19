@@ -350,7 +350,8 @@ DIV.layered>DIV {
     left: 0px;
 }
 
-.editor, .overlay {
+.editor,
+.overlay {
     padding-left: var(--target_feedback_width);
 }
 
@@ -663,14 +664,17 @@ LABEL,
 
 }
 
-.save_history, BUTTON.grade_unselected[onclick] {
+.save_history,
+BUTTON.grade_unselected[onclick] {
     border: 0.1vw outset #888;
     border-radius: 0.5vw;
     background: #EEE;
     padding: 0.1vw;
     margin: 0.1vw;
 }
-.save_history:hover, BUTTON.grade_unselected[onclick]:hover {
+
+.save_history:hover,
+BUTTON.grade_unselected[onclick]:hover {
     background: #DDD;
     border: 0.1vw inset #888;
 }
@@ -806,4 +810,22 @@ BODY.dograding .grading PRE BUTTON:hover,
 .active_completion {
     color: #FFF;
     background: #000;
+}
+
+#search_input {
+    display: none;
+    position: absolute;
+    top: 1vw;
+    left: 0px;
+    font-size: 1vw;
+    border: 0.1vw solid #000;
+    z-index: 10;
+    border-radius: 0.2vw;
+    width: 20vw;
+    background: #FFF;
+}
+
+.completion,
+#search_input {
+    box-shadow: 4px 2px 4px black;
 }

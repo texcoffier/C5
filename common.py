@@ -15,9 +15,10 @@ def bind(fct, _obj):
 
 try:
     Object # pylint: disable=pointless-statement
+    def protect_regexp(txt):
+        return txt.replace(RegExp('([.*+[(\\\\$^])', 'g'), '\\$1')
     def replace_all(txt, regexp, value):
-        regexp = regexp.replace(RegExp("\\\\", "g"), "\\\\")
-        return txt.replace(RegExp(regexp, "g"), value)
+        return txt.replace(RegExp(protect_regexp(regexp), "g"), value)
     PYTHON = False
 except NameError:
     def replace_all(txt, regexp, value):

@@ -158,7 +158,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     current_question = -1 # The question on screen
     compile_now = False
     editor_lines = []
-    do_not_register_this_blur = False
     init_done = False
     seconds = 0
     start_time = 0
@@ -560,6 +559,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         </p>
         """
         self.top.appendChild(self.fullscreen)
+
+        self.search_input = document.createElement('INPUT')
+        self.search_input.id = 'search_input'
+        self.top.appendChild(self.search_input)
 
     def set_editmode(self, value):
         """Toggle between edit source code and comment it"""
@@ -1334,22 +1337,27 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             line_bad, column_bad = self.get_line_column(start_pos + 1)
             self.highlight_errors[line_bad + ':' + column_bad] = 'cursorbad'
 
-    def highlight_word(self):
+    def highlight_word(self, word=None):
         """Highlight the current word in the text"""
-        char = RegExp('[a-zA-Z0-9_]')
-        start = self.cursor_position
-        if (not self.source[start].match(char)
-                and self.source[start-1] and self.source[start-1].match(char)):
-            start -= 1
-        while self.source[start] and self.source[start].match(char):
-            start -= 1
-        if start == self.cursor_position:
-            return # Not on a word
-        end = self.cursor_position
-        while self.source[end] and self.source[end].match(char):
-            end += 1
-
-        name = RegExp('\\b' + self.source[start + 1:end] + '\\b', 'g')
+        if word is None:
+            char = RegExp('[a-zA-Z0-9_]')
+            start = self.cursor_position
+            if (not self.source[start].match(char)
+                    and self.source[start-1] and self.source[start-1].match(char)):
+                start -= 1
+            while self.source[start] and self.source[start].match(char):
+                start -= 1
+            if start == self.cursor_position:
+                return # Not on a word
+            end = self.cursor_position
+            while self.source[end] and self.source[end].match(char):
+                end += 1
+            word = self.source[start + 1:end]
+            name = RegExp('\\b' + word + '\\b', 'g')
+        else:
+            if word == '':
+                return
+            name = RegExp(protect_regexp(word), 'g')
 
         items = self.source.matchAll(name)
         while True:
@@ -1357,17 +1365,21 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if not match.value:
                 break
             line_word, column_word = self.get_line_column(match.value.index + 1)
-            key = line_word + ':' + column_word + ':' + (end - start - 1)
+            key = line_word + ':' + column_word + ':' + len(word)
             self.highlight_errors[key] = 'cursorword'
+        return word
+
+    def clear_cursor_markers(self):
+        """Remove highlighted word and parenthesis"""
+        for key, error in self.highlight_errors.Items():
+            if error and error.startswith('cursor'):
+                self.highlight_errors[key] = None
 
     def update_cursor_position_now(self):
         """Get the cursor position
         pos = [current_position, do_div_br_collapse]
         """
-        # Remove old cursor position
-        for key, error in self.highlight_errors.Items():
-            if error and error.startswith('cursor'):
-                self.highlight_errors[key] = None
+        self.clear_cursor_markers()
         self.do_coloring = "update_cursor_position_now"
         try:
             cursor = document.getSelection().getRangeAt(0).cloneRange()
@@ -1491,8 +1503,57 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def stop_completion(self):
         """Close completion menu"""
         if self.completion_running:
+            self.search_input.style.display = 'none'
+            self.search_input.last_value = None
             self.completion.style.display = 'none'
             self.completion_running = False
+
+    def start_search(self):
+        """Ctrl+F"""
+        def update_search():
+            value = self.search_input.value
+            if value == self.search_input.last_value:
+                return
+            self.search_input.last_value = value
+            self.clear_cursor_markers()
+            self.highlight_word(value)
+            lines = []
+            if len(value) > 0:
+                for i, line in enumerate(self.source.split('\n')):
+                    if value in line:
+                        lines.append('<option value="' + i + '">'
+                            + html(line[:60]) + '</option>')
+                        if len(lines) > 200:
+                            break
+            self.completion.innerHTML = ''.join(lines)
+            self.completion.style.display = 'block'
+            if len(lines):
+                self.completion.firstChild.className = 'active_completion'
+                self.goto_source_line(self.completion.firstChild.value)
+            self.completion.style.left = self.search_input.offsetLeft + 'px'
+            self.completion.style.top = self.search_input.offsetTop + self.search_input.offsetHeight + 'px'
+            self.active_completion = 0
+            self.completion_running = 'search'
+        if self.completion_running == 'search':
+            self.search_input.select()
+        else:
+            self.search_input.style.display = 'block'
+            self.search_input.onkeyup = update_search
+            self.search_input.value = self.highlight_word() or ''
+            editor_left = self.options['positions']['editor'][0]
+            editor_right = editor_left + self.options['positions']['editor'][1]
+            if editor_left >= 100 - editor_right:
+                left = 1
+                width = editor_left
+            else:
+                left = editor_right
+                width = 100 - editor_right
+            self.search_input.style.left = left + 'vw'
+            self.search_input.style.width = width - 2 + 'vw'
+
+            self.search_input.line, self.search_input.column = self.get_line_column(self.cursor_position)
+            self.search_input.scroll = self.layered.scrollTop
+        self.search_input.focus()
 
     def onkeydown(self, event): # pylint: disable=too-many-branches
         """Key down"""
@@ -1500,17 +1561,23 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
             return
         self.current_key = event.key
-        if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9'):
+        if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9') and self.completion_running != 'search':
             return
-        if self.completion_running and event.target is self.editor:
+        if self.completion_running == 'search' or self.completion_running and event.target is self.editor:
             if event.key == 'ArrowUp':
                 direction = -1
             elif event.key == 'ArrowDown':
                 direction = 1
             elif event.key == 'Enter':
-                document.execCommand('insertText', False,
-                    self.completion.childNodes[self.active_completion].innerHTML[
-                        len(self.to_complete):])
+                option = self.completion.childNodes[self.active_completion]
+                if self.completion_running == 'search':
+                    line = self.editor_lines[option.value]
+                    document.getSelection().collapse(line,
+                        (line.innerHTML or line.nodeValue).indexOf(self.search_input.value)
+                        )
+                else:
+                    document.execCommand('insertText', False,
+                        option.innerHTML[len(self.to_complete):])
                 self.stop_completion()
                 stop_event(event)
                 return
@@ -1520,10 +1587,19 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.completion.childNodes[self.active_completion].className = ''
                 self.active_completion += direction + len(self.completion.childNodes)
                 self.active_completion = self.active_completion % len(self.completion.childNodes)
-                self.completion.childNodes[self.active_completion].className = 'active_completion'
+                if self.completion.childNodes[self.active_completion]:
+                    self.completion.childNodes[self.active_completion].className = 'active_completion'
                 stop_event(event)
+                if self.completion_running == 'search':
+                    self.goto_source_line(self.completion.childNodes[self.active_completion].value)
                 return
-            self.stop_completion()
+            if self.completion_running == 'search' and event.key == 'Escape':
+                document.getSelection().collapse(
+                    self.editor_lines[self.search_input.line-1], self.search_input.column)
+                self.layered.scrollTop = self.search_input.scroll
+                self.editor.focus()
+            if self.completion_running != 'search' or event.key == 'Escape':
+                self.stop_completion()
         if event.target is self.editor and event.key not in (
                 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'):
             self.clear_highlight_errors()
@@ -1546,6 +1622,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             else:
                 self.save()
             stop_event(event)
+        elif event.key == 'f' and event.ctrlKey:
+            self.start_search()
+            stop_event(event)
         elif event.key in 'yz' and event.ctrlKey:
             stop_event(event)
             if event.key == 'z':
@@ -1565,9 +1644,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     self.goto_line(JOURNAL.pending_goto_history.pop())
                 else:
                     self.goto_line(JOURNAL.pending_goto + 1)
-        elif event.key == 'f' and event.ctrlKey:
-            self.do_not_register_this_blur = True
-            return
         elif event.key == ' ' and event.ctrlKey:
             self.try_completion()
             return
@@ -1628,9 +1704,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Key press"""
     def onblur(self, _event):
         """Window blur"""
-        if self.do_not_register_this_blur:
-            self.do_not_register_this_blur = False
-            return
         if not GRADING and self.options['checkpoint']:
             self.record_pending_goto()
             SHARED_WORKER.blur()
@@ -2134,10 +2207,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def goto_source_line(self, target_line):
         """Scroll the indicated source line to the window top"""
-        for element in self.editor_lines:
-            if (element.nodeValue or element.textContent) == target_line:
-                self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
-                break
+        element = self.editor_lines[target_line]
+        if not element:
+            for element in self.editor_lines:
+                if (element.nodeValue or element.textContent) == target_line:
+                    break
+        self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
 
     def set_editor_content(self, message): # pylint: disable=too-many-branches,too-many-statements
         """Set the editor content (question change or reset)"""
