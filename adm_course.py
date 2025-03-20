@@ -149,18 +149,17 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
             text.append('">')
             text.append(filename)
             text.append('</a>')
-    text.append('<tr><td><tt>login value</tt>\nStatus=Any<td>')
+    text.append('''<tr><td><tt>login value</tt>\nStatus=Any<td rowspan="2"
+><div style="vertical-align:top;font-size:80%">All sources codes:<br>
+<button onclick="window.open(BASE + '/adm/answers/' + COURSE + '/*/' + COURSE + '.zip')"
+ style="background: #EEE">Sources<br>txt ZIP</button></div>''')
+
     for what in WHAT:
         text.append('<td><button class="download" onclick="show(\''
                     + what + '\')">📥</button>')
-        if what == 'status':
-            text.append('''
-<td rowspan="2">Sources:
-<button onclick="window.open(BASE + '/adm/answers/' + COURSE + '/*/' + COURSE + '.zip')"
->Sources<br>txt ZIP</button>''')
 
     text.append('</tr>')
-    text.append('<tr><td><tt>login value</tt>\nStatus=done<td>')
+    text.append('<tr><td><tt>login value</tt>\nStatus=done')
     for what in WHAT:
         text.append('<td><button  class="download" onclick="show(\''
                     + what + '\001done' + '\')">📥</button>')
