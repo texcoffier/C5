@@ -1787,7 +1787,6 @@ def create_page(building_name):
     content.append('''
         <div class="drag_and_drop">Faites glisser les noms<br>vers ou depuis le plan</div>
         <div id="waiting"></div>
-        <div id="messages"></div>
         <div id="pointer_on_student_list">Mettez le curseur sur le plan<br>
         pour activer la mise à jour<br>
         de la liste des étudiants.</div>
@@ -1799,6 +1798,7 @@ def create_page(building_name):
             ontouchstart="ROOM.drag_start(event)"
         ></canvas>
         <div id="live_spy"></div>
+        <div id="messages"></div>
         ''')
     document.body.innerHTML = ''.join(content)
     document.body.onkeydown = key_event_handler
