@@ -14,6 +14,7 @@ ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
 LONG_CLICK = 500
 MENU_FONT = "18px sans-serif"
+SPY_FONT = 12
 
 if COURSE in ('=MAPS', '=IPS'):
     del BUILDINGS['empty']
@@ -264,6 +265,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         window.onfocus = mouse_enter
         window.onresize = update_page
         self.draw_times = []
+        self.start_timestamp = strptime(OPTIONS['start'])
+        self.stop_timestamp = strptime(OPTIONS['stop'])
     def xys(self, column, line):
         """Change coordinates system"""
         return [self.left + self.scale * self.columns_x[2*column],
@@ -1249,6 +1252,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         def select(item):
             if item.startswith("Regarder"):
                 create_realtime_spy(student)
+            elif item.startswith("Naviguer"):
+                create_timetravel(login)
             elif item.startswith("Clôturer"):
                 close_exam(login)
             elif item.startswith("Rouvrir"):
@@ -1298,7 +1303,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.the_menu.open(line, column,
             [
                 student.firstname + ' ' + student.surname,
-                "", spy, temps, state, grade,
+                "", spy,
+                "Naviguer dans le temps",
+                temps, state, grade,
                 student.mail or 'Adresse mail inconnue',
                 "",
                 blur, grades, feedback
@@ -1682,7 +1689,7 @@ def create_page(building_name):
             padding-left: calc(var(--menu-width) + var(--menu-padding));
             text-align: right;
             pointer-events: none;
-            font-size: 12px;
+            font-size: ''', SPY_FONT, '''px;
         }
         #live_spy > DIV {
             display: inline-block;
@@ -1697,7 +1704,7 @@ def create_page(building_name):
         #live_spy > DIV > DIV {
             margin-bottom: 100em;
         }
-        #live_spy > DIV > B {
+        #live_spy > DIV > B, .tt_student > B {
             display: block;
             background: #FF0E;
             position: sticky;
@@ -1736,6 +1743,36 @@ def create_page(building_name):
             background: #AFAD;
             top: 10em;
             left: var(--menu-width);
+        }
+        #timetravel {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            z-index: 10;
+        }
+        #timeline {
+            width: 100%;
+            height: 1.2em;
+            background: #888;
+            position: relative;
+            display: none;
+            }
+        #timeline SPAN {
+            position: absolute;
+            color: #FFF;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .tt_student {
+            display: inline-block;
+            width: 30em;
+            white-space: pre;
+            background: #FFF;
+            vertical-align: top;
+            overflow: hidden;
+            font-size: 12px;
+            line-height: 12px;
+            overflow: hidden;
         }
         </style>
         <div id="top"
@@ -1799,6 +1836,8 @@ def create_page(building_name):
         ></canvas>
         <div id="live_spy"></div>
         <div id="messages"></div>
+        <div id="timetravel"><div id="timeline" onmousemove="time_jump(event)">
+        Ascenseur temporel : mettez votre curseur ici</div><div id="tt_students"></div></div>
         ''')
     document.body.innerHTML = ''.join(content)
     document.body.onkeydown = key_event_handler
@@ -1922,11 +1961,26 @@ def key_event_handler(event):
                 spy = spy.parentNode
             spy.shared_worker.close()
             spy.remove()
+            for i, infos in enumerate(TIME_TRAVEL_STUDENTS):
+                if infos[1] is spy.shared_worker:
+                    TIME_TRAVEL_STUDENTS.splice(i, 1) # pylint: disable=no-member
+                    break
     if event.key == 'Escape':
         while document.getElementById('live_spy').firstChild:
             spy = document.getElementById('live_spy').firstChild
             spy.shared_worker.close()
             spy.remove()
+        for _div, shared_worker, _journal, _student, _letter in TIME_TRAVEL_STUDENTS:
+            shared_worker.close()
+        while len(TIME_TRAVEL_STUDENTS):
+            TIME_TRAVEL_STUDENTS.pop()
+        document.getElementById('tt_students').innerHTML = ''
+    if len(TIME_TRAVEL_STUDENTS) == 0:
+        document.getElementById('timeline').style.display = 'none'
+    if event.key == 'ArrowRight' and time_jump.seconds:
+        time_jump(event, time_jump.seconds + 5)
+    if event.key == 'ArrowLeft' and time_jump.seconds:
+        time_jump(event, time_jump.seconds - 5)
 
 def set_time_bonus(element, login):
     """Recode and update student bonus time"""
@@ -2007,10 +2061,10 @@ def scheduler():
             message = "Examen terminé"
             ROOM.state = 'done'
         elif now < OPTIONS['start']:
-            message = 'Début dans ' + split_time(strptime(OPTIONS['start']) - secs)
+            message = 'Début dans ' + split_time(ROOM.start_timestamp - secs)
             ROOM.state = 'pending'
         else:
-            message = 'Fin dans ' + split_time(strptime(OPTIONS['stop']) - secs)
+            message = 'Fin dans ' + split_time(ROOM.stop_timestamp - secs)
             ROOM.state = 'running'
         document.getElementById('TTL').innerHTML = message
     if Student.moving_student or Student.highlight_student:
@@ -2120,52 +2174,99 @@ def clean_up_bad_placements():
         lines.append('\n')
     print(''.join(lines))
 
+def display_student_screen(journal, feedback, student, letter):
+    if journal.position > 0:
+        before = html(journal.content[:journal.position-1])
+        cursor = html(journal.content[journal.position-1])
+    else:
+        before = ''
+        cursor = ''
+    feedback.innerHTML = (
+        '<b>Q' + (journal.question+1)
+        + '<var style="font-weight: normal; color: #888">(«<i id="SPY-'
+        + letter + '">' + letter + '</i>» pour fermer)</var> '
+        + student.surname + ' ' + student.firstname
+        + '</b><div>'
+        + before + '<span style="color:#FFF;background:#000">' + cursor + '</span>'
+        + html(journal.content[journal.position:])
+        + '</div>')
+    feedback.lastChild.style.height = journal.height * SPY_FONT + 'px'
+    feedback.scrollTo({'top': journal.scroll_line * SPY_FONT, 'behavior': 'smooth'})
+
+TIME_TRAVEL_STUDENTS = []
+
+def time_jump(event=None, secs=None):
+    timeline = document.getElementById('timeline')
+    if secs:
+        t01 = (secs - ROOM.start_timestamp) / (ROOM.stop_timestamp -  ROOM.start_timestamp)
+    else:
+        if event:
+            t01 = event.layerX / timeline.offsetWidth
+        else:
+            t01 = 0
+        secs = (1 - t01) * ROOM.start_timestamp + t01 * ROOM.stop_timestamp
+    time_jump.seconds = secs
+    timestamp = str('T' + str(secs))
+    if event:
+        if t01 < 0.5:
+            pos = 'left:' + t01 * timeline.offsetWidth
+        else:
+            pos = 'right:' + (1 - t01) * timeline.offsetWidth
+        timeline.innerHTML = (
+            '<span style="' + pos + 'px">use ← → keys '
+            + nice_date(secs, True).replace(' ', ' <b>')
+            + '</b></span>')
+    for div, _shared_worker, journal, student, letter in TIME_TRAVEL_STUDENTS:
+        for i, line in enumerate(journal.lines):
+            if line.startswith('T') and line > timestamp:
+                journal.see_past(i)
+                break
+        display_student_screen(journal, div, student, letter)
+
+def create_timetravel(login):
+    # line_height
+    # time
+    def nothing(_journal):
+        time_jump()
+    div = document.createElement('DIV')
+    div.className = 'tt_student'
+    student = STUDENT_DICT[login]
+    letter = spy_letter(student)
+    document.getElementById('tt_students').appendChild(div)
+    div.shared_worker, journal = create_shared_worker(login, nothing)
+    TIME_TRAVEL_STUDENTS.append([div, div.shared_worker, journal, student, letter])
+    document.getElementById('timeline').style.display = 'block'
+
+def spy_letter(student):
+    letters = []
+    for spy in document.getElementById('live_spy').childNodes:
+        letters.append(spy.getElementsByTagName('I')[0].innerHTML)
+    for spy in document.getElementById('tt_students').childNodes:
+        i = spy.getElementsByTagName('I')
+        if len(i):
+            letters.append(i[0].innerHTML)
+    letter = student.surname[0].upper()
+    if letter not in letters:
+        return letter
+    letter = student.firstname[0].upper()
+    if letter not in letters:
+        return letter
+    for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+        if letter not in letters:
+            return letter
+    return '1'
 
 def create_realtime_spy(student):
     """
     Choisir login
     """
-    letters = []
-    for spy in document.getElementById('live_spy').childNodes:
-        letters.append(spy.getElementsByTagName('I')[1].innerHTML)
-    letter = student.surname[0].upper()
-    if letter in letters:
-        letter = student.firstname[0].upper()
-    if letter in letters:
-        for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-            if letter not in letters:
-                break
-
+    letter = spy_letter(student)
     feedback = document.createElement('DIV')
-    feedback_header = document.createElement('B')
-    feedback.appendChild(feedback_header)
-    feedback_header.innerHTML = (
-        '<i style="float:left;background:#FFF;color: #080;">?</i> <var style="font-weight: normal; color: #888">(«<i id="SPY-'
-        + letter + '">' + letter + '</i>» pour fermer)</var> '
-        + student.surname + ' ' + student.firstname
-        )
-    feedback_div = document.createElement('DIV')
-    feedback.appendChild(feedback_div)
     document.getElementById('live_spy').appendChild(feedback)
-    feedback_div.textContent = '0'
-    line_height = feedback_div.offsetHeight
-
     def update_real_time(journal):
         if not journal.remote_update:
             return
-        if journal.position > 0:
-            before = html(journal.content[:journal.position-1])
-            cursor = html(journal.content[journal.position-1])
-        else:
-            before = ''
-            cursor = ''
-        feedback_div.innerHTML = (
-            before + '<span style="color:#FFF;background:#000">' + cursor + '</span>'
-            + html(journal.content[journal.position:]))
-        feedback.style.height = journal.height * line_height + 'px'
-        feedback.scrollTo({'top': journal.scroll_line * line_height, 'behavior': 'smooth'})
-        feedback_header.firstChild.innerHTML = 'Q' + (journal.question+1)
-
+        display_student_screen(journal, feedback, student, letter)
     feedback.shared_worker, _journal = create_shared_worker(student.login, update_real_time)
 
 try:
@@ -2214,4 +2315,5 @@ else:
         XHR.send()
 
 SERVER_TIME_DELTA = int(millisecs()/1000 - SERVER_TIME)
+
 setInterval(scheduler, 20)
