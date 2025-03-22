@@ -44,18 +44,32 @@ TABLE { border-spacing: 0px; }
 TABLE TD { vertical-align: top; border: 1px solid #888; padding: 0px; white-space: pre}
 BUTTON { width: 100% }
 E { font-family: emoji }
-TABLE#report TR:first-child, TABLE#TOMUSS TR:first-child { position: sticky; top: 0px; background: #FFFD; }
+TABLE#report TR:first-child, TABLE#TOMUSS TR:first-child {
+  height: 3em; z-index: 100;position: sticky; top: 0px; background: #FFFD; }
 TABLE#report > TBODY > TR:hover > TD { background: #DDD }
 TABLE#report > TBODY > TR > TD:nth-child(2) > DIV { font-size: 60% }
 BUTTON.download { width: calc(100% - 2px); font-size: 150%; height: 1.5em; margin: 1px;}
 DIALOG { position: fixed; right: 0px; top: 0px; border: 4px solid #0F0 }
 DIALOG BUTTON { font-size: 200%; width: 2em }
 DIALOG TEXTAREA { width: 40em ; height: 40em }
+DIV[onclick] { cursor: pointer; width: 100%; height: 3em }
+DIV[onclick]:hover { background: #EEE }
 </style>
 <dialog id="dialog"></dialog>
 <p>
-<table id="report" border>
-    <tr><th colspan="2">Login<th>Minutes<br>Bonus<th>Status<th>Questions<br>Validated<th>Grade<th>Comments<th>Version<th>Graders<th>Window<br>Blur<th>Blur<br>time<th>Files</tr>
+<table id="report" border><tbody><tr>
+<th><div onclick="sort_report(0)">Login</div>
+<th><div onclick="sort_report(1)">Name</div>
+<th><div onclick="sort_report(2)">Minutes<br>Bonus</div>
+<th><div onclick="sort_report(3)">Status</div>
+<th><div onclick="sort_report(4)">Questions<br>Validated</div>
+<th><div onclick="sort_report(5)">Grade</div>
+<th><div onclick="sort_report(6)">Comments</div>
+<th><div onclick="sort_report(7)">Version</div>
+<th><div onclick="sort_report(8)">Graders</div>
+<th><div onclick="sort_report(9)">Window<br>Blur</div>
+<th><div onclick="sort_report(10)">Blur<br>time</div>
+<th><div onclick="sort_report(11)">Files</div></tr>
 """]
     cache = {}
     nr_grades_max = {'a': 0, 'b': 0}
@@ -164,7 +178,7 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
         text.append('<td><button  class="download" onclick="show(\''
                     + what + '\001done' + '\')">📥</button>')
     text.append('</tr>')
-    text.append('</table>')
+    text.append('</tbody></table>')
 
     ###########################################################################
     ###########################################################################
@@ -359,5 +373,29 @@ DIALOG TEXTAREA { width: 40em ; height: 40em }
 
     document.body.innerHTML = text.join('') # pylint: disable=no-member
 
+def sort_report(col):
+    print("Sorting")
+    def cmp(a, b):
+        if a > b:
+            return 1
+        if a == b:
+            return 0
+        return -1
+    table = document.getElementById('report')
+    lines = []
+    for line in table.rows:
+        if line.cells[0].innerHTML.startswith('<a'):
+            value = line.cells[col].textContent
+            if not isNaN(value):
+                value = 1000000000 + Number(value)
+            lines.append([value, line])
+        else:
+            last = line
+    lines.sort(cmp)
+    last = last.previousSibling
+    for _, line in lines:
+        line.remove()
+    for _, line in lines:
+        table.firstChild.insertBefore(line, last)
 
 display()
