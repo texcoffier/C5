@@ -19,9 +19,22 @@ DIALOG {
     border-radius: 1vw;
 }
 
+DIALOG .dialog_title {
+    background: #FF9;
+    padding: 1vw;
+    font-weight: bold;
+    border-radius: 2vw;
+    margin-top: 0px;
+}
+
+DIALOG .dialog_content {
+    max-height: 70vh;
+    overflow: auto;
+}
+
 DIALOG BUTTON {
     display: block;
-    margin-top: 4vw;
+    margin-top: 2vw;
     float: right;
     font-size: 130%;
 }

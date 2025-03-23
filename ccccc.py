@@ -262,12 +262,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
         EDITMODE[0] = EDITMODE[1] = '\n'.join(JOURNAL.lines)
         print("GUI: init done")
 
-    def popup_message(self, txt, cancel='', ok='OK', callback=None, add_input=False, init=None): # pylint: disable=no-self-use
+    def popup_message(self, txt, cancel='', ok='OK', callback=None, add_input=False, init=None, title=None): # pylint: disable=no-self-use
         """For Alert and Prompt"""
         if self.dialog_on_screen:
             return
         self.dialog_on_screen = True
         popup = document.createElement('DIALOG')
+        txt = '<div class="dialog_content">' + txt + '</div>'
+        if title:
+            txt = '<div class="dialog_title">' + title + '</div>' + txt
         if callback and add_input:
             txt += '<br><input id="popup_input"'
             if init:
@@ -275,7 +278,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             txt += '>'
         if cancel != '':
             txt += '<button id="popup_cancel">' + cancel + '</button>'
-        txt += '<button id="popup_ok">' + ok + '</button>'
+        if ok:
+            txt += '<button id="popup_ok">' + ok + '</button>'
         popup.innerHTML = txt
         document.body.appendChild(popup)
 
@@ -287,7 +291,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
             except: # pylint: disable=bare-except
                 # On examination termination : body.innerHTLM = ''
                 pass
-            stop_event(event)
+            if event:
+                stop_event(event)
 
         def validate(event):
             if callback:
@@ -299,7 +304,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         if cancel != '':
             document.getElementById('popup_cancel').onclick = close
-        document.getElementById('popup_ok').onclick = validate
+        if ok:
+            document.getElementById('popup_ok').onclick = validate
 
         def enter_escape(event):
             """Enter is OK escape is Cancel"""
