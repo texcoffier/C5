@@ -34,6 +34,8 @@ EDITMODE = ['', ''] # Journals without and with comments
 
 IS_TEACHER = SESSION_LOGIN != STUDENT
 
+MEDIA.sort()
+
 def get_xhr_data(event):
     """Evaluate the received javascript"""
     if event.target.readyState == 4:
@@ -418,6 +420,17 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.line_height = self.line_numbers.firstChild.offsetHeight
         self.canvas.height = self.canvas.parentNode.offsetHeight
         self.canvas.width = self.canvas.offsetWidth
+    def insert_media(self, event):
+        """Insert the name of the cliked media"""
+        tr = event.target
+        while tr.tagName != 'TR':
+            tr = tr.parentNode
+        self.set_editor_content(
+            JOURNAL.content[:self.cursor_position]
+            + tr.lastChild.textContent
+            + JOURNAL.content[self.cursor_position:])
+        document.getElementById('popup_cancel').onclick()
+        self.editor.focus()
     def create_gui(self): # pylint: disable=too-many-statements
         """The text editor container"""
         classes = []
@@ -521,6 +534,25 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 + '<option' + opt2 + '>Commenter en sélectionnant</option>')
             self.editmode.onchange = bind(self.update_editmode, self)
             self.editor_title.firstChild.appendChild(self.editmode)
+
+        if len(MEDIA) and not GRADING and self.options['display_media_list']:
+            def show_media():
+                options = [
+                    '<table class="media" onclick="ccccc.insert_media(event)">'
+                ]
+                for i in MEDIA:
+                    options.append('<tr><td><img src="media/' + COURSE
+                        + '/' + i + '?ticket=' + TICKET + '"><td><div>' + i + '</div></tr>')
+                options.append('</table>')
+                self.popup_message(''.join(options), "Annuler", None,
+                    title="Cliquez pour inserrer le nom de l'image dans le code source.")
+
+            self.media_button = document.createElement('SPAN')
+            self.media_button.innerHTML = '📷'
+            self.media_button.onclick = show_media
+            self.media_button.style.marginLeft = "0.2vw"
+            self.media_button.style.cursor = "pointer"
+            self.editor_title.firstChild.appendChild(self.media_button)
 
         if self.options['display_local_save']:
             self.local_button = document.createElement('TT')

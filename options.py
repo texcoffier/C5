@@ -36,6 +36,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['checkpoint'           ,1, "Requires students to be placed on the map (examination mode)"],
     ['allow_copy_paste'     ,0, "Copy/paste allowed (if not allowed students must be in full screen mode)"],
     ['forbid_question_copy' ,0, "Forbid text selection in questions"],
+    ['display_media_list'   ,0, "Add a media menu 📷 in the source editor title bar"],
     ['save_unlock'          ,0, "Saving a question unlock next"],
     ['automatic_compilation',1, "Compilation is automatic"],
     ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],

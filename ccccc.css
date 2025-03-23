@@ -842,3 +842,27 @@ BODY.dograding .grading PRE BUTTON:hover,
 #search_input {
     box-shadow: 4px 2px 4px black;
 }
+
+.media {
+    border-spacing: 0px;
+}
+.media TR {
+    cursor: pointer;
+}
+.media TD DIV, .media IMG {
+    height: 1.5vw;
+}
+.media IMG {
+    vertical-align: bottom;
+}
+.media TR:hover {
+    background: #EEE;
+}
+.media TD:first-child {
+    text-align: center;
+}
+.media, .media TR, .media TD, .media DIV, .media IMG {
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
+}
