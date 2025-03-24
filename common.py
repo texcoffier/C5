@@ -1171,12 +1171,18 @@ def create_shared_worker(login='', hook=None):
         shared_worker.post('T' + seconds)
     shared_worker.timestamp = shared_worker_timestamp
     def shared_worker_focus():
-        """Record current time"""
+        """Window get focus and full screen"""
+        if shared_worker.focused:
+            return # Focus yet sent
         shared_worker_timestamp(int(millisecs() / 1000))
         shared_worker.post('F')
+        shared_worker.focused = True
     shared_worker.focus = shared_worker_focus
     def shared_worker_blur():
-        """Record current time"""
+        """Window lost focus or fullscreen"""
+        if not shared_worker.focused:
+            return # Blurred yet sent
+        shared_worker.focused = False
         shared_worker_timestamp(int(millisecs() / 1000))
         shared_worker.post('B')
     shared_worker.blur = shared_worker_blur

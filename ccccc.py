@@ -188,7 +188,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     current_key = None
     meter = document.createRange()
     span_highlighted = None # Racket eval result line highlighted
-    first_F11 = True
+    focused = False
     need_grading_update = True
     dialog_on_screen = False
     completion_running = False
@@ -676,24 +676,20 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         self.content_old = content
                         self.record_error('BuG ' + content)
 
-        if (not GRADING
-                and not self.options['allow_copy_paste']
-                and not self.options['feedback']
-                and (
-                    int(window.innerHeight * window.devicePixelRatio) + 30 < screen.height
-                 or int(window.innerWidth  * window.devicePixelRatio) + 40 < screen.width
+        if not (GRADING or self.options['allow_copy_paste'] or self.options['feedback'] or not self.options['checkpoint']):
+            # EXAM MODE because not grading, no copy/paste no feedback and a checkpoint
+            is_fullscreen = (
+                    window.innerHeight * window.devicePixelRatio + 30 > screen.height
+                and window.innerWidth  * window.devicePixelRatio + 40 > screen.width
                 )
-           ):
-            if self.fullscreen.style.display != 'block':
-                self.fullscreen.style.display = 'block'
-                if not self.first_F11:
-                    SHARED_WORKER.blur()
-        else:
-            if self.fullscreen.style.display != 'none':
+            if is_fullscreen:
                 self.fullscreen.style.display = 'none'
-                self.first_F11 = False
-                if not GRADING and self.options['checkpoint']:
-                    SHARED_WORKER.focus()
+            else:
+                self.fullscreen.style.display = 'block'
+            if is_fullscreen and self.focused:
+                SHARED_WORKER.focus()
+            else:
+                SHARED_WORKER.blur()
 
         if self.do_update_cursor_position:
             # print('do_update_cursor_position', self.do_update_cursor_position)
@@ -1698,10 +1694,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
         elif event.key == 'F8':
             self.do_indent()
-        elif event.key == 'F11':
-            if self.first_F11:
-                self.first_F11 = False
-                SHARED_WORKER.focus()
         elif event.key == 'Enter' and event.target is self.editor:
             # Automatic indent
             self.update_source()
@@ -1742,14 +1734,14 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Key press"""
     def onblur(self, _event):
         """Window blur"""
+        self.focused = False
         if not GRADING and self.options['checkpoint']:
             self.record_pending_goto()
-            SHARED_WORKER.blur()
     def onfocus(self, _event):
         """Window focus"""
+        self.focused = True
         if not GRADING and self.options['checkpoint'] and self.fullscreen.style.display == 'none':
             self.record_pending_goto()
-            SHARED_WORKER.focus()
     def memorize_inputs(self):
         """Record all input values"""
         if not self.inputs[self.current_question]:
