@@ -168,7 +168,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 self.kill()
     def send_input(self, data:str) -> None:
         """Send the data to the running process standard input"""
-        self.log(("INPUT", data))
+        # self.log(("INPUT", data))
         if self.process and self.stdin_w:
             os.write(self.stdin_w, data.encode('utf-8') + b'\n')
         self.input_done.set()
@@ -266,7 +266,6 @@ class Process: # pylint: disable=too-many-instance-attributes
                 self.kill()
                 break
             # self.log(("RUN", line[:100]))
-            self.log("RUN")
             if b'\001\002RACKETFini !\001' in line:
                 self.log(("EXIT", 0))
                 await self.websocket.send(json.dumps(['return', "\n"]))
@@ -469,7 +468,8 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
         process.log(("START", ticket, login, course, process.launcher))
         async for message in websocket:
             action, data = json.loads(message)
-            process.log(('ACTION', action))
+            if action != 'input': # To many logs (Grapic)
+                process.log(('ACTION', action))
             if not session.is_admin() and not process.course_running():
                 if action == 'compile':
                     await process.websocket.send(json.dumps(
