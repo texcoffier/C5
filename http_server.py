@@ -207,6 +207,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             COURSE_CONFIG = {json.dumps(course.get_config())};
             COURSE_CONFIG['feedback'] = {feedback};
             COMMENT_STRING = {json.dumps(course.get_language()[1])};
+            MEDIA = {json.dumps(course.media)};
         </script>
         <script src="ccccc.js?ticket={session.ticket}"></script>''')
 
