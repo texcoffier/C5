@@ -367,7 +367,7 @@ class Journal:
 
         def add(index):
             # Jump over not interesting things
-            while index < len(self.lines) and self.lines[index][0] in 'GTBFLPH':
+            while index < len(self.lines) and self.lines[index][0] in 'GTLPH':
                 if len(self.children[index]) != 1:
                     for i in self.children[index]:
                         add(i)
@@ -619,6 +619,21 @@ class Journal:
             return int(ctx.measureText(char).width)
         def draw_b(_action, x, y):
             return draw_char('#', x, y, font="px sans")
+        def draw_B(_action, x, y):
+            draw_B.start = (x, y)
+            return 0
+        def draw_F(_action, x, y):
+            if draw_B.start:
+                ctx.strokeStyle = '#000'
+                ctx.lineWidth = 3 * zoom
+                ctx.lineCap = "round"
+                ctx.beginPath()
+                ctx.moveTo(draw_B.start[0], draw_B.start[1] - size/2)
+                ctx.lineTo(x + 1, y - size/2)
+                ctx.stroke()
+                ctx.lineCap = "butt"
+                draw_B.start = None
+            return 0
         def draw_S(_action, x, y):
             return draw_char('📩', x, y)
         def draw_g(_action, x, y):
@@ -630,8 +645,8 @@ class Journal:
         draw = {
             'D': draw_ID, 'I': draw_ID, 'c': draw_c, 't': draw_t,
             'Q': draw_nothing, 'L': draw_nothing, 'P': draw_nothing, 'T': draw_nothing,
-            'H': draw_nothing, '#': draw_nothing, 'G': draw_nothing, 'F': draw_nothing,
-            'B': draw_nothing,
+            'H': draw_nothing, '#': draw_nothing, 'G': draw_nothing,
+            'B': draw_B, 'F': draw_F,
             'b': draw_b, 'O': draw_O, 'S': draw_S, 'g': draw_g, '✍': draw_hand,
         }
         if canvas.width != canvas.offsetWidth:
