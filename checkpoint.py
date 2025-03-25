@@ -1756,6 +1756,7 @@ def create_page(building_name):
             background: #888;
             position: relative;
             display: none;
+            overflow: hidden;
             }
         #timeline SPAN {
             position: absolute;
@@ -1772,7 +1773,7 @@ def create_page(building_name):
             overflow: hidden;
             font-size: 12px;
             line-height: 12px;
-            overflow: hidden;
+            border-bottom: 1px solid #000;
         }
         </style>
         <div id="top"
@@ -2199,6 +2200,10 @@ def time_jump(event=None, secs=None):
     timeline = document.getElementById('timeline')
     if secs:
         t01 = (secs - ROOM.start_timestamp) / (ROOM.stop_timestamp -  ROOM.start_timestamp)
+        if t01 < 0:
+            t01 = 0
+        elif t01 > 1:
+            t01 = 1
     else:
         if event:
             t01 = event.layerX / timeline.offsetWidth

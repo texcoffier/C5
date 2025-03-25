@@ -253,11 +253,11 @@ class Journal:
         while True:
             line = self.lines[index]
             action = line[0]
-            if action in 'PIDLb': # Position/Insert/Delete/Line/Bubble
+            if action in 'PIDLbH': # Position/Insert/Delete/Line/Bubble/Height
                 lines.append(line)
                 index -= 1
-            elif action in 'TOC#HScgtFB':
-                # Time/Open/Close/Debug/Height/compile/good/tag/Focus/Blur
+            elif action in 'TOC#ScgtFB':
+                # Time/Open/Close/Debug/compile/good/tag/Focus/Blur
                 index -= 1
                 if index < 0:
                     break
