@@ -100,6 +100,8 @@ DIV[onclick]:hover { background: #EEE }
                 nr_blurs += 1
             elif line.startswith('g'):
                 nr_answered += 1
+            elif line.startswith('#checkpoint_stop'):
+                break
         journal['nr_blurs'] = nr_blurs
         journal['blur_time'] = blur_time
         journal['nr_answered'] = nr_answered
