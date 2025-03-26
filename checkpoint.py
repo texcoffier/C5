@@ -2280,6 +2280,8 @@ except SyntaxError:
     INFO = {}
 if 'building' not in INFO:
     INFO['building'] = OPTIONS.default_building or "Nautibus"
+if 'start' not in OPTIONS:
+    OPTIONS['start'] = OPTIONS['stop'] = nice_date(0)
 
 if COURSE == "=MAPS":
     document.body.innerHTML = ('<title>Hostmap</title><span id="top"></span>'
