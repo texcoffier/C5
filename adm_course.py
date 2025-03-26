@@ -318,6 +318,7 @@ DIV[onclick]:hover { background: #EEE }
             text.append(login)
             text.append('<td><td>')
             grading = parse_grading(student['grades'])
+            i = 0
             for infos in notation:
                 _text, grade_label, values = infos
                 if len(grade_label) == 0:
@@ -329,6 +330,7 @@ DIV[onclick]:hover { background: #EEE }
                     text.append(grading[i][0])
                 else:
                     text.append('???')
+                i += 1
                 text.append('<td>')
             text.append('</tr>')
         text.append('</table>')
