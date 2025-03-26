@@ -614,6 +614,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 yield cls.get(course)
             except ValueError as err:
                 print(err)
+    @classmethod
+    def courses_matching(cls, course, session=None):
+        """Returns instances with name matching 'course' regexp."""
+        return [
+            config
+            for config in cls.configs.values()
+            if (session is None or session.is_admin(config))
+                and (re.match(course, config.session) or re.match(course, config.course))
+        ]
 
     def is_admin(self, login:str) -> bool:
         """Is admin or creator"""

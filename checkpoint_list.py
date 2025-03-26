@@ -20,6 +20,24 @@ def edit():
             + encodeURIComponent(session_filter).replace(RegExp('\\.', 'g'), '%2E')
             + '?ticket=' + TICKET)
 
+def edit_ticked():
+    """Launch editor on a set of session"""
+    names = []
+    for row in document.getElementsByTagName('TR'):
+        if row.style.display != "none":
+            if (row.cells[1]
+                    and row.cells[1].firstChild.tagName == 'INPUT'
+                    and row.cells[1].firstChild.checked
+                    ):
+                names.append(row.cells[2].firstChild.textContent.upper()
+                    + '=' + row.cells[0].firstChild.textContent)
+    if len(names):
+        window.open(
+            BASE + '/adm/session/^(' + encodeURIComponent('|'.join(names))
+            + ')?ticket=' + TICKET)
+    else:
+        alert("Tick some boxes before clicking here")
+
 def get_regexp_from_filter(value):
     """Translate"""
     if value == 'Mes sessions':
@@ -116,8 +134,8 @@ def update(value):
                 INTERFACE.nr_sessions_filtered += 1
             else:
                 row.style.display = "none"
-            if row.cells[5].textContent.strip() != '':
-                nr_actives += Number(row.cells[5].textContent)
+            if row.cells[6].textContent.strip() != '':
+                nr_actives += Number(row.cells[6].textContent)
     change_header_visibility(header, one_visible)
     document.getElementById('nr_actives').innerHTML = nr_actives
     document.getElementById('nr_doing_grading').innerHTML = INTERFACE.nr_doing_grading
@@ -186,7 +204,8 @@ def init_interface(nr_doing_grading):
 <input id="filter" onclick="show_filter_menu()"> ← filter only what matters to you.
 <datalist id="filter_menu"></datalist>''']
     if window.IS_AUTHOR:
-        top.append('<button onclick="edit()">Edit all sessions</button>')
+        top.append('<button onclick="edit()">Edit all sessions</button> ')
+        top.append('<button onclick="edit_ticked()">Edit ☑ sessions</button>')
     top.append('''
 <div style="float: right">
 <span id="nr_doing_grading"></span> active graders</span>,
@@ -196,7 +215,7 @@ def init_interface(nr_doing_grading):
      style="font-size:80%;white-space:nowrap"
      onclick="column_toggle(event)">Columns:'''
         )
-    for i, header in enumerate(['Compiler', 'Title', 'Students', 'Waiting', 'Actives', 'With me',
+    for i, header in enumerate(['☑', 'Compiler', 'Title', 'Students', 'Waiting', 'Actives', 'With me',
                    'Start date', 'Stop date', 'Duration', 'Options', 'Edit', '👁', 'Waiting Room',
                    'Creator', 'Admins', 'Graders', 'Proctors', 'Media']):
         if header in INTERFACE.columns:

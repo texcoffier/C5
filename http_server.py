@@ -481,11 +481,7 @@ async def adm_git_pull(request:Request) -> Response:
     session, config = await get_course_config(request)
     course = request.match_info['course']
     if course.startswith('^'):
-        configs = [
-            config
-            for config in CourseConfig.configs.values()
-            if re.match(course, config.session)
-        ]
+        configs = CourseConfig.courses_matching(course, session)
     else:
         configs = [config]
 
@@ -504,11 +500,7 @@ async def adm_force_grading_done(request:Request) -> Response:
     session, config = await get_course_config(request)
     course = request.match_info['course']
     if course.startswith('^'):
-        configs = [
-            config
-            for config in CourseConfig.configs.values()
-            if re.match(course, config.session)
-        ]
+        configs = CourseConfig.courses_matching(course, session)
     else:
         configs = [config]
 
@@ -759,9 +751,8 @@ async def adm_config(request:Request) -> Response: # pylint: disable=too-many-br
     if course.startswith('^'):
         # Configuration of multiple session with regular expression
         the_answers = []
-        for conf in tuple(CourseConfig.configs.values()):
-            if session.is_admin(conf) and re.match(course, conf.session):
-                the_answers.append(await adm_config_course(conf, action, value))
+        for conf in CourseConfig.courses_matching(course, session):
+            the_answers.append(await adm_config_course(conf, action, value))
     else:
         # Configuration of a single session
         the_answers = [await adm_config_course(config, action, value)]
@@ -1365,6 +1356,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     content.append(f'''
     <tr>
     <td class="clipped course"><div>{course.course.split('=')[1]}</div></td>
+    <td><input type="checkbox">
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
     <td class="clipped title"><div>{html.escape(course.title)}</div>
     <td>{len(course.active_teacher_room) or ''}
@@ -1408,7 +1400,7 @@ def checkpoint_table(session:Session, courses:List[CourseConfig],
 async def checkpoint_list(request:Request) -> Response:
     """Page with all checkpoints"""
     session = await Session.get_or_fail(request)
-    titles = '''<tr class="sticky2"><th>Session<th>Comp<br>iler
+    titles = '''<tr class="sticky2"><th>Session<th>☑<th>Comp<br>iler
         <th>Title
         <th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
         <th>Start date<th>Stop date<th>Duration<th>Options<th>Edit<th>👁<th>Waiting<br>Room
@@ -1698,10 +1690,7 @@ async def get_course_config(request:Request) -> Tuple[Session,CourseConfig]:
     course = request.match_info['course']
     if course.startswith('^'):
         session = await Session.get_or_fail(request)
-        matches = []
-        for config in CourseConfig.configs.values():
-            if session.is_admin(config) and re.match(course, config.session):
-                matches.append(config)
+        matches = CourseConfig.courses_matching(course, session)
         if not matches:
             raise web.HTTPUnauthorized(body='no_matching_session')
         class FakeConfig(CourseConfig): # pylint: disable=too-few-public-methods
@@ -1826,6 +1815,7 @@ async def js_errors(request:Request) -> Response:
         return session.message('not_root')
     stream = web.StreamResponse()
     stream.content_type = 'text/plain'
+    stream.charset = 'utf-8'
     await stream.prepare(request)
     process = await asyncio.create_subprocess_exec(
         'awk', '/     ERROR / { if ($0 != P && $0 != Q) { print($0) ; Q=P ; P=$0 ;} }',

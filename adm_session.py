@@ -396,7 +396,7 @@ def init():
     update_course_config.div = div
 
     div.onchange = onchange
-    title = html(COURSE.replace('=', '   '))
+    title = html(COURSE)
     if title.startswith('^'):
         title = '<span style="background: #F00; color: #FFF">' + title + ' (session set)</span>'
     div.innerHTML = ('<h1 style="display: flex"><span>' + title + """</span>

@@ -10,7 +10,7 @@ TABLE {
 
 TABLE TD,
 TABLE TH {
-    border: 1px solid #AAA;
+    border: 2px solid #DDD;
     padding: 2px
 }
 
@@ -40,10 +40,10 @@ TABLE TD.clipped:hover DIV {
 }
 
 TR:hover TD {
-    border-bottom: 3px solid #000;
-    padding-bottom: 0px;
-    border-top: 3px solid #000;
-    padding-top: 0px;
+    border-bottom: 2px solid #000;
+    border-top: 2px solid #000;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 TD {
@@ -164,10 +164,11 @@ BUTTON {
     background: #DDD;
 }
 
-#column_toggles SPAN:hover { background: #EEE }
+#column_toggles SPAN { border: 1px solid #00F }
+#column_toggles SPAN[checked]:hover { background: #88F }
 
-#column_toggles SPAN[checked="1"] { border: 1px solid #FFF }
-#column_toggles SPAN[checked="0"] { border: 1px solid #000 }
+#column_toggles SPAN[checked="1"] { background: #FFF }
+#column_toggles SPAN[checked="0"] { background: #DDF }
 
 BODY.hide1 TR > *:nth-child(1),
 BODY.hide2 TR > *:nth-child(2),
@@ -189,4 +190,5 @@ BODY.hide17 TR > *:nth-child(17),
 BODY.hide18 TR > *:nth-child(18),
 BODY.hide19 TR > *:nth-child(19),
 BODY.hide20 TR > *:nth-child(20)
+BODY.hide21 TR > *:nth-child(21)
 { display: none }
