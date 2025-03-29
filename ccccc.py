@@ -729,9 +729,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     message = self.options['time_done']
                     delta = -delta
                     if (SESSION_LOGIN != self.options['creator']
-                        and SESSION_LOGIN not in self.options['admins'].split(' ')
-                        and SESSION_LOGIN not in self.options['graders'].split(' ')
-                        and SESSION_LOGIN not in self.options['proctors'].split(' ')):
+                        and SESSION_LOGIN not in CONFIG['masters']
+                        and SESSION_LOGIN not in self.options['admins']
+                        and SESSION_LOGIN not in self.options['graders']
+                        and SESSION_LOGIN not in self.options['proctors']):
                         self.do_stop()
                 else:
                     message = self.options['time_running']
