@@ -2035,6 +2035,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.canvas.parentNode.scrollLeft = max(
                 0, self.tree_canvas() - self.canvas.parentNode.offsetWidth + 40)
             self.need_grading_update = True # Need to recompute links in grading pane
+            self.old_delta = 0 # Need to redisplay timer
             if (GRADING or self.options['feedback']) and self.source != '':
                 self.add_grading()
                 self.need_grading_update = False
