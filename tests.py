@@ -125,6 +125,11 @@ class Tests: # pylint: disable=too-many-public-methods
                 os.unlink(course_name + '/journal.log')
             for i in glob.glob(course_name + '/LOGS/*/journal.log'):
                 os.unlink(i)
+            for i in glob.glob(course_name + '/LOGS/*/grades.log'):
+                os.unlink(i)
+            for i in glob.glob(course_name + '/MEDIA/*'):
+                os.unlink(i)
+        os.system('rm -r COMPILE_REMOTE/XXX')
 
         start = time.time()
         self.wait_start()
@@ -157,6 +162,8 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_zip,
                     self.test_media,
                     self.test_completion,
+                    self.test_manage_tree,
+                    self.test_manage_import,
                     # self.test_git,
                     ):
                 print('*'*99)
@@ -1084,32 +1091,37 @@ class Q1(Question):
             self.check('BODY', {'innerHTML': Contains('«REMOTE=xxx» Renamed as «REMOTE=xxxx»')})
         self.delete_session_xxx()
 
+    def load_zip(self, url):
+        """Retrieve a ZIP and returns the filename list"""
+            # Using self.goto() will lock selenium firefox driver
+        self.driver.execute_script(
+            f"window.open('https://127.0.0.1:4201/{url}/test.zip?ticket={self.ticket}')")
+        for _ in range(20):
+            time.sleep(0.1)
+            names = glob.glob(os.path.expanduser('~/*/test.zip'))
+            if names:
+                break
+            names = glob.glob(os.path.expanduser('~/test.zip'))
+            if names:
+                break
+        else:
+            raise ValueError('Downloaded file not found')
+        print('\t\t', names)
+        self.goto('x')
+        name = names[0]
+        while os.path.getsize(name) == 0:
+            time.sleep(0.1)
+        p = subprocess.run(['unzip', '-l', name], capture_output=True, check=True)
+        # subprocess.run(['cp', name, '/tmp/toto.zip'], check=True)
+        os.unlink(name)
+        return p.stdout
+
     def test_zip(self):
         """Load session ZIP"""
         with self.admin_rights():
-            # Using self.goto() will lock selenium firefox driver
-            self.driver.execute_script(f"window.open('https://127.0.0.1:4201/adm/get/COMPILE_REMOTE/test.zip?ticket={self.ticket}')")
-            for _ in range(20):
-                time.sleep(0.1)
-                names = glob.glob(os.path.expanduser('~/*/test.zip'))
-                if names:
-                    break
-                names = glob.glob(os.path.expanduser('~/test.zip'))
-                if names:
-                    break
-            else:
-                raise ValueError('Downloaded file not found')
-            print('\t\t', names)
-            self.goto('x')
-            name = names[0]
-            while os.path.getsize(name) == 0:
-                time.sleep(0.1)
-            p = subprocess.run(['unzip', '-l', name], capture_output=True, check=True)
-            # for line in p.stdout.split(b'\n'):
-            #     print(line)
+            files = self.load_zip('adm/get/COMPILE_REMOTE')
             for value in (b'questions.py', b'questions.js', b'questions.json', b'session.cf'):
-                assert b'COMPILE_REMOTE/test/' + value in p.stdout
-            os.unlink(name)
+                assert b'COMPILE_REMOTE/test/' + value in files
 
     def test_media(self):
         """Media: Uploading Listing Removing"""
@@ -1427,6 +1439,115 @@ class Q1(Question):
             # # sys.stdin.readline()
             # retry(lambda: options(''))
             # check(base + second_item)
+
+    def test_manage_tree(self):
+        """Test tree ticking and export"""
+        with self.admin_rights():
+            self.goto('adm/session/REMOTE=test')
+            self.click('#Manage')
+            tree = self.check('#tree')
+            labels = self.driver.find_elements_by_css_selector('#tree LABEL')
+            inputs = self.driver.find_elements_by_css_selector('#tree INPUT')
+            export_button, import_button = self.driver.find_elements_by_css_selector('#tree_menu BUTTON')
+            retry(lambda: not export_button.get_attribute('disabled'))
+            state = self.driver.execute_script("return get_state()")
+            assert state == ''
+            labels[0].click() # Check all
+            retry(lambda: export_button.get_attribute('disabled'))
+            retry(lambda: not inputs[-1].get_attribute('checked'))
+            state = set(self.driver.execute_script("return get_state()").split(' '))
+
+            # Unclick last
+            labels[-1].click()
+            retry(lambda: inputs[-1].get_attribute('checked'))
+            state2 = set(self.driver.execute_script("return get_state()").split(' '))
+            assert state - state2 == set(('messages',))
+            retry(lambda: export_button.get_attribute('disabled'))
+
+            # Uncheck all
+            labels[0].click() # Uncheck all
+            retry(lambda: inputs[-1].get_attribute('checked')) # Always unchecked
+            state2 = self.driver.execute_script("return get_state()")
+            assert state2 == ''
+            retry(lambda: not export_button.get_attribute('disabled'))
+
+            # Export
+            files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
+            for name in (b'session.cf', b'questions.py'):
+                assert b'C5/COMPILE_REMOTE/test/' + name in files
+            assert files.count(b' C5/') == 2
+
+            if not os.path.exists('COMPILE_REMOTE/test/MEDIA'):
+                os.mkdir('COMPILE_REMOTE/test/MEDIA')
+            open('COMPILE_REMOTE/test/MEDIA/foo.png', 'wb').close()
+            if not os.path.exists('COMPILE_REMOTE/test/LOGS'):
+                os.mkdir('COMPILE_REMOTE/test/LOGS')
+            if not os.path.exists('COMPILE_REMOTE/test/LOGS/john.doe'):
+                os.mkdir('COMPILE_REMOTE/test/LOGS/john.doe')
+            open('COMPILE_REMOTE/test/LOGS/john.doe/journal.log', 'wb').close()
+            open('COMPILE_REMOTE/test/LOGS/john.doe/grades.log', 'wb').close()
+            files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
+            for name in (b'session.cf', b'questions.py', b'MEDIA/foo.png',
+                         b'LOGS/john.doe/journal.log', b'LOGS/john.doe/grades.log'):
+                assert b'C5/COMPILE_REMOTE/test/' + name in files
+            assert files.count(b' C5/') == 5
+
+            # Filtered export (do not check individual session attributes)
+            state.discard('Grades')
+            state.discard('Journal')
+            state.discard('Media')
+            files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
+            for name in (b'session.cf', b'questions.py'):
+                assert b'C5/COMPILE_REMOTE/test/' + name in files
+            assert files.count(b' C5/') == 2
+
+    def test_manage_import(self):
+        """Test filtered import"""
+        with open('tests_import.zip', 'rb') as file:
+            zip_content = file.read()
+        def send(what, session):
+            print(f'\twhat=«{what}» session=«{session}»')
+            if session:
+                destination = 'one'
+            else:
+                destination = 'multiple'
+            response = requests.post(
+                f"https://127.0.0.1:4201/adm/import/{what}?ticket={self.ticket}",
+                data={'destination': destination, 'session': session},
+                files={'zip': ('foo.zip', zip_content, 'application/zip')},
+                verify=False
+                )
+            return response.text
+
+        save_ticket = self.ticket
+        response = requests.get('https://127.0.0.1:4201/', verify = False)
+        self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
+        with self.admin_rights():
+            self.goto('adm/session/REMOTE=test')
+            output = send('sequential', '')
+            assert output == '<h1>COMPILE_REMOTE/test</h1>\n<br>C5/COMPILE_REMOTE/test/session.cf<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/foo.png</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/questions.py</span><h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>make: &#x27;COMPILE_REMOTE/test/questions.js&#x27; is up to date.\n</pre>'
+            output = send('Source', '')
+            assert output == '<h1>COMPILE_REMOTE/test</h1>\n<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/session.cf</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/foo.png</span><br>C5/COMPILE_REMOTE/test/questions.py<h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>COMPILE_REMOTE/test/questions.py â\x86\x92 COMPILE_REMOTE/test/questions.js OK\nCOMPILE_REMOTE/test/questions.py â\x86\x92 COMPILE_REMOTE/test/questions.json OK\n</pre>'
+            output = send('Journal Grades Media', '')
+            assert output == '<h1>COMPILE_REMOTE/test</h1>\n<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/session.cf</span><br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log<br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log<br>C5/COMPILE_REMOTE/test/MEDIA/foo.png<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/questions.py</span><h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>make: &#x27;COMPILE_REMOTE/test/questions.js&#x27; is up to date.\n</pre>'
+
+            # Import into another session
+            output = send('start Source Journal Grades Media', 'TOTO=XXX')
+            assert("Bad compiler" in output)
+
+            output = send('sequential Source Journal Grades Media', 'REMOTE=XXX')
+            assert output == '<br>C5/COMPILE_REMOTE/test/session.cf<br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log<br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log<br>C5/COMPILE_REMOTE/test/MEDIA/foo.png<br>C5/COMPILE_REMOTE/test/questions.py<h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/XXX</h2><pre>COMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.js OK\nCOMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.json OK\n</pre>'
+            
+            assert os.path.exists('COMPILE_REMOTE/XXX/questions.py')
+            assert os.path.exists('COMPILE_REMOTE/XXX/session.cf')
+            assert os.path.exists('COMPILE_REMOTE/XXX/MEDIA/foo.png')
+            assert os.path.exists('COMPILE_REMOTE/XXX/LOGS/john.doe/grades.log')
+            assert os.path.exists('COMPILE_REMOTE/XXX/LOGS/john.doe/journal.log')
+            with open('COMPILE_REMOTE/XXX/session.cf', 'rb') as file:
+                content = file.read()
+            assert content.count(b'\n') == 2
+            assert content.endswith(b"\n('sequential', 1)\n")    
+        self.ticket = save_ticket
 
     def screenshots(self):
         """Dump screen shots"""

@@ -1211,6 +1211,9 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     config.set_parameter('state', 'Draft')
     return f"Course «{dst_dirname}» added"
 
+def good_session_name(txt):
+    return re.match('[-_A-Za-z0-9]+', txt)
+
 async def upload_course(request:Request) -> Response:
     """Add a new course"""
     session = await Session.get_or_fail(request)
@@ -1227,6 +1230,8 @@ async def upload_course(request:Request) -> Response:
     else:
         if not session.is_author():
             message = "Session adding is not allowed!"
+        if not good_session_name(replace[:-3]):
+            message = "Bad session name!"
     if not message:
         message = await update_file(request, session, compiler, replace)
     if '!' not in message and '<pre' not in message and not replace:
@@ -1891,6 +1896,181 @@ async def full_stats(request:Request) -> Response:
     <script src="stats.js?ticket={session.ticket}"></script>
     ''')
 
+async def adm_export(request:Request) -> Response:
+    """Export things"""
+    session, config = await get_course_config(request)
+    course = request.match_info['course']
+    if course.startswith('^'):
+        configs = CourseConfig.courses_matching(course, session)
+    else:
+        configs = [config]
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, mode="w", compression=zipfile.ZIP_DEFLATED) as zipper:
+        for course in configs:
+            if not session.is_admin(course):
+                continue
+            what = request.match_info['what'].split(' ')
+            dirname = f'C5/COMPILE_{course.course.replace("=", "/")}'
+            zipper.writestr(f'{dirname}/session.cf', course.create_config(what))
+            await asyncio.sleep(0)
+            for login in os.listdir(course.dir_log):
+                if 'Journal' in what:
+                    journa = f'{course.dir_log}/{login}/journal.log'
+                    if os.path.exists(journa):
+                        zipper.writestr(f'{dirname}/LOGS/{login}/journal.log',
+                            pathlib.Path(journa).read_text(encoding='utf-8'))
+                await asyncio.sleep(0)
+                if 'Grades' in what:
+                    grades = f'{course.dir_log}/{login}/grades.log'
+                    if os.path.exists(grades):
+                        zipper.writestr(f'{dirname}/LOGS/{login}/grades.log',
+                            pathlib.Path(grades).read_text(encoding='utf-8'))
+                await asyncio.sleep(0)
+            if 'Media' in what:
+                if os.path.exists(course.dir_media):
+                    for media in os.listdir(course.dir_media):
+                        filename = f'{course.dir_media}/{media}'
+                        zipper.writestr(f'{dirname}/MEDIA/{media}',
+                                pathlib.Path(filename).read_bytes())
+                        await asyncio.sleep(0)
+            if 'Source' in what:
+                zipper.writestr(f'{dirname}/questions.py',
+                    pathlib.Path(course.file_py).read_text(encoding='utf-8'))
+                await asyncio.sleep(0)
+            for i in ('Journal', 'Grades', 'Media', 'Source'):
+                if i in what:
+                    what.remove(i)
+            if what:
+                log(f'BUG WHAT={what}')
+
+    stream = web.StreamResponse()
+    stream.content_type = 'application/zip'
+    await stream.prepare(request)
+    await stream.write(data.getvalue())
+    return stream
+
+async def adm_import(request:Request) -> Response:
+    session = await Session.get_or_fail(request)
+    if not session.is_author():
+        raise session.exception('not_author')
+    what = set(request.match_info['what'].split(' '))
+    binary_what = set(i.encode('utf-8') for i in what)
+    post = await request.post()
+    session_zip = zipfile.ZipFile(post['zip'].file, mode="r")
+    stream = web.StreamResponse()
+    stream.content_type = 'text/html'
+    await stream.prepare(request)
+    async def write(txt):
+        await stream.write(txt.encode('utf-8'))
+    async def skip():
+        await write(f'<br><span style="color:#BBB">{filename}</span>')
+    async def badfilename(message):
+        await write(f'<br><span style="color:#F00">{message}</span>')
+        await skip()
+    destination = post['destination']
+    if destination == 'one':
+        destination = post['session']
+        compiler, session_name = destination.split('=')
+        if compiler not in COMPILERS:
+            await write(f'Bad compiler: «{compiler}». Allowed are {COMPILERS}.\n')
+            return stream
+        if not good_session_name(session_name):
+            await write(f'Bad session name: {session_name}.\n')
+            return stream
+        dirname = f'COMPILE_{compiler}/{session_name}'
+        do_not_overwrite = False
+        if os.path.exists(dirname):
+            config = CourseConfig.get(dirname)
+            if not session.is_admin(config):
+                await write(f'Your are not admin of: «{dirname}».\n')
+                return stream
+        courses = (dirname,)
+    else:
+        destination = None
+        courses = set()
+    course = ''
+    for filename in session_zip.namelist():
+        try:
+            _c5, compiler, session_name, *data = filename.split('/')
+        except ValueError:
+            await write('<br>' + html.escape(filename) + ' Invalid filename.')
+            continue
+        if not destination:
+            dirname = f'{compiler}/{session_name}'
+            if course != dirname:
+                await write(f'<h1>{dirname}</h1>\n')
+                course = dirname
+                if compiler.split('COMPILE_')[1] not in COMPILERS:
+                    await badfilename(f'Bad compiler: «{compiler}». Allowed are {COMPILERS}.\n')
+                    continue
+                if not good_session_name(session_name):
+                    await badfilename(f'Bad session name: «{session_name}».\n')
+                    continue
+                do_not_overwrite = False
+                if os.path.exists(dirname):
+                    config = CourseConfig.get(dirname)
+                    if not session.is_admin(config):
+                        do_not_overwrite = True
+                        await badfilename(f'You are not admin of: «{session_name}».\n')
+                else:
+                    os.mkdir(dirname)
+                courses.add(course)
+        if do_not_overwrite:
+            await skip()
+            continue
+        path = pathlib.Path(f'{dirname}/{"/".join(data[:-1])}')
+        if filename.endswith("journal.log"):
+            if 'Journal' not in what:
+                await skip()
+                continue
+        elif filename.endswith("grades.log"):
+            if 'Grades' not in what:
+                await skip()
+                continue
+        elif '/MEDIA/' in filename:
+            if 'Media' not in what:
+                await skip()
+                continue
+        elif filename.endswith("questions.py"):
+            if 'Source' not in what:
+                await skip()
+                continue
+        with session_zip.open(filename, "r") as file:
+            path.mkdir(parents=True, exist_ok=True)
+            path = path / data[-1]
+            content = file.read()
+            if data[0] == 'session.cf':
+                content = content.split(b'\n')
+                content = [line
+                           for line in content
+                           if not line or line.split(b"'", 2)[1] in binary_what
+                          ]
+                if len(content) > 1:
+                    if path.exists():
+                        content = b'\n'.join(content)
+                        with path.open("ab") as file:
+                            file.write(content)
+                    else:
+                        content.insert(0, f"('creator', {repr(session.login)})".encode('utf-8'))
+                        content = b'\n'.join(content)
+                        path.write_bytes(content)
+                else:
+                    await skip()
+                    continue
+            else:
+                path.write_bytes(content)
+            await write(f'<br>{filename}')
+
+    await write(f'<h1>Compile and Load configs</h1>')
+    for course in courses:
+        await write(f'<h2>{course}</h2>')
+        config = CourseConfig.get(course)
+        with os.popen(f'make {config.file_js} 2>&1', 'r') as file:
+            errors = file.read()
+        await write(f'<pre>{html.escape(errors)}</pre>')
+        await asyncio.sleep(0)
+    return stream
+
 class JournalLink: # pylint: disable=too-many-instance-attributes
     """To synchronize multiple connections to the same student session"""
     journals:Dict[Tuple[str,str],"JournalLink"] = {} # Key is (session, login)
@@ -2116,7 +2296,7 @@ async def live_link(request:Request) -> StreamResponse:
             journals.pop(port, None)
             continue
         if journa and session.login != journa.login:
-            log(f'{session.is_grader(journa.course)} {message.split(" ", 1)[1]}')
+            log(f'{session.login} {journa.login} {journa.course.course} {session.is_grader(journa.course)} {journa.editor} {journa.course.running(session.login)} {journa.msg_id} {message}')
             if not allow_edit:
                 if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'bGTtLH':
                     continue
@@ -2182,7 +2362,7 @@ def main():
         log('='*60)
         sys.exit(1)
 
-    app = web.Application()
+    app = web.Application(client_max_size=1024*1024*1024**2)
     app.add_routes([web.get('/', home),
                     web.get('/{filename}', handle()),
                     web.get('/{filename}/V{version}', handle()),
@@ -2203,6 +2383,7 @@ def main():
                     web.get('/adm/editor/{course}', adm_editor),
                     web.get('/adm/js_errors', js_errors),
                     web.get('/adm/building/{building}', adm_building),
+                    web.get('/adm/export/{course}/{what}/{filename}', adm_export),
                     web.get('/config/reload', config_reload),
                     web.get('/course_config/{course}', course_config),
                     web.get('/checkpoint/*', checkpoint_list),
@@ -2232,6 +2413,7 @@ def main():
                     web.post('/adm/c5/{action}', adm_c5),
                     web.post('/adm/building/{building}', adm_building_store),
                     web.post('/adm/session/{course}/{action}', adm_config),
+                    web.post('/adm/import/{what}', adm_import),
                     ])
     app.on_startup.append(startup)
     logging.basicConfig(level=logging.DEBUG)

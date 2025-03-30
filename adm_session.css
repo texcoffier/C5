@@ -6,6 +6,7 @@ BODY {
     --state-widths: 12em;
     --config-widths:  calc(100vw - var(--rights-widths) - var(--state-widths) - 3.6em);
     --messages_height: 10em;
+    --menutree_width: 30em;
     padding: 0px;
     margin: 0px;
     box-sizing: border-box;
@@ -22,10 +23,6 @@ BODY > DIV {
 
 BODY * {
     box-sizing: border-box;
-}
-
-FORM {
-    display: none;
 }
 
 #server_feedback {
@@ -53,6 +50,7 @@ FORM {
     border-top-right-radius: 0.5em;
     border-bottom: 1px solid #000;
     margin: 2px;
+    margin-right: -6px; /* Hide space */
     background: #DDD;
     height: 24px;
     padding: 3px;
@@ -254,3 +252,44 @@ DIV.state A:hover {
     width: 100%;
     border-radius: 0.5em;
 }
+
+#tree {
+    margin-left: 1em;
+    max-width: calc(100% - var(--menutree_width) - 2em);
+    display: inline-block;
+}
+
+#tree DIV {
+    margin-left: 2em;
+}
+#tree LABEL {
+    transition: background 0.1s;
+}
+#tree LABEL:hover {
+    background: #FF0;
+}
+#tree INPUT {
+    margin-left: -1em;
+}
+#tree_menu {
+    display: inline-block;
+    width: var(--menutree_width);
+}
+#tree_menu DIV {
+    border: 1px solid #000;
+    margin-bottom: 0.5em;
+    border-radius: 0.3em;
+    padding: 0.2em;
+}
+
+#tree, #tree_menu {
+    vertical-align: top;
+}
+
+#tree_menu P.radio {
+    margin-left: 1em;
+}
+#tree_menu P.radio INPUT[type=radio] {
+    margin-left: -1em;
+}
+

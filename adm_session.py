@@ -10,6 +10,8 @@ State = {
     'original_value': {}
 }
 
+DEFAULT_COURSE_OPTIONS_DICT = {}
+
 def add(element):
     """Add an element to the document BODY"""
     document.body.appendChild(element)
@@ -183,6 +185,9 @@ def do_submit(element):
 def onchange(event):
     """Send the change to the server"""
     target = event.target
+    tree_menu =  document.getElementById('tree_menu')
+    if tree_menu and tree_menu.contains(target):
+        return
     attr = target.id
     if target.type == 'radio':
         if not target.checked:
@@ -238,15 +243,6 @@ def select_action(element):
         eval(element.options[element.selectedIndex].getAttribute('action'))(element.parentNode)
     element.selectedIndex = 0
 
-def load_min_zip():
-    """Get all the session files"""
-    window.location = ("/adm/get_exclude/LOGS session.cf questions.js questions.json/COMPILE_"
-        + COURSE.replace('=', '/') + '.zip?ticket=' + TICKET)
-
-def load_full_zip():
-    """Get all the session files"""
-    window.location = "/adm/get/COMPILE_" + COURSE.replace('=', '/') + '.zip?ticket=' + TICKET
-
 def select_tab(label):
     """Select the tab to display"""
     new_tab = document.getElementById(label)
@@ -256,6 +252,11 @@ def select_tab(label):
         State['selected_tab'].className = ''
     State['selected_tab'] = new_tab
     State['selected_tab'].className = "selected"
+
+    if len(DEFAULT_COURSE_OPTIONS_DICT) == 0:
+        for line in DEFAULT_COURSE_OPTIONS:
+            if len(line) == 3:
+                DEFAULT_COURSE_OPTIONS_DICT[line[0]] = line[2]
 
     if label == "Try A":
         content = '<iframe src="=' + COURSE + '/Va?ticket=' + TICKET + '"></iframe>'
@@ -382,12 +383,165 @@ A subject and B subject if they are different.
                 + comment + '<td>' + tag + '</tr>')
         content.append('</table></div>')
         content = ''.join(content)
+    elif label == 'Manage':
+        content = '''
+<div onclick="manage_click(event)" id="manage">
+<div id="tree">
+<p>
+Choose the data to manage:
+</p>
+<label><input type="checkbox">All</label>
+    <div><label><input type="checkbox">Exam parameters (reset before reopening for the next semester)</label>
+        <div><label><input type="checkbox">Session config tab</label>
+            <div><label><input type="checkbox" name="start"></label></div>
+            <div><label><input type="checkbox" name="stop"></label></div>
+            <div><label><input type="checkbox" name="state"></label></div>
+            <div><label><input type="checkbox" name="checkpoint"></label></div>
+            <div><label><input type="checkbox" name="allow_copy_paste"></label></div>
+            <div><label><input type="checkbox" name="forbid_question_copy"></label></div>
+            <div><label><input type="checkbox" name="allow_ip_change"></label></div>
+            <div><label><input type="checkbox" name="feedback"></label></div>
+            <div><label><input type="checkbox" name="force_grading_done"></label></div>
+        </div>
+        <div><label><input type="checkbox">Student</label>
+            <div><label><input type="checkbox" name="expected_students"></label></div>
+            <div><label><input type="checkbox" name="expected_students_required"></label></div>
+            <div><label><input type="checkbox" name="tt"></label></div>
+        </div>
+        <div><label><input type="checkbox">Students logs</label>
+            <div><label><input type="checkbox" name="active_teacher_room">Placement</label></div>
+            <div><label><input type="checkbox" name="Grades">Grading</label></div>
+            <div><label><input type="checkbox" name="Journal">Work + teacher comment</label></div>
+        </div>
+    </div>
+    <div><label><input type="checkbox" name="Config">Session config tab (except Exam parameters)</label></div>
+    <div><label><input type="checkbox" name="Access">Session access tab (except Exam parameters) : admins/proctors/graders lists</label></div>
+    <div><label><input type="checkbox" name="Source">Session source tab</label></div>
+    <div><label><input type="checkbox" name="Media">Session media tab</label></div>
+    <div><label><input type="checkbox" name="Grading">Session grading tab</label></div>
+    <div><label><input type="checkbox" name="messages">Session chat tab</label></div>
+</div>
+<div id="tree_menu">
+<p>
+Operation on the selected data:
+<div>
+<button>Export ZIP</button> of the selected data of the current session
+or more if multiple sessions are edited.
+</div>
+<div>
+<form method="POST" enctype="multipart/form-data" target="manage">
+<button id="manage_import" onclick="do_import(this)">Import ZIP</button>
+containing one or <b>multiple</b> sessions.<br>
+<input id="manage_file" type="file" name="zip" accept="application/zip" onchange="update_disabled()"><br>
+Only the selected data will be imported.<br>
+Sessions are created automaticaly.
+<p class="radio">
+<label><input id="manage_one" onchange="update_disabled()" type="radio" name="destination" value="one"
+>Do not use session names from ZIP and import into</label>
+<input id="manage_name" name="session" style="width:100%" onkeyup="update_disabled()"
+ value="''' + COURSE + '''">
+<p class="radio">
+<label><input id="manage_multiple" onchange="update_disabled()" type="radio"
+              name="destination" value="multiple" select
+>Import into or create the sessions whose names are in the ZIP</label>
+</form>
+</div>
+<!--
+<button>Reset to defaults</button>
+<button>Reset to session default (from session source code)</button>
+-->
+</div>
+</div>
+'''
+        items = []
+        for value in content.split('name="'):
+            key = value.split('"')[0]
+            if key in DEFAULT_COURSE_OPTIONS_DICT:
+                left = key + '">'
+                if key == 'state':
+                    DEFAULT_COURSE_OPTIONS_DICT[key] = 'State'
+                value = left + DEFAULT_COURSE_OPTIONS_DICT[key] + value[len(left):]
+            items.append(value)
+        content = 'name="'.join(items)
+        setTimeout(update_disabled, 100)
     else:
         content = ''
 
     document.getElementById('content').innerHTML = content
     if len(State['original_value']):
         update_course_config(State.config, '')
+
+def get_state():
+    inputs = {}
+    for element in document.getElementById('tree').getElementsByTagName('INPUT'):
+        if element.name:
+            inputs[element.name] = element.checked
+    if inputs['Access']:
+        for key in 'admins graders proctors'.split(' '):
+            inputs[key] = True
+        inputs['Access'] = False
+    if inputs['Config']:
+        for key in DEFAULT_COURSE_OPTIONS_DICT:
+            if key not in inputs:
+                inputs[key] = True
+        inputs['Config'] = False
+    if inputs['Grading']:
+        inputs['notation'] = True
+        inputs['notationB'] = True
+        inputs['Grading'] = False
+    inputs = [i for i in inputs if inputs[i]]
+    return ' '.join(inputs)
+
+def update_disabled():
+    tree = document.getElementById('tree')
+    if not tree:
+        return
+    tree_menu = document.getElementById('tree_menu')
+    tree = tree.parentNode
+    disabled = get_state() == ''
+    if disabled:
+        tree_menu.style.opacity = 0.4
+    else:
+        tree_menu.style.opacity = 1
+    for element in tree.getElementsByTagName('BUTTON'):
+        element.disabled = disabled
+    for element in tree.getElementsByTagName('INPUT'):
+        if element.type != 'checkbox':
+            element.disabled = disabled
+    if not disabled:
+        manage_import = document.getElementById('manage_import')
+        manage_file = document.getElementById('manage_file')
+        manage_one = document.getElementById('manage_one')
+        manage_multiple = document.getElementById('manage_multiple')
+        manage_name = document.getElementById('manage_name')
+        if not manage_one.checked:
+            manage_name.disabled = True
+        if (not manage_one.checked and not manage_multiple.checked
+            or manage_one.checked and '=' not in manage_name.value
+           ):
+            manage_import.disabled = True
+            manage_file.disabled = True
+        if not manage_file.value:
+            manage_import.disabled = True
+
+def manage_click(event):
+    if event.target.tagName == 'INPUT':
+        if event.target.type == 'checkbox':
+            value = event.target.checked
+            for element in event.target.parentNode.parentNode.getElementsByTagName('INPUT'):
+                element.checked = value
+            update_disabled()
+    elif event.target.tagName == 'BUTTON':
+        if event.target.innerHTML == 'Export':
+            window.open('adm/export/' + COURSE + '/' + get_state()
+                + '/' + COURSE + '.zip?ticket=' + TICKET)
+
+def do_import(element):
+    form = element
+    while form.tagName != 'FORM':
+        form = form.parentNode
+    form.setAttribute('action', 'adm/import/' + get_state() + '?ticket=' + TICKET)
+    form.submit()
 
 def init():
     """Create the HTML"""
@@ -417,15 +571,14 @@ def init():
     <div id="Grading">Grading</div>
     <div id="Results">Export/Stats</div>
     <div id="History">History</div>
-    <select onchange="select_action(this)" style="vertical-align: top;">
+    <div id="Manage">Manage</div>
+     <select onchange="select_action(this)" style="vertical-align: top;">
     <option>Actions</option>
     <option action="upload">Upload a new source</option>
     <option action="upload_media">Upload a new media</option>
     <option action="rename_session">Rename session</option>
     <option action="delete_all">Delete <b>ALL</b></option>
     <option action="delete_students">Delete <b>Students</b></option>
-    <option action="load_min_zip">Load ZIP question+media</option>
-    <option action="load_full_zip">Load ZIP question+media+logs</option>
     <option action="git_pull">GIT pull</option>
     <option action="force_grading_done">Force «Grading done» on finished gradings</option>
     </select>

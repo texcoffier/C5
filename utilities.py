@@ -319,6 +319,26 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.parse_position = os.path.getsize(self.file_cf)
         self.time = time.time()
 
+    def create_config(self, what):
+        """Return the config filtered by what
+              * option name
+              * Placement
+           No history recorded.
+        """
+        lines = []
+        for key in tuple(what):
+            if key in self.config:
+                if key == 'active_teacher_room':
+                    for login, value in self.config[key].items():
+                        lines.append(repr(('active_teacher_room', login, value)))
+                elif key == 'messages':
+                    for message in self.config[key]:
+                        lines.append(repr(('messages', '+', message)))
+                else:
+                    lines.append(repr((key, self.config[key])))
+                what.remove(key)
+        return '\n'.join(lines) + '\n'
+
     def update(self) -> None:
         """Compute some values"""
         self.start = self.config['start']
@@ -581,7 +601,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if getattr(config, 'time', 0):
             return config
         # No file with this name
-        cls.configs.pop(course)
+        cls.configs.pop(course, None)
         raise ValueError("Session inconnue : " + course)
 
     @classmethod

@@ -164,7 +164,7 @@ System calls allowable for g++/gcc:
 
     ['admins', '', 'Administrators with all the access rights'],
     ['graders', '', 'Teachers allowed to try the session, grade and place the students'],
-    ['proctors', '', 'Can only place the students'],
+    ['proctors', '', 'Proctors can only place the students'],
     ['expected_students', '', 'The login list of expected students, the session is in bold in their session list.'],
     ['expected_students_required', 0, 'Unexpected students do not see the session, but a teacher can send them the link to it'],
     ['tt', '', 'The logins of student with ⅓ more time'],
