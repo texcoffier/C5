@@ -1228,7 +1228,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         items = [
             "Pour les " + len(room.students) + " étudiants de cette pièce",
             "",
-            "Espionner en temps réel",
+            "Espionner les écrans en temps réel",
             "Noter et commenter leur travail",
             "Noter et commenter leur travail (sujet : A)",
             "Noter et commenter leur travail (sujet : B)",
@@ -1250,7 +1250,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def open_student_menu(self, line, column, student):
         login = student.login
         def select(item):
-            if item.startswith("Regarder"):
+            if item.startswith("Espionner"):
                 create_realtime_spy(student)
             elif item.startswith("Naviguer"):
                 create_timetravel(login)
@@ -1278,7 +1278,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         grade = "Noter l'étudiant"
         if self.state == 'done':
             grade = '*' + grade
-        spy = "Regarder en temps réel"
+        spy = "Espionner l'écran en temps réel"
         if self.state == 'running':
             spy = '*' + spy
         temps = "Temps bonus"
@@ -1571,9 +1571,9 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.grade = data[1][8]
         self.blur_time = data[1][9]
         self.feedback = data[1][10]
-        self.firstname = data[2]['fn']
-        self.surname = data[2]['sn']
-        self.mail = data[2]['mail']
+        self.firstname = data[2]['fn'] or '?'
+        self.surname = data[2]['sn'] or '?'
+        self.mail = data[2]['mail'] or '?'
         if self.hostname in ROOM.ips:
             unknown_room = 0
         else:
@@ -2191,7 +2191,7 @@ def display_student_screen(journal, feedback, student, letter):
         + before + '<span style="color:#FFF;background:#000">' + cursor + '</span>'
         + html(journal.content[journal.position:])
         + '</div>')
-    feedback.lastChild.style.height = journal.height * SPY_FONT + 'px'
+    feedback.style.height = journal.height * SPY_FONT + 'px'
     feedback.scrollTo({'top': journal.scroll_line * SPY_FONT, 'behavior': 'smooth'})
 
 TIME_TRAVEL_STUDENTS = []
@@ -2245,7 +2245,9 @@ def create_timetravel(login):
 def spy_letter(student):
     letters = []
     for spy in document.getElementById('live_spy').childNodes:
-        letters.append(spy.getElementsByTagName('I')[0].innerHTML)
+        i = spy.getElementsByTagName('I')
+        if len(i):
+            letters.append(i[0].innerHTML)
     for spy in document.getElementById('tt_students').childNodes:
         i = spy.getElementsByTagName('I')
         if len(i):
