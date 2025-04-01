@@ -20,6 +20,7 @@ import io
 import pathlib
 import glob
 import csv
+import copy
 import signal
 from aiohttp import web, WSMsgType
 from aiohttp.web_request import Request
@@ -674,36 +675,6 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         assert re.match('#[0-9A-Z]{3}', value)
         config.set_parameter('highlight', value)
         feedback = f"«{course}» The session color is now {value}"
-    elif action in ('delete', 'delete_students'):
-        if not os.path.exists('Trash'):
-            os.mkdir('Trash')
-        if action == 'delete':
-            to_delete = config.dir_session
-        else:
-            to_delete = config.dir_log
-        move_to_trash(to_delete)
-        if action == 'delete':
-            del CourseConfig.configs[config.dir_session]
-            return f"«{course}» moved to Trash directory. Now close this page!"
-        config.config['active_teacher_room'] = {}
-        config.config['messages'] = []
-        config.config['tt'] = ''
-        config.config['expected_students'] = ''
-        config.config['state'] = 'Draft'
-        config.update()
-        config.record_config()
-        return f"«{course}» students moved to Trash. Now close this page!"
-    elif action == 'rename':
-        value = value.replace('.py', '')
-        new_dirname = f'COMPILE_{config.compiler}/{value}'
-        if '.' in value or '/' in value:
-            return f"«{value}» invalid name because it contains «/», «.»"
-        if os.path.exists(new_dirname):
-            return f"«{value}» exists!"
-        os.rename(config.dir_session, new_dirname)
-        del CourseConfig.configs[config.dir_session] # Delete old
-        CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
-        return f"«{course}» Renamed as «{config.compiler}={value}». Now close this page!"
     elif action == 'display_student_filter':
         config.set_parameter('display_student_filter', int(value))
         feedback = f"«{course}» «{'do not' if value == '0' else ''} display student filter."
@@ -761,6 +732,21 @@ async def adm_config(request:Request) -> Response: # pylint: disable=too-many-br
             return answer('<br>'.join(str(i) for i in the_answers))
         return the_answers[0]
     return answer("Aucune session ne correspond")
+
+async def adm_rename(request:Request) -> Response: # pylint: disable=too-many-branches
+    session, config = await get_course_config(request)
+    if not session.is_admin(config):
+        raise session.exception('not_admin')
+    value = request.match_info['new']
+    new_dirname = f'COMPILE_{config.compiler}/{value}'
+    if '.' in value or '/' in value:
+        return answer(f"«{value}» invalid name because it contains «/», «.»")
+    if os.path.exists(new_dirname):
+        return answer(f"«{value}» exists!")
+    os.rename(config.dir_session, new_dirname)
+    del CourseConfig.configs[config.dir_session] # Delete old
+    CourseConfig.get(new_dirname) # Full reload of new (safer than updating)
+    return answer(f"«{config.course}» Renamed as «{config.compiler}={value}». Now close this page!")
 
 def text_to_dict(text:str) -> Dict[str,str]:
     """Transform a user text to a dict.
@@ -1949,6 +1935,83 @@ async def adm_export(request:Request) -> Response:
     await stream.write(data.getvalue())
     return stream
 
+async def adm_reset(request:Request) -> Response:
+    """Reset or erase things"""
+    session, config = await get_course_config(request)
+    course = request.match_info['course']
+    if course.startswith('^'):
+        configs = CourseConfig.courses_matching(course, session)
+    else:
+        configs = [config]
+    stream = web.StreamResponse()
+    stream.content_type = 'text/html'
+    await stream.prepare(request)
+    async def write(txt):
+        txt += '\n'
+        await stream.write(txt.encode('utf-8'))
+
+    for course in configs:
+        what = set(request.match_info['what'].split(' '))
+        await write(f'<h1>{course.course}</h1>')
+        if not session.is_admin(course):
+            await write('You are not administrator')
+            continue
+        if 'Source' in what:
+            await write('Delete session<br>')
+            move_to_trash(config.dir_session)
+            del CourseConfig.configs[config.dir_session]
+            await asyncio.sleep(0)
+            continue
+        if 'Journal' in what and 'Grades' in what:
+            await write('Delete students works, comments and grades<br>')
+            move_to_trash(config.dir_log)
+            await asyncio.sleep(0)
+        else:
+            if 'Journal' in what:
+                for filename in glob.glob(f'{course.dir_log}/*/journal.log'):
+                    await write(f'Delete {filename}<br>')
+                    move_to_trash(filename)
+                    await asyncio.sleep(0)
+            if 'Grades' in what:
+                for filename in glob.glob(f'{course.dir_log}/*/grades.log'):
+                    await write(f'Delete {filename}<br>')
+                    move_to_trash(filename)
+                    await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        if 'Media' in what:
+            await write('Delete all media<br>')
+            move_to_trash(config.dir_media)
+            await asyncio.sleep(0)
+        for i in ('Journal', 'Grades', 'Media'):
+            if i in what:
+                what.discard(i)
+        changed = []
+        for line in options.DEFAULT_COURSE_OPTIONS:
+            attr = line[0]
+            if attr not in what:
+                continue
+            what.discard(attr)
+            default_value = course.questions[0]['options'].get(attr, line[1])
+            #print(f"{attr} Default:{default_value} Current:{course.config[attr]}", flush=True)
+            if course.config[attr] != default_value:
+                course.config[attr] = copy.deepcopy(default_value)
+                changed.append(attr)
+        if 'active_teacher_room' in what and course.config['active_teacher_room']:
+            del course.config['active_teacher_room']
+            changed.append('active_teacher_room')
+
+        if changed:
+            await write(f'Reset config attributes {sorted(changed)}<br>')
+            await asyncio.sleep(1)
+            config.record_config()
+            await write('Config history has been erased<br>')
+            del CourseConfig.configs[config.dir_session]
+            await asyncio.sleep(0)
+        if what:
+            await write(f'<b>BUG : {what}</b>')
+
+    return stream
+
 async def adm_import(request:Request) -> Response:
     session = await Session.get_or_fail(request)
     if not session.is_author():
@@ -2373,8 +2436,7 @@ def main():
                     web.get('/adm/answers/{course}/{students}/{filename:.*}', adm_answers),
                     web.get('/adm/root', adm_root),
                     web.get('/adm/session/{course}', adm_session), # Edit page
-                    web.get('/adm/session2/{course}/{action}/{value}', adm_config),
-                    web.get('/adm/session2/{course}/{action}', adm_config),
+                    web.get('/adm/rename/{course}/{new}', adm_rename),
                     web.get('/adm/course/{course}', adm_course),
                     web.get('/adm/history/{course}', adm_history),
                     web.get('/adm/git_pull/{course}', adm_git_pull),
@@ -2384,6 +2446,7 @@ def main():
                     web.get('/adm/js_errors', js_errors),
                     web.get('/adm/building/{building}', adm_building),
                     web.get('/adm/export/{course}/{what}/{filename}', adm_export),
+                    web.get('/adm/reset/{course}/{what}', adm_reset),
                     web.get('/config/reload', config_reload),
                     web.get('/course_config/{course}', course_config),
                     web.get('/checkpoint/*', checkpoint_list),

@@ -217,17 +217,7 @@ def rename_session():
     """Rename the session"""
     name = prompt('New name?')
     if name and name != 'null':
-        window.location = '/adm/session2/' + COURSE + '/rename/' + name + '?ticket=' + TICKET
-
-def delete_all():
-    """Delete everything"""
-    if confirm('Really delete everything?'):
-        window.location = '/adm/session2/' + COURSE + '/delete?ticket=' + TICKET
-
-def delete_students():
-    """Delete student logs"""
-    if confirm('Really delete student logs?'):
-        window.location = '/adm/session2/' + COURSE + '/delete_students?ticket=' + TICKET
+        window.location = '/adm/rename/' + COURSE + '/' + name + '?ticket=' + TICKET
 
 def git_pull():
     """Pull source update from GIT"""
@@ -429,8 +419,8 @@ Operation on the selected data:
 or more if multiple sessions are edited.
 </div>
 <div>
-<form method="POST" enctype="multipart/form-data" target="manage">
-<button id="manage_import" onclick="do_import(this)">Import ZIP</button>
+<form method="POST" enctype="multipart/form-data" target="_top">
+<button id="manage_import">Import ZIP</button>
 containing one or <b>multiple</b> sessions.<br>
 <input id="manage_file" type="file" name="zip" accept="application/zip" onchange="update_disabled()"><br>
 Only the selected data will be imported.<br>
@@ -446,10 +436,16 @@ Sessions are created automaticaly.
 >Import into or create the sessions whose names are in the ZIP</label>
 </form>
 </div>
-<!--
-<button>Reset to defaults</button>
-<button>Reset to session default (from session source code)</button>
--->
+<div>
+<button id="manage_reset">Reset to session defaults</button> use defaults
+defined by COURSE_OPTIONS in the source file or C5 defaults if not
+defined in COURSE_OPTIONS.
+<p id="manage_reset_log">
+The reset may destroy all students logs, grading...<br>
+So be really careful and get the ZIP before.
+<p id="manage_reset_all">
+Resetting the «Session source tab» will fully destroy the session.
+</div>
 </div>
 </div>
 '''
@@ -498,7 +494,8 @@ def update_disabled():
         return
     tree_menu = document.getElementById('tree_menu')
     tree = tree.parentNode
-    disabled = get_state() == ''
+    state = get_state()
+    disabled = state == ''
     if disabled:
         tree_menu.style.opacity = 0.4
     else:
@@ -510,6 +507,9 @@ def update_disabled():
             element.disabled = disabled
     if not disabled:
         manage_import = document.getElementById('manage_import')
+        manage_reset = document.getElementById('manage_reset')
+        manage_reset_log = document.getElementById('manage_reset_log')
+        manage_reset_all = document.getElementById('manage_reset_all')
         manage_file = document.getElementById('manage_file')
         manage_one = document.getElementById('manage_one')
         manage_multiple = document.getElementById('manage_multiple')
@@ -523,6 +523,14 @@ def update_disabled():
             manage_file.disabled = True
         if not manage_file.value:
             manage_import.disabled = True
+        if 'Source' in state:
+            manage_reset_all.style.color = '#F00'
+        else:
+            manage_reset_all.style.color = '#888'
+        if 'Grades' in state or 'Journal' in state or 'Source' in state:
+            manage_reset_log.style.color = '#F00'
+        else:
+            manage_reset_log.style.color = '#888'
 
 def manage_click(event):
     if event.target.tagName == 'INPUT':
@@ -535,13 +543,14 @@ def manage_click(event):
         if event.target.innerHTML == 'Export':
             window.open('adm/export/' + COURSE + '/' + get_state()
                 + '/' + COURSE + '.zip?ticket=' + TICKET)
-
-def do_import(element):
-    form = element
-    while form.tagName != 'FORM':
-        form = form.parentNode
-    form.setAttribute('action', 'adm/import/' + get_state() + '?ticket=' + TICKET)
-    form.submit()
+        elif event.target.innerHTML == 'Import ZIP':
+            form = element
+            while form.tagName != 'FORM':
+                form = form.parentNode
+            form.setAttribute('action', 'adm/import/' + get_state() + '?ticket=' + TICKET)
+            form.submit()
+        elif event.target.innerHTML == 'Reset to session defaults':
+            window.location = 'adm/reset/' + COURSE + '/' + get_state() + '?ticket=' + TICKET
 
 def init():
     """Create the HTML"""
@@ -577,8 +586,6 @@ def init():
     <option action="upload">Upload a new source</option>
     <option action="upload_media">Upload a new media</option>
     <option action="rename_session">Rename session</option>
-    <option action="delete_all">Delete <b>ALL</b></option>
-    <option action="delete_students">Delete <b>Students</b></option>
     <option action="git_pull">GIT pull</option>
     <option action="force_grading_done">Force «Grading done» on finished gradings</option>
     </select>

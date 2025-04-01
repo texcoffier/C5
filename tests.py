@@ -164,6 +164,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_completion,
                     self.test_manage_tree,
                     self.test_manage_import,
+                    self.test_manage_reset,
                     # self.test_git,
                     ):
                 print('*'*99)
@@ -1052,8 +1053,8 @@ class Q1(Question):
         for name in ('xxx', 'xxxx'):
             if os.path.exists('COMPILE_REMOTE/' + name):
                 with self.admin_rights():
-                    self.goto(f'adm/session2/REMOTE={name}/delete/unused')
-                    self.check('BODY', {'innerHTML': Contains(f'«REMOTE={name}» moved to Trash directory')})
+                    self.goto(f'adm/reset/REMOTE={name}/Source')
+                    self.check('BODY', {'innerHTML': Contains('Delete session')})
 
     def test_source_edit(self):
         """Test questionnary editor"""
@@ -1448,7 +1449,7 @@ class Q1(Question):
             tree = self.check('#tree')
             labels = self.driver.find_elements_by_css_selector('#tree LABEL')
             inputs = self.driver.find_elements_by_css_selector('#tree INPUT')
-            export_button, import_button = self.driver.find_elements_by_css_selector('#tree_menu BUTTON')
+            export_button, _import_button, _reset_button = self.driver.find_elements_by_css_selector('#tree_menu BUTTON')
             retry(lambda: not export_button.get_attribute('disabled'))
             state = self.driver.execute_script("return get_state()")
             assert state == ''
@@ -1475,7 +1476,7 @@ class Q1(Question):
             files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
             for name in (b'session.cf', b'questions.py'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
-            assert files.count(b' C5/') == 2
+            assert files.count(b' C5/') - files.count(b'/Anon_') == 2
 
             if not os.path.exists('COMPILE_REMOTE/test/MEDIA'):
                 os.mkdir('COMPILE_REMOTE/test/MEDIA')
@@ -1490,7 +1491,7 @@ class Q1(Question):
             for name in (b'session.cf', b'questions.py', b'MEDIA/foo.png',
                          b'LOGS/john.doe/journal.log', b'LOGS/john.doe/grades.log'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
-            assert files.count(b' C5/') == 5
+            assert files.count(b' C5/') - files.count(b'/Anon_') == 5
 
             # Filtered export (do not check individual session attributes)
             state.discard('Grades')
@@ -1499,7 +1500,7 @@ class Q1(Question):
             files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
             for name in (b'session.cf', b'questions.py'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
-            assert files.count(b' C5/') == 2
+            assert files.count(b' C5/') - files.count(b'/Anon_') == 2
 
     def test_manage_import(self):
         """Test filtered import"""
@@ -1548,6 +1549,55 @@ class Q1(Question):
             assert content.count(b'\n') == 2
             assert content.endswith(b"\n('sequential', 1)\n")    
         self.ticket = save_ticket
+
+    def test_manage_reset(self):
+        """Test filtered reset"""
+        os.system('unzip tests_import.zip ; rm -r COMPILE_REMOTE/XXXXX 2>/dev/null')
+        os.rename('C5/COMPILE_REMOTE/test', 'COMPILE_REMOTE/XXXXX')
+        os.system('rm -r C5 ; make COMPILE_REMOTE/XXXXX/questions.js')
+        # inflating: C5/COMPILE_REMOTE/test/questions.py  
+        with self.admin_rights():
+            for filename, what, message in (
+                    ('MEDIA'                    , 'Media'          , 'Delete all media'),
+                    ('LOGS/john.doe/journal.log', 'Journal'        , 'Delete COMPILE_REMOTE/XXXXX/LOGS/john.doe/journal.log'),
+                    ('LOGS/john.doe/grades.log' , 'Grades'         , 'Delete COMPILE_REMOTE/XXXXX/LOGS/john.doe/grades.log'),
+                    ('LOGS'                     , 'Journal Grades' , 'Delete students works, comments and grades'),
+                    ):
+                print(f'\tReset {what} {filename}')
+                filename = f'COMPILE_REMOTE/XXXXX/{filename}'
+                assert os.path.exists(filename)
+                self.goto(f'adm/reset/REMOTE=XXXXX/{what}')
+                assert not os.path.exists(filename)
+                self.check('BODY', {'innerHTML': Contains(message)})
+
+            self.goto('adm/reset/REMOTE=XXXXX/start')
+            self.check('BODY', {
+                'innerHTML': Contains("Reset config attributes ['start']")})
+            with open('COMPILE_REMOTE/XXXXX/session.cf', 'rb') as file:
+                content = file.read()
+            assert b"('start', '2000-01-01 00:00:00'" in content
+            assert b"('active_teacher_room', 'thi\xc3\xa9rry.excoffier'," in content
+
+            self.goto('checkpoint/REMOTE=XXXXX')
+            self.check('BODY', {'innerHTML': Contains('id="timetravel')})
+            retry(lambda:
+                list(self.driver.execute_script("return STUDENT_DICT")) != ['thiérry.excoffier'])
+
+            self.goto('adm/reset/REMOTE=XXXXX/active_teacher_room state start')
+            self.check('BODY', {
+                'innerHTML': Contains("Reset config attributes ['active_teacher_room']")})
+            with open('COMPILE_REMOTE/XXXXX/session.cf', 'rb') as file:
+                content = file.read()
+            assert b"'active_teacher_room'" not in content
+
+            self.goto('=REMOTE=XXXXX')
+            self.check('BODY', {'innerHTML': Contains('COURSE_CONFIG')})
+            config = self.driver.execute_script("return COURSE_CONFIG")
+            assert config['start'] == '2000-01-01 00:00:00'
+
+            self.goto('checkpoint/REMOTE=XXXXX')
+            self.check('BODY', {'innerHTML': Contains('id="timetravel')})
+            retry(lambda: 'thiérry.excoffier' in self.driver.execute_script("return STUDENT_DICT"))
 
     def screenshots(self):
         """Dump screen shots"""

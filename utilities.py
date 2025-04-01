@@ -1381,7 +1381,7 @@ With Firefox:
         """,
     'load': "./load_testing.py",
     'compile': fr"""#C5_LOGIN
-        echo START SERVERS
+        echo COMPILE
         cd {C5_DIR} 2>/dev/null || true
         mkdir TICKETS 2>/dev/null || true
         make prepare
