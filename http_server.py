@@ -1996,9 +1996,11 @@ async def adm_reset(request:Request) -> Response:
             if course.config[attr] != default_value:
                 course.config[attr] = copy.deepcopy(default_value)
                 changed.append(attr)
-        if 'active_teacher_room' in what and course.config['active_teacher_room']:
-            del course.config['active_teacher_room']
-            changed.append('active_teacher_room')
+        for attr in ('active_teacher_room', 'messages'):
+            if attr in what and course.config[attr]:
+                del course.config[attr]
+                changed.append(attr)
+                what.discard(attr)
 
         if changed:
             await write(f'Reset config attributes {sorted(changed)}<br>')

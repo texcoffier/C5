@@ -1568,11 +1568,11 @@ class Q1(Question):
                 assert os.path.exists(filename)
                 self.goto(f'adm/reset/REMOTE=XXXXX/{what}')
                 assert not os.path.exists(filename)
-                self.check('BODY', {'innerHTML': Contains(message)})
+                self.check('BODY', {'innerHTML': Contains(message) & ~Contains('BUG')})
 
             self.goto('adm/reset/REMOTE=XXXXX/start')
             self.check('BODY', {
-                'innerHTML': Contains("Reset config attributes ['start']")})
+                'innerHTML': Contains("Reset config attributes ['start']") & ~Contains('BUG')})
             with open('COMPILE_REMOTE/XXXXX/session.cf', 'rb') as file:
                 content = file.read()
             assert b"('start', '2000-01-01 00:00:00'" in content
@@ -1585,13 +1585,13 @@ class Q1(Question):
 
             self.goto('adm/reset/REMOTE=XXXXX/active_teacher_room state start')
             self.check('BODY', {
-                'innerHTML': Contains("Reset config attributes ['active_teacher_room']")})
+                'innerHTML': Contains("Reset config attributes ['active_teacher_room']") & ~Contains('BUG')})
             with open('COMPILE_REMOTE/XXXXX/session.cf', 'rb') as file:
                 content = file.read()
             assert b"'active_teacher_room'" not in content
 
             self.goto('=REMOTE=XXXXX')
-            self.check('BODY', {'innerHTML': Contains('COURSE_CONFIG')})
+            self.check('BODY', {'innerHTML': Contains('COURSE_CONFIG') & ~Contains('BUG')})
             config = self.driver.execute_script("return COURSE_CONFIG")
             assert config['start'] == '2000-01-01 00:00:00'
 
