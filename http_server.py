@@ -2126,13 +2126,30 @@ async def adm_import(request:Request) -> Response:
                 path.write_bytes(content)
             await write(f'<br>{filename}')
 
-    await write(f'<h1>Compile and Load configs</h1>')
+    await write('<h1>Compile and Load configs</h1>')
     for course in courses:
         await write(f'<h2>{course}</h2>')
-        config = CourseConfig.get(course)
-        with os.popen(f'make {config.file_js} 2>&1', 'r') as file:
+        if not os.path.exists(course):
+            os.mkdir(course)
+        if not os.path.exists(f'{course}/questions.py'):
+            questions = pathlib.Path(f'{course}/questions.py')
+            await write(f'Create minimal {questions}')
+            questions.write_bytes(b"""
+class SomeQuestion(Question):
+    def question(self):
+        if self.version() == 'a':
+            return '''Question for A'''
+        return '''Question for B'''
+    def tester(self):
+        self.display('Nothing tested')
+    def default_answer(self):
+        return '''Initial answer'''
+""")
+        with os.popen(f'make {course}/questions.js 2>&1', 'r') as file:
             errors = file.read()
         await write(f'<pre>{html.escape(errors)}</pre>')
+        await asyncio.sleep(0)
+        config = CourseConfig.get(course)
         await asyncio.sleep(0)
     return stream
 
