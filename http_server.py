@@ -1212,12 +1212,12 @@ async def upload_course(request:Request) -> Response:
         course = CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace}')
         if not session.is_admin(course):
             message = "Session change is not allowed!"
+        if not good_session_name(replace):
+            message = f"Bad session name: {replace}"
         replace += '.py'
     else:
         if not session.is_author():
             message = "Session adding is not allowed!"
-        if not good_session_name(replace[:-3]):
-            message = "Bad session name!"
     if not message:
         message = await update_file(request, session, compiler, replace)
     if '!' not in message and '<pre' not in message and not replace:
