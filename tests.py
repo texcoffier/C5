@@ -1547,55 +1547,59 @@ class Q1(Question):
             with open('COMPILE_REMOTE/XXX/session.cf', 'rb') as file:
                 content = file.read()
             assert content.count(b'\n') == 2
-            assert content.endswith(b"\n('sequential', 1)\n")    
+            assert content.endswith(b"\n('sequential', 1)\n")
         self.ticket = save_ticket
 
     def test_manage_reset(self):
         """Test filtered reset"""
-        os.system('unzip tests_import.zip ; rm -r COMPILE_REMOTE/XXXXX 2>/dev/null')
-        os.rename('C5/COMPILE_REMOTE/test', 'COMPILE_REMOTE/XXXXX')
-        os.system('rm -r C5 ; make COMPILE_REMOTE/XXXXX/questions.js')
+        self.delete_session_xxx()
+        os.system('''
+        unzip tests_import.zip
+        mv C5/COMPILE_REMOTE/test COMPILE_REMOTE/xxx
+        rm -r C5
+        make COMPILE_REMOTE/xxx/questions.js
+        ''')
         # inflating: C5/COMPILE_REMOTE/test/questions.py  
         with self.admin_rights():
             for filename, what, message in (
                     ('MEDIA'                    , 'Media'          , 'Delete all media'),
-                    ('LOGS/john.doe/journal.log', 'Journal'        , 'Delete COMPILE_REMOTE/XXXXX/LOGS/john.doe/journal.log'),
-                    ('LOGS/john.doe/grades.log' , 'Grades'         , 'Delete COMPILE_REMOTE/XXXXX/LOGS/john.doe/grades.log'),
+                    ('LOGS/john.doe/journal.log', 'Journal'        , 'Delete COMPILE_REMOTE/xxx/LOGS/john.doe/journal.log'),
+                    ('LOGS/john.doe/grades.log' , 'Grades'         , 'Delete COMPILE_REMOTE/xxx/LOGS/john.doe/grades.log'),
                     ('LOGS'                     , 'Journal Grades' , 'Delete students works, comments and grades'),
                     ):
                 print(f'\tReset {what} {filename}')
-                filename = f'COMPILE_REMOTE/XXXXX/{filename}'
+                filename = f'COMPILE_REMOTE/xxx/{filename}'
                 assert os.path.exists(filename)
-                self.goto(f'adm/reset/REMOTE=XXXXX/{what}')
+                self.goto(f'adm/reset/REMOTE=xxx/{what}')
                 assert not os.path.exists(filename)
                 self.check('BODY', {'innerHTML': Contains(message) & ~Contains('BUG')})
 
-            self.goto('adm/reset/REMOTE=XXXXX/start')
+            self.goto('adm/reset/REMOTE=xxx/start')
             self.check('BODY', {
                 'innerHTML': Contains("Reset config attributes ['start']") & ~Contains('BUG')})
-            with open('COMPILE_REMOTE/XXXXX/session.cf', 'rb') as file:
+            with open('COMPILE_REMOTE/xxx/session.cf', 'rb') as file:
                 content = file.read()
             assert b"('start', '2000-01-01 00:00:00'" in content
             assert b"('active_teacher_room', 'thi\xc3\xa9rry.excoffier'," in content
 
-            self.goto('checkpoint/REMOTE=XXXXX')
+            self.goto('checkpoint/REMOTE=xxx')
             self.check('BODY', {'innerHTML': Contains('id="timetravel')})
             retry(lambda:
                 list(self.driver.execute_script("return STUDENT_DICT")) != ['thiérry.excoffier'])
 
-            self.goto('adm/reset/REMOTE=XXXXX/active_teacher_room state start')
+            self.goto('adm/reset/REMOTE=xxx/active_teacher_room state start')
             self.check('BODY', {
                 'innerHTML': Contains("Reset config attributes ['active_teacher_room']") & ~Contains('BUG')})
-            with open('COMPILE_REMOTE/XXXXX/session.cf', 'rb') as file:
+            with open('COMPILE_REMOTE/xxx/session.cf', 'rb') as file:
                 content = file.read()
             assert b"'active_teacher_room'" not in content
 
-            self.goto('=REMOTE=XXXXX')
+            self.goto('=REMOTE=xxx')
             self.check('BODY', {'innerHTML': Contains('COURSE_CONFIG') & ~Contains('BUG')})
             config = self.driver.execute_script("return COURSE_CONFIG")
             assert config['start'] == '2000-01-01 00:00:00'
 
-            self.goto('checkpoint/REMOTE=XXXXX')
+            self.goto('checkpoint/REMOTE=xxx')
             self.check('BODY', {'innerHTML': Contains('id="timetravel')})
             retry(lambda: 'thiérry.excoffier' in self.driver.execute_script("return STUDENT_DICT"))
 
