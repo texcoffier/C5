@@ -281,6 +281,10 @@ DIV.state A:hover {
     border-radius: 0.3em;
     padding: 0.2em;
 }
+#tree_menu BUTTON {
+    font-weight: bold;
+    font-size: 100%;
+}
 
 #tree, #tree_menu {
     vertical-align: top;

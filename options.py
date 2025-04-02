@@ -33,9 +33,6 @@ DEFAULT_COURSE_OPTIONS = [
 ┣━━━━━━━━╉────────────────────┼────────────────────┤
 ┃Archive ┃creator admin       │creator admin       │
 ┗━━━━━━━━┹────────────────────┴────────────────────┘</pre>"""],
-    ['checkpoint'           ,1, "Requires students to be placed on the map (examination mode)"],
-    ['allow_copy_paste'     ,0, "Copy/paste allowed (if not allowed students must be in full screen mode)"],
-    ['forbid_question_copy' ,0, "Forbid text selection in questions"],
     ['display_media_list'   ,0, "Add a media menu 📷 in the source editor title bar"],
     ['save_unlock'          ,0, "Saving a question unlock next"],
     ['automatic_compilation',1, "Compilation is automatic"],
@@ -43,9 +40,15 @@ DEFAULT_COURSE_OPTIONS = [
     ['grading_done'         ,1, "Graders indicate «grading done» in place of the grading level"],
     ['force_grading_done'   ,0, "Consider all gradings done even if graders did not approve"],
     ['feedback_for_all'     ,0, "Allow an empty feedback (with the examination questions) to students who did not attend to the session"],
-    ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
     ['git_url'              ,'', "The GIT url to fetch updates. <b>You must only commit 'questions.py' and 'MEDIA/*' nothing else.</b>"],
+
+    'Set <button onclick="exam_mode(1)" style="font-size:100%">Examination</button> or <button onclick="exam_mode(0)" style="font-size:100%">Course</button> modes for attributes:',
+
+    ['checkpoint'           ,1, "Requires students to be placed on the map (examination mode)"],
+    ['allow_copy_paste'     ,0, "Copy/paste allowed (if not allowed students must be in full screen mode)"],
+    ['forbid_question_copy' ,1, "Forbid text selection in questions"],
+    ['allow_ip_change'      ,0, "Allow IP change (bad Internet connection)"],
 
     "Checkpoint placement interface",
 
@@ -165,7 +168,7 @@ System calls allowable for g++/gcc:
     ['admins', '', 'Administrators with all the access rights'],
     ['graders', '', 'Teachers allowed to try the session, grade and place the students'],
     ['proctors', '', 'Proctors can only place the students'],
-    ['expected_students', '', 'The login list of expected students, the session is in bold in their session list.'],
+    ['expected_students', '', 'The login list of expected students, the session is in bold in their session list'],
     ['expected_students_required', 0, 'Unexpected students do not see the session, but a teacher can send them the link to it'],
     ['tt', '', 'The logins of student with ⅓ more time'],
 ]

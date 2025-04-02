@@ -212,6 +212,30 @@ def onchange(event):
     post(BASE + '/adm/session/' + COURSE + '/' + attr + '?ticket=' + TICKET, value, True)
     event.stopPropagation()
 
+def nothing():
+    """Do nothing"""
+    return
+
+def exam_mode(exam):
+    """Modify parameters to be in examination mode of not"""
+    i = 0
+    for attr, value in [('checkpoint', 1), ('allow_copy_paste', 0),
+                        ('forbid_question_copy', 1), ('allow_ip_change', 0)]:
+        def do_later():
+            """In a function so all the inputs have not the same value"""
+            input = document.getElementById(attr)
+            if exam:
+                new_value = value == 1
+            else:
+                new_value = value == 0
+            if input.checked == new_value:
+                return nothing
+            def fct():
+                input.checked = new_value and True or False
+                onchange({'target': input, 'stopPropagation': nothing})
+            return fct
+        setTimeout(do_later(), 200 * i)
+        i += 1
 
 def rename_session():
     """Rename the session"""
@@ -405,7 +429,7 @@ Choose the data to manage:
         </div>
     </div>
     <div><label><input type="checkbox" name="Config">Session config tab (except Exam parameters)</label></div>
-    <div><label><input type="checkbox" name="Access">Session access tab (except Exam parameters) : admins/proctors/graders lists</label></div>
+    <div><label><input type="checkbox" name="Access">Session access tab (except Exam parameters): admins/proctors/graders lists</label></div>
     <div><label><input type="checkbox" name="Source">Session source tab</label></div>
     <div><label><input type="checkbox" name="Media">Session media tab</label></div>
     <div><label><input type="checkbox" name="Grading">Session grading tab</label></div>
@@ -437,14 +461,22 @@ Sessions are created automaticaly.
 </form>
 </div>
 <div>
-<button id="manage_reset">Reset to session defaults</button> use defaults
+<b>Session copy</b>:<br>
+Export and then import with another name.
+</div>
+<div id="manage_reset_all">
+<b>Session delete</b>: the «Erase or reset to defaults» of<br>
+«Session source tab» will fully destroy the session.<br>
+«Students logs» will destroy students logs.<br>
+«Session media tab» will erase media.<br>
+</div>
+<div>
+<button id="manage_reset">Erase or reset to defaults</button> use defaults
 defined by COURSE_OPTIONS in the source file or C5 defaults if not
 defined in COURSE_OPTIONS.
 <p id="manage_reset_log">
-The reset may destroy all students logs, grading...<br>
+This may destroy all students logs, grading...<br>
 So be really careful and get the ZIP before.
-<p id="manage_reset_all">
-Resetting the «Session source tab» will fully destroy the session.
 </div>
 </div>
 </div>
@@ -526,7 +558,7 @@ def update_disabled():
         if 'Source' in state:
             manage_reset_all.style.color = '#F00'
         else:
-            manage_reset_all.style.color = '#888'
+            manage_reset_all.style.color = '#000'
         if 'Grades' in state or 'Journal' in state or 'Source' in state:
             manage_reset_log.style.color = '#F00'
         else:
