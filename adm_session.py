@@ -439,7 +439,7 @@ Choose the data to manage:
 <p>
 Operation on the selected data:
 <div>
-<button>Export ZIP</button> of the selected data of the current session
+<button id="manage_export">Export ZIP</button> of the selected data of the current session
 or more if multiple sessions are edited.
 </div>
 <div>
@@ -572,16 +572,16 @@ def manage_click(event):
                 element.checked = value
             update_disabled()
     elif event.target.tagName == 'BUTTON':
-        if event.target.innerHTML == 'Export':
+        if event.target.id == 'manage_export':
             window.open('adm/export/' + COURSE + '/' + get_state()
                 + '/' + COURSE + '.zip?ticket=' + TICKET)
-        elif event.target.innerHTML == 'Import ZIP':
-            form = element
+        elif event.target.id == 'manage_import':
+            form = event.target
             while form.tagName != 'FORM':
                 form = form.parentNode
             form.setAttribute('action', 'adm/import/' + get_state() + '?ticket=' + TICKET)
             form.submit()
-        elif event.target.innerHTML == 'Reset to session defaults':
+        elif event.target.id == 'manage_reset':
             window.location = 'adm/reset/' + COURSE + '/' + get_state() + '?ticket=' + TICKET
 
 def init():
