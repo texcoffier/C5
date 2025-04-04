@@ -671,7 +671,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if student.good_room:
                 if student.active:
                     color = "0123456789ABCDEF"[
-                        min(15, max(0, (now - student.checkpoint_time)/BOLD_TIME_ACTIVE))]
+                        min(15, max(0, Math.round((now - student.checkpoint_time)/BOLD_TIME_ACTIVE)))]
                     border_color = "#" + color + color + color
                 else:
                     border_color = "#0F0" # Examen done
