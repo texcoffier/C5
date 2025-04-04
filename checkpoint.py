@@ -247,7 +247,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     ctrl = False # Control key pressed
     time_span = [0, 1e50]
     rotate_180 = False
-    nr_max_grade = 0
+    nr_max_grade = {'a':0, 'b': 0}
     state = 'nostate'
     def __init__(self, info):
         self.menu = document.getElementById('top')
@@ -708,7 +708,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Draw grading (2 triangles: done and visible)
             if student.grade[1]:
                 ctx.fillStyle = "#0F0"
-                if student.grade[1] == self.nr_max_grade:
+                if student.grade[1] == ROOM.nr_max_grade[student.version]:
                     ctx.beginPath()
                     ctx.moveTo(left + width/2, top + height)
                     ctx.lineTo(left + width  , top + height)
@@ -1290,7 +1290,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             blur = ' ' + student.blur + ' pertes de focus (' + student.blur_time + ' secs)'
 
         if student.grade != '':
-            grades = ' Somme des ' + student.grade[1] + '/' + self.nr_max_grade + ' notes → ' + student.grade[0]
+            grades = ' Somme des ' + student.grade[1] + '/' + ROOM.nr_max_grade[student.version] + ' notes → ' + student.grade[0]
             feedback = ' ' + [
                 "Rien d'affiché à l'étudiant",
                 "Code source commenté",
@@ -1863,14 +1863,14 @@ def update_page():
     students.sort(cmp_student_name)
     ROOM.students = []
     ROOM.waiting_students = []
-    ROOM.nr_max_grade = 0
+    ROOM.nr_max_grade = {'a': 0, 'b': 0}
     for student in students:
         if student.building == ROOM.building:
             ROOM.students.append(student)
         elif not student.active:
             ROOM.waiting_students.append(student)
-        if student.grade != '' and student.grade[1] > ROOM.nr_max_grade:
-            ROOM.nr_max_grade = student.grade[1]
+        if student.grade != '' and student.grade[1] > ROOM.nr_max_grade[student.version]:
+            ROOM.nr_max_grade[student.version] = student.grade[1]
 
     if ROOM.moving and ROOM.moving != True: # pylint: disable=singleton-comparison
         student = STUDENT_DICT[ROOM.moving['login']]
