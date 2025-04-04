@@ -2037,7 +2037,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             # self.record_pending_goto() # Record pending goto because if ^Z
             SHARED_WORKER.question(value)
             self.journal_question = JOURNAL.questions[value]
-            self.set_editor_content(JOURNAL.content)
+            if self.journal_question.start + 1 == self.journal_question.head:
+                # Initialize with the default answer
+                self.set_editor_content(self.question_original[value])
+            else:
+                self.set_editor_content(JOURNAL.content)
             self.compilation_run()
             self.canvas.parentNode.scrollLeft = max(
                 0, self.tree_canvas() - self.canvas.parentNode.offsetWidth + 40)
@@ -2170,18 +2174,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             content.append(value)
             if what in self: # pylint: disable=unsupported-membership-test
                 self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
-        elif what == 'editor':
-            # New question
-            question = self.journal_question
-            self.compile_now = True
-            if not question or question.created_now or self.wait_indentation:
-                message = value
-                if not self.wait_indentation:
-                    message += '\n\n\n' # XXX
-                self.set_editor_content(message)
-                self.wait_indentation = False
-            else:
-                self.set_editor_content(JOURNAL.content)
         elif what == 'default':
             print("DEFAULT", value)
             self.question_original[value[0]] = value[1]

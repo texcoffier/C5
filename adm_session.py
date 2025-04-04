@@ -417,7 +417,7 @@ Choose the data to manage:
             <div><label><input type="checkbox" name="feedback"></label></div>
             <div><label><input type="checkbox" name="force_grading_done"></label></div>
         </div>
-        <div><label><input type="checkbox">Student</label>
+        <div><label><input type="checkbox">Student lists</label>
             <div><label><input type="checkbox" name="expected_students"></label></div>
             <div><label><input type="checkbox" name="expected_students_required"></label></div>
             <div><label><input type="checkbox" name="tt"></label></div>
