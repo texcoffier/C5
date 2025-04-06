@@ -2283,7 +2283,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                                or port is not None and connection[1] != port
                             ]
         if not self.connections:
-            JournalLink.journals.pop((self.course.course, self.login))
+            JournalLink.journals.pop((self.course.course, self.login), None)
 
     @classmethod
     def new(cls, course, login, socket, port, is_editor): # pylint: disable=too-many-arguments
@@ -2390,15 +2390,17 @@ async def live_link(request:Request) -> StreamResponse:
                     journa.close(socket, port)
                     continue
                 if message.startswith('#'):
-                    log(f'Not allowed via web interface «{message}»')
+                    log(f'Not allowed via web interface {session.login} {journa.course.course} «{message}»')
                 elif message.startswith('b+') and not message.startswith(f'b+{session.login}'):
-                    log(f'Hacker «{message}»')
+                    log(f'Hacker {session.login} {journa.course.course} «{message}»')
                 else:
                     if message.startswith('bC'):
                         journa.erase_comment_history(int(message[2:].split(' ')[0]))
                     await journa.write(message)
             else:
-                log(f'{journa.msg_id} != {msg_id}  for  {message}')
+                log(f'{journa.msg_id} != {msg_id} {session.login} {journa.course.course} {message}')
+                await socket.send_str(f'{port} R')
+                journa.close(socket, port)
         else:
             assert port not in journals
             session_name, asked_login = message.split(' ', 1)

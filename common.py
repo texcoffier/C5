@@ -1113,11 +1113,11 @@ def create_shared_worker(login='', hook=None):
     print(millisecs())
     shared_worker = eval('new SharedWorker("live_link.js' + window.location.search + '")')
     def reload_page(message):
-        # Firefox 129 bug? The alert function does not returns
-        setTimeout(bind(window.location.reload, window.location), 5000)
+        def reload_page():
+            window.location.reload()
         shared_worker.port.close()
-        alert(message + "\nLa page va être rechargée.")
-        window.location.reload()
+        ccccc.popup_message(message + "<p>La page va être rechargée.", cancel='', ok='OK',
+            callback=reload_page)
     def shared_worker_message(event):
         """Message from the shared worker"""
         if event.data.startswith('J'):
@@ -1133,7 +1133,7 @@ def create_shared_worker(login='', hook=None):
         elif event.data.startswith('M'):
             print("SHARED WORKER SAYS:", event.data[1:])
         elif event.data.startswith('R'):
-            reload_page("Le serveur a été arrêté pour une maintenance.")
+            reload_page("Il y a eu un problème.")
         elif event.data.startswith('A'):
             ccccc.popup_message('<pre>' + html(event.data[1:]) + '</pre>')
         else:
