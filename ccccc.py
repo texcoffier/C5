@@ -195,7 +195,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     to_complete = ''
     last_scroll = 0 # Last scroll position sent to journal in seconds
     old_scroll_top = 0
-    wait_indentation = False
     user_compilation = False
     journal_question = None
     old_delta = None
@@ -1470,8 +1469,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             return
         self.user_compilation = True # Indent trigger compile
         self.unlock_worker()
-        self.wait_indentation = True
-        self.worker.postMessage(['indent', self.source.strip()])
+        self.worker.postMessage(['indent', self.source])
 
     def try_completion(self):
         """Check possible completion"""
@@ -2174,6 +2172,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             content.append(value)
             if what in self: # pylint: disable=unsupported-membership-test
                 self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
+        elif what == 'editor':
+            self.set_editor_content(value)
         elif what == 'default':
             print("DEFAULT", value)
             self.question_original[value[0]] = value[1]
