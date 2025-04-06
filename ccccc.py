@@ -1782,6 +1782,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.do_not_clear[box] = True
         if self[box]: # pylint: disable=unsubscriptable-object
             self[box].innerHTML = '' # pylint: disable=unsubscriptable-object
+            self[box].content_size = 0
 
     def onerror(self, event): # pylint: disable=no-self-use
         """When the worker die?"""
@@ -2129,6 +2130,13 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                             span.focus()
                     self.input_index += 1
                 else:
+                    if self.executor.content_size > 1000000:
+                        if self.executor.content_size == 1000001:
+                            continue
+                        self.executor.content_size = 1000001
+                        value = 'Truncated...'
+                    else:
+                        self.executor.content_size += len(value)
                     span = document.createElement('DIV')
                     # The first space is replaced by an unsecable space
                     # in order to display it on span start <span> foo</span>
