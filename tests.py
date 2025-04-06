@@ -118,7 +118,7 @@ class Tests: # pylint: disable=too-many-public-methods
             course.set_parameter('admins', '')
             course.set_parameter('feedback', 0)
             course.set_parameter('grading_done', 0)
-            course.set_parameter('expected_students_required', 0)
+            course.set_parameter('expected_students', ' \n \n ')
             course.set_parameter('hide_before', 360)
             course.set_parameter('state', "Ready")
             if os.path.exists(course_name + '/journal.log'):

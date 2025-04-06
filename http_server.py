@@ -607,12 +607,6 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         value = xxx_local.normalize_logins(value)
         config.set_parameter('expected_students', value)
         feedback = f"«{course}» Expected student list updated with «{value}»"
-    elif action == 'expected_students_required':
-        config.set_parameter('expected_students_required', int(value))
-        if value == '0':
-            feedback = f"«{course}» All students see this session."
-        else:
-            feedback = f"«{course}» Restricted to expected students."
     elif action == 'admins':
         value = xxx_local.normalize_logins(value)
         config.set_parameter('admins', value)
@@ -1325,11 +1319,13 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
         ('sequential', 'S', 'Sequential question access'),
         ('save_unlock', '🔓', 'Save unlock next question'),
         ('allow_ip_change', 'IP', 'Allow IP change'),
-        ('expected_students_required', '🪪', 'Only expected students'),
+        ('expected_students', '🪪', 'Only expected students'),
     ):
         value = course.config.get(attr, 0)
         if str(value).isdigit():
             value = int(value)
+        else:
+            value = value.strip()
         if value:
             if attr == 'coloring':
                 tip += ' «' + course.theme + '»'
@@ -1622,7 +1618,7 @@ async def home(request:Request) -> Response:
     for _course_name, course in courses:
         expected = (login in course.expected_students
                     or login in course.tt_list)
-        if course.expected_students_required and not expected:
+        if course.expected_students and not expected:
             continue
         status = course.status(login)
         feedback = course.get_feedback(login)

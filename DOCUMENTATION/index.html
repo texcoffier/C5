@@ -491,9 +491,6 @@ make[1]: Leaving directory '/home/exco/C5'
 ┣━━━━━━━━╉────────────────────┼────────────────────┤
 ┃Archive ┃creator admin       │creator admin       │
 ┗━━━━━━━━┹────────────────────┴────────────────────┘</pre></tr>
-<tr><td>checkpoint<td>1<td>Requires students to be placed on the map (examination mode)</tr>
-<tr><td>allow_copy_paste<td>0<td>Copy/paste allowed (if not allowed students must be in full screen mode)</tr>
-<tr><td>forbid_question_copy<td>0<td>Forbid text selection in questions</tr>
 <tr><td>display_media_list<td>0<td>Add a media menu 📷 in the source editor title bar</tr>
 <tr><td>save_unlock<td>0<td>Saving a question unlock next</tr>
 <tr><td>automatic_compilation<td>1<td>Compilation is automatic</tr>
@@ -501,9 +498,13 @@ make[1]: Leaving directory '/home/exco/C5'
 <tr><td>grading_done<td>1<td>Graders indicate «grading done» in place of the grading level</tr>
 <tr><td>force_grading_done<td>0<td>Consider all gradings done even if graders did not approve</tr>
 <tr><td>feedback_for_all<td>0<td>Allow an empty feedback (with the examination questions) to students who did not attend to the session</tr>
-<tr><td>allow_ip_change<td>0<td>Allow IP change (bad Internet connection)</tr>
 <tr><td>sequential<td>1<td>Questions must be answered from first to last</tr>
 <tr><td>git_url<td><tt>&#x27;&#x27;</tt><td>The GIT url to fetch updates. <b>You must only commit 'questions.py' and 'MEDIA/*' nothing else.</b></tr>
+<tr><th style="background: #FFF" colspan="3">Set &lt;button onclick=&quot;exam_mode(1)&quot; style=&quot;font-size:100%&quot;&gt;Examination&lt;/button&gt; or &lt;button onclick=&quot;exam_mode(0)&quot; style=&quot;font-size:100%&quot;&gt;Course&lt;/button&gt; modes for attributes:</tr>
+<tr><td>checkpoint<td>1<td>Requires students to be placed on the map (examination mode)</tr>
+<tr><td>allow_copy_paste<td>0<td>Copy/paste allowed (if not allowed students must be in full screen mode)</tr>
+<tr><td>forbid_question_copy<td>1<td>Forbid text selection in questions</tr>
+<tr><td>allow_ip_change<td>0<td>Allow IP change (bad Internet connection)</tr>
 <tr><th style="background: #FFF" colspan="3">Checkpoint placement interface</tr>
 <tr><td>display_student_filter<td>0<td>Display an INPUT field containing a list of student IDs to highlight</tr>
 <tr><td>display_my_rooms<td>1<td>Add a toggle to display only the rooms I dragged student into</tr>
@@ -613,8 +614,7 @@ System calls allowable for g++/gcc:
 <tr><td>admins<td><tt>&#x27;&#x27;</tt><td>Administrators with all the access rights</tr>
 <tr><td>graders<td><tt>&#x27;&#x27;</tt><td>Teachers allowed to try the session, grade and place the students</tr>
 <tr><td>proctors<td><tt>&#x27;&#x27;</tt><td>Proctors can only place the students</tr>
-<tr><td>expected_students<td><tt>&#x27;&#x27;</tt><td>The login list of expected students, the session is in bold in their session list.</tr>
-<tr><td>expected_students_required<td>0<td>Unexpected students do not see the session, but a teacher can send them the link to it</tr>
+<tr><td>expected_students<td><tt>&#x27;&#x27;</tt><td>The login list of expected students, if not empty only listed students may see the session on their C5 home page.</tr>
 <tr><td>tt<td><tt>&#x27;&#x27;</tt><td>The logins of student with ⅓ more time</tr>
 </table>
     </div END>

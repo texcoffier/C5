@@ -373,7 +373,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.force_grading_done = int(self.config['force_grading_done'])
         self.feedback_for_all = int(self.config['feedback_for_all'])
         self.expected_students = set(re.split('[ \n\r\t]+', self.config['expected_students']))
-        self.expected_students_required = int(self.config['expected_students_required'])
+        if tuple(self.expected_students) == ('',):
+            self.expected_students = set()
         if os.path.exists(self.dir_media):
             self.media = os.listdir(self.dir_media)
         else:

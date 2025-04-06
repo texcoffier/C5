@@ -65,7 +65,7 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                         content.append('    ' + JSON.stringify(key)
                                        + ':' + JSON.stringify(value[key]))
                     element.value = '{\n' + ',\n'.join(content) + '\n}'
-                if attr not in ('admins', 'graders', 'proctors', 'expected_students', 'expected_students_required', 'tt'):
+                if attr not in ('admins', 'graders', 'proctors', 'expected_students', 'tt'):
                     element.rows = len(content) + 3
                 if attr == 'expected_students':
                     document.getElementById("nr_expected_students"
@@ -305,10 +305,12 @@ def select_tab(label):
     <tr><th>Proctors
         <td><textarea id="proctors"></textarea>
     </tr>
-    <tr><th><span id="nr_expected_students"></span> Students (<label><input type="checkbox" id="expected_students_required">hide to others</label>)
+    <tr><th><span id="nr_expected_students"></span> Students
+    <p>""" + DEFAULT_COURSE_OPTIONS_DICT['expected_students'] + """
         <td><textarea id="expected_students"></textarea>
     </tr>
-    <tr><th><span id="nr_tt"></span> Students with ⅓ more time to answer
+    <tr><th><span id="nr_tt"></span> Students
+    <p>""" + DEFAULT_COURSE_OPTIONS_DICT['tt'] + """
         <td><textarea id="tt"></textarea>
     </tr>
     </table>"""
@@ -419,7 +421,6 @@ Choose the data to manage:
         </div>
         <div><label><input type="checkbox">Student lists</label>
             <div><label><input type="checkbox" name="expected_students"></label></div>
-            <div><label><input type="checkbox" name="expected_students_required"></label></div>
             <div><label><input type="checkbox" name="tt"></label></div>
         </div>
         <div><label><input type="checkbox">Students logs</label>
@@ -672,11 +673,4 @@ def update_interface():
         else:
             grading_sum.innerHTML = '<span style="background:#F88">' + total + '/' + total2 + '</span>'
 
-    required = document.getElementById("expected_students_required")
-    expected_students = document.getElementById("expected_students")
-    if required and expected_students:
-        if required.checked and expected_students.value.trim() == '':
-            required.parentNode.style.background = "#F00"
-        else:
-            required.parentNode.style.background = "#FFF"
 init()
