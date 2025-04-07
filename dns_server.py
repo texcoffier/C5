@@ -47,6 +47,8 @@ while True:
     except KeyboardInterrupt:
         print(f"Stop at {time.ctime()} keyboard interrupt", file=sys.stderr)
         break
+    except SystemExit:
+        break
     except: # pylint: disable=bare-except
         print("EXCEPTION!", file=sys.stderr)
         traceback.print_exc()
