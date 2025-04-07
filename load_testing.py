@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 """
 Send many requests to the compile server
-   . 127 ; ./compile_server.py  # In a window
-   . 127 ; ./load_testing.py   # In another window
+   . 127 ; ./compile_server.py load_testing       # In a window
+   . 127 ; ./load_testing.py                      # In another window
 """
 
 import json
@@ -28,6 +28,11 @@ int main()
 """
 URL = f"wss://{utilities.C5_HOST}:{utilities.C5_SOCK}/{TICKET}/{COURSE}"
 HEADERS = {'X-Forwarded-For': '127.0.0.1', 'User-Agent': BROWSER}
+CERT = ssl.SSLContext(
+        protocol=ssl.PROTOCOL_SSLv23,
+        verify_mode=ssl.CERT_NONE,
+        cert_reqs=ssl.CERT_NONE,
+        check_hostname=False)
 
 with open(f'TICKETS/{TICKET}', 'w', encoding="ascii") as _:
     _.write(repr(('localhost', BROWSER, 'X', time.time(), {'fn': 'FN', 'sn': 'SN'})))
@@ -36,15 +41,16 @@ STATS = []
 
 async def one_student():
     """Emulate one student work"""
-    async with websockets.connect(URL, extra_headers=HEADERS, ssl=ssl.SSLContext()) as websocket: # pylint: disable=no-member
+    async with websockets.connect(URL, extra_headers=HEADERS, ssl=CERT) as websocket: # pylint: disable=no-member
         while True:
             await asyncio.sleep(1 + 10*random.random())
             start = time.time()
             await websocket.send(json.dumps(
                 ['compile', [COURSE, '0', 'g++', [], [], [], SOURCE]]))
             answer = await websocket.recv()
-            assert 'Bravo' in answer # Compilation successful
-            await websocket.send(json.dumps(['run', '']))
+            if 'Bravo' not in answer:
+                raise ValueError(f'Compilation fail: {answer}')
+            await websocket.send(json.dumps(['run', [[], [], 1000, 100000]]))
             answer = await websocket.recv()
             assert 'Bonjour' in answer # Execution output is fine
             answer = await websocket.recv()

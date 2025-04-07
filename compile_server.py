@@ -458,7 +458,7 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
         await bad_session(websocket)
         return
 
-    session = await utilities.Session.get(websocket, ticket)
+    session = await utilities.Session.get(websocket, ticket, allow_ip_change='load_testing' in sys.argv)
     if not session:
         await bad_session(websocket)
         return
