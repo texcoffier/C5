@@ -2382,7 +2382,7 @@ async def live_link(request:Request) -> StreamResponse:
         if journa:
             msg_id, message = message.split(' ', 1)
             if msg_id == journa.msg_id:
-                if not journa.course.running(session.login):
+                if not journa.course.running(session.login, session.hostname):
                     journa.close(socket, port)
                     continue
                 if message.startswith('#'):
