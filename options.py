@@ -35,7 +35,7 @@ DEFAULT_COURSE_OPTIONS = [
 ┗━━━━━━━━┹────────────────────┴────────────────────┘</pre>"""],
     ['display_media_list'   ,0, "Add a media menu 📷 in the source editor title bar"],
     ['save_unlock'          ,0, "Saving a question unlock next"],
-    ['automatic_compilation',1, "Compilation is automatic"],
+    ['automatic_compilation',0, "Compilation is automatic"],
     ['feedback'             ,0, "Maximum level of student feedback allowed to teachers"],
     ['grading_done'         ,1, "Graders indicate «grading done» in place of the grading level"],
     ['force_grading_done'   ,0, "Consider all gradings done even if graders did not approve"],
