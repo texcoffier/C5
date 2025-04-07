@@ -370,6 +370,10 @@ class Process: # pylint: disable=too-many-instance-attributes
                 stderr=asyncio.subprocess.STDOUT,
                 preexec_fn=set_racket_limits,
                 close_fds=True,
+                # ChatGPT suggest this to use less memory 2% less when I tried.
+                env={'PLT_GC_VARIABLES': 'usemmap=no;generations=1;trim=yes',
+                     # 'PLT_RACKET_NO_JIT': '1'
+                    }
                 )
                 self.stdout = self.process.stdout
                 self.tasks = [asyncio.ensure_future(self.runner())]
