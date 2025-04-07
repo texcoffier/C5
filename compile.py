@@ -250,8 +250,11 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self.options['positions']['compiler'][0] >= 100
                 or self.options['positions']['compiler'][2] >= 100
                 ) and self.options['display_compile_run']:
-            more = (' <label onclick="ccccc.user_compilation=true;ccccc.compilation_run()">'
-                    + self.options['executor_title_button'] + '</label>')
+            if self.options['automatic_compilation']:
+                more = ' <span style="font-size:60%">AutoRun</span>'
+            else:
+                more = (' <label onclick="ccccc.user_compilation=true;ccccc.compilation_run()">'
+                        + self.options['executor_title_button'] + '</label>')
         else:
             more = ''
         more += '<span ondblclick="ccccc.send_mail()" style="float:right; background: #CCF; margin-right: 0.3em;">'
