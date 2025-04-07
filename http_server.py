@@ -1830,7 +1830,6 @@ async def journal(request:Request) -> StreamResponse:
         await asyncio.sleep(60)
         try:
             await stream.write(b'\n')
-            await stream.drain()
         except ConnectionResetError:
             try:
                 course.streams.remove(stream)
@@ -2400,6 +2399,9 @@ async def live_link(request:Request) -> StreamResponse:
         else:
             assert port not in journals
             session_name, asked_login = message.split(' ', 1)
+            if session_name.isdigit():
+                log(f'Message from closed session {session.login} {journa.course.course} «{message}»')
+                continue
             course = CourseConfig.get(utilities.get_course(session_name))
             allow_edit = asked_login == session.login or session.is_grader(course)
             if asked_login and session.is_proctor(course):

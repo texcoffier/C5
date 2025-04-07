@@ -433,7 +433,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             for stream in tuple(self.streams):
                 try:
                     await stream.write(data)
-                    await stream.drain()
                 except: # pylint: disable=bare-except
                     self.streams.remove(stream)
         self.send_journal_running = False
