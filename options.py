@@ -54,7 +54,7 @@ DEFAULT_COURSE_OPTIONS = [
 
     ['display_student_filter', 0, "Display an INPUT field containing a list of student IDs to highlight"],
     ['display_my_rooms'      , 1, "Add a toggle to display only the rooms I dragged student into"],
-    ['display_session_name'  , 0, "Display the session name"],
+    ['display_session_name'  , 1, "Display the session name"],
     ['default_building'      ,'', "Preselected building name"],
 
     "Student session list",
