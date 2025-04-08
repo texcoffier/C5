@@ -1,14 +1,21 @@
+#!/usr/bin/python3
+
 """Global statistics creation and display.
 
 Need to add counting of I D S T ...
+
+If launched with a session list has: COMPILE_REMOTE/*
+It will display the histogram of median compile time between 2 compilation.
 
 """
 
 # pylint: disable=invalid-name,multiple-statements,eval-used
 
 import os
+import sys
 import collections
 import json
+import utilities
 
 PAUSE_TIME = 10*60 # 10 minutes
 
@@ -17,12 +24,15 @@ class Stat:
     last_interaction = 0
     nr_compile_without_error = nr_compile_with_error = 0
     work_time = timestamp = 0
+    last_compile = 0
+    time_between_compile_stddev = None
 
     def __init__(self):
         self.question_dict = collections.defaultdict(int) # Nr questions see
         self.allow_edit_dict = collections.defaultdict(int) # Nr forbiden actions while compiling
         self.sessions = []
         self.grade = {}
+        self.time_between_compile = []
 
     def parse(self, line):
         if line.startswith('T'):
@@ -37,7 +47,11 @@ class Stat:
             self.work_time += timestamp - self.last_interaction
             self.last_interaction = timestamp
         elif line.startswith('c'):
-            if line == 'c0':
+            if self.last_compile:
+                delta = self.last_interaction - self.last_compile
+                self.time_between_compile.append(delta)
+            self.last_compile = self.last_interaction
+            if line.startswith('c0'):
                 self.nr_compile_without_error += 1
             else:
                 self.nr_compile_with_error += 1
@@ -67,11 +81,13 @@ class Stat:
             self.grade = sum(grade)
         else:
             del self.grade
-
+        if self.time_between_compile:
+            self.time_between_compile.sort()
+            self.time_between_compile = self.time_between_compile[len(self.time_between_compile)//2]
     def __repr__(self):
         return repr(self.__dict__)
 
-def compile_stats(courses) -> None:
+def compile_stats(courses, create=True) -> None:
     """Create a resume for each session stats"""
     full = {}
     for session in courses:
@@ -117,7 +133,40 @@ def compile_stats(courses) -> None:
             file.write(content)
         full[session.dir_session] = eval(content)
         print()
-    with open('xxx-full-stats.js', 'w', encoding='utf-8') as file:
-        file.write(f'{json.dumps(full)}')
-    print(f"xxx-full-stats.js : {os.path.getsize('xxx-full-stats.js')} bytes")
+    if create:
+        with open('xxx-full-stats.js', 'w', encoding='utf-8') as file:
+            file.write(f'{json.dumps(full)}')
+        print(f"xxx-full-stats.js : {os.path.getsize('xxx-full-stats.js')} bytes")
 
+def main():
+    sessions = [
+        utilities.CourseConfig.get(i)
+        for i in sys.argv[1:]
+        ]
+    compile_stats(sessions, create=False)
+    histo = [0] * 30
+    size = 5
+    for session in sessions:
+        try:
+            with open(session.dir_session + '/session.stats', 'r', encoding='utf-8') as file:
+                content = file.read()
+        except FileNotFoundError:
+            continue
+        content = eval(content)
+        for student in content.values():
+            nr = student.get('nr_compile_without_error',0) + student.get('nr_compile_with_error', 0)
+            if nr < 10:
+                continue
+            tbc = student['time_between_compile'] // size
+            if tbc < len(histo):
+                histo[tbc] += 1
+    print('Number of seconds between 2 compiles (median for session with >10 compiles).')
+    print('The number of «*» indicates the number of students with this median time.')
+    nrmax = max(histo)
+    for delta, nbr in enumerate(histo):
+        print(f'{delta*size:3}-{delta*(size+1):<3} {"*"*int(80*nbr/nrmax)}')
+
+
+
+if __name__ == '__main__':
+    main()
