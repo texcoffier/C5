@@ -2,9 +2,11 @@
 """
 Send many requests to the compile server
    . 127 ; ./compile_server.py load_testing       # In a window
-   . 127 ; ./load_testing.py                      # In another window
+   . 127 ; ./load_testing.py [racket]             # In another window
+
 """
 
+import sys
 import json
 import time
 import asyncio
@@ -15,17 +17,39 @@ import utilities
 
 NR_STUDENTS = 100
 
+if 'racket' in sys.argv:
+    COURSE = 'REMOTE=racket'
+    SOURCE = """
+(require racket/math)
+(display "Bonjour")
+"""
+    COMPILER = ['compile', [COURSE, '0', 'racket', [], [], [], SOURCE]]
+    def check_exec(answer):
+        return 'Bonjour' in answer and 'RACKETFini' in answer
+else:
+    COURSE = 'REMOTE=test'
+    SOURCE = """
+    using namespace std;
+    #include <iostream>
+    int main()
+    {
+        cout << "Bonjour\\n";
+    }
+    """
+    COMPILER = ['compile', [COURSE, '0', 'g++', [], [], [], SOURCE]]
+    def check_exec(answer):
+        return 'Bonjour' in answer and 'cution = 0' in answer and 'return' in answer
+
+async def wait(socket, fct):
+    answer = await socket.recv()
+    for _ in range(10):
+        if fct(answer):
+            return
+        answer += await socket.recv()
+    raise ValueError(f"wait {fct} failed with {answer}")
+
 TICKET = 'FAKETICKET'
 BROWSER = 'Mozilla/5.0 (X11) Gecko/20100101 Firefox/100.0'
-COURSE = 'REMOTE=test'
-SOURCE = """
-using namespace std;
-#include <iostream>
-int main()
-{
-    cout << "Bonjour\\n";
-}
-"""
 URL = f"wss://{utilities.C5_HOST}:{utilities.C5_SOCK}/{TICKET}/{COURSE}"
 HEADERS = {'X-Forwarded-For': '127.0.0.1', 'User-Agent': BROWSER}
 CERT = ssl.SSLContext(
@@ -39,24 +63,19 @@ with open(f'TICKETS/{TICKET}', 'w', encoding="ascii") as _:
 
 STATS = []
 
+def check_compile(answer):
+    return 'Bravo' in answer
+
 async def one_student():
     """Emulate one student work"""
     async with websockets.connect(URL, extra_headers=HEADERS, ssl=CERT) as websocket: # pylint: disable=no-member
         while True:
-            await asyncio.sleep(1 + 10*random.random())
+            await asyncio.sleep(10 + 30*random.random())
             start = time.time()
-            await websocket.send(json.dumps(
-                ['compile', [COURSE, '0', 'g++', [], [], [], SOURCE]]))
-            answer = await websocket.recv()
-            if 'Bravo' not in answer:
-                raise ValueError(f'Compilation fail: {answer}')
+            await websocket.send(json.dumps(COMPILER))
+            await wait(websocket, check_compile)
             await websocket.send(json.dumps(['run', [[], [], 1000, 100000]]))
-            answer = await websocket.recv()
-            assert 'Bonjour' in answer # Execution output is fine
-            answer = await websocket.recv()
-            if 'cution = 0' not in answer:
-                answer += await websocket.recv()
-            assert 'return' in answer and 'cution = 0' in answer # Return value is fine
+            await wait(websocket, check_exec)
             # print(f'{name}:{time.time()-start:.1f} ', end='', flush=True)
             STATS.append(time.time() - start)
 
