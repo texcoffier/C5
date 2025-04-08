@@ -33,7 +33,7 @@ import websockets
 from websockets import WebSocketServerProtocol
 import utilities
 
-
+MIN_TIME_BETWEEN_CONNECT = 0.2 # Racket start time
 PROCESSES = []
 UID_MIN = int(utilities.C5_COMPILE_UID)
 FREE_USERS = list(range(UID_MIN, UID_MIN+1000))
@@ -453,6 +453,18 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
     """Analyse the requests from one websocket connection"""
     print(time.strftime('%Y%m%d%H%M%S'), path, flush=True)
 
+    if time.time() < echo.next_allowed_start_time:
+        wait = echo.next_allowed_start_time - time.time()
+        echo.next_allowed_start_time += MIN_TIME_BETWEEN_CONNECT
+        if wait > 0.5:
+            await websocket.send(json.dumps(['wait',
+                f"""Vous êtes dans la file d'attente.
+Le programme s'exécutera dans {wait:.1f} secondes.
+N'actualisez PAS la page."""]))
+        await asyncio.sleep(wait)
+    else:
+        echo.next_allowed_start_time = time.time() + MIN_TIME_BETWEEN_CONNECT
+
     _, ticket, course = path.split('/')
     if not os.path.exists('TICKETS/' + ticket):
         await bad_session(websocket)
@@ -509,6 +521,7 @@ async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: d
         PROCESSES.remove(process)
         FREE_USERS.append(process.launcher)
     # search_leak()
+echo.next_allowed_start_time = 0
 
 async def main() -> None:
     """Answer compilation requests"""

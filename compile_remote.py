@@ -86,7 +86,8 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
             elif data[0] == 'stop':
                 self.post('stop', data[1])
                 self.stoped = True
-
+            elif data[0] == 'wait':
+                self.post('wait', data[1])
         def event_open(_event):
             print('Socket opened')
             self.socket = socket

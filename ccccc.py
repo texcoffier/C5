@@ -2016,7 +2016,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
-        # print(millisecs(), self.state, what, str(event.data[1])[:10])
+        # print(event.data)
         value = event.data[1]
         if what == 'options':
             for key in value:
@@ -2212,6 +2212,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     self.question.onscroll = onscroll
                 setTimeout(spy_onscroll, 100)
                 self.question.scrollTop = self.journal_question.scrollTop or 0
+        elif what == 'wait':
+            self.executor.innerHTML += value
+            self.compiler.innerHTML += value
         elif what == 'eval':
             try:
                 eval(value) # pylint: disable=eval-used
