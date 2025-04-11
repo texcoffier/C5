@@ -343,7 +343,7 @@ int main()                       {main declaration:0,1}
 </pre>
 <b>Indicate your session gradings here,</b>
 A subject and B subject if they are different.
-(Grading sum : <span id="grading_sum" style="background: #0F0"></span>):
+<div id="grading_sum"></div>
 </div>
     <div style="display: flex"><textarea id="notation" style="flex:1"></textarea> <textarea id="notationB" style="flex:1"></textarea></div>"""
     elif label == 'Config':
@@ -654,23 +654,42 @@ def count_words(element_id):
                    + message)
     return message
 
+def count_toggles(toggles):
+    max_grade = 0
+    nr_competence_toggle = 0
+    for _text1, grade_label, grades in toggles:
+        if ':' in grade_label:
+            nr_competence_toggle += 1
+        else:
+            if len(grades):
+                max_grade += Number(grades[-1])
+    return max_grade, nr_competence_toggle
+
 def update_interface():
     """Update grading"""
     grading_sum = document.getElementById('grading_sum')
     notation = document.getElementById("notation")
     notationB = document.getElementById("notationB")
     if grading_sum and notation:
-        total = 0
-        for _text1, _text2, grades in parse_notation(notation.value):
-            if len(grades):
-                total += Number(grades[-1])
-        total2 = 0
-        for _text1, _text2, grades in parse_notation(notationB.value):
-            if len(grades):
-                total2 += Number(grades[-1])
-        if total == total2 or total2 == 0:
-            grading_sum.innerHTML = total
-        else:
-            grading_sum.innerHTML = '<span style="background:#F88">' + total + '/' + total2 + '</span>'
+        total, total_competence = count_toggles(parse_notation(notation.value))
+        total2, total2_competence = count_toggles(parse_notation(notationB.value))
+
+        if total or total2:
+            message = 'Maximum possible grade: <b>'
+            if total == total2 or total2 == 0:
+                message += total
+            else:
+                message += '<span style="background:#F88">' + total + '/' + total2 + '</span>'
+            message += '</b>'
+
+        if total_competence or total2_competence:
+            message += '. Nbr competences toggles: <b>'
+            if total_competence == total2_competence or total2_competence == 0:
+                message += total_competence
+            else:
+                message += '<span style="background:#F88">' + total_competence + '/' + total2_competence + '</span>'
+            message += '</b>'
+
+        grading_sum.innerHTML = message
 
 init()
