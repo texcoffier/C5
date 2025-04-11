@@ -204,6 +204,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def init(self):
         self.options = options = COURSE_CONFIG
 
+        # Fix missing bloc position
+        for infos in DEFAULT_COURSE_OPTIONS:
+            if infos[0] == 'positions':
+                for key in infos[1]:
+                    if key not in options['positions']:
+                        options['positions'][key] = [100, 1, 100, 1, '#0000']
+                break
+
         answers = {}
         for question_index, question in JOURNAL.questions.Items():
             answers[question_index] = [question.source, question.good]
