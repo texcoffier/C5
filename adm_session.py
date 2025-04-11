@@ -614,7 +614,7 @@ def init():
      <div id="server_feedback">Problems and server feedbacks will be written here.</div>
     </h1>
     <title>""" + html(COURSE.replace(RegExp('.*=', ''), ' ')) + """</title>
-    <link rel="stylesheet" href="adm_session.css?ticket=""" + TICKET + '''">
+    <link rel="stylesheet" href="CSS/adm_session.css?ticket=""" + TICKET + '''">
     <div id="tabs" onclick="select_tab(event.target.id)">
     <div id="Config">Config</div>
     <div id="Access">Access</div>

@@ -134,9 +134,9 @@ def compile_stats(courses, create=True) -> None:
         full[session.dir_session] = eval(content)
         print()
     if create:
-        with open('xxx-full-stats.js', 'w', encoding='utf-8') as file:
+        with open('JS/xxx-full-stats.js', 'w', encoding='utf-8') as file:
             file.write(f'{json.dumps(full)}')
-        print(f"xxx-full-stats.js : {os.path.getsize('xxx-full-stats.js')} bytes")
+        print(f"JS/xxx-full-stats.js : {os.path.getsize('JS/xxx-full-stats.js')} bytes")
 
 def main():
     sessions = [

@@ -188,7 +188,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
         session.header(login=login) + f'''
         <title>{title}</title>
         <link rel="stylesheet" href="HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
-        <link rel="stylesheet" href="ccccc.css?ticket={session.ticket}">
+        <link rel="stylesheet" href="CSS/ccccc.css?ticket={session.ticket}">
         <script src="HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         <script>
             SESSION_LOGIN = "{session.login}";
@@ -210,7 +210,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             COMMENT_STRING = {json.dumps(course.get_language()[1])};
             MEDIA = {json.dumps(course.media)};
         </script>
-        <script src="ccccc.js?ticket={session.ticket}"></script>''')
+        <script src="JS/ccccc.js?ticket={session.ticket}"></script>''')
 
 
 def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
@@ -225,6 +225,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
         course = None
         if not session:
             assert '/.' not in filename
+            assert base
             filename = base + '/' + filename
         else:
             if '=' in filename:
@@ -402,7 +403,7 @@ async def adm_course(request:Request) -> Response:
     await stream.write(
         f"""}}
             </script>
-            <script src="adm_course.js?ticket={session.ticket}"></script>
+            <script src="JS/adm_course.js?ticket={session.ticket}"></script>
             <div id="top"></div>
             """.encode('utf-8'))
     return stream
@@ -837,7 +838,7 @@ async def adm_root(request:Request, more:str='') -> Response:
     session = await get_root_login(request)
     return answer(
         session.header((), more)
-        + f'<script src="adm_root.js?ticket={session.ticket}"></script>')
+        + f'<script src="JS/adm_root.js?ticket={session.ticket}"></script>')
 
 async def adm_get(request:Request) -> StreamResponse:
     """Get a file or a ZIP"""
@@ -1401,8 +1402,8 @@ async def checkpoint_list(request:Request) -> Response:
     content = [
         session.header(),
         f'''
-        <script src="checkpoint_list.js?ticket={session.ticket}"></script>
-        <link rel="stylesheet" href="checkpoint_list.css?ticket={session.ticket}">
+        <script src="JS/checkpoint_list.js?ticket={session.ticket}"></script>
+        <link rel="stylesheet" href="CSS/checkpoint_list.css?ticket={session.ticket}">
         <div id="header"></div>
         <table>''']
     def hide_header():
@@ -1499,7 +1500,7 @@ async def checkpoint(request:Request) -> Response:
         OPTIONS = {json.dumps(course.config)};
         </script>
         <script src="checkpoint/BUILDINGS?ticket={session.ticket}"></script>
-        <script src="checkpoint.js?ticket={session.ticket}"></script>
+        <script src="JS/checkpoint.js?ticket={session.ticket}"></script>
         <link rel="stylesheet" href="HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
         <script src="HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         ''')
@@ -1533,7 +1534,7 @@ async def checkpoint_hosts(request:Request, real_course="=IPS") -> Response:
         SERVER_TIME = {time.time()};
         </script>
         <script src="checkpoint/BUILDINGS?ticket={session.ticket}"></script>
-        <script src="checkpoint.js?ticket={session.ticket}"></script>
+        <script src="JS/checkpoint.js?ticket={session.ticket}"></script>
         ''')
 
 async def checkpoint_maps(request:Request) -> Response:
@@ -1636,7 +1637,7 @@ async def home(request:Request) -> Response:
                      course.title, course.start_timestamp, course.stop_timestamp,
                      login in course.tt_list))
     return answer(f'''{session.header(login=login)}
-<script src="home.js?ticket={session.ticket}"></script>
+<script src="JS/home.js?ticket={session.ticket}"></script>
 <script>home({json.dumps(data)}, {await utilities.LDAP.infos(login)})</script>
 ''')
 
@@ -1745,7 +1746,7 @@ async def adm_session(request:Request) -> Response:
         BUILDINGS = {json.dumps(sorted(os.listdir('BUILDINGS')))};
         STUDENTS = {json.dumps(students)};
         </script>
-        <script src="adm_session.js?ticket={session.ticket}"></script>''')
+        <script src="JS/adm_session.js?ticket={session.ticket}"></script>''')
 
 async def adm_editor(request:Request) -> Response:
     """Session questions editor"""
@@ -1872,7 +1873,7 @@ async def change_session_ip(request:Request) -> Response:
 async def full_stats(request:Request) -> Response:
     """All session stats"""
     session = await Session.get_or_fail(request) # await get_author_login(request)
-    with open('xxx-full-stats.js', 'r', encoding='utf-8') as file:
+    with open('JS/xxx-full-stats.js', 'r', encoding='utf-8') as file:
         data = file.read()
     return answer(f'''<!DOCTYPE html>
     <title>STATS</title>
@@ -1880,7 +1881,7 @@ async def full_stats(request:Request) -> Response:
     <link REL="icon" href="favicon.ico?ticket={session.ticket}">
     <div id="header"></div>
     <div id="top"></div>
-    <script src="stats.js?ticket={session.ticket}"></script>
+    <script src="JS/stats.js?ticket={session.ticket}"></script>
     ''')
 
 async def adm_export(request:Request) -> Response:
@@ -2456,8 +2457,10 @@ def main():
 
     app = web.Application(client_max_size=1024*1024*1024**2)
     app.add_routes([web.get('/', home),
-                    web.get('/{filename}', handle()),
-                    web.get('/{filename}/V{version}', handle()),
+                    web.get('/{filename}', handle()), # Only editor
+                    web.get('/{filename}/V{version}', handle()), # Only editor
+                    web.get('/JS/{filename}', handle('JS')),
+                    web.get('/CSS/{filename}', handle('CSS')),
                     web.get('/node_modules/{filename:.*}', handle('node_modules')),
                     web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
                     web.get('/adm/get/{filename:.*}', adm_get),

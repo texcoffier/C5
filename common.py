@@ -1179,7 +1179,7 @@ def create_shared_worker(login='', hook=None):
     print("Start shared worker for communication")
     journal = Journal()
     print(millisecs())
-    shared_worker = eval('new SharedWorker("live_link.js' + window.location.search + '")')
+    shared_worker = eval('new SharedWorker("JS/live_link.js' + window.location.search + '")')
     def reload_page(message):
         def reload_page():
             window.location.reload()

@@ -1,5 +1,6 @@
 
-
+JS/%.js:JS %.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
+	@./py2js $* || true
 %.js:%.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
 	@./py2js $* || true
 
@@ -11,6 +12,9 @@ $(C5_CUSTOMIZE):
 
 default:all
 	@./utilities.py open # Open page on browser
+
+JS:
+	mkdir JS
 
 sandbox:
 	git clone "https://github.com/cloudflare/sandbox.git"
@@ -31,7 +35,8 @@ favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
 prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js node_modules/alasql sandbox killer \
-	ccccc.js live_link.js adm_root.js adm_course.js adm_session.js checkpoint.js checkpoint_list.js home.js stats.js \
+	JS/ccccc.js JS/live_link.js JS/adm_root.js JS/adm_course.js JS/adm_session.js \
+	JS/checkpoint.js JS/checkpoint_list.js JS/home.js JS/stats.js \
 	favicon.ico node_modules/@jcubic/lips
 	@$(MAKE) -j $$(nproc) $$(echo COMPILE_*/*/*.py | sed 's/\.py/.js/g')
 	@if [ ! -d SSL ] ; then ./utilities.py SSL-SS ; fi

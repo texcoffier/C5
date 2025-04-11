@@ -41,6 +41,7 @@ case $1 in
 	*)
 		COMPILER=
 		FILES="compatibility.py xxx_local.py options.py $PY"
+		JS=JS/$JS
 		;;
 esac
 
