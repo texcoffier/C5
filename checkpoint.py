@@ -1690,6 +1690,7 @@ def create_page(building_name):
             text-align: right;
             pointer-events: none;
             font-size: ''', SPY_FONT, '''px;
+            line-height: ''', SPY_FONT, '''px;
         }
         #live_spy > DIV {
             display: inline-block;
