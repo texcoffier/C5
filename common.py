@@ -118,7 +118,7 @@ class QuestionStats:
         self.head = None # <index> of the last version
         self.tags = [('', start+2)] # List[Tuple[<tag>, <index>]]
         self.good = False
-        self.source_old = self.source = self.last_tagged_source = ''
+        self.source_old = self.source = self.last_tagged_source = self.first_source = ''
         self.zoom = 6 # Maximum version tree zoom
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
@@ -209,6 +209,10 @@ class Journal:
     def action_I(self, value, _start):
         """Text insert"""
         string = unprotect_crlf(value)
+        if not self.content:
+            question = self.questions[self.question]
+            if not question.first_source:
+                question.first_source = string
         self.content = self.content[:self.position] + string + self.content[self.position:]
         size = len(string)
         for bubble in self.bubbles:
