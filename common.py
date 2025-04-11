@@ -1116,8 +1116,11 @@ def create_shared_worker(login='', hook=None):
         def reload_page():
             window.location.reload()
         shared_worker.port.close()
-        ccccc.popup_message(message + "<p>La page va être rechargée.", cancel='', ok='OK',
-            callback=reload_page)
+        if window.ccccc:
+            ccccc.popup_message(message + "<p>La page va être rechargée.", cancel='', ok='OK',
+                callback=reload_page)
+        else:
+            reload_page()
     def shared_worker_message(event):
         """Message from the shared worker"""
         if event.data.startswith('J'):
