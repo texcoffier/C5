@@ -2192,7 +2192,7 @@ def display_student_screen(journal, feedback, student, letter):
         + before + '<span style="color:#FFF;background:#000">' + cursor + '</span>'
         + html(journal.content[journal.position:])
         + '</div>')
-    feedback.style.height = journal.height * SPY_FONT + 'px'
+    feedback.style.height = (journal.height or 20) * SPY_FONT + 'px'
     feedback.scrollTo({'top': journal.scroll_line * SPY_FONT, 'behavior': 'smooth'})
 
 TIME_TRAVEL_STUDENTS = []
