@@ -86,6 +86,9 @@ def get_certificate(server=True):
         return cert
     return None
 
+def set_of_logins(txt):
+    return set(xxx_local.normalize_login(login)
+               for login in re.split('[ \n\r\t]+', txt))
 
 class Process: # pylint: disable=invalid-name
     """Create a LDAP or DNS process and get information from it.
@@ -348,7 +351,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.stop_tt_timestamp = self.start_timestamp + (
             self.stop_timestamp - self.start_timestamp) * 4 / 3
         self.stop_tt = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.stop_tt_timestamp))
-        self.tt_list = set(re.split('[ \n\r\t]+', self.config['tt']))
+        self.tt_list = set_of_logins(self.config['tt'])
         self.tt_list.add('')
         if 'teachers' in self.config:
             teachers = re.split('[ \n\r\t]+', self.config['teachers'])
@@ -356,9 +359,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             self.config['graders'] = ' '.join(teachers[1:])
             del self.config['teachers']
         self.creator = self.config['creator']
-        self.admins = set(re.split('[ \n\r\t]+', self.config['admins']))
-        self.graders = set(re.split('[ \n\r\t]+', self.config['graders']))
-        self.proctors = set(re.split('[ \n\r\t]+', self.config['proctors']))
+        self.admins = set_of_logins(self.config['admins'])
+        self.graders = set_of_logins(self.config['graders'])
+        self.proctors = set_of_logins(self.config['proctors'])
         self.checkpoint = int(self.config['checkpoint'])
         self.sequential = int(self.config['sequential'])
         self.highlight = self.config['highlight']
@@ -372,7 +375,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.feedback = self.config['feedback']
         self.force_grading_done = int(self.config['force_grading_done'])
         self.feedback_for_all = int(self.config['feedback_for_all'])
-        self.expected_students = set(re.split('[ \n\r\t]+', self.config['expected_students']))
+        self.expected_students = set_of_logins(self.config['expected_students'])
         if tuple(self.expected_students) == ('',):
             self.expected_students = set()
         if os.path.exists(self.dir_media):
