@@ -67,11 +67,9 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     element.value = '{\n' + ',\n'.join(content) + '\n}'
                 if attr not in ('admins', 'graders', 'proctors', 'expected_students', 'tt'):
                     element.rows = len(content) + 3
-                if attr == 'expected_students':
-                    document.getElementById("nr_expected_students"
-                                           ).innerHTML = count_words('expected_students')
-                if attr == 'tt':
-                    document.getElementById("nr_tt").innerHTML = count_words('tt')
+                tt = element.parentNode.parentNode.cells[0].firstChild
+                if tt.className == 'counter':
+                    tt.innerHTML, element.value = count_words(element)
             elif element.tagName == 'INPUT':
                 if element.type in ('checkbox', 'radio'):
                     element.checked = value != 0
@@ -296,20 +294,20 @@ def select_tab(label):
     <tr><th>Creator
         <td><p id="creator"></p>
     </tr>
-    <tr><th>Admins
+    <tr><th><tt class="counter"></tt> Admins
         <td><textarea id="admins"></textarea>
     </tr>
-    <tr><th>Graders
+    <tr><th><tt class="counter"></tt> Graders
         <td><textarea id="graders"></textarea>
     </tr>
-    <tr><th>Proctors
+    <tr><th><tt class="counter"></tt> Proctors
         <td><textarea id="proctors"></textarea>
     </tr>
-    <tr><th><span id="nr_expected_students"></span> Students
+    <tr><th><tt class="counter"></tt> Students
     <p>""" + DEFAULT_COURSE_OPTIONS_DICT['expected_students'] + """
         <td><textarea id="expected_students"></textarea>
     </tr>
-    <tr><th><span id="nr_tt"></span> Students
+    <tr><th><tt class="counter"></tt> Students
     <p>""" + DEFAULT_COURSE_OPTIONS_DICT['tt'] + """
         <td><textarea id="tt"></textarea>
     </tr>
@@ -637,22 +635,24 @@ def init():
     setTimeout(load_config, 10) # Wait CSS loading
     setInterval(update_interface, 1000)
 
-def count_words(element_id):
+def count_words(element):
     """Search for duplicate student ID"""
-    text = document.getElementById(element_id).value.strip()
+    text = element.value.strip()
     if len(text) == 0:
-        return ''
+        return '', text
     words = text.split(RegExp('[ \t\n\r]+'))
 
     uniq = {}
     for word in words:
-        uniq[word] = True
+        new_word = normalize_login(word)
+        uniq[new_word] = True
+        text = text.replace(word, new_word)
     message = str(len(uniq))
     if len(uniq) != len(words):
-        message = ('<tt style="background:#F88; font-size:200%">'
-                   + (len(words) - len(uniq)) + ' duplicate student</tt><br>'
+        message = ('<b style="background:#F88; font-size:200%">'
+                   + (len(words) - len(uniq)) + ' duplicates</b><br>'
                    + message)
-    return message
+    return message, text
 
 def count_toggles(toggles):
     max_grade = 0

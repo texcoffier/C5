@@ -297,3 +297,7 @@ DIV.state A:hover {
     margin-left: -1em;
 }
 
+TT {
+    font-family: monospace, monospace
+}
+
