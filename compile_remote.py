@@ -113,16 +113,6 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
-        if not source:
-            self.post('compiler', 'Rien à compiler.')
-            self.post('tester', self.tester_initial_content())
-            self.post('executor', self.executor_initial_content())
-            self.post('executor', 'Rien à exécuter')
-            self.execution_result = ''
-            self.execution_returns = None
-            self.post('state', "stopped")
-            self.run_tester()
-            return None
         try:
             if not self.socket:
                 self.connect()
