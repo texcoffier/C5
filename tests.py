@@ -18,6 +18,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.alert import Alert
 import utilities
 
+URL = "https://127.0.0.1:4301/"
+
 urllib3.disable_warnings()
 
 def retry(test, required=True, nbr=30):
@@ -257,7 +259,7 @@ class Tests: # pylint: disable=too-many-public-methods
         # because Selenium can manage it properly:
         # It says there is a popup by deny dismissing it (sometime randomly)
         self.driver.execute_script("GRADING = true")
-        self.driver.get(f"https://127.0.0.1:4201/{url}?ticket={self.ticket}")
+        self.driver.get(f"{URL}{url}?ticket={self.ticket}")
     @contextlib.contextmanager
     def change_ip(self):
         """Change the session IP and so break it"""
@@ -265,7 +267,7 @@ class Tests: # pylint: disable=too-many-public-methods
             print("\tSESSION IP CHANGE")
             self.driver.execute_script(f"""
             var t = document.createElement('SCRIPT');
-            t.src = 'https://127.0.0.1:4201/debug/change_session_ip?ticket={self.ticket}';
+            t.src = '{URL}debug/change_session_ip?ticket={self.ticket}';
             t.onload = function() {{ document.body.className = 'done' }}
             document.body.appendChild(t);
             """)
@@ -1096,7 +1098,7 @@ class Q1(Question):
         """Retrieve a ZIP and returns the filename list"""
             # Using self.goto() will lock selenium firefox driver
         self.driver.execute_script(
-            f"window.open('https://127.0.0.1:4201/{url}/test.zip?ticket={self.ticket}')")
+            f"window.open('{URL}{url}/test.zip?ticket={self.ticket}')")
         for _ in range(20):
             time.sleep(0.1)
             names = glob.glob(os.path.expanduser('~/*/test.zip'))
@@ -1127,13 +1129,13 @@ class Q1(Question):
     def test_media(self):
         """Media: Uploading Listing Removing"""
         save_ticket = self.ticket
-        response = requests.get('https://127.0.0.1:4201/', verify = False)
+        response = requests.get(URL, verify = False)
         self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
         with self.admin_rights():
             with open('COMPILE_REMOTE/grapic/MEDIA/chien.png', 'rb') as file:
                 content = file.read()
             response = requests.post(
-                f"https://127.0.0.1:4201/upload_media/REMOTE/grapic?ticket={self.ticket}",
+                f"{URL}upload_media/REMOTE/grapic?ticket={self.ticket}",
                 data={'filename': 'xxx-test.png'},
                 files={'course': ('xxx-test.png', content, 'text/plain')},
                 verify=False
@@ -1155,7 +1157,7 @@ class Q1(Question):
         """GIT"""
         def upload(src, name="_new_"):
             return requests.post(
-                f"https://127.0.0.1:4201/upload_course/REMOTE/{name}?ticket={self.ticket}",
+                f"{URL}upload_course/REMOTE/{name}?ticket={self.ticket}",
                 data={'filename': 'xxx.py'},
                 files={'course': ('xxx.py', src, 'text/plain')},
                 verify=False)
@@ -1169,7 +1171,7 @@ class Q1(Question):
                                   stderr=subprocess.DEVNULL) as process:
                 return process.stdout.read()
 
-        response = requests.get('https://127.0.0.1:4201/', verify = False)
+        response = requests.get(URL, verify = False)
         self.delete_session_xxx()
         save_ticket = self.ticket
         self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
@@ -1513,7 +1515,7 @@ class Q1(Question):
             else:
                 destination = 'multiple'
             response = requests.post(
-                f"https://127.0.0.1:4201/adm/import/{what}?ticket={self.ticket}",
+                f"{URL}adm/import/{what}?ticket={self.ticket}",
                 data={'destination': destination, 'session': session},
                 files={'zip': ('foo.zip', zip_content, 'application/zip')},
                 verify=False
@@ -1521,7 +1523,7 @@ class Q1(Question):
             return response.text
 
         save_ticket = self.ticket
-        response = requests.get('https://127.0.0.1:4201/', verify = False)
+        response = requests.get(URL, verify = False)
         self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
