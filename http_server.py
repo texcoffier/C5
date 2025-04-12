@@ -601,8 +601,14 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             feedback = f"«{course}» Start date invalid: «{value}»!"
     elif action == 'tt':
         value = xxx_local.normalize_logins(value)
+        old_list = set(config.tt_list)
         config.set_parameter('tt', value)
         feedback = f"«{course}» TT list updated with «{value}»"
+        for student in old_list ^ set(config.tt_list):
+            if student in config.active_teacher_room:
+                bonus = config.active_teacher_room[student].bonus_time
+                await JournalLink.new(config, student, None, None, False).write(
+                    f'#bonus_time {bonus} {config.get_stop(student)}')
     elif action == 'expected_students':
         value = xxx_local.normalize_logins(value)
         config.set_parameter('expected_students', value)
