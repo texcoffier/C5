@@ -21,10 +21,6 @@ except: # pylint: disable=bare-except
 
 DEPRECATED = ('save_button', 'local_button', 'stop_button', 'reset_button', 'line_numbers')
 
-NAME_CHARS = '[a-zA-Z_0-9]'
-NAME = RegExp(NAME_CHARS)
-NAME_FIRST = RegExp('[a-zA-Z_]')
-
 REAL_GRADING = GRADING
 if not COURSE_CONFIG['display_grading']:
     GRADING = False
@@ -250,6 +246,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if GRADING or self.options['feedback'] >= 5:
             # Will be updated after
             self.options['positions']['grading'] = [0, 1, 0, 75, '#FFF8']
+        if options['language'] == 'lisp':
+            self.name_chars = '[a-zA-Z0-9!$%&*+-./:<=>?@^_~]'
+            self.name_first = RegExp(self.name_chars)
+        else:
+            self.name_chars = '[a-zA-Z_0-9]'
+            self.name_first = RegExp('[a-zA-Z_]')
+        self.not_name_chars = '[^' + self.name_chars[1:]
+        self.name = RegExp(self.name_chars)
 
         print("GUI: wait worker")
         if options['state'] == 'Ready':
@@ -1382,7 +1386,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def highlight_word(self, word=None):
         """Highlight the current word in the text"""
         if word is None:
-            char = RegExp('[a-zA-Z0-9_]')
+            char = self.name
             start = self.cursor_position
             if (not self.source[start].match(char)
                     and self.source[start-1] and self.source[start-1].match(char)):
@@ -1395,18 +1399,21 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             while self.source[end] and self.source[end].match(char):
                 end += 1
             word = self.source[start + 1:end]
-            name = RegExp('\\b' + word + '\\b', 'g')
+            # Will not find word if first in the source
+            name = RegExp(self.not_name_chars + protect_regexp(word) + self.not_name_chars, 'g')
+            delta = 2
         else:
             if word == '':
                 return
             name = RegExp(protect_regexp(word), 'g')
+            delta = 1
 
         items = self.source.matchAll(name)
         while True:
             match = items.next()
             if not match.value:
                 break
-            line_word, column_word = self.get_line_column(match.value.index + 1)
+            line_word, column_word = self.get_line_column(match.value.index + delta)
             key = line_word + ':' + column_word + ':' + len(word)
             self.highlight_errors[key] = 'cursorword'
         return word
@@ -1421,6 +1428,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Get the cursor position
         pos = [current_position, do_div_br_collapse]
         """
+        if self.completion_running:
+            return
         self.clear_cursor_markers()
         self.do_coloring = "update_cursor_position_now"
         try:
@@ -1482,14 +1491,14 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def try_completion(self):
         """Check possible completion"""
         i = self.cursor_position - 1
-        while i > 0 and NAME.exec(self.source[i]):
+        while i > 0 and self.name.exec(self.source[i]):
             i -= 1
         if self.cursor_position - i == 1:
             return # Nothing
-        if not NAME_FIRST.exec(self.source[i+1]):
+        if not self.name_first.exec(self.source[i+1]):
             return # Do not start by an allowed letter
         self.to_complete = self.source[i+1:self.cursor_position]
-        matches = self.source.matchAll(RegExp('\\b' + self.to_complete + NAME_CHARS + '+\\b', 'g'))
+        matches = self.source.matchAll(RegExp('\\b' + self.to_complete + self.name_chars + '+' + self.not_name_chars , 'g'))
         uniqs = []
         while True:
             i = matches.next().value
@@ -1498,7 +1507,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             i = i[0]
             if i in uniqs:
                 continue
-            uniqs.append(i)
+            if i[:-1] not in uniqs:
+                uniqs.append(i[:-1])
         uniqs.sort()
         self.record_error('to_complete=«' + self.to_complete
             + '» cursor_position=' + self.cursor_position
@@ -1554,6 +1564,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def start_search(self):
         """Ctrl+F"""
+        self.search_input.last_value = None
         def update_search():
             value = self.search_input.value
             if value == self.search_input.last_value:
