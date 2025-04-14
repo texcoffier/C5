@@ -67,9 +67,10 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     element.value = '{\n' + ',\n'.join(content) + '\n}'
                 if attr not in ('admins', 'graders', 'proctors', 'expected_students', 'tt'):
                     element.rows = len(content) + 3
-                tt = element.parentNode.parentNode.cells[0].firstChild
-                if tt.className == 'counter':
-                    tt.innerHTML, element.value = count_words(element)
+                if element.parentNode.parentNode.cells:
+                    tt = element.parentNode.parentNode.cells[0].firstChild
+                    if tt.className == 'counter':
+                        tt.innerHTML, element.value = count_words(element)
             elif element.tagName == 'INPUT':
                 if element.type in ('checkbox', 'radio'):
                     element.checked = value != 0
