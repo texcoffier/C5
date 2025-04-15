@@ -1467,7 +1467,7 @@ def compute_diffs(old, rep):
         position += insert_pos
     return diffs
 
-def myers_diff(a_lines, b_lines):
+def myers_diff(a_lines, b_lines, merge=True):
     """
     An implementation of the Myers diff algorithm.
     See http://www.xmailserver.org/diff2.pdf
@@ -1499,6 +1499,8 @@ def myers_diff(a_lines, b_lines):
                     revert.append(history[1:])
                     history = history[0]
                 revert = revert[::-1]
+                if not merge:
+                    return revert
                 last = [None, None, None]
                 compacted = []
                 y = 0

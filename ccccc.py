@@ -1098,18 +1098,17 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.line_numbers.childNodes[i].style.top = '-10em'
 
         if self.options['diff'] and self.journal_question:
-            default_answer = {}
             sep = RegExp('[ \t]', 'g')
             old = self.journal_question.first_source or self.question_original[self.current_question]
             if not REAL_GRADING and not self.options['diff_original']:
                 old = self.journal_question.last_tagged_source or old
-            for line in old.split('\n'):
-                default_answer[line.replace(sep, '')] = True
-            for number, line in zip(self.line_numbers.childNodes, self.source.split('\n')):
-                if default_answer[line.replace(sep, '')]:
-                    number.style.background = ""
-                else:
-                    number.style.background = "#0F0"
+            diffs = compute_diffs([i.strip() for i in old.split('\n')],
+                                  [i.strip() for i in self.source.split('\n')], False)
+            for number in self.line_numbers.childNodes:
+                number.style.background = ""
+            for insert, position, _value in diffs:
+                if insert:
+                    self.line_numbers.childNodes[position].style.background = "#0F0"
 
         self.overlay_show()
         self.line_numbers.style.height = self.comments.style.height = self.overlay.offsetHeight + 'px'
