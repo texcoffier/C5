@@ -723,7 +723,7 @@ class Journal:
                     feedback[0] = (x, y, width, tree[0] + 1, lines)
                 x += width
             for i, child in enumerate(tree[3:]):
-                if i > 0:
+                if i == 1:
                     x += padding - width/2
                     x = int(x) + 0.5
                 todo.append([child, x, y])
