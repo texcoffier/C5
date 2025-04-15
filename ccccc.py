@@ -196,6 +196,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     old_delta = None
     eval_error_recorded = False
     content_old = None
+    wait_indent = False
 
     def init(self):
         self.options = options = COURSE_CONFIG
@@ -1484,7 +1485,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Formate the source code"""
         if self.add_comments:
             return
-        self.user_compilation = True # Indent trigger compile
+        self.wait_indent = True # Indent will trigger compile
         self.unlock_worker()
         self.worker.postMessage(['indent', self.source])
 
@@ -2201,6 +2202,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
         elif what == 'editor':
             self.set_editor_content(value)
+            if self.wait_indent:
+                self.wait_indent = False
+                self.user_compilation = True
+                self.compilation_run()
         elif what == 'default':
             print("DEFAULT", value)
             self.question_original[value[0]] = value[1]
