@@ -1811,6 +1811,13 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def change_history(self, event):
         """Put an old version in the editor"""
         choosen = event.target.selectedOptions[0].innerHTML
+        if choosen == 'Version mise à jour':
+            index = self.journal_question.start + 1
+            if JOURNAL.lines[index].startswith('I'):
+                index += 1
+            self.goto_line(index)
+            self.set_editor_content(self.question_original[self.current_question])
+            return
         if choosen == "Version initiale":
             choosen = ''
         for tag, index in self.journal_question.tags:
@@ -1827,6 +1834,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         content = ['<option selected>Retourner sur</option>']
         for tag in self.journal_question.tags[::-1]:
             content.append('<option>' + (html(tag[0] or "Version initiale")) + '</option>')
+        original = self.question_original[self.current_question].strip() 
+        if original != '' and original != self.journal_question.first_source.strip():
+            content.append('<option>Version mise à jour</option>')
         self.save_history.innerHTML = ''.join(content)
 
     def save(self):
