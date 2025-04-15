@@ -2122,6 +2122,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                             G.canvas.onkeyup = None
                             stop_event(event)
                         G.canvas.onkeyup = onkeypress
+                        def onkeydown(event):
+                            event.stopPropagation()
+                        G.canvas.onkeydown = onkeydown
                 elif value == '\002INPUT':
                     if (self.executor.lastChild.tagName not in ('BR', 'DIV')
                             or self.executor.lastChild.style.float == 'left'):
