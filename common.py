@@ -1389,6 +1389,9 @@ def create_shared_worker(login='', hook=None):
 
 def compute_diffs(old, rep):
     """Returns a list of change to change text from 'old' to 'rep'
+    Triples:
+       * [True, position, text to insert]
+       * [False, position, number of char to delete]
     """
     diffs = []
     position = 0
@@ -1464,7 +1467,69 @@ def compute_diffs(old, rep):
         position += insert_pos
     return diffs
 
-def compute_diffs_regtest():
+def myers_diff(a_lines, b_lines):
+    """
+    An implementation of the Myers diff algorithm.
+    See http://www.xmailserver.org/diff2.pdf
+    """
+    frontier = {1: [0, None]}
+
+    a_max = len(a_lines)
+    b_max = len(b_lines)
+
+    for d in range(0, a_max + b_max + 1):
+        for k in range(-d, d + 1, 2):
+            go_down = k == -d or k != d and frontier[k - 1][0] < frontier[k + 1][0]
+            if go_down:
+                x, history = frontier[k + 1]
+            else:
+                x, history = frontier[k - 1]
+                x += 1
+            y = x - k
+            if 1 <= y and y <= b_max and go_down:
+                history = [history, True, y-1, b_lines[y-1]]
+            elif 1 <= x and x <= a_max:
+                history = [history, False, y, 1]
+            while x < a_max and y < b_max and a_lines[x] == b_lines[y]:
+                x += 1
+                y += 1
+            if x >= a_max and y >= b_max:
+                revert = []
+                while history:
+                    revert.append(history[1:])
+                    history = history[0]
+                revert = revert[::-1]
+                last = [None, None, None]
+                compacted = []
+                y = 0
+                for item in revert:
+                    if item[0] != last[0]:
+                        if last[0] is not None:
+                            compacted.append(last)
+                    else:
+                        if item[0]:
+                            if y+1 == item[1]:
+                                last[2] += item[2]
+                                y += 1
+                                continue
+                            else:
+                                compacted.append(last)
+                        else:
+                            if y == item[1]:
+                                last[2] += 1
+                                continue
+                            else:
+                                compacted.append(last)
+                    last = item
+                    y = last[1]
+                if last[0] is not None:
+                    compacted.append(last)
+                return compacted
+            frontier[k] = (x, history)
+
+    assert False, 'Could not find edit script'
+
+def compute_diffs_regtest(algorithm):
     """Check if compute_diff works"""
     initials = []
     def strings(depth, prefix):
@@ -1477,7 +1542,7 @@ def compute_diffs_regtest():
     strings(6, '')
 
     def check_diff(initial, after):
-        for insert, pos, val in compute_diffs(initial, after):
+        for insert, pos, val in algorithm(initial, after):
             if insert:
                 initial = initial[:pos] + val + initial[pos:]
                 if val == '':
@@ -1503,7 +1568,20 @@ def compute_diffs_regtest():
         change(initial, initial, 4)
     print('ok')
 
-# compute_diffs_regtest()
+compute_diffs = myers_diff
+
+
+# print(myers_diff('aaaa', 'aaaa'))
+# print(myers_diff('aaaa', ''))
+# print(myers_diff('', 'aaaa'))
+# print(myers_diff('bbbb', 'aaaa'))
+# import time
+# start = time.time()
+# compute_diffs_regtest(myers_diff)
+# print(time.time() - start)
+# start = time.time()
+# compute_diffs_regtest(compute_diffs)
+# print(time.time() - start)
 
 def session_tree(sessions, remove=0):
     """
