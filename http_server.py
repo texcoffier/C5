@@ -212,6 +212,17 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
         </script>
         <script src="JS/ccccc.js?ticket={session.ticket}"></script>''')
 
+def get_login(request, use_match=False):
+    if use_match:
+        login = request.match_info['login']
+    else:
+        login = request.query.get('login', '')
+    if not utilities.C5_VALIDATE:
+        return login # Regression tests use login with uppercase
+    login = xxx_local.normalize_login(login)
+    if re.match('^[-_.a-z0-9]*$', login):
+        return login
+    raise ValueError(f"Invalid login name: «{login}»")
 
 def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
     """Send the file content"""
@@ -237,7 +248,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                     login_as = ''
                     status = course.status(login, session.hostname)
                 else:
-                    login_as = request.query.get('login', '')
+                    login_as = get_login(request)
                     if login_as == login:
                         login_as = ''
                     if login_as and session.is_proctor(course):
@@ -280,7 +291,7 @@ async def grade(request:Request) -> Response:
     is_grader = session.is_grader(course)
     if not is_grader:
         return answer("Vous n'êtes pas autorisé à noter.")
-    return await editor(session, True, course, request.match_info['login'], grading=True)
+    return await editor(session, True, course, get_login(request, use_match=True), grading=True)
 
 async def record_grade(request:Request) -> Response:
     """Log a grade"""
@@ -673,7 +684,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         config.set_parameter('notation_max', float(value))
         feedback = f"«{course}» Maximum grade set to {value[:100]}"
     elif action == 'highlight':
-        assert re.match('#[0-9A-Z]{3}', value)
+        assert re.match('^#[0-9A-Z]{3}$', value)
         config.set_parameter('highlight', value)
         feedback = f"«{course}» The session color is now {value}"
     elif action == 'display_student_filter':
@@ -1199,7 +1210,7 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     return f"Course «{dst_dirname}» added"
 
 def good_session_name(txt):
-    return re.match('[-_A-Za-z0-9]+', txt)
+    return re.match('^[-_A-Za-z0-9]+$', txt)
 
 async def upload_course(request:Request) -> Response:
     """Add a new course"""
@@ -1610,7 +1621,7 @@ async def home(request:Request) -> Response:
     if session.is_student():
         login = ''
     else:
-        login = request.query.get('login', '')
+        login = get_login(request)
     if not login:
         login = session.login
         if session.is_root():
@@ -1725,7 +1736,7 @@ async def adm_history(request:Request) -> Response:
         if not line:
             continue
         date = line[-22:]
-        if re.match(' # [-0-9: ]*', date):
+        if re.match(' # [-0-9: ]*$', date):
             line = line[:-22]
         else:
             date = ' # ????-??-?? ??:??:??'
