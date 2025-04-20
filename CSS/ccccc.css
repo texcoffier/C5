@@ -91,17 +91,15 @@ BODY.versions DIV.editor_title .canvas {
     color: #FFF;
     z-index: 100;
     padding: 0.2vw;
-    max-width: 20vw;
+    max-width: 30vw;
+}
+.version_feedback .code {
+    font-size: 0.6vw;
 }
 
 DIV.editor_title .canvas {
     display: none;
-    overflow: scroll;
-}
-
-DIV.editor_title CANVAS {
-    width: 3000px;
-    height: 600px;
+    width: 100%;
 }
 
 DIV.tester {

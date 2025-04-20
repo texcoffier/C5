@@ -145,6 +145,7 @@ def post(url, value, iframe=False):
     form.appendChild(data)
     if iframe:
         iframe = document.createElement("iframe")
+        iframe.style.border = '0px'
         form.target = iframe.name = 'post_iframe_' + millisecs()
         form.appendChild(iframe)
     document.body.appendChild(form)

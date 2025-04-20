@@ -387,7 +387,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.options['positions']['tester'][0] = 100 # Hide tester
 
         if document.body.classList.contains('versions'):
-            version_height = '4em'
+            version_height = '6vh'
         else:
             version_height = '0px'
 
@@ -430,7 +430,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if self.stop_button:
                 self.stop_button.style.display = 'none'
         self.line_height = self.line_numbers.firstChild.offsetHeight
-        self.canvas.height = self.canvas.parentNode.offsetHeight
+        self.canvas.height = "200px"
         self.canvas.width = self.canvas.offsetWidth
     def insert_media(self, event):
         """Insert the name of the cliked media"""
@@ -572,19 +572,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.local_button.onclick = bind(self.save_local, self)
             self.editor_title.firstChild.appendChild(self.local_button)
 
-        canvas = document.createElement('DIV')
-        canvas.className = 'canvas'
         self.canvas = document.createElement('CANVAS')
+        self.canvas.className = 'canvas'
         def canvas_event(event):
             JOURNAL.tree_canvas(this, event)
         self.canvas.onmousemove = canvas_event
         self.canvas.onmousedown = canvas_event
+        self.canvas.onmouseup = canvas_event
         def leave_version_tree():
             self.version_feedback.style.display = 'none'
         self.canvas.onmouseout = leave_version_tree
 
-        canvas.appendChild(self.canvas)
-        self.editor_title.insertBefore(canvas, self.editor_title.firstChild)
+        self.editor_title.insertBefore(self.canvas, self.editor_title.firstChild)
 
         self.fullscreen = document.createElement('DIV')
         self.fullscreen.className = 'fullscreen'

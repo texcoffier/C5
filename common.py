@@ -238,6 +238,7 @@ class Journal:
         self.timestamps = []
         self.clear_pending_goto()
         self.evaluate(self.lines, 0)
+        self.offset_x = None
     def clear_pending_goto(self):
         """No currently pending goto in the past"""
         self.pending_goto = False
@@ -540,6 +541,74 @@ class Journal:
         for child in tree[3:]:
             self.tree_dump(child, texts, indent)
 
+    def get_past_content(self, index):
+        """Returns the content for the indicated index"""
+        if self.pending_goto:
+            pending = int(self.lines[-1][1:])
+        else:
+            pending = 0
+        self.see_past(index)
+        content = self.content
+        if pending:
+            self.see_past(pending)
+        else:
+            if self.pending_goto:
+                self.pop()
+        return content
+
+    def display_diff(self, used_lines):
+        """Diff"""
+        old_content = self.get_past_content(used_lines[0])
+        new_content = self.get_past_content(used_lines[-1]+1)
+        text = []
+        last_displayed = -1
+        def append(txt):
+            text.append(replace_all(replace_all(html(txt), '\n', '⏎<br>'), ' ', ' '))
+        def finish():
+            if last_displayed != -1 and pos - last_displayed > 80:
+                i = last_displayed
+                while old_content[i] and old_content[i] != '\n':
+                    i += 1
+                i += 1
+                while old_content[i] and old_content[i] != '\n':
+                    i += 1
+                i += 1
+                append(old_content[last_displayed:i])
+        for add, pos, value in myers_diff(old_content, new_content, merge=True):
+            finish()
+            if last_displayed == -1 or pos - last_displayed > 80:
+                if last_displayed != -1:
+                    text.append('<br>...<br>')
+                start = pos - 1
+                while start > 0 and old_content[start] != '\n':
+                    start -= 1
+                if start:
+                    start -= 1
+                while start > 0 and old_content[start] != '\n':
+                    start -= 1
+                if start:
+                    start += 1
+            else:
+                start = last_displayed
+            append(old_content[start:pos])
+            if add:
+                text.append('<span style="background:#080">')
+                append(value)
+                text.append('</span>')
+                old_content = old_content[:pos] + value + old_content[pos:]
+                last_displayed = pos + len(value)
+            else:
+                text.append('<span style="background:#A00">')
+                append(old_content[pos:pos+value])
+                text.append('</span>')
+                old_content = old_content[:pos] + old_content[pos+value:]
+                last_displayed = pos
+        pos = 1000000000
+        finish()
+        return ('<div style="text-align:right">'
+            + nice_date(self.timestamps[used_lines[0]], secs=True)
+            + '</div><div class="code">') + ''.join(text) + '</div>'
+
     def explain(self, used_lines):
         """Explain the journal content for version feedback"""
         lines = []
@@ -576,6 +645,8 @@ class Journal:
             else:
                 continue
             lines.append(text)
+        if len(lines) > 1 or lines[0][0] in 'ID':
+            return self.display_diff(used_lines)
         lines = ['<br>'.join(lines)]
         if SESSION_LOGIN in CONFIG['roots']:
             lines.append('<pre style="font-size: 50%">')
@@ -607,22 +678,22 @@ class Journal:
     def tree_canvas(self, canvas, event=None):
         """Draw tree in canvas.
         Return selected item"""
-        if canvas.parentNode.offsetWidth == 0 or canvas.parentNode.offsetHeight == 0:
+        max_width = 0
+        canvas.width = Math.round(canvas.offsetWidth * window.devicePixelRatio)
+        canvas.height = Math.round(canvas.offsetHeight * window.devicePixelRatio)
+
+        if canvas.offsetWidth == 0 or canvas.offsetHeight == 0:
             return
         tree = self.tree()
-        # zoom = max(2, min(int(canvas.parentNode.offsetWidth / tree[1]),
-        #                   int(canvas.parentNode.offsetHeight / tree[2] / 12),
-        #                   self.questions[self.question].zoom))
-        zoom = 2
+        zoom = 3 * window.devicePixelRatio
         self.questions[self.question].zoom = zoom
-        font_size = zoom * 12 # Font size
+        font_size = 12 * window.devicePixelRatio # Font size (not zoomed)
         ascent = -font_size / 4
         descent = font_size / 10
         size = int(font_size + ascent + descent) # Full line height with font ascent and descent
         middle = int(size / 2) + 1
         center = zoom/2 - 0.5
         arrow = zoom * 1 # Arrow size
-        padding = int(font_size / 2)
         def draw_ID(_action, x, y):
             """Some Insert and deletes"""
             znb_i = nb_i * zoom
@@ -657,8 +728,8 @@ class Journal:
                 ctx.fillStyle = '#FA0'
             else:
                 ctx.fillStyle = '#F00'
-            ctx.fillRect(x+center - 0.5*zoom, y - size + 0.5, 4*zoom, middle)
-            return 4*zoom
+            ctx.fillRect(x+center - 0.5*zoom, y - size + 0.5, 2*zoom, middle)
+            return 2*zoom
         def draw_O(_action, x, y):
             "Connection"
             ctx.strokeStyle = '#88F'
@@ -701,6 +772,7 @@ class Journal:
                 ctx.stroke()
                 ctx.lineCap = "butt"
                 draw_B.start = None
+                ctx.lineWidth = zoom
             return 0
         def draw_S(_action, x, y):
             return draw_char('📩', x, y)
@@ -717,10 +789,6 @@ class Journal:
             'B': draw_B, 'F': draw_F,
             'b': draw_b, 'O': draw_O, 'S': draw_S, 'g': draw_g, '✍': draw_hand,
         }
-        if canvas.width != canvas.offsetWidth:
-            canvas.width = canvas.offsetWidth
-        if canvas.height != canvas.offsetHeight:
-            canvas.height = canvas.offsetHeight
         ctx = canvas.getContext("2d")
         ctx.fillStyle = '#FFF'
         ctx.strokeStyle = '#000'
@@ -735,17 +803,28 @@ class Journal:
             event = self.last_event
         if event:
             rect = event.target.getBoundingClientRect()
-            mouse_x = event.clientX - rect.x
-            mouse_y = event.clientY - rect.y
+            mouse_x = (event.clientX - rect.x + 2) * window.devicePixelRatio
+            mouse_y = (event.clientY - rect.y) * window.devicePixelRatio
+
         else:
             mouse_x = mouse_y = 0
         self.last_event = None
-        feedback = [None]
+        feedback = None
         ctx.lineWidth = zoom
 
-        todo = [[tree, 0.5, size + 0.5]]
+        class Line:
+            def __init__(self, parent_line=None, index_start=0):
+                self.items = []
+                self.last_x = 0
+                self.parent_line = parent_line
+                self.index_start = index_start
+            def append(self, index, nb_i, nb_d, index_start):
+                self.items.append([index, nb_i, nb_d, index_start, self])
+
+        line_list = [Line()]
+        todo = [[tree, line_list[0]]]
         while len(todo):
-            tree, x, y = todo.pop()
+            tree, line = todo.pop()
             action = self.lines[tree[0]] or '✍'
             if len(tree) == 4:
                 # BEWARE timestamp are recorded every DELTA_T seconds
@@ -755,7 +834,6 @@ class Journal:
             else:
                 timestamp = 0
             char = action[0]
-            lines = [tree[0]]
             if char == 'I':
                 nb_i = 1
             else:
@@ -764,12 +842,13 @@ class Journal:
                 nb_d = 1
             else:
                 nb_d = 0
+            index_start = tree[0]
             if char in ('I', 'D', 'P', 'L', 'H', 'b'):
                 while len(tree) == 4: # Merge only if there is no branch
                     next_line = tree[3][0]
                     if not self.lines[next_line]:
                         break
-                    if self.timestamps[next_line] != timestamp and char != 'b':
+                    if (self.timestamps[next_line] - timestamp) > 60 and char != 'b':
                         break # Not same (DELTA_T) second
                     next_char = self.lines[next_line][0]
                     if next_char not in ('I', 'D', 'P', 'L', 'H', 'b'):
@@ -780,39 +859,142 @@ class Journal:
                     elif char == 'D':
                         nb_d += 1
                     tree = tree[3]
-                    lines.append(tree[0])
-            width = draw[char](action, x, y)
+            line.append(tree[0], nb_i, nb_d, index_start)
+            if len(tree) > 3:
+                todo.append([tree[3], line])
+                for child in tree[4:]:
+                    new_line = Line(line, tree[0])
+                    line_list.append(new_line)
+                    todo.append([child, new_line])
+        # def sort_last(a, b):
+        #     return a.index_start - b.index_start
+        # line_list.sort(sort_last)
+        changes = []
+        last_line = 0
+        line_segments = []
+        for i, line in enumerate(line_list):
+            if i == 0:
+                line.line = 0
+                line_segments.append([0, line.items[-1][0]])
+            else:
+                usable = False
+                j = line.parent_line.line + 1
+                for used_spaces in line_segments[j:]:
+                    usable = True
+                    for start, stop in used_spaces:
+                        if line.index_start < stop and line.items[-1][0] > start:
+                            usable = False
+                            break
+                    if usable:
+                        line_segments[j].append([line.index_start, line.items[-1][0]])
+                        line.line = j
+                        break
+                    j += 1
+                if not usable:
+                    line.line = len(line_segments)
+                    line_segments[j] = [[line.index_start, line.items[-1][0]]]
+
+            line.y = (line.line+1)*(size+1*zoom) + 0.5
+            if line.line > last_line:
+                last_line = line.line
+            for item in line.items:
+                changes.append(item)
+        def sort_index(a, b):
+            return a[0] - b[0]
+        changes.sort(sort_index)
+        x = (self.offset_x or 0) + 0.5
+        positions = {}
+        for index, nb_i, nb_d, index_start, line in changes:
+            action = self.lines[index] or '✍'
+            y = line.y
+            width = draw[action[0]](action, x, y)
             if width > 0:
-                if mouse_y < y and mouse_y >= y-size+1 and mouse_x >= x and char != '✍':
-                    feedback[0] = (x, y, width, tree[0] + 1, lines)
-                x += width
-            for i, child in enumerate(tree[3:]):
-                if i == 1:
-                    x += padding - width/2
-                    x = int(x) + 0.5
-                todo.append([child, x, y])
-                dy = child[2] * size
-                if i > 0:
-                    ctx.lineWidth = 1
-                    startx = int(x - padding) - 0.5
-                    endy = int(y - size/2) + 0.5
-                    endx = startx + padding
-                    ctx.strokeStyle = '#000'
+                if mouse_y < y and mouse_y >= y-size+1 and mouse_x >= x and (mouse_x < x + width or line.items[-1][0] == index) and action != '✍':
+                    lines = []
+                    feedback = (x, y, width, index + 1, lines)
+                    while index_start != index:
+                        lines.append(index_start)
+                        index_start = self.children[index_start][0]
+                    lines.append(index_start)
+                if x != line.last_x and line.last_x:
+                    ctx.lineWidth = 4*zoom
+                    ctx.strokeStyle = '#0001'
                     ctx.beginPath()
-                    ctx.moveTo(startx, y_start)
-                    ctx.lineTo(startx, endy)
-                    ctx.lineTo(endx, endy)
-                    ctx.lineTo(endx, endy)
-                    ctx.lineTo(endx - arrow, endy - arrow)
-                    ctx.lineTo(endx - arrow, endy + arrow)
-                    ctx.lineTo(endx, endy)
+                    ctx.moveTo(line.last_x, y - size/2)
+                    ctx.lineTo(x, y - size/2)
                     ctx.stroke()
                     ctx.lineWidth = zoom
+                if line.last_x == 0 and line.parent_line:
+                    start_x = positions[line.index_start]
+                    ctx.lineWidth = 1
+                    ctx.strokeStyle = '#000'
+                    ctx.beginPath()
+                    ctx.moveTo(start_x, line.parent_line.y)
+                    if start_x == x:
+                        ctx.lineTo(x, y - size)
+                        ctx.lineTo(x - arrow, y - size - arrow)
+                        ctx.lineTo(x + arrow, y - size - arrow)
+                        ctx.lineTo(x, y - size)
+                    else:
+                        ctx.lineTo(start_x, y - size/2)
+                        ctx.lineTo(x, y - size/2)
+                        ctx.lineTo(x - arrow, y - size/2 - arrow)
+                        ctx.lineTo(x - arrow, y - size/2 + arrow)
+                        ctx.lineTo(x, y - size/2)
+
+                    ctx.stroke()
+                    ctx.lineWidth = zoom
+                x += width
+                line.last_x = x
+                positions[index] = x
+                if x > max_width:
+                    max_width = x
+
+        if self.offset_x is None:
+            self.offset_x = Math.min(0, -max_width + canvas.width)
+        TIME_DY = 20
+        if mouse_y > canvas.height - TIME_DY:
+            ctx.fillStyle = "#FF08"
+        else:
+            ctx.fillStyle = "#FF01"
+        ctx.fillRect(0, canvas.height - TIME_DY, canvas.width, TIME_DY)
+        max_width = max_width - self.offset_x
+        width = canvas.width * canvas.width / max_width
+        x = -self.offset_x / max_width * canvas.width
+        if x < 0:
+            x = 0
+        elif x + width > canvas.width:
+            x = canvas.width - width
+        ctx.fillStyle = "#0002"
+        ctx.fillRect(x, canvas.height - TIME_DY + 2, width, TIME_DY - 4)
+
+        x = 0
+        ctx.font = '9px sans'
+        ctx.fillStyle = "#000"
+        last_date = ''
+        for item in changes:
+            pos = (positions[item[0]] - self.offset_x) / max_width * canvas.width
+            if pos > x:
+                date = nice_date(self.timestamps[item[0]])
+                if date[:11] == last_date[:11]:
+                    display = date[11:]
+                    ctx.fillStyle = "#0008"
                 else:
-                    y_start = y
-                y += dy
-        if feedback[0]:
-            pos_x, pos_y, width, line, lines = feedback[0]
+                    display = date[:10]
+                    ctx.fillStyle = "#000"
+                last_date = date
+                ctx.fillText(display, pos, canvas.height - 5)
+                x = pos + ctx.measureText(display).width + 5
+
+        if mouse_y > canvas.height - TIME_DY:
+            if buttons:
+                self.offset_x = Math.min(
+                    0,
+                    Math.max(
+                    int((-mouse_x + width/2) / canvas.width * max_width),
+                    -max_width + canvas.width))
+        elif feedback:
+            pos_x, pos_y, width, line, lines = feedback
             ctx.lineWidth = 1
             ctx.strokeStyle = '#000'
             ctx.beginPath()
@@ -1299,6 +1481,7 @@ def create_shared_worker(login='', hook=None):
         """Change question.
         Returns True if it is NOT the first time"""
         question = journal.get_question(index)
+        journal.offset_x = None
         ccccc.set_editor_visibility(True)
         if question:
             if question.head != len(journal.lines):
