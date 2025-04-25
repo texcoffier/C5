@@ -692,7 +692,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
             # EXAM MODE because not grading, no copy/paste no feedback and a checkpoint
             is_fullscreen = (
                     window.innerHeight * window.devicePixelRatio + 30 > screen.height
+                and window.innerHeight * window.devicePixelRatio - 10 <= screen.height
                 and window.innerWidth  * window.devicePixelRatio + 40 > screen.width
+                and window.innerWidth  * window.devicePixelRatio - 10 <= screen.width
+                or  window.innerHeight == screen.height
+                and window.innerWidth  == screen.width
                 )
             if is_fullscreen:
                 self.fullscreen.style.display = 'none'
