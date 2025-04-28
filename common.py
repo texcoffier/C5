@@ -1285,7 +1285,8 @@ def create_shared_worker(login='', hook=None):
 
     def shared_worker_close():
         if window.ccccc:
-            ccccc.editor.focus() # To blur focused comment to save it
+            if ccccc.editor:
+                ccccc.editor.focus() # To blur focused comment to save it
             if not ccccc.options['allow_copy_paste']:
                 shared_worker.blur()
         shared_worker.port.postMessage(['CLOSE'])
