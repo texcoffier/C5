@@ -808,6 +808,7 @@ return sum ;
             # self.check_alert('pas autorisé à noter', accept=True, required=True)
 
             self.goto('adm/session/REMOTE=test')
+            self.click('#state OPTION[value="Grade"]')
             self.click('#Access')
             self.move_cursor('#graders')
             self.control('a')
@@ -909,6 +910,8 @@ return sum ;
             (0, 0, {'innerHTML': Not(Contains('ccccc.js'))}),
         )
         with self.admin_rights():
+            self.goto('adm/session/REMOTE=test')
+            self.click('#state OPTION[value="Grade"]')
             self.goto(f'grade/REMOTE=test/{student}')
             while len(self.driver.find_elements_by_css_selector(
                 '.grade_unselected:first-child')) == 0:
@@ -923,13 +926,15 @@ return sum ;
         for admin_feeback, grader_feedback, check in cases:
             with self.admin_rights():
                 self.goto('adm/session/REMOTE=test')
-                self.click('#state OPTION[value="Done"]')
+                self.click('#state OPTION[value="Grade"]')
                 self.click(f'#feedback OPTION[value="{admin_feeback}"]')
                 self.click('#start')
                 self.goto(f'grade/REMOTE=test/{student}')
                 time.sleep(0.5)
                 self.click(f'#grading_feedback OPTION[value="{grader_feedback}"]')
                 self.click('.editor')
+                self.goto('adm/session/REMOTE=test')
+                self.click('#state OPTION[value="Done"]')
             self.goto('=REMOTE=test')
             self.check('BODY', check)
         self.test_dates('2000-01-01 01:00:01', '2001-01-01 01:00:01', nothing, 'Done')
@@ -938,6 +943,7 @@ return sum ;
         """Test an exam"""
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
+            self.click('#state OPTION[value="Ready"]')
             self.click('#start')
             self.control('a')
             self.check('#start').send_keys('2000-01-01 00:00:00')

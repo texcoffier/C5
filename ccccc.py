@@ -2029,13 +2029,26 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.nr_grades = i - 1
             self.grading.id = "grading"
             if GRADING:
-                self.grading.onclick = grade
+                self.grading.onclick = bind(self.grade, self)
             self.grading.innerHTML = ''.join(content)
             self.update_grading(GRADES)
         else:
             self.question.innerHTML = ''.join(content)
         if GRADING:
             update_feedback(WHERE[10])
+
+    def grade(self, event):
+        """Set the grade"""
+        if not self.grading_allowed():
+            return
+        if 'grade_selected' in event.target.className:
+            value = ''
+        else:
+            value = event.target.textContent
+        grade_id = event.target.getAttribute('g')
+        if grade_id is None:
+            return
+        self.record_grade(grade_id, value)
 
     def clear_input(self, the_question, the_index):
         """Clear student answers"""
@@ -2399,8 +2412,20 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 'student': STUDENT,
             }, 'record_grade/' + COURSE + '?ticket=' + TICKET)
 
+    def grading_allowed(self):
+        """Returns True if grading is allowed"""
+        if COURSE_CONFIG.state == 'Grade':
+            return True
+        self.popup_message(
+            "Notation non autorisée pour l'instant.<br>"
+            + "Le responsable de la session doit la passer en mode «Grade»"
+            )
+        return False
+
     def set_all_grades(self, index):
         """Set all grades to the first value"""
+        if not self.grading_allowed():
+            return
         i = 0
         graded = {}
         for button in self.grading.getElementsByTagName('BUTTON'):
@@ -2764,17 +2789,6 @@ class Grapic: # pylint: disable=too-many-public-methods
             return
         self.ctxs[image_id].fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")"
         self.ctxs[image_id].fillRect(x, y, 1, 1)
-
-def grade(event):
-    """Set the grade"""
-    if 'grade_selected' in event.target.className:
-        value = ''
-    else:
-        value = event.target.textContent
-    grade_id = event.target.getAttribute('g')
-    if grade_id is None:
-        return
-    ccccc.record_grade(grade_id, value)
 
 def feedback_change(element):
     """The grader changed the feedback level"""
