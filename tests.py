@@ -131,7 +131,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 os.unlink(i)
             for i in glob.glob(course_name + '/MEDIA/*'):
                 os.unlink(i)
-        os.system('rm -r COMPILE_REMOTE/XXX')
+        os.system('rm -r COMPILE_REMOTE/XXX COMPILE_REMOTE/xxx')
 
         start = time.time()
         self.wait_start()
