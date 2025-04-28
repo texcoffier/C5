@@ -2359,6 +2359,12 @@ async def live_link(request:Request) -> StreamResponse:
         traceback.print_exc()
         raise
 
+    def warn(txt):
+        msg = f'{time.strftime("%Y-%m-%d %H:%M:%S")} WS  {session.login} port={port} msg={message:.5} '
+        if journa:
+            msg += f'{journa.login} {journa.course.course} {journa.msg_id} {allow_edit} '
+        log(msg + txt)
+
     journals:Dict[int,JournalLink] = {}
 
     async for msg in socket:
@@ -2370,62 +2376,60 @@ async def live_link(request:Request) -> StreamResponse:
             break
         port, message = msg.data.split(' ', 1)
         journa, allow_edit = journals.get(port, (None, True))
-        # log(f'{port} {message} {journa} {len(journa.msg_id) if journa else "?"} {allow_edit}')
         if message == '-':
             if journa:
+                warn('close')
                 journa.close(socket, port)
             else:
-                log(f'Message «{msg.data}» close but no journal. bug={port in journals}')
+                warn('close but no journal')
             journals.pop(port, None)
             continue
         if journa and session.login != journa.login:
-            log(f'{session.login} {journa.login} {journa.course.course} {session.is_grader(journa.course)} {journa.editor} {journa.course.running(session.login)} {journa.msg_id} {message}')
-            if not allow_edit:
-                if not session.is_grader(journa.course) or not message.split(' ', 1)[1][0] in 'bGTtLH':
-                    continue
-            # Allow grader comments
+            if not session.is_grader(journa.course) or message.split(' ', 1)[1][0] not in 'bGTtLH':
+                # Grader is not allowed to insert or deletes character
+                # in the student source code.
+                warn(f'grader={session.is_grader(journa.course)} not allowed source modification')
+                continue
+            # Allow grader comments and moving around
         if journa:
             msg_id, message = message.split(' ', 1)
             if msg_id == journa.msg_id:
                 if not journa.course.running(session.login, session.hostname):
+                    warn('Session not running')
                     journa.close(socket, port)
                     continue
                 if message.startswith('#'):
-                    log(f'Not allowed via web interface {session.login} {journa.course.course} «{message}»')
+                    warn('Not allowed via web interface')
                 elif message.startswith('b+') and not message.startswith(f'b+{session.login}'):
-                    log(f'Hacker {session.login} {journa.course.course} «{message}»')
+                    warn('Hacker')
                 else:
+                    # warn(f'Record')
                     if message.startswith('bC'):
                         journa.erase_comment_history(int(message[2:].split(' ')[0]))
                     await journa.write(message)
             else:
-                log(f'{journa.msg_id} != {msg_id} {session.login} {journa.course.course} {message}')
+                warn('Bad message ID')
                 await socket.send_str(f'{port} R')
                 journa.close(socket, port)
         else:
             assert port not in journals
             session_name, asked_login = message.split(' ', 1)
             if session_name.isdigit():
-                log(f'Message from closed session {session.login} {journa.course.course} «{message}»')
+                warn('Message from closed session')
                 continue
             course = CourseConfig.get(utilities.get_course(session_name))
-            allow_edit = asked_login == session.login or session.is_grader(course)
-            if asked_login and session.is_proctor(course):
-                login = asked_login
-            else:
-                login = session.login
-            for_editor = login.startswith('_FOR_EDITOR_')
+            allow_edit = (asked_login == session.login) or session.is_grader(course)
+            for_editor = asked_login.startswith('_FOR_EDITOR_')
             if for_editor:
-                login = login.replace('_FOR_EDITOR_', '')
                 asked_login = asked_login.replace('_FOR_EDITOR_', '')
                 if session.is_admin(course):
                     allow_edit = True
-                else:
-                    login = session.login
             journa = JournalLink.new(course, asked_login, socket, port, for_editor)
             journals[port] = [journa, allow_edit]
-            await socket.send_str(
-                port + ' J' + '\n'.join(journa.content) + '\n')
+            warn('Open socket')
+            if allow_edit or session.is_proctor(course):
+                await socket.send_str(
+                    port + ' J' + '\n'.join(journa.content) + '\n')
             if allow_edit:
                 await journa.write(f'T{int(time.time())}')
                 await journa.write(f'O{session.login} {session.client_ip} {port}')
