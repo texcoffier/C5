@@ -1240,7 +1240,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         for student in room.students:
             items.append('→' + student.login + ' '
                 + str(student.bonus_time).rjust(2) + ' '
-                + str(student.grade[0] and student.grade[0].toFixed(2) or '?').rjust(5) + '['
+                + str(student.grade[1] and student.grade[0].toFixed(2) or '?').rjust(5) + '['
                 + str(student.grade[1] or '?').rjust(2) + '] '
                 + str(student.blur_time).rjust(4) + '['
                 + str(student.blur).rjust(2) + '] '
