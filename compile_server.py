@@ -486,7 +486,7 @@ N'actualisez PAS la page."""]))
             action, data = json.loads(message)
             if action != 'input': # To many logs (Grapic)
                 process.log(('ACTION', action))
-            if not session.is_admin() and not process.course_running():
+            if not session.is_admin() and not process.course_running() and not session.is_grader(process.course):
                 if action == 'compile':
                     await process.websocket.send(json.dumps(
                         ['compiler', "La session est terminée"]))
