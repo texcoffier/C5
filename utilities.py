@@ -1102,7 +1102,7 @@ class Session:
             <head>
             <meta charset="utf-8">
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-            <link REL="icon" href="favicon.ico?ticket={self.ticket}">
+            <link REL="icon" href="https://{C5_URL}/favicon.ico?ticket={self.ticket}">
             </head>
             <h1>{name} : {CONFIG.config['messages'].get(key, key)}</h1>
             {more}
@@ -1119,7 +1119,7 @@ class Session:
             <head>
             <meta charset="utf-8">
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-            <link REL="icon" href="favicon.ico?ticket={self.ticket}">
+            <link REL="icon" href="https://{C5_URL}/favicon.ico?ticket={self.ticket}">
             </head>
             <h1>{name} : {CONFIG.config['messages'].get(key, key)}</h1>
             """,
