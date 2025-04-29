@@ -818,6 +818,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.overlay.removeChild(self.overlay.lastChild)
         if update_cursor:
             self.update_cursor_position()
+    def set_editor_visibility(self, visible):
+        """Show/hide editor without changing its content"""
+        if visible:
+            visible = ''
+        else:
+            visible = 'none'
+        self.editor.style.display = self.overlay.style.display = \
+            self.comments.style.display = self.line_numbers.style.display = visible
     def update_source(self):
         """Extract the textContent of the DIV with the good \n"""
         def clear_text(state):
@@ -1089,7 +1097,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         for i in range(i+1, len(self.line_numbers.childNodes)):
             self.line_numbers.childNodes[i].style.top = '-10em'
 
-        if self.options['diff']:
+        if self.options['diff'] and self.journal_question:
             default_answer = {}
             sep = RegExp('[ \t]', 'g')
             old = self.journal_question.first_source or self.question_original[self.current_question]
@@ -2083,9 +2091,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             # self.record_pending_goto() # Record pending goto because if ^Z
             SHARED_WORKER.question(value)
             self.journal_question = JOURNAL.questions[value]
+            if not self.journal_question:
+                return
             if self.journal_question.start + 1 == self.journal_question.head:
-                # Initialize with the default answer
-                self.set_editor_content(self.question_original[value])
+                if not REAL_GRADING: # If not default answer: do set one
+                    # Initialize with the default answer
+                    self.set_editor_content(self.question_original[value])
             else:
                 self.set_editor_content(JOURNAL.content)
             self.compilation_run()
@@ -2093,7 +2104,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 0, self.tree_canvas() - self.canvas.parentNode.offsetWidth + 40)
             self.need_grading_update = True # Need to recompute links in grading pane
             self.old_delta = 0 # Need to redisplay timer
-            if (GRADING or self.options['feedback']) and self.source != '':
+            if (GRADING or self.options['feedback']):
                 self.add_grading()
                 self.need_grading_update = False
                 if self.options['feedback'] >= 5 and GRADES:

@@ -1163,9 +1163,20 @@ def create_shared_worker(login='', hook=None):
                 ccccc.set_editmode(1) # Keep commented version synchronized
                 ccccc.editmode.selectedIndex = 1
             if int(msg_id) != len(journal.lines):
-                ccccc.record_error('DESYNC')
-                reload_page("Désynchronisation avec le serveur. " + msg_id + ' != ' + len(journal.lines))
-                window.location.reload()
+                if int(msg_id) < len(journal.lines):
+                    if journal.lines[int(msg_id)] == message:
+                        error = "On a reçu un paquet déjà reçu «" + html(message) + "»"
+                    else:
+                        error = ("On a reçu un paquet déjà reçu avec une valeur différente «"
+                            + html(message) + "» != «" + html(journal.lines[int(msg_id)]) + '»')
+                else:
+                    error = "Un paquet s'est perdu"
+                ccccc.record_error('DESYNC ' + error)
+                print(error)
+                reload_page("Désynchronisation avec le serveur. " + msg_id + ' != ' + len(journal.lines)
+                    + '<br>' + error)
+                return
+                # window.location.reload()
             print("Add line to journal: " + message)
             if message.startswith('#bonus_time '):
                 ccccc.stop_timestamp = int(message.split(' ')[2])
@@ -1224,10 +1235,15 @@ def create_shared_worker(login='', hook=None):
         """Change question.
         Returns True if it is NOT the first time"""
         question = journal.get_question(index)
+        ccccc.set_editor_visibility(True)
         if question:
             if question.head != len(journal.lines):
                 shared_worker.post('G' + question.head)
             return True
+        if ccccc.add_comments:
+            ccccc.set_editor_visibility(False) # Must not modify editor content
+            ccccc.popup_message("L'étudiant n'a rien enregistré, choisissez une autre question.")
+            return False # Do not create a question when commenting
         shared_worker.post('Q' + index)
         journal.get_question(index).created_now = True
         return False
