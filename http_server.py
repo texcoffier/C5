@@ -514,9 +514,9 @@ async def adm_force_grading_done(request:Request) -> Response:
         if not session.is_admin(config):
             continue
         await stream.write(f'<h1>{config.course}</h1><pre>'.encode('utf-8'))
-        nbr_grades = {'a': len(common.parse_notation(config.notation)) - 1}
+        nbr_grades = {'a': common.Grades(config.notation).nr_grades_and_competences()}
         if config.notationB:
-            nbr_grades['b'] = len(common.parse_notation(config.notationB)) - 1
+            nbr_grades['b'] = common.Grades(config.notationB).nr_grades_and_competences()
         else:
             nbr_grades['b'] = nbr_grades['a']
         for student, state in config.active_teacher_room.items():
@@ -2444,15 +2444,15 @@ def log(message):
 def main():
     """Run http server"""
     # Check if an upgrade is needed
-    for filename in glob.glob('COMPILE_*/*/LOGS/*/http_server.log'):
-        translation = filename.replace('http_server', 'journal')
-        if os.path.exists(translation):
-            break
-        log('='*60)
-        log('YOU MUST RUN « ./upgrade_logs.py »')
-        log('TO TRANSLATE ALL «http_server.log»+«comments.log» to «journal.log»')
-        log('='*60)
-        sys.exit(1)
+    # for filename in glob.glob('COMPILE_*/*/LOGS/*/http_server.log'):
+    #     translation = filename.replace('http_server', 'journal')
+    #     if os.path.exists(translation):
+    #         break
+    #     log('='*60)
+    #     log('YOU MUST RUN « ./upgrade_logs.py »')
+    #     log('TO TRANSLATE ALL «http_server.log»+«comments.log» to «journal.log»')
+    #     log('='*60)
+    #     sys.exit(1)
 
     app = web.Application(client_max_size=1024*1024*1024**2)
     app.add_routes([web.get('/', home),

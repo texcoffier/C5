@@ -301,3 +301,9 @@ TT {
     font-family: monospace, monospace
 }
 
+.grading TD {
+    vertical-align: top;
+}
+.grading P {
+    margin-top: 0em;
+}

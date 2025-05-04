@@ -601,11 +601,66 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if config:
             return config
         config = CourseConfig(course)
-        if getattr(config, 'time', 0):
+        if not getattr(config, 'time', 0):
+            # No file with this name
+            cls.configs.pop(course, None)
+            raise ValueError("Session inconnue : " + course)
+        if not re.match('.*{[^:}{]+:([?],)?[-.,0-9]*}', config.notation, flags=re.S):
             return config
-        # No file with this name
-        cls.configs.pop(course, None)
-        raise ValueError("Session inconnue : " + course)
+        try:
+            print("REWRITE GRADES", course, flush=True)
+            renames = []
+            notations = []
+            for notation in (config.notation, config.notationB):
+                translate = {}
+                grades = common.Grades(notation)
+                notations.append(grades)
+                for i, grade in enumerate(grades.content[:-1]):
+                    if grade.key_original:
+                        translate[str(i)] = str(grade.key)
+                    else:
+                        translate[str(i)] = str(i)
+                renames.append(translate)
+            for login, state in config.active_teacher_room.items():
+                grades = config.get_grades(login)
+                if not grades:
+                    continue
+                grade_file = f'{config.dir_log}/{login}/grades.log'
+                print(f'Translate «{grade_file}»: ', end='')
+                if state.room.count(',') < 3:
+                    translate = renames[0]
+                    print('no version, assume «a» ', end='')
+                elif state.room.split(',')[3] == 'a': # Check subject version
+                    translate = renames[0]
+                else:
+                    translate = renames[1]
+                old = [json.loads(line) for line in grades.strip().split('\n')]
+                new = []
+                for line in old:
+                    line = list(line)
+                    # Use 'get' because the translations may yet has been done
+                    line[2] = translate.get(line[2], line[2])
+                    new.append(line)
+                if old == new:
+                    print('no change', flush=True)
+                else:
+                    with open(grade_file, "w", encoding='utf-8') as file:
+                        for line in new:
+                            file.write(json.dumps(line) + '\n')
+                    print('done', flush=True)
+            # Update configuration only if the translation was successful
+            print("Update session configuration: ", end='', flush=True)
+            if config.notation:
+                config.set_parameter('notation', notations[0].with_keys())
+            if config.notationB:
+                config.set_parameter('notationB', notations[1].with_keys())
+            print("done", flush=True)
+            return config
+        except: # pylint: disable=bare-except
+            print('Grade translation failure')
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
 
     @classmethod
     def load_all_configs(cls) -> None:

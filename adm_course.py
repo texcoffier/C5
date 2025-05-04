@@ -26,7 +26,7 @@ def show(what):
 
 def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Create the admin home page"""
-    notation = parse_notation(NOTATION)
+    notation = Grades(NOTATION)
     document.title = "👁" + COURSE.split('=')[1]
     students = []
     for student in STUDENTS:
@@ -113,17 +113,16 @@ DIV[onclick]:hover { background: #EEE }
         grading = parse_grading(student['grades'])
         grade = 0
         graders = []
-        for question in grading:
-            if ':' in notation[question][1]:
+        for grd in notation.grades:
+            if grd.is_competence:
                 continue # It'a a competence
-            value = grading[question][0]
-            if value == '?':
+            value = grading[grd.key]
+            if not value or value[0] == '?':
                 continue
-            grade += Number(value)
-            if len(grading[question][0]):
-                grader = grading[question][1].split('\n')[1]
-                if grader not in graders:
-                    graders.append(grader)
+            grade += Number(value[0])
+            grader = value[1].split('\n')[1]
+            if grader not in graders:
+                graders.append(grader)
         nr_grades[login] = len(grading)
         nr_grades_max[version] = max(nr_grades_max[version], len(grading))
         if len(grading) == 0 and student.status == 'done':
@@ -276,19 +275,14 @@ DIV[onclick]:hover { background: #EEE }
         <table id="TOMUSS"><tr><td>ID<td>Nom<td>Prénom""")
         labels = {}
         header2 = '' # Second line of headers
-        for infos in notation:
-            _text, grade_label, values = infos
-            if len(grade_label) == 0:
-                continue
-            if ':' in grade_label:
-                continue # It's a competence
-            while grade_label in labels:
-                grade_label += '+'
-            labels[grade_label] = True
+        for grade in notation.grades:
+            while grade.label in labels:
+                grade.label += '+'
+            labels[grade.label] = True
             step = 1
-            grade_max = float(values[0])
-            grade_min = float(values[0])
-            for value in values:
+            grade_max = float(grade.grades[0])
+            grade_min = float(grade.grades[0])
+            for value in grade.grades:
                 value = float(value)
                 if value > grade_max:
                     grade_max = value
@@ -297,14 +291,14 @@ DIV[onclick]:hover { background: #EEE }
                 mod = Math.abs(value) % 1.
                 if mod and mod < step:
                     step = mod
-            if grade_min < 0 or 'bonus' in grade_label.lower():
+            if grade_min < 0 or 'bonus' in grade.label.lower():
                 what = '±'
             else:
                 what = ''
             if -grade_min > grade_max:
                 grade_max = -grade_min
             text.append(
-                "<td>" + what + grade_max + '<td>' + html(grade_label))
+                "<td>" + what + grade_max + '<td>' + html(grade.label))
             header2 += '<td>Note<td>Commentaire'
 
         text.append('</tr><tr><td><td><td>')
@@ -318,19 +312,12 @@ DIV[onclick]:hover { background: #EEE }
             text.append(login)
             text.append('<td><td>')
             grading = parse_grading(student['grades'])
-            i = 0
-            for infos in notation:
-                _text, grade_label, values = infos
-                if len(grade_label) == 0:
-                    continue
-                if ':' in grade_label:
-                    continue # It's a competence
+            for grade in notation.grades:
                 text.append('<td>')
-                if grading[i]:
-                    text.append(grading[i][0])
+                if grading[grade.key]:
+                    text.append(grading[grade.key][0])
                 else:
                     text.append('???')
-                i += 1
                 text.append('<td>')
             text.append('</tr>')
         text.append('</table>')
@@ -339,13 +326,8 @@ DIV[onclick]:hover { background: #EEE }
     ###########################################################################
     ###########################################################################
 
-    notation = parse_notation(NOTATION)
     text.append("""<h2>Compétences</h2>
                    <table id="TOMUSS_competence"><tr><td>ID<td>Compétence</tr>""")
-    all_competences = {}
-    for i in range(len(notation) - 1):
-        if ':' in notation[i][1]:
-            all_competences[notation[i][1].split(':')[-1]] = True
     for login in students:
         student = STUDENTS[login]
         if student.status != 'done':
@@ -355,18 +337,16 @@ DIV[onclick]:hover { background: #EEE }
         text.append('<td>')
         grading = parse_grading(student['grades'])
         competences = {}
-        for i in range(len(notation) - 1):
-            if ':' not in notation[i][1]:
-                continue
-            code = notation[i][1].split(':')[-1]
-            if grading[i] and grading[i][0] != '':
-                if code not in competences:
-                    competences[code] = []
-                competences[code].append(float(grading[i][0]))
+        for grade in notation.competences:
+            code = replace_all(grade.key, "'", "") # «'» used for duplicate keys
+            if code not in competences:
+                competences[code] = []
+            note = grading[grade.key]
+            if note and note[0] != '' and note[0] != '?':
+                competences[code].append(float(note[0]))
         competences_list = []
-        for key in all_competences:
-            values = competences[key]
-            if values:
+        for key, values in competences.Items():
+            if len(values):
                 competences_list.append(key + 'o' + (Math.round(sum(values) / len(values)) + 1))
             else:
                 competences_list.append(key + 'o0')

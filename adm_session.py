@@ -315,34 +315,50 @@ def select_tab(label):
     </table>"""
     elif label == 'Grading':
         content = """
-    <div style="display:grid; height: 100%; grid-template-rows: min-content auto">
+    <div class="grading" style="display:grid; height: 100%; grid-template-rows: min-content auto">
     <div>
-    Indicate the maximum grade (20 for example): <input id="notation_max" size="4">
+    <table><tr style="background:#F8F8F8"><td>
     <p>
     Example of grading definition for the «hello world» C program.<br>
-    The grading part is right aligned and green with one button for each grade.
-    <p>
-    Every line of the grading definition found in the student source code
-    become a link to the student source code.
-    To disable this, add a '▶' in the lines you want to be a link.
-    </p>
-    <p>
-    If the grading part is «{printf:SomeKey:-1,0,1,2,3}» then «SomeKey» will be
-    hidden to the grader but used to compute the competence export table
-    for TOMUSS.
-    -1 is for not evaluated and 0 for not acquired.
-     <b>If it is a competence the value will not be used to compute the grade</b>.
+    The grading part is right aligned with one button per grade.
     <pre>
-#include &lt;stdio.h&gt;               {stdio.h:0,1}
-int main()                       {main declaration:0,1}
-{        /* ? = Not evaluated */ {bloc:?,0,1}
-   printf("Hello World\\n");     {printf:0,0.5,1,1.5,2}
+#include &lt;stdio.h&gt;            {stdio.h:0,1}
+int main()                    {main declaration:0,1}
+{
+   printf("Hello World\\n");   {printf:0,0.5,1,1.5,2}
 }
-// Malus                         {No comments:-1,0}
+// Malus                      {No comments:-1,0}
 </pre>
-<b>Indicate your session gradings here,</b>
-A subject and B subject if they are different.
-<div id="grading_sum"></div>
+    <p>
+    Each grading definition line found in the student code<br>
+    is clickable to scroll the student code to the right place.<br>
+    To disable this, add a '▶' in the lines you want to be clickable.
+    </p>
+</td><td>
+    <p>
+    If the grading part is «{printf:Key:-1,-0.5,0,0.5,1,1.5,2}» then:
+    </p>
+    <ul>
+    <li> «Key» will be automaticaly computed if there is none.</li>
+    <li> «Key» uniquely identify the grade,<br>
+        so it is possible to change the order
+        of the grades without consequences.</li>
+    <li> «Key» is not displayed to the graders.</li>
+    <li> if «Key» is an integer, then the grade is a value positive or negative.</li>
+    <li> if «Key» is not an integer then it is a competence key:
+        <ul>
+            <li> if the same competence is evaluated multiple times,<br>
+            «'» are appended to the key to remove duplicates.</li>
+            <li> «?» is for «Not Evaluated» and «0» for «Not Acquired».</li>
+            <li> Competences are not used to compute the grade.</li>
+        </ul></li>
+    </ul>
+</td></tr></table>
+
+Grade maximum displayed to the students: <input id="notation_max" size="4">.
+<div id="grading_sum" style="display: inline-block"></div>
+<div style="width:100%; display:flex; text-align: center;"
+><span style="flex:1">Gradings for session A</span> <span style="flex:1">Grading for session B if ≠ A</span></div>
 </div>
     <div style="display: flex"><textarea id="notation" style="flex:1"></textarea> <textarea id="notationB" style="flex:1"></textarea></div>"""
     elif label == 'Config':
@@ -634,7 +650,7 @@ def init():
     """)
     add(div)
     setTimeout(load_config, 10) # Wait CSS loading
-    setInterval(update_interface, 1000)
+    setInterval(update_interface, 5000)
 
 def count_words(element):
     """Search for duplicate student ID"""
@@ -655,42 +671,35 @@ def count_words(element):
                    + message)
     return message, text
 
-def count_toggles(toggles):
-    max_grade = 0
-    nr_competence_toggle = 0
-    for _text1, grade_label, grades in toggles:
-        if ':' in grade_label:
-            nr_competence_toggle += 1
-        else:
-            if len(grades):
-                max_grade += Number(grades[-1])
-    return max_grade, nr_competence_toggle
-
 def update_interface():
     """Update grading"""
     grading_sum = document.getElementById('grading_sum')
     notation = document.getElementById("notation")
     notationB = document.getElementById("notationB")
     if grading_sum and notation:
-        total, total_competence = count_toggles(parse_notation(notation.value))
-        total2, total2_competence = count_toggles(parse_notation(notationB.value))
+        grade_a = Grades(notation.value)
+        grade_b = Grades(notationB.value)
 
-        if total or total2:
+        if grade_a.max_grade or grade_b.max_grade:
             message = 'Maximum possible grade: <b>'
-            if total == total2 or total2 == 0:
-                message += total
+            if grade_a.max_grade == grade_b.max_grade or grade_b.max_grade == 0:
+                message += grade_a.max_grade
             else:
-                message += '<span style="background:#F88">' + total + '/' + total2 + '</span>'
+                message += '<span style="background:#F88">' + grade_a.max_grade + '/' + grade_b.max_grade + '</span>'
             message += '</b>'
 
-        if total_competence or total2_competence:
+        if grade_a.nr_competences or grade_b.nr_competences:
             message += '. Nbr competences toggles: <b>'
-            if total_competence == total2_competence or total2_competence == 0:
-                message += total_competence
+            if grade_a.nr_competences == grade_b.nr_competences or grade_b.nr_competences == 0:
+                message += grade_a.nr_competences
             else:
-                message += '<span style="background:#F88">' + total_competence + '/' + total2_competence + '</span>'
+                message += '<span style="background:#F88">' + grade_a.nr_competences + '/' + grade_b.nr_competences + '</span>'
             message += '</b>'
 
         grading_sum.innerHTML = message
+        if notation.value:
+            notation.value = grade_a.with_keys()
+        if notationB.value:
+            notationB.value = grade_b.with_keys()
 
 init()

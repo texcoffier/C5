@@ -1920,13 +1920,13 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     button.title = grading[g][1].split('\n')[-1]
                 button.className = 'grade_selected'
                 value = grading[g][0]
-                if int(button.getAttribute('c')):
-                    if value >= 0:
-                        competences.append(Number(value))
-                else:
+                if g.isdigit(): # Not a competence
                     if value != '?':
                         grading_sum += Number(value)
                     nr_real_grade += 1
+                else:
+                    if value >= 0:
+                        competences.append(Number(value))
                 nr_grades += 1
             else:
                 button.className = 'grade_unselected'
@@ -1997,9 +1997,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 content.append('<button onclick="ccccc.set_all_grades(-1)">dernières cases</button>')
             content.append('<pre>')
             use_triangle = '▶' in NOTATION
-            i = 0
-            for text, grade_label, values in parse_notation(NOTATION):
-                for line in text.split('\r\n'):
+            self.nr_grades = 0
+            for grade in Grades(NOTATION).content:
+                for line in grade.text_before.split('\r\n'):
                     line = line.trimEnd()
                     line_clean = line.replace('▶', '')
                     if (len(line) <= 5 # Too short line
@@ -2007,7 +2007,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                             or line_clean not in self.source # Not in source
                             or len(self.source.split('\n' + line_clean + '\n')) != 2 # Duplicate line
                             ):
-                        line = html(line)
+                        line = '<span>' + html(line) + '</span>'
                     else:
                         line = '''<span
                             onclick="ccccc.goto_source_line(this.textContent.replace('▶', ''))"
@@ -2015,26 +2015,20 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     content.append(line)
                     content.append('\n')
                 content.pop()
-                if len(grade_label):
-                    competence = ':' in grade_label and 1 or 0
-                    # Remove competence key at the end of the grade label
-                    grade_label = html(grade_label.replace(RegExp(':[a-z0-9+]*$'), ''))
-                    if '?' in values:
+                if len(grade.label):
+                    if grade.is_competence:
                         content.append('<span class="competence">')
                     else:
                         content.append('<span class="grade_value">')
-                    content.append(grade_label)
-                    for choice in values:
-                        content.append('<button g="' + i + '" v="'
-                                       + choice + '" c="'
-                                       + competence
-                                       + '">' + choice + '</button>')
+                    self.nr_grades += 1
+                    content.append(grade.label)
+                    for choice in grade.grades:
+                        content.append('<button g="' + grade.key + '" v="'
+                                       + choice + '">' + choice + '</button>')
                     content.append('</span>')
                 else:
                     content.append('\n')
-                i += 1
             content.append('</pre>')
-            self.nr_grades = i - 1
             self.grading.id = "grading"
             if GRADING:
                 self.grading.onclick = bind(self.grade, self)
@@ -2437,24 +2431,22 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Set all grades to the first value"""
         if not self.grading_allowed():
             return
-        i = 0
         graded = {}
         for button in self.grading.getElementsByTagName('BUTTON'):
             if 'grade_selected' in button.className:
                 graded[button.getAttribute('g')] = True
 
-        for _text, grade_label, values in parse_notation(NOTATION):
-            if i not in graded and len(grade_label) and values:
+        for grade in Grades(NOTATION).grades:
+            if grade.key not in graded:
                 if index == 1:
-                    if values[0] >= 0 or values[0] == '?':
-                        self.record_grade(i, values[0])
+                    if grade.grades[0] >= 0 or grade.grades[0] == '?':
+                        self.record_grade(grade.key, grade.grades[0])
                 elif index == 0:
-                    self.record_grade(i, values[0])
+                    self.record_grade(grade.key, grade.grades[0])
                 elif index == -1:
-                    self.record_grade(i, values[-1])
+                    self.record_grade(grade.key, grade.grades[-1])
                 else:
                     raise ValueError('set_all_grades index=' + index)
-            i += 1
     def send_mail_right(self):
         """Send a mail to the student"""
         width = 0

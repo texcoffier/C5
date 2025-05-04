@@ -70,23 +70,87 @@ else:
         """Only first replacement"""
         return string.replace(RegExp(pattern), replacement)
 
-def parse_notation(notation):
-    """Returns a list or [text, grade_label, [grade_values]]"""
-    content = []
-    text = ''
-    for i, item in enumerate(notation.split('{')):
-        options = item.split('}')
-        if len(options) == 1 or not re_match('.*' + POSSIBLE_GRADES, options[0]):
-            if i != 0:
-                text += '{'
-            text += item
-            continue
-        grade_label = re_sub(POSSIBLE_GRADES, '', options[0])
-        grade_values = re_sub('.*:', '', options[0]).split(',')
-        content.append([text, grade_label, grade_values])
-        text = '}'.join(options[1:])
-    content.append([text, '', []])
-    return content
+class Grade:
+    """Pattern:  text_before {label:key:-1,0,0.5,1,2}
+    If key does not starts with '#' it is a compétence.
+    """
+    def __init__(self, text_before, label, key, grades):
+        self.text_before = text_before
+        self.label = label
+        self.key = self.key_original = key
+        self.grades = grades
+        self.is_competence = key and not key.isdigit()
+
+    def with_key(self):
+        if self.label == '':
+            return self.text_before
+        return self.text_before + '{' + self.label + ':' + self.key + ':' + ','.join(self.grades) + '}'
+class Grades:
+    def __init__(self, notation):
+        self.content = [] # grades and competence
+        self.grades = [] # Only grades, not competences
+        self.competences = [] # Only competences, not grades
+        self.grade_by_key = {}
+        self.nr_grades = self.nr_competences = self.max_grade = 0
+        text = ''
+        grade_key_max = 0
+        for i, item in enumerate(notation.split('{')):
+            options = item.split('}')
+            if len(options) == 1 or not re_match('.*' + POSSIBLE_GRADES, options[0]):
+                if i != 0:
+                    text += '{'
+                text += item
+                continue
+            grade_label = re_sub(POSSIBLE_GRADES, '', options[0])
+            grade_grades = re_sub('.*:', '', options[0]).split(',')
+            if ':' in grade_label:
+                grade_label, grade_key = grade_label.split(':')
+                try:
+                    if grade_key_max < int(grade_key):
+                        grade_key_max = int(grade_key)
+                except: # pylint: disable=bare-except
+                    pass
+            else:
+                grade_key = None
+            grade = Grade(text, grade_label, grade_key, grade_grades)
+            if grade.key in self.grade_by_key:
+                grade.key = None # Remove duplicate key (the second one)
+            self.grade_by_key[grade_key] = grade
+            self.content.append(grade)
+            if grade.is_competence:
+                self.nr_competences += 1
+                self.competences.append(grade)
+            else:
+                self.nr_grades += 1
+                if grade.grades:
+                    self.max_grade += float(grade.grades[-1])
+                    self.grades.append(grade)
+            text = '}'.join(options[1:])
+
+        # Add missing identifiers
+        for grade in self.content:
+            if grade.key is None or grade.key == '':
+                if grade.is_competence:
+                    i = grade.key_original
+                    while i in self.grade_by_key:
+                        i += "'"
+                else:
+                    i = grade_key_max
+                    while str(i) in self.grade_by_key:
+                        i += 1
+                grade.key = str(i)
+                self.grade_by_key[grade.key] = grade
+
+        self.content.append(Grade(text, '', '', []))
+
+    def nr_grades_and_competences(self):
+        return self.nr_grades + self.nr_competences
+
+    def with_keys(self):
+        content = []
+        for grade in self.content:
+            content.append(grade.with_key())
+        return ''.join(content)
 
 # Journal management.
 # Common between server and browser.

@@ -768,8 +768,16 @@ BODY.dograding .grading PRE BUTTON:hover,
     /* Some space for firefox scrollbar */
     color: #00F;
 }
+.grading PRE BUTTON {
+    font-size: 83%;
+    vertical-align: top;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0.3vw;
+    padding-right: 0.3vw;
+}
 
-.grading PRE SPAN.competence BUTTON[v="-1"] {
+.grading PRE SPAN.competence BUTTON[v="-1"], .grading PRE SPAN.competence BUTTON[v="?"] {
     --color: #DDD;
 }
 
@@ -796,8 +804,8 @@ BODY.dograding .grading PRE BUTTON:hover,
 .grading PRE SPAN.competence BUTTON {
     background: var(--color);
     color: transparent;
-    width: 1.3vw;
-    height: 1.3vw;
+    width: 1vw;
+    height: 1vw;
 }
 
 .grading PRE SPAN.competence BUTTON.grade_selected {
