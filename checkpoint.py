@@ -1573,7 +1573,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.feedback = data[1][10]
         self.firstname = data[2]['fn'] or '?'
         self.surname = data[2]['sn'] or '?'
-        self.mail = data[2]['mail'] or '?'
+        self.mail = data[2]['mail'] or ''
         if self.hostname in ROOM.ips:
             unknown_room = 0
         else:
