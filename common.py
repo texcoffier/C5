@@ -1570,7 +1570,7 @@ def create_shared_worker(login='', hook=None):
     window.onbeforeunload = shared_worker_close
     return shared_worker, journal
 
-def compute_diffs(old, rep):
+def compute_diffs_fast(old, rep):
     """Returns a list of change to change text from 'old' to 'rep'
     Triples:
        * [True, position, text to insert]
@@ -1710,6 +1710,8 @@ def myers_diff(a_lines, b_lines, merge=True):
                 if last[0] is not None:
                     compacted.append(last)
                 return compacted
+            if len(frontier) > 1000:
+                return compute_diffs_fast(a_lines, b_lines)
             frontier[k] = (x, history)
 
     assert False, 'Could not find edit script'
