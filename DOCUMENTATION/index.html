@@ -493,7 +493,7 @@ make[1]: Leaving directory '/home/exco/C5'
 ┗━━━━━━━━┹────────────────────┴────────────────────┘</pre></tr>
 <tr><td>display_media_list<td>0<td>Add a media menu 📷 in the source editor title bar</tr>
 <tr><td>save_unlock<td>0<td>Saving a question unlock next</tr>
-<tr><td>automatic_compilation<td>1<td>Compilation is automatic</tr>
+<tr><td>automatic_compilation<td>0<td>Compilation is done on any little source change</tr>
 <tr><td>feedback<td>0<td>Maximum level of student feedback allowed to teachers</tr>
 <tr><td>grading_done<td>1<td>Graders indicate «grading done» in place of the grading level</tr>
 <tr><td>force_grading_done<td>0<td>Consider all gradings done even if graders did not approve</tr>
@@ -508,7 +508,7 @@ make[1]: Leaving directory '/home/exco/C5'
 <tr><th style="background: #FFF" colspan="3">Checkpoint placement interface</tr>
 <tr><td>display_student_filter<td>0<td>Display an INPUT field containing a list of student IDs to highlight</tr>
 <tr><td>display_my_rooms<td>1<td>Add a toggle to display only the rooms I dragged student into</tr>
-<tr><td>display_session_name<td>0<td>Display the session name</tr>
+<tr><td>display_session_name<td>1<td>Display the session name</tr>
 <tr><td>default_building<td><tt>&#x27;&#x27;</tt><td>Preselected building name</tr>
 <tr><th style="background: #FFF" colspan="3">Student session list</tr>
 <tr><td>highlight<td><tt>&#x27;#FFF&#x27;</tt><td>Background color in the student and teacher session list</tr>
@@ -1089,7 +1089,7 @@ System calls allowable for g++/gcc:
             Cette fonctionnalité peut être (dés)activée par
             l'administrateur de la session.
         </li>
-        <li> « Mettre en évidence les logins » permet d'afficher en au de
+        <li> « Mettre en évidence les logins » permet d'afficher en haut de
             la liste les étudiants dont le login est indiqué dans la liste.
             Cette fonctionnalité peut être (dés)activée par
             l'administrateur de la session.
@@ -1100,8 +1100,8 @@ System calls allowable for g++/gcc:
             la configuration alors seul les étudiants présents dans les
             salles affichées complètement (pas à moitié) sur l'écran
             seront indiqués dans la liste des étudiants à placer.
-            Cette liste est mise à jour en fin de déplacement,
-            pas pendant que le plan bouge sur l'écran.
+            Il suffit d'appuyer sur la touche «Espace» pour placer
+            l'étudiant sur la chaise devant sa machine fixe.
         </li>
         <li>
             Le haut du plan contient la légende et comment l'utiliser.
@@ -1120,31 +1120,29 @@ System calls allowable for g++/gcc:
     </p>
     <ul>
         <li>
+            Pour déplacer un étudiant : il faut cliquez longtemps dessus.
+        </li>
+        <li>
             Les étudiants qui changent de fenêtres pendant l'examen sont
             mis en évidence sur cette vue avec un barre de progression rouge
             indiquant le nombre de changements de fenêtres.
-            Au dessus de cette barre il est indiqué le nombre de
-            secondes pendant lesquelles le focus a été perdu.
+            Pour avoir plus le nombre de fois et le temps il suffit de cliquer.
         </li>
         <li>
             Au dessous de la barre de progression rouge il y a un barre verte
             indiquant le nombre de questions réussies dans la suite d'exercices.
         </li>
         <li>
-            Si l'étudiant a été noté, sa note est indiquée ainsi
-            que le nombre d'éléments notés.
-            Le symbole <span style="font-family:emoji">👁</span> indique les informations dont la diffusion
-            est autorisées par le correcteur :
-            commentaires, notes et détail des notes.
+            En bas à droite il y a un carré vert si l'étudiant voit sa copie corrigée,
+            ou un triangle si la copie est corrigée mais pas affichée.
         </li>
         <li>
-            La couleur de l'étudiant indique :
+            Le carré autour de l'étudiant indique :
             <ul>
-                <li> Gris : surveillé par un autre enseignant.</li>
-                <li> Noir : travaille avec vous.</li>
-                <li> Bleu : n'a rien fait depuis 5 minutes.</li>
+                <li> Noir → Gris → Blanc : Temps d'inactivité de l'étudiant. Noir = Actif</li>
                 <li> Vert : examen clôturé</li>
                 <li> Rouge : Placé dans la mauvaise salle.</li>
+                <li> Trait épais : placé par vous.</li>
             </ul>
         </li>
     </ul>
@@ -1152,21 +1150,20 @@ System calls allowable for g++/gcc:
     <h3>Surveillant : administrer la session, regarder le code.</h3>
     <img src="screen-spy.svg" class="screenshot">
     <p>
-        Quand on clique sur un étudiant on peut accéder à la dernière
-        version de son travail.
-        On peut utiliser un ascenseur temporel pour voir l'évolution
-        de ce qu'il a fait.
-        Le déplacement dans le temps est instantané.
-        Les zones rouges indiquent les moments où le focus a été perdu.
+        On peut voir ce qu'il y a sur l'écran de l'étudiant de deux façons :
     </p>
     <ul>
-        <li> Traits noirs : les compilations.
-        <li> Traits bleus : les sauvegardes faites par l'étudiant.
-        <li> Traits verts : les questions réussies (avec le numéro de la question).
+        <li>
+            Quand on clique sur un étudiant on peut «Espionner l'écran en temps réel»
+            On peut espionner plusieurs écran et même toute la
+            salle en utilisant le menu <span style="font-family:emoji">📝</span>.
+        </li>
+        <li>
+            On peut utiliser peut aussi utiliser «Naviguer dans le temps»
+            qui affiche un ascenseur temporel pour voir l'évolution
+            de ce que des étudiants on fait seconde par seconde.
+        </li>
     </ul>
-    <p>
-        Le code source s'affiche alors au dessous de la barre d'ascenseur.
-    </p>
     <p>
         Le bouton «Clôturer examen» doit être utilisé quand il quitte
         la salle afin qu'il ne puisse pas continuer l'examen à l'extérieur.
@@ -1182,52 +1179,42 @@ System calls allowable for g++/gcc:
         qui n'apparaît pas ici.
     </p>
     <p>
-        Ont ferme la popup en cliquant sur × ou bien en appuyant
-        sur la touche escape.
-    </p>
-    <p>
         Le bouton «Noter l'étudiant» permet de noter
         et commenter le source de l'étudiant.
     </p>
 
     <h3>Correcteur : notes, commentaires et retours.</h3>
     <p>
-        Il clique sur l'étudiant placé et arrive sur l'éditeur C5
-        avec le barème de notation affiché.
-        Il n'a plus qu'à cliquer pour mettre les notes qui
+        Il clique sur l'étudiant placé et choisit «Noter l'étudiant».
+        On arrive sur l'éditeur C5 avec le barème de notation affiché.
+    </p>
+    <p>
+        Avant de corriger il doit choisir la version qu'il veut corriger,
+        par défaut c'est la version qui était sur l'écran
+        de l'étudiant à la fin de la session.
+        Mais le correcteur peut par exemple revenir
+        sur la dernière version qui compilait
+        ou bien la dernière version sauvegardée pour corriger.
+    </p>
+    <p>
+        Il suffit de cliquer pour mettre les notes qui
         sont immédiatement enregistrées.
         Si 2 enseignants notent en même temps le même étudiant,
         ils perdent une seule note dans le pire cas.
     </p>
     <p>
-        Le correcteur peut ajouter des remarques aux lignes
-        dans les petits carrés à droite du code source.
+        Le correcteur peut ajouter des remarques en sélectionnant
+        la partie du code source qu'il veut commenter.
+        Il peut ensuite taper le commentaire, le déplacer,
+        changer sa taille ou bien le détruire.
     </p>
     <img src="screen-grade.svg" class="screenshot">
     <p>
         Le correcteur peut essayer le code de l'étudiant pour le tester
         et même le modifier temporairement pour voir ce que cela donne.
+        Mais pour faire cela il faut quitter le mode 'Commenter'
+        et passer en 'Bidouiller'.
     </p>
-    <p>
-        Lors de la correction le correcteur est automatiquement
-        positionné sur la <b>dernière version connue</b> du code source.
-        Le correcteur peut décider de corriger autre chose que
-        cette dernière version connue en choisissant dans un menu déroulant.
-        La dernière version connue est la plus récente
-        parmi les suivantes :
-    </p>
-    <ul>
-        <li> La dernière version enregistrée par l'étudiant.</li>
-        <li> La dernière compilation faite, mais seulement
-            si c'est un session avec le compilateur REMOTE.</li>
-        <li> La version qui a passé les tests de régression la première fois,
-            sans les améliorations que l'étudiant aurait pu ajouter après.
-        </li>
-        <li> La sauvegarde de dernière seconde qui est faite automatiquement
-            par C5 10 secondes avant la fin de l'examen si l'étudiant
-            n'a pas sauvegardé lui-même la minute précédente.
-        </li>
-    </ul>
     <p>
         Une fois la correction faite, il indique ce qu'il veut diffuser à l'étudiant.
     </p>
@@ -1245,8 +1232,10 @@ System calls allowable for g++/gcc:
         d'information.
     </p>
     <p>
-        Sur la plan, un <span style="font-family:emoji">👁</span> indique les informations dont la diffusion
-        est autorisé par le correcteur.
+        Sur la plan, un triangle vert en bas à droite indique que c'est corrigé
+        et un carré indiqué que c'est corrigé et diffusé à l'étudiant.
+        Le <span style="font-family:emoji">📝</span> permet d'avoir
+        un résumé des notes de tous les étudiants.
     </p>
     <p>
         <span style="font-family:emoji">✉</span> permet d'ouvrir la messagerie
