@@ -43,10 +43,12 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                 self.nr_warnings = 0
                 self.run_after_compile()
                 message = data[1]
-                if 'Bravo, il' not in message:
-                    message = '<error>' + self.escape(message) + '</error>'
-                else:
+                if 'Bravo, il' in message:
                     message = self.escape(message)
+                else:
+                    nr_errors = len(message.split(': error: ')) - 1
+                    nr_warnings = len(message.split(': warning: ')) - 1
+                    message = '<error ' + nr_errors + ' ' + nr_warnings + '>' + self.escape(message) + '</error>'
                 self.post('compiler', message)
                 for line in data[1].split('\n'):
                     line = line.split(':')

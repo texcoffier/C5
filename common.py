@@ -171,7 +171,7 @@ class Grades:
 #    'F'             # Focus
 #    'B'             # Blur
 #    'S<name>'       # Student saved the source
-#    'c<error>'      # 0 if compiled without error message
+#    'c<error>'      # error = 100 * #errors + #warnings
 #    't<tag>'        # Add a tag
 #    'g'             # Question passed (good)
 #    'b<description> # A bubble comment
@@ -1513,12 +1513,9 @@ def create_shared_worker(login='', hook=None):
         """Goto in the past"""
         shared_worker.post('G' + index)
     shared_worker.goto = shared_worker_goto
-    def shared_worker_compile(error):
+    def shared_worker_compile(nr_errors, nr_warnings):
         """Record a compilation result"""
-        if error:
-            shared_worker.post('c1')
-        else:
-            shared_worker.post('c0')
+        shared_worker.post('c' + (100*nr_errors + nr_warnings))
     shared_worker.compile = shared_worker_compile
     def shared_worker_good():
         """Goto in the past"""

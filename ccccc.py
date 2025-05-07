@@ -191,7 +191,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     to_complete = ''
     last_scroll = 0 # Last scroll position sent to journal in seconds
     old_scroll_top = 0
-    user_compilation = False
+    user_compilation = user_execution = False
     journal_question = None
     old_delta = None
     eval_error_recorded = False
@@ -1719,7 +1719,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             return
         elif event.key == 'F9':
             if self.options['automatic_compilation'] == 0: # pylint: disable=singleton-comparison
-                self.user_compilation = True
+                self.user_compilation = self.user_execution = True
                 self.compilation_run()
             elif self.options['automatic_compilation']:
                 document.getElementById('automatic_compilation').className = 'unchecked'
@@ -2256,9 +2256,26 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self[what].style.background = '#FAA' # pylint: disable=unsubscriptable-object
             else:
                 self[what].style.background = self[what].background # pylint: disable=unsubscriptable-object
-            if what == 'compiler' and '<h2>' not in value and not JOURNAL.pending_goto and self.user_compilation:
+            if (what == 'compiler'
+                    and '<h2>' not in value
+                    and not JOURNAL.pending_goto
+                    and self.user_compilation
+                    and self.options['compiler'] != 'racket'
+                    ):
+                self.user_execution = True
                 self.user_compilation = False
-                SHARED_WORKER.compile('<error' in value)
+                error = value.split('<error')
+                if len(error) == 2:
+                    error = error[1].split('>')[0].split(' ')
+                    if len(error) == 3: # <error 1 4> for example
+                        nr_errors = int(error[1])
+                        nr_warnings = int(error[2])
+                    else:
+                        nr_errors = 0
+                        nr_warnings = 1
+                else:
+                    nr_errors = nr_warnings = 0
+                SHARED_WORKER.compile(nr_errors, nr_warnings)
                 self.tree_canvas() # Here because scheduler do not call coloring
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
             if what == 'question' and self.journal_question:
@@ -2398,6 +2415,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 '<i style="opacity:0.3">$1</i><br><b>$2</b><br><i style="opacity:0.3">$3</i>')
         if text == ['', 'Fini !']:
             span.style.marginTop = '1em'
+            if self.user_execution:
+                self.user_execution = False
+                nr_errors = len(self.executor.textContent.split('struct:exn:fail:')) - 1
+                SHARED_WORKER.compile(nr_errors, 0)
+                self.tree_canvas()
         span.onmouseenter = highlight
         span.onmouseleave = unhighlight
         self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
