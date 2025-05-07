@@ -1009,11 +1009,11 @@ return sum ;
             self.check('#start').send_keys('2000-01-01 00:00:00')
             self.click('#stop')
             self.control('a')
-            duration = 3
+            duration = 10
             stop = time.localtime(time.time() + duration)
             self.check('#stop').send_keys(time.strftime('%Y-%m-%d %H:%M:%S', stop))
             self.click('#start')
-            time.sleep(0.1)
+            time.sleep(0.2)
 
             self.ticket = student
             self.goto('=REMOTE=test')
