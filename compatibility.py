@@ -21,10 +21,10 @@ def dict_items():
     """Dict items"""
     THIS = eval('this') # pylint: disable=eval-used
     return [[i, THIS[i]] for i in THIS] # pylint: disable=undefined-variable
+DIGITS = RegExp('^[0-9]+$')
 def isdigit():
-    """Not compatible with Python"""
-    THIS = eval('this')
-    return not isNaN(THIS)
+    """Compatible with Python"""
+    return eval('this').match(DIGITS)
 Object.defineProperty(Object.prototype, 'Items',
                       {'enumerable': False, 'value': dict_items})
 Object.defineProperty(String.prototype, 'lower',
