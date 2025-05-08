@@ -1999,7 +1999,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             for grade in Grades(NOTATION).content:
                 for line in grade.text_before.split('\r\n'):
                     line = line.trimEnd()
-                    line_clean = line.replace('▶', '')
+                    line_clean = line.replace('▶', '').trimEnd()
                     if (len(line) <= 5 # Too short line
                             or use_triangle and '▶' not in line # ▶ is required
                             or line_clean not in self.source # Not in source
@@ -2008,7 +2008,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                         line = '<span>' + html(line) + '</span>'
                     else:
                         line = '''<span
-                            onclick="ccccc.goto_source_line(this.textContent.replace('▶', ''))"
+                            onclick="ccccc.goto_source_line(this.textContent.replace('▶', '').trimEnd())"
                             class="link">''' + html(line) + "</span>"
                     content.append(line)
                     content.append('\n')
