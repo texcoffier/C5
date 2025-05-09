@@ -1028,7 +1028,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         def textarea_size(event):
             return [
                 (event.target.offsetWidth / self.char_width).toFixed(2),
-                (event.target.offsetHeight / self.line_height).toFixed(2)
+                ((event.target.offsetHeight + event.target.previousSibling.offsetHeight)
+                 / self.line_height).toFixed(2)
                 ]
 
         def textarea_mouse_up(event):
