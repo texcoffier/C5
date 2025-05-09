@@ -737,8 +737,20 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
             ctx.globalAlpha = 1
             ctx.fillStyle = "#000"
-            ctx.fillText(student.firstname, x_pos, y_pos - char_size.fontBoundingBoxDescent)
-            ctx.fillText(student.surname, x_pos, y_pos + line_height - char_size.fontBoundingBoxDescent)
+            y_pos = y_pos - char_size.fontBoundingBoxDescent
+            if student.login in OPTIONS['tt']:
+                bonus = '⅓'
+            else:
+                bonus = ''
+            if student.bonus_time:
+                bonus += '+' + (student.bonus_time//60) + 'm'
+            if bonus:
+                y_pos -= line_height / 2
+                ctx.fillText(bonus, x_pos, y_pos)
+                y_pos += line_height
+            ctx.fillText(student.firstname, x_pos, y_pos)
+            y_pos += line_height
+            ctx.fillText(student.surname, x_pos, y_pos)
 
     def draw_map(self, ctx, canvas): # pylint: disable=too-many-locals
         """Draw the character map"""
