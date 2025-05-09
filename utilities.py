@@ -487,6 +487,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if self.state == 'Draft' and not self.is_admin(login):
             return 'draft'
         if self.state != 'Ready' and not self.is_grader(login):
+            active_teacher_room = self.active_teacher_room.get(login, None)
+            if not active_teacher_room:
+                return 'nothing'
+            if self.checkpoint and active_teacher_room.teacher == '':
+                # Not placed
+                return 'checkpoint'
             return 'done'
         now = int(time.time())
         if not login: # For adm home
