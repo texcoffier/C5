@@ -1998,17 +1998,17 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.nr_grades = 0
             for grade in Grades(NOTATION).content:
                 for line in grade.text_before.split('\r\n'):
-                    line = line.trimEnd()
-                    line_clean = line.replace('▶', '').trimEnd()
+                    line_clean = line.replace('▶', '').strip()
                     if (len(line) <= 5 # Too short line
                             or use_triangle and '▶' not in line # ▶ is required
                             or line_clean not in self.source # Not in source
-                            or len(self.source.split('\n' + line_clean + '\n')) != 2 # Duplicate line
+                            or len(self.source.split(RegExp(
+                                '\n *' + protect_regexp(line_clean) + ' *\n'))) != 2 # Duplicate line
                             ):
                         line = '<span>' + html(line) + '</span>'
                     else:
                         line = '''<span
-                            onclick="ccccc.goto_source_line(this.textContent.replace('▶', '').trimEnd())"
+                            onclick="ccccc.goto_source_line(this.textContent.replace('▶', '').strip())"
                             class="link">''' + html(line) + "</span>"
                     content.append(line)
                     content.append('\n')
@@ -2326,7 +2326,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         element = self.editor_lines[target_line]
         if not element:
             for element in self.editor_lines:
-                if (element.nodeValue or element.textContent) == target_line:
+                if (element.nodeValue or element.textContent).strip() == target_line:
                     break
         self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
 
