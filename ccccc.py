@@ -2318,6 +2318,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.worker.postMessage(['goto', index])
 
     def get_element_box(self, element):
+        if element.offsetWidth == 0:
+            return {'top': element.offsetTop, 'left': element.offsetLeft,
+                    'width': element.offsetWidth, 'height': element.offsetHeight}
         self.meter.setStart(element, 0)
         self.meter.setEnd(element, 0)
         return self.get_rect(self.meter)
