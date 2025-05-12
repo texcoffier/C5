@@ -695,9 +695,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             height = y_size - 2*ctx.lineWidth
 
             # Draw focus lost time
-            if student.blur_time > 2: # student.blur contains the number of blur
+            if student.blur_time: # student.blur contains the number of blur
                 ctx.fillStyle = "#F44"
-                ctx.fillRect(left, top, min(2*width, student.blur_time), height/2)
+                ctx.fillRect(left, top, min(2*width, student.blur_time*self.scale/20), height/2)
 
             # Draw question done correctly
             if student.nr_questions_done and max_question_done:
