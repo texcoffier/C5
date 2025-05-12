@@ -609,7 +609,7 @@ def init():
     div.onchange = onchange
     title = html(COURSE)
     if title.startswith('^'):
-        title = '<span style="background: #F00; color: #FFF">' + title + ' (session set)</span>'
+        document.body.className = 'multiple'
     div.innerHTML = ('<h1 style="display: flex"><span>' + title + """</span>
      <div id="server_feedback">Problems and server feedbacks will be written here.</div>
     </h1>
@@ -618,16 +618,16 @@ def init():
     <div id="tabs" onclick="select_tab(event.target.id)">
     <div id="Config">Config</div>
     <div id="Access">Access</div>
-    <div id="Edit">Source</div>
-    <div id="Media">Media</div>
-    <div id="Try A">Try A</div>
-    <div id="Try B">Try B</div>
-    <div id="Place">Place</div>
-    <div id="Chat">Chat</div>
-    <div id="Students">Students</div>
-    <div id="Grading">Grading</div>
-    <div id="Results">Export/Stats</div>
-    <div id="History">History</div>
+    <div id="Edit" class="single">Source</div>
+    <div id="Media" class="single">Media</div>
+    <div id="Try A" class="single">Try A</div>
+    <div id="Try B" class="single">Try B</div>
+    <div id="Place" class="single">Place</div>
+    <div id="Chat" class="single">Chat</div>
+    <div id="Students" class="single">Students</div>
+    <div id="Grading" class="single">Grading</div>
+    <div id="Results" class="single">Export/Stats</div>
+    <div id="History" class="single">History</div>
     <div id="Manage">Manage</div>
      <select onchange="select_action(this)" style="vertical-align: top;">
     <option>Actions</option>

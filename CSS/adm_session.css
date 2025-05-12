@@ -25,6 +25,11 @@ BODY * {
     box-sizing: border-box;
 }
 
+BODY.multiple DIV.single {
+    pointer-events: none;
+    opacity: 0.2;
+}
+
 #server_feedback {
     display: block;
     height: 3em;
