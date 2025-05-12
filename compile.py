@@ -257,7 +257,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                         + self.options['executor_title_button'] + '</label>')
         else:
             more = ''
-        more += '<span ondblclick="ccccc.send_mail()" style="float:right; background: #CCF; margin-right: 0.3em;">'
+        more += '<span class="fnsn" ondblclick="ccccc.send_mail()">'
         if self.options['GRADING']:
             more += (
             '<a style="font-family:emoji;text-decoration:none" href="mailto:'
@@ -274,7 +274,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             + more
             + '<tt class="truncate_sn">' + self.options['INFOS']['sn'].upper() + '</tt>'
             + ' '
-            + '<tt class="truncate_fn">' + self.options['INFOS']['fn'].lower() + '</tt>'
+            + '<tt class="truncate_fn">' + self.options['INFOS']['fn'].title() + '</tt>'
             + "</span></h2>")
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""

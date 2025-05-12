@@ -35,6 +35,26 @@ Object.defineProperty(String.prototype, 'isdigit',
                       {'enumerable': False, 'value': isdigit})
 String.prototype.strip = String.prototype.trim
 
+def title():
+    """Nearly compatible with Python"""
+    uppercased = ''
+    first = True
+    for i in eval('this'):
+        lower = i.lower()
+        upper = i.upper()
+        if lower == upper:
+            # Not alphabetic
+            first = True
+            uppercased += i
+        elif first:
+            uppercased += upper
+            first = False
+        else:
+            uppercased += lower
+    return uppercased
+Object.defineProperty(String.prototype, 'title',
+                      {'enumerable': False, 'value': title})
+
 def rjust(nr):
     """Compatible with Python"""
     THIS = eval('this')

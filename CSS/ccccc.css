@@ -638,18 +638,27 @@ H2:hover .timer SPAN DIV {
     font-size: 100%
 }
 
+.fnsn {
+    float:right;
+    background: #CCF;
+    margin-right: 0.3em;
+    display: inline-block;
+    max-height: 1.7vw;
+    margin-top: -0.3vw;
+    overflow: hidden;
+    word-break: break-word;
+}
+.fnsn:hover {
+    max-height: initial;
+}
+
 .truncate_sn,
 .truncate_fn {
     display: inline-block;
     max-width: 6vw;
-    height: 1vw;
+    height: 100%;
     overflow: hidden;
     vertical-align: top;
-}
-
-SPAN:hover .truncate_sn,
-SPAN:hover .truncate_fn {
-    height: auto;
 }
 
 LABEL,
