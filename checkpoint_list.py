@@ -6,6 +6,8 @@ class INTERFACE:
     filter = None            # The filter value
     filter_element = None    # The INPUT containing the filter
     nr_sessions_filtered = 0 # Number of sessions displayed on screen
+    titles = None            # Column title (init from HTML content)
+    visible_columns = []      # Titles of the columns to hide (init from localStorage)
 
 def edit():
     """Launch editor on a set of session"""
@@ -186,7 +188,7 @@ def init_interface(nr_doing_grading):
         columns = None
     if not columns:
         columns = '["Title","Students","Start date","Duration","Options","Edit","👁","Waiting Room"]'
-    INTERFACE.columns = JSON.parse(columns)
+    INTERFACE.visible_columns = [clean_title(title) for title in JSON.parse(columns)]
     if url.indexOf('/*/') != -1:
         INTERFACE.filter = decodeURIComponent(url.replace(RegExp('.*/'), '').split('?')[0])
     if not INTERFACE.filter or INTERFACE.filter == '':
@@ -210,27 +212,7 @@ def init_interface(nr_doing_grading):
 <div style="float: right">
 <span id="nr_doing_grading"></span> active graders</span>,
 <span id="nr_actives"></span> active students</span>
-</div>
-<div id="column_toggles"
-     style="font-size:80%;white-space:nowrap"
-     onclick="column_toggle(event)">Columns:'''
-        )
-    for i, header in enumerate(['☑', 'Compiler', 'Title', 'Students', 'Waiting', 'Actives', 'With me',
-                   'Start date', 'Stop date', 'Duration', 'Options', 'Edit', '👁', 'Waiting Room',
-                   'Creator', 'Admins', 'Graders', 'Proctors', 'Media']):
-        if header in INTERFACE.columns:
-            checked = '0'
-        else:
-            checked = '1'
-        top.append('<span index="' + (i+2) + '" checked="'
-                   + checked + '">' + header + '</span>')
-        top.append(' ')
-    top.pop()
-
-    top.append('''
-        </div>
-        ''')
-
+</div>''')
     document.getElementById('header').innerHTML = ''.join(top)
 
     update(INTERFACE.filter)
@@ -239,27 +221,37 @@ def init_interface(nr_doing_grading):
         INTERFACE.filter_element.value = INTERFACE.filter
     INTERFACE.filter_menu = document.getElementById('filter_menu')
     init_filters(INTERFACE.filter_element.value)
+
+    for tr in document.getElementsByTagName('TR'):
+        if tr.className == 'sticky2':
+            INTERFACE.titles = [clean_title(th.textContent) for th in tr.cells]
+            break
+
     update_body_class()
+
+def clean_title(txt):
+    return txt.replace(RegExp('[  \n]*', 'g'), '').lower().replace('waitingroom', 'waitroom')
 
 def column_toggle(event):
     """Show Hide column"""
     span = event.target
-    if span.tagName != 'SPAN':
+    if span.parentNode.tagName != 'TH' and span.tagName != 'TH':
         return
-    checked = int(span.getAttribute('checked'))
-    span.setAttribute('checked', 1 - checked)
-    column = span.textContent
+    column = clean_title(span.textContent)
+    if column == 'Session':
+        return
+    checked = column not in INTERFACE.visible_columns
     if checked:
-        INTERFACE.columns.append(column)
+        INTERFACE.visible_columns.append(column)
     else:
-        INTERFACE.columns = [i for i in INTERFACE.columns if i != column]
+        INTERFACE.visible_columns = [i for i in INTERFACE.visible_columns if i != column]
     update_body_class()
-    localStorage['columns'] = JSON.stringify(INTERFACE.columns)
+    localStorage['columns'] = JSON.stringify(INTERFACE.visible_columns)
 
 def update_body_class():
     """To hide columns"""
     hidden = []
-    for col in document.getElementById('column_toggles').getElementsByTagName('SPAN'):
-        if col.getAttribute('checked') == '1':
-            hidden.append('hide' + col.getAttribute('index'))
+    for i, title in enumerate(INTERFACE.titles):
+        if i and title not in INTERFACE.visible_columns:
+            hidden.append('hide' + (i+1))
     document.body.className = ' '.join(hidden)

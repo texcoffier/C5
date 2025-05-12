@@ -11,15 +11,13 @@ TABLE {
 TABLE TD,
 TABLE TH {
     border: 2px solid #DDD;
+}
+TABLE TD {
     padding: 2px
 }
 
 TABLE TD.course DIV {
     width: 13em;
-}
-
-TABLE TD.compiler DIV {
-    width: 3em;
 }
 
 TABLE TD.title DIV {
@@ -138,12 +136,12 @@ BUTTON {
 
 .sticky {
     position: sticky;
-    top: 2.8em;
+    top: 1.5em;
 }
 
 .sticky2 {
     position: sticky;
-    top: 4.2em;
+    top: 2.9em;
 }
 
 #filter {
@@ -170,25 +168,114 @@ BUTTON {
 #column_toggles SPAN[checked="1"] { background: #FFF }
 #column_toggles SPAN[checked="0"] { background: #DDF }
 
-BODY.hide1 TR > *:nth-child(1),
-BODY.hide2 TR > *:nth-child(2),
-BODY.hide3 TR > *:nth-child(3),
-BODY.hide4 TR > *:nth-child(4),
-BODY.hide5 TR > *:nth-child(5),
-BODY.hide6 TR > *:nth-child(6),
-BODY.hide7 TR > *:nth-child(7),
-BODY.hide8 TR > *:nth-child(8),
-BODY.hide9 TR > *:nth-child(9),
-BODY.hide10 TR > *:nth-child(10),
-BODY.hide11 TR > *:nth-child(11),
-BODY.hide12 TR > *:nth-child(12),
-BODY.hide13 TR > *:nth-child(13),
-BODY.hide14 TR > *:nth-child(14),
-BODY.hide15 TR > *:nth-child(15),
-BODY.hide16 TR > *:nth-child(16),
-BODY.hide17 TR > *:nth-child(17),
-BODY.hide18 TR > *:nth-child(18),
-BODY.hide19 TR > *:nth-child(19),
-BODY.hide20 TR > *:nth-child(20)
-BODY.hide21 TR > *:nth-child(21)
-{ display: none }
+TR > TH:nTR > TH:nth-child(5) DIV {
+    max-width: 2em;
+    word-break: break-word;
+}
+h-child(3) DIV {
+    max-width: 3.5em;
+    word-break: break-word;
+}
+TR > TH:nth-child(5) DIV {
+    max-width: 2em;
+    word-break: break-word;
+}
+TR > TH:nth-child(6) DIV {
+    max-width: 2em;
+    word-break: break-word;
+}
+TR > TH:nth-child(7) DIV {
+    max-width: 2em;
+    word-break: break-word;
+}
+TR > TH:nth-child(8) DIV {
+    max-width: 2em;
+    word-break: break-word;
+}
+TR > TH:nth-child(15) DIV {
+    max-width: 3em;
+}
+
+
+BODY.hide1 TR > TH:nth-child(1),
+BODY.hide2 TR > TH:nth-child(2),
+BODY.hide3 TR > TH:nth-child(3),
+BODY.hide4 TR > TH:nth-child(4),
+BODY.hide5 TR > TH:nth-child(5),
+BODY.hide6 TR > TH:nth-child(6),
+BODY.hide7 TR > TH:nth-child(7),
+BODY.hide8 TR > TH:nth-child(8),
+BODY.hide9 TR > TH:nth-child(9),
+BODY.hide10 TR > TH:nth-child(10),
+BODY.hide11 TR > TH:nth-child(11),
+BODY.hide12 TR > TH:nth-child(12),
+BODY.hide13 TR > TH:nth-child(13),
+BODY.hide14 TR > TH:nth-child(14),
+BODY.hide15 TR > TH:nth-child(15),
+BODY.hide16 TR > TH:nth-child(16),
+BODY.hide17 TR > TH:nth-child(17),
+BODY.hide18 TR > TH:nth-child(18),
+BODY.hide19 TR > TH:nth-child(19),
+BODY.hide20 TR > TH:nth-child(20),
+BODY.hide21 TR > TH:nth-child(21)
+{
+    font-size: 10px;
+    writing-mode: sideways-lr;
+}
+
+BODY.hide1 TR > TD:nth-child(1) DIV,
+BODY.hide2 TR > TD:nth-child(2) DIV,
+BODY.hide3 TR > TD:nth-child(3) DIV,
+BODY.hide4 TR > TD:nth-child(4) DIV,
+BODY.hide5 TR > TD:nth-child(5) DIV,
+BODY.hide6 TR > TD:nth-child(6) DIV,
+BODY.hide7 TR > TD:nth-child(7) DIV,
+BODY.hide8 TR > TD:nth-child(8) DIV,
+BODY.hide9 TR > TD:nth-child(9) DIV,
+BODY.hide10 TR > TD:nth-child(10) DIV,
+BODY.hide11 TR > TD:nth-child(11) DIV,
+BODY.hide12 TR > TD:nth-child(12) DIV,
+BODY.hide13 TR > TD:nth-child(13) DIV,
+BODY.hide14 TR > TD:nth-child(14) DIV,
+BODY.hide15 TR > TD:nth-child(15) DIV,
+BODY.hide16 TR > TD:nth-child(16) DIV,
+BODY.hide17 TR > TD:nth-child(17) DIV,
+BODY.hide18 TR > TD:nth-child(18) DIV,
+BODY.hide19 TR > TD:nth-child(19) DIV,
+BODY.hide20 TR > TD:nth-child(20) DIV,
+BODY.hide21 TR > TD:nth-child(21) DIV
+{
+    height: 20px;
+    width: 10px;
+    font-size: 8px;
+    overflow: hidden;
+    writing-mode: sideways-lr;
+}
+
+BODY.hide1 TR > TD.tipped:nth-child(1):hover DIV,
+BODY.hide2 TR > TD.tipped:nth-child(2):hover DIV,
+BODY.hide3 TR > TD.tipped:nth-child(3):hover DIV,
+BODY.hide4 TR > TD.tipped:nth-child(4):hover DIV,
+BODY.hide5 TR > TD.tipped:nth-child(5):hover DIV,
+BODY.hide6 TR > TD.tipped:nth-child(6):hover DIV,
+BODY.hide7 TR > TD.tipped:nth-child(7):hover DIV,
+BODY.hide8 TR > TD.tipped:nth-child(8):hover DIV,
+BODY.hide9 TR > TD.tipped:nth-child(9):hover DIV,
+BODY.hide10 TR > TD.tipped:nth-child(10):hover DIV,
+BODY.hide11 TR > TD.tipped:nth-child(11):hover DIV,
+BODY.hide12 TR > TD.tipped:nth-child(12):hover DIV,
+BODY.hide13 TR > TD.tipped:nth-child(13):hover DIV,
+BODY.hide14 TR > TD.tipped:nth-child(14):hover DIV,
+BODY.hide15 TR > TD.tipped:nth-child(15):hover DIV,
+BODY.hide16 TR > TD.tipped:nth-child(16):hover DIV,
+BODY.hide17 TR > TD.tipped:nth-child(17):hover DIV,
+BODY.hide18 TR > TD.tipped:nth-child(18):hover DIV,
+BODY.hide19 TR > TD.tipped:nth-child(19):hover DIV,
+BODY.hide20 TR > TD.tipped:nth-child(20):hover DIV,
+BODY.hide21 TR > TD.tipped:nth-child(21):hover DIV
+{
+    font-size: 100%;
+    writing-mode: lr;
+    height: auto;
+    width: auto;
+}

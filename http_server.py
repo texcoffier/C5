@@ -1364,27 +1364,27 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
     <td><input type="checkbox">
     <td class="clipped compiler"><div>{course.course.split('=')[0].title()}</div>
     <td class="clipped title"><div>{html.escape(course.title)}</div>
-    <td>{len(course.active_teacher_room) or ''}
-    <td>{len(waiting) if course.checkpoint else ''}
-    <td><b>{course.number_of_active_students() or ''}</b>
-    <td>{len(with_me) or ''}
-    <td style="white-space: nowrap">{course.start if course.start > "2001" else ""}
-    <td style="white-space: nowrap">{course.stop if course.stop < "2100" else ""}
-    <td style="white-space: nowrap">{nice_duration(course.stop_timestamp - course.start_timestamp)}
-    <td style="white-space: nowrap; background:{course.config['highlight']}">{bools}
-    <td> {
+    <td><div>{len(course.active_teacher_room) or ''}</div>
+    <td><div>{len(waiting) if course.checkpoint else ''}</div>
+    <td><div><b>{course.number_of_active_students() or ''}</b></div>
+    <td><div>{len(with_me) or ''}</div>
+    <td style="white-space: nowrap"><div>{course.start if course.start > "2001" else ""}</div>
+    <td style="white-space: nowrap"><div>{course.stop if course.stop < "2100" else ""}</div>
+    <td style="white-space: nowrap"><div>{nice_duration(course.stop_timestamp - course.start_timestamp)}</div>
+    <td style="white-space: nowrap; background:{course.config['highlight']}"><div>{bools}</div>
+    <td><div>{
         f'<a target="_blank" href="adm/session/{course.course}?ticket={session.ticket}">Edit</a>'
         if session.is_admin(course) else ''
-    }
-    <td> {
+    }</div>
+    <td><div>{
         f'<a target="_blank" href="={course.course}?ticket={session.ticket}">{run}</a>'
         if course.status('').startswith('running') or session.is_grader(course)
         else ''
-    }
-    <td> {
+    }</div>
+    <td><div>{
         f'<a target="_blank" href="checkpoint/{course.course}?ticket={session.ticket}">Place</a>'
         if session.is_proctor(course) else ''
-    }
+    }</div>
     <td class="clipped names"><div>{course.creator}</div>
     {tipped(course.config['admins'])}
     {tipped(course.config['graders'])}
@@ -1405,11 +1405,11 @@ def checkpoint_table(session:Session, courses:List[CourseConfig],
 async def checkpoint_list(request:Request) -> Response:
     """Page with all checkpoints"""
     session = await Session.get_or_fail(request)
-    titles = '''<tr class="sticky2"><th>Session<th>☑<th>Comp<br>iler
-        <th>Title
-        <th>Stud<br>ents<th>Wait<br>ing<th>Act<br>ives<th>With<br>me
-        <th>Start date<th>Stop date<th>Duration<th>Options<th>Edit<th>👁<th>Waiting<br>Room
-        <th>Creator<th>Admins<th>Graders<th>Proctors<th>Media</tr>'''
+    titles = '''<tr class="sticky2" onclick="column_toggle(event)"></div><th><div>Session</div><th><div>☑</div><th><div>Compiler
+        </div><th><div>Title
+        </div><th><div>Students</div><th><div>Waiting</div><th><div>Actives</div><th><div>With me
+        </div><th><div>Start date</div><th><div>Stop date</div><th><div>Duration</div><th><div>Options</div><th><div>Edit</div><th><div>👁</div><th><div>Wait room
+        </div><th><div>Creator</div><th><div>Admins</div><th><div>Graders</div><th><div>Proctors</div><th><div>Media</tr>'''
     content = [
         session.header(),
         f'''
