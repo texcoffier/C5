@@ -965,17 +965,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
             if column_stop < 0:
                 column_stop = len(line.textContent)
             self.meter.setEnd(line, column_stop)
-            rect = self.get_rect(self.meter)
-            marker = document.createElement('DIV')
-            marker.className = 'bubble_target'
-            marker.style.left = 'calc(' + rect['left'] + 'px - var(--target_feedback_width))'
-            marker.style.top = rect['top'] + 'px'
-            marker.style.width = rect['width'] + 'px'
-            marker.style.height = 'calc(' + rect['height'] + 'px - var(--target_feedback_width))'
-            # marker.onmouseenter = enter_bubble # Does not works: event not received
-            marker.bubble = bubble_elm
-            self.comments.appendChild(marker)
-            return marker.offsetLeft, marker.offsetTop
+            for rect in self.meter.getClientRects():
+                top = self.get_layer_y(rect['top'])
+                left = self.get_layer_x(rect['left'])
+                marker = document.createElement('DIV')
+                marker.className = 'bubble_target'
+                marker.style.left = 'calc(' + left + 'px - var(--target_feedback_width))'
+                marker.style.top = top + 'px'
+                marker.style.width = rect['width'] + 'px'
+                marker.style.height = 'calc(' + rect['height'] + 'px - var(--target_feedback_width))'
+                # marker.onmouseenter = enter_bubble # Does not works: event not received
+                marker.bubble = bubble_elm
+                self.comments.appendChild(marker)
 
         def bubble_move(event):
             if event.target.tagName == 'SPAN':
