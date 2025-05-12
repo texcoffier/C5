@@ -16,7 +16,7 @@ def bind(fct, _obj):
 try:
     Object # pylint: disable=pointless-statement
     def protect_regexp(txt):
-        return txt.replace(RegExp('([.*+?[(\\\\$^])', 'g'), '\\$1')
+        return txt.replace(RegExp('([.*+?[()\\\\$^])', 'g'), '\\$1')
     def replace_all(txt, regexp, value):
         return txt.replace(RegExp(protect_regexp(regexp), "g"), value)
     PYTHON = False
