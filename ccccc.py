@@ -1830,6 +1830,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.goto_line(index)
             self.set_editor_content(self.question_original[self.current_question])
             return
+        if choosen == "Dernière version":
+            if JOURNAL.pending_goto:
+                self.goto_line(len(JOURNAL.lines)-1)
+            else:
+                self.popup_message("Bug: Dernière Version. Utilisez l'arbre pour la retrouver.")
+            return
         if choosen == "Version initiale":
             choosen = ''
         for tag, index in self.journal_question.tags:
@@ -1844,6 +1850,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         if self.save_history == document.activeElement:
             return
         content = ['<option selected>Retourner sur</option>']
+        if JOURNAL.pending_goto and not JOURNAL.lines[-2].startswith('t'):
+            content.append('<option>' + 'Dernière version' + '</option>')
         for tag in self.journal_question.tags[::-1]:
             content.append('<option>' + (html(tag[0] or "Version initiale")) + '</option>')
         original = self.question_original[self.current_question].strip() 
