@@ -128,6 +128,12 @@ def nice_date(seconds, sec=False):
             + (sec and ':' + two_digit(js_date.getSeconds()) or '')
            )
 
+def hhmmss(seconds):
+    """Returns a string from seconds"""
+    js_date = Date()
+    js_date.setTime(seconds*1000)
+    return two_digit(js_date.getHours()) + ':' + two_digit(js_date.getMinutes()) + ':' + two_digit(js_date.getSeconds()) 
+
 def strptime(yyyymmddhhmmss):
     """Parse start/stop date"""
     js_date = Date(

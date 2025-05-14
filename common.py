@@ -910,7 +910,13 @@ class Journal:
                     ctx.lineWidth = zoom
                 if line.last_x == 0 and line.parent_line:
                     start_x = positions[line.index_start]
-                    ctx.lineWidth = 1
+                    if action[0] == '✍':
+                        ctx.font = font_size + "px sans"
+                        ctx.fillText(hhmmss(self.timestamps[line.index_start]),
+                            start_x + 1, y - size/2 - 3)
+                        ctx.lineWidth = 3
+                    else:
+                        ctx.lineWidth = 1
                     ctx.strokeStyle = '#000'
                     ctx.beginPath()
                     ctx.moveTo(start_x, line.parent_line.y - zoom)
