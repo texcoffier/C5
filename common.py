@@ -707,6 +707,10 @@ class Journal:
                 nb_d = 0
             index_start = tree[0]
             if char in ('I', 'D', 'P', 'L', 'H', 'b'):
+                if char == 'b':
+                    mergeable = ('P', 'L', 'H', 'b')
+                else:
+                    mergeable = ('I', 'D', 'P', 'L', 'H')
                 while len(tree) == 4: # Merge only if there is no branch
                     next_line = tree[3][0]
                     if not self.lines[next_line]:
@@ -714,7 +718,7 @@ class Journal:
                     if (self.timestamps[next_line] - timestamp) > DT_MERGE and char != 'b':
                         break # Not same max(DELTA_T, DT_MERGE) seconds
                     next_char = self.lines[next_line][0]
-                    if next_char not in ('I', 'D', 'P', 'L', 'H', 'b'):
+                    if next_char not in mergeable:
                         break # Only merge D and I and P
                     char = next_char
                     if char == 'I':
