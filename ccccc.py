@@ -387,7 +387,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.options['positions']['tester'][0] = 100 # Hide tester
 
         if document.body.classList.contains('versions'):
-            version_height = '6vh'
+            version_height = '9vh'
         else:
             version_height = '0px'
 

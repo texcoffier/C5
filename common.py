@@ -55,6 +55,7 @@ def unprotect_crlf(text):
 
 POSSIBLE_GRADES = ":([?],)?[-0-9,.]+$"
 DELTA_T = 10
+DT_MERGE = 60 # Insert/Delete in the same DT_MERGE seconds are merged on version tree
 
 if PYTHON:
     import re
@@ -685,27 +686,26 @@ class Journal:
         if canvas.offsetWidth == 0 or canvas.offsetHeight == 0:
             return
         tree = self.tree()
-        zoom = 3 * window.devicePixelRatio
+        zoom = int(window.devicePixelRatio * canvas.width / 100)
         self.questions[self.question].zoom = zoom
-        font_size = 12 * window.devicePixelRatio # Font size (not zoomed)
+        font_size = 4 * zoom
         ascent = -font_size / 4
         descent = font_size / 10
         size = int(font_size + ascent + descent) # Full line height with font ascent and descent
-        middle = int(size / 2) + 1
         center = zoom/2 - 0.5
         arrow = zoom * 1 # Arrow size
+        size_id = size - zoom
         def draw_ID(_action, x, y):
             """Some Insert and deletes"""
-            znb_i = nb_i * zoom
-            znb_d = nb_d * zoom
+            znb_i = nb_i
+            znb_d = nb_d
             nb_id = znb_i + znb_d
-            if nb_id > middle:
-                nb_id = zoom / nb_id * 2
-                znb_i *= nb_id
-                znb_d *= nb_id
+            if nb_id > size_id:
+                znb_i = size_id * znb_i / nb_id
+                znb_d = size_id * znb_d / nb_id
 
             x += center
-            y -= 0.5
+            y += -zoom + 0.5
             ctx.strokeStyle = '#F88'
             ctx.beginPath()
             ctx.moveTo(x, y)
@@ -721,21 +721,26 @@ class Journal:
             return zoom
         def draw_c(action, x, y):
             "Compilation"
+            y += 0.5
             value = int(action[1:])
             if value == 0:
-                ctx.fillStyle = '#0F0'
+                ctx.fillStyle = '#0A0'
             elif value < 100:
                 ctx.fillStyle = '#FA0'
             else:
                 ctx.fillStyle = '#F00'
-            ctx.fillRect(x+center - 0.5*zoom, y - size + 0.5, 2*zoom, middle)
-            return 2*zoom
+            ctx.beginPath()
+            ctx.moveTo(x-center-1, y)
+            ctx.lineTo(x+1, y-zoom-1)
+            ctx.lineTo(x+center+3, y)
+            ctx.fill()
+            return 2
         def draw_O(_action, x, y):
             "Connection"
             ctx.strokeStyle = '#88F'
             ctx.beginPath()
-            ctx.moveTo(x+center, y - 3*size/4 + 0.5)
-            ctx.lineTo(x+center, y - size/4 - 0.5)
+            ctx.moveTo(x+center, y - zoom + 0.5)
+            ctx.lineTo(x+center, y - size - 0.5)
             ctx.stroke()
             return zoom
         def draw_t(action, x, y):
@@ -805,7 +810,6 @@ class Journal:
             rect = event.target.getBoundingClientRect()
             mouse_x = (event.clientX - rect.x + 2) * window.devicePixelRatio
             mouse_y = (event.clientY - rect.y) * window.devicePixelRatio
-
         else:
             mouse_x = mouse_y = 0
         self.last_event = None
@@ -827,9 +831,6 @@ class Journal:
             tree, line = todo.pop()
             action = self.lines[tree[0]] or '✍'
             if len(tree) == 4:
-                # BEWARE timestamp are recorded every DELTA_T seconds
-                # So checking a 1 second delta has no sense.
-                # See: 'shared_worker_post'
                 timestamp = self.timestamps[tree[0]]
             else:
                 timestamp = 0
@@ -848,8 +849,8 @@ class Journal:
                     next_line = tree[3][0]
                     if not self.lines[next_line]:
                         break
-                    if (self.timestamps[next_line] - timestamp) > 60 and char != 'b':
-                        break # Not same (DELTA_T) second
+                    if (self.timestamps[next_line] - timestamp) > DT_MERGE and char != 'b':
+                        break # Not same max(DELTA_T, DT_MERGE) seconds
                     next_char = self.lines[next_line][0]
                     if next_char not in ('I', 'D', 'P', 'L', 'H', 'b'):
                         break # Only merge D and I and P
@@ -871,12 +872,13 @@ class Journal:
         # line_list.sort(sort_last)
         changes = []
         last_line = 0
-        line_segments = []
+        line_segments = [] # Used segments
         for i, line in enumerate(line_list):
             if i == 0:
                 line.line = 0
                 line_segments.append([0, line.items[-1][0]])
             else:
+                # Search free space
                 usable = False
                 j = line.parent_line.line + 1
                 for used_spaces in line_segments[j:]:
@@ -887,7 +889,7 @@ class Journal:
                             break
                     if usable:
                         line_segments[j].append([line.index_start, line.items[-1][0]])
-                        line.line = j
+                        line.line = j # Can collapse current line in previous one
                         break
                     j += 1
                 if not usable:
@@ -917,11 +919,12 @@ class Journal:
                         index_start = self.children[index_start][0]
                     lines.append(index_start)
                 if x != line.last_x and line.last_x:
-                    ctx.lineWidth = 4*zoom
+                    # The works on another version: grey the time
+                    ctx.lineWidth = size - zoom + 0.5
                     ctx.strokeStyle = '#0001'
                     ctx.beginPath()
-                    ctx.moveTo(line.last_x, y - size/2)
-                    ctx.lineTo(x, y - size/2)
+                    ctx.moveTo(line.last_x, y - zoom - (size-zoom)/2)
+                    ctx.lineTo(x, y - zoom - (size-zoom)/2)
                     ctx.stroke()
                     ctx.lineWidth = zoom
                 if line.last_x == 0 and line.parent_line:
@@ -950,6 +953,7 @@ class Journal:
                 if x > max_width:
                     max_width = x
 
+        # Display horizontal scrollbar background
         if self.offset_x is None:
             self.offset_x = Math.min(0, -max_width + canvas.width)
         TIME_DY = 20
@@ -973,6 +977,7 @@ class Journal:
         ctx.fillStyle = "#000"
         last_date = ''
         for item in changes:
+            # Displays date on the horizontal scrollbar
             pos = (positions[item[0]] - self.offset_x) / max_width * canvas.width
             if pos > x:
                 date = nice_date(self.timestamps[item[0]])
@@ -988,12 +993,14 @@ class Journal:
 
         if mouse_y > canvas.height - TIME_DY:
             if buttons:
+                # Move the scrollbar
                 self.offset_x = Math.min(
                     0,
                     Math.max(
                     int((-mouse_x + width/2) / canvas.width * max_width),
                     -max_width + canvas.width))
         elif feedback:
+            # Top right black box with change details
             pos_x, pos_y, width, line, lines = feedback
             ctx.lineWidth = 1
             ctx.strokeStyle = '#000'
