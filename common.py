@@ -881,7 +881,7 @@ class Journal:
 
         x = (self.offset_x or 0) + 0.5
         feedback = None
-        positions = {}
+        self.positions = positions = {}
         max_width = 0
         for index, nb_i, nb_d, index_start, line in changes:
             action = self.lines[index] or '✍'
@@ -929,9 +929,9 @@ class Journal:
                 positions[index] = x
                 if x > max_width:
                     max_width = x
-        return feedback, positions, max_width
+        return feedback, max_width
 
-    def draw_horizontal_scrollbar(self, canvas, ctx, max_width, mouse_y, changes, positions):
+    def draw_horizontal_scrollbar(self, canvas, ctx, max_width, mouse_y, changes):
         """Display horizontal scrollbar background and time label"""
         if self.offset_x is None:
             self.offset_x = Math.min(0, -max_width + canvas.width)
@@ -956,7 +956,7 @@ class Journal:
         last_date = ''
         for item in changes:
             # Displays date on the horizontal scrollbar
-            pos = (positions[item[0]] - self.offset_x) / max_width * canvas.width
+            pos = (self.positions[item[0]] - self.offset_x) / max_width * canvas.width
             if pos > x:
                 date = nice_date(self.timestamps[item[0]])
                 if date[:11] == last_date[:11]:
@@ -969,6 +969,16 @@ class Journal:
                 ctx.fillText(display, pos, canvas.height - 5)
                 x = pos + ctx.measureText(display).width + 5
         return x, width, max_width
+
+    def version_tree_show(self, canvas, index):
+        """Horizontal scroll of version tree to show changes on the screen"""
+        if not self.positions:
+            return
+        if not self.positions[index]:
+            return
+        self.offset_x = self.offset_x - self.positions[index] + canvas.offsetWidth * window.devicePixelRatio - 150
+        if self.offset_x > 0:
+            self.offset_x = 0
 
     def tree_canvas(self, canvas, event=None):
         """Draw tree in canvas.
@@ -1023,8 +1033,8 @@ class Journal:
 
         line_list = self.create_line_list(tree)
         changes = self.get_elements_to_draw(line_list, size + zoom)
-        feedback, positions, max_width = self.draw_changes(ctx, changes, size, zoom, mouse_x, mouse_y)
-        x, width, max_width = self.draw_horizontal_scrollbar(canvas, ctx, max_width, mouse_y, changes, positions)
+        feedback, max_width = self.draw_changes(ctx, changes, size, zoom, mouse_x, mouse_y)
+        x, width, max_width = self.draw_horizontal_scrollbar(canvas, ctx, max_width, mouse_y, changes)
 
         if mouse_y > canvas.height - TIME_DY:
             if buttons:

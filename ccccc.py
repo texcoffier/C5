@@ -1768,6 +1768,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             document.execCommand('insertHTML', False, self.insert_on_keyup)
             self.insert_on_keyup = None
         self.do_coloring = "onkeyup"
+        if JOURNAL.pending_goto:
+            JOURNAL.version_tree_show(self.canvas, int(JOURNAL.lines[-1][1:]))
+        else:
+            JOURNAL.version_tree_show(self.canvas, len(JOURNAL.lines))
     def onkeypress(self, event):
         """Key press"""
     def onblur(self, _event):
