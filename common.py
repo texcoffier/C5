@@ -909,7 +909,7 @@ class Journal:
                     ctx.lineWidth = 1
                     ctx.strokeStyle = '#000'
                     ctx.beginPath()
-                    ctx.moveTo(start_x, line.parent_line.y)
+                    ctx.moveTo(start_x, line.parent_line.y - zoom)
                     if start_x == x:
                         ctx.lineTo(x, y - size)
                         ctx.lineTo(x - arrow, y - size - arrow)
@@ -994,11 +994,30 @@ class Journal:
             # must stay highlighted on the next draw.
             event = self.last_event
         if event:
-            rect = event.target.getBoundingClientRect()
+            rect = canvas.getBoundingClientRect()
             mouse_x = (event.clientX - rect.x + 2) * window.devicePixelRatio
             mouse_y = (event.clientY - rect.y) * window.devicePixelRatio
+            if mouse_x < 0:
+                mouse_x = 0
+            elif mouse_x > rect.width:
+                mouse_x = rect.width - 1
         else:
             mouse_x = mouse_y = 0
+        if buttons and not self.previous_buttons:
+            def update(event):
+                self.tree_canvas(canvas, event)
+                event.stopPropagation()
+                event.preventDefault()
+            window.onmousemove = update
+            self.previous_mouse_y = mouse_y
+        elif not buttons and self.previous_buttons:
+            window.onmousemove = ''
+            self.previous_mouse_y = None
+        else:
+            if self.previous_mouse_y:
+                mouse_y = self.previous_mouse_y
+
+        self.previous_buttons = buttons
         self.last_event = None
         ctx.lineWidth = zoom
 
