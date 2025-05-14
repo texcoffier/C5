@@ -56,6 +56,7 @@ def unprotect_crlf(text):
 POSSIBLE_GRADES = ":([?],)?[-0-9,.]+$"
 DELTA_T = 10
 DT_MERGE = 60 # Insert/Delete in the same DT_MERGE seconds are merged on version tree
+TIME_DY = 20 # Horizontal scrollbar width
 
 if PYTHON:
     import re
@@ -184,7 +185,6 @@ class QuestionStats:
         self.tags = [('', start+2)] # List[Tuple[<tag>, <index>]]
         self.good = False
         self.source_old = self.source = self.last_tagged_source = self.first_source = ''
-        self.zoom = 6 # Maximum version tree zoom
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
 
@@ -676,25 +676,109 @@ class Journal:
             + nice_date(self.timestamps[used_lines[0]], secs=True)
             + '</div>' + ''.join(lines))
 
-    def tree_canvas(self, canvas, event=None):
-        """Draw tree in canvas.
-        Return selected item"""
-        max_width = 0
-        canvas.width = Math.round(canvas.offsetWidth * window.devicePixelRatio)
-        canvas.height = Math.round(canvas.offsetHeight * window.devicePixelRatio)
+    def create_line_list(self, tree):
+        """Extracts one line per tree version"""
+        class Line:
+            def __init__(self, parent_line=None, index_start=0):
+                self.items = []
+                self.last_x = 0
+                self.parent_line = parent_line
+                self.index_start = index_start
+            def append(self, index, nb_i, nb_d, index_start):
+                self.items.append([index, nb_i, nb_d, index_start, self])
 
-        if canvas.offsetWidth == 0 or canvas.offsetHeight == 0:
-            return
-        tree = self.tree()
-        zoom = int(window.devicePixelRatio * canvas.width / 100)
-        self.questions[self.question].zoom = zoom
-        font_size = 4 * zoom
-        ascent = -font_size / 4
-        descent = font_size / 10
-        size = int(font_size + ascent + descent) # Full line height with font ascent and descent
-        center = zoom/2 - 0.5
-        arrow = zoom * 1 # Arrow size
+        line_list = [Line()]
+        todo = [[tree, line_list[0]]]
+        while len(todo):
+            tree, line = todo.pop()
+            action = self.lines[tree[0]] or '✍'
+            if len(tree) == 4:
+                timestamp = self.timestamps[tree[0]]
+            else:
+                timestamp = 0
+            char = action[0]
+            if char == 'I':
+                nb_i = 1
+            else:
+                nb_i = 0
+            if char == 'D':
+                nb_d = 1
+            else:
+                nb_d = 0
+            index_start = tree[0]
+            if char in ('I', 'D', 'P', 'L', 'H', 'b'):
+                while len(tree) == 4: # Merge only if there is no branch
+                    next_line = tree[3][0]
+                    if not self.lines[next_line]:
+                        break
+                    if (self.timestamps[next_line] - timestamp) > DT_MERGE and char != 'b':
+                        break # Not same max(DELTA_T, DT_MERGE) seconds
+                    next_char = self.lines[next_line][0]
+                    if next_char not in ('I', 'D', 'P', 'L', 'H', 'b'):
+                        break # Only merge D and I and P
+                    char = next_char
+                    if char == 'I':
+                        nb_i += 1
+                    elif char == 'D':
+                        nb_d += 1
+                    tree = tree[3]
+            line.append(tree[0], nb_i, nb_d, index_start)
+            if len(tree) > 3:
+                todo.append([tree[3], line])
+                for child in tree[4:]:
+                    new_line = Line(line, tree[0])
+                    line_list.append(new_line)
+                    todo.append([child, new_line])
+        return line_list
+
+    def get_elements_to_draw(self, line_list, line_height):
+        """Collapse line and return elements to draw.
+        They are sorted by time. Not version.
+        """
+        changes = []
+        last_line = 0
+        line_segments = [] # Used segments
+        for i, line in enumerate(line_list):
+            if i == 0:
+                line.line = 0
+                line_segments.append([0, line.items[-1][0]])
+            else:
+                # Search free space
+                usable = False
+                j = line.parent_line.line + 1
+                for used_spaces in line_segments[j:]:
+                    usable = True
+                    for start, stop in used_spaces:
+                        if line.index_start < stop and line.items[-1][0] > start:
+                            usable = False
+                            break
+                    if usable:
+                        line_segments[j].append([line.index_start, line.items[-1][0]])
+                        line.line = j # Can collapse current line in previous one
+                        break
+                    j += 1
+                if not usable:
+                    line.line = len(line_segments)
+                    line_segments[j] = [[line.index_start, line.items[-1][0]]]
+
+            line.y = (line.line+1)*line_height + 0.5
+            if line.line > last_line:
+                last_line = line.line
+            for item in line.items:
+                changes.append(item)
+        def sort_index(a, b):
+            return a[0] - b[0]
+        changes.sort(sort_index)
+        return changes
+
+    def draw_changes(self, ctx, changes, size, zoom, mouse_x, mouse_y):
+        """Display all the version changes"""
+        font_size = int(5 * size / 5)
         size_id = size - zoom
+        center = zoom/2 - 0.5
+        descent = font_size / 10
+        arrow = zoom # Arrow size
+
         def draw_ID(_action, x, y):
             """Some Insert and deletes"""
             znb_i = nb_i
@@ -794,118 +878,11 @@ class Journal:
             'B': draw_B, 'F': draw_F,
             'b': draw_b, 'O': draw_O, 'S': draw_S, 'g': draw_g, '✍': draw_hand,
         }
-        ctx = canvas.getContext("2d")
-        ctx.fillStyle = '#FFF'
-        ctx.strokeStyle = '#000'
-        ctx.fillRect(0, 0, 10000, 10000)
-        if event:
-            buttons = event.buttons
-        else:
-            buttons = None
-        if not event and self.last_event:
-            # The box click trigger coloring, but the highlighted box
-            # must stay highlighted on the next draw.
-            event = self.last_event
-        if event:
-            rect = event.target.getBoundingClientRect()
-            mouse_x = (event.clientX - rect.x + 2) * window.devicePixelRatio
-            mouse_y = (event.clientY - rect.y) * window.devicePixelRatio
-        else:
-            mouse_x = mouse_y = 0
-        self.last_event = None
-        feedback = None
-        ctx.lineWidth = zoom
 
-        class Line:
-            def __init__(self, parent_line=None, index_start=0):
-                self.items = []
-                self.last_x = 0
-                self.parent_line = parent_line
-                self.index_start = index_start
-            def append(self, index, nb_i, nb_d, index_start):
-                self.items.append([index, nb_i, nb_d, index_start, self])
-
-        line_list = [Line()]
-        todo = [[tree, line_list[0]]]
-        while len(todo):
-            tree, line = todo.pop()
-            action = self.lines[tree[0]] or '✍'
-            if len(tree) == 4:
-                timestamp = self.timestamps[tree[0]]
-            else:
-                timestamp = 0
-            char = action[0]
-            if char == 'I':
-                nb_i = 1
-            else:
-                nb_i = 0
-            if char == 'D':
-                nb_d = 1
-            else:
-                nb_d = 0
-            index_start = tree[0]
-            if char in ('I', 'D', 'P', 'L', 'H', 'b'):
-                while len(tree) == 4: # Merge only if there is no branch
-                    next_line = tree[3][0]
-                    if not self.lines[next_line]:
-                        break
-                    if (self.timestamps[next_line] - timestamp) > DT_MERGE and char != 'b':
-                        break # Not same max(DELTA_T, DT_MERGE) seconds
-                    next_char = self.lines[next_line][0]
-                    if next_char not in ('I', 'D', 'P', 'L', 'H', 'b'):
-                        break # Only merge D and I and P
-                    char = next_char
-                    if char == 'I':
-                        nb_i += 1
-                    elif char == 'D':
-                        nb_d += 1
-                    tree = tree[3]
-            line.append(tree[0], nb_i, nb_d, index_start)
-            if len(tree) > 3:
-                todo.append([tree[3], line])
-                for child in tree[4:]:
-                    new_line = Line(line, tree[0])
-                    line_list.append(new_line)
-                    todo.append([child, new_line])
-        # def sort_last(a, b):
-        #     return a.index_start - b.index_start
-        # line_list.sort(sort_last)
-        changes = []
-        last_line = 0
-        line_segments = [] # Used segments
-        for i, line in enumerate(line_list):
-            if i == 0:
-                line.line = 0
-                line_segments.append([0, line.items[-1][0]])
-            else:
-                # Search free space
-                usable = False
-                j = line.parent_line.line + 1
-                for used_spaces in line_segments[j:]:
-                    usable = True
-                    for start, stop in used_spaces:
-                        if line.index_start < stop and line.items[-1][0] > start:
-                            usable = False
-                            break
-                    if usable:
-                        line_segments[j].append([line.index_start, line.items[-1][0]])
-                        line.line = j # Can collapse current line in previous one
-                        break
-                    j += 1
-                if not usable:
-                    line.line = len(line_segments)
-                    line_segments[j] = [[line.index_start, line.items[-1][0]]]
-
-            line.y = (line.line+1)*(size+1*zoom) + 0.5
-            if line.line > last_line:
-                last_line = line.line
-            for item in line.items:
-                changes.append(item)
-        def sort_index(a, b):
-            return a[0] - b[0]
-        changes.sort(sort_index)
         x = (self.offset_x or 0) + 0.5
+        feedback = None
         positions = {}
+        max_width = 0
         for index, nb_i, nb_d, index_start, line in changes:
             action = self.lines[index] or '✍'
             y = line.y
@@ -952,11 +929,12 @@ class Journal:
                 positions[index] = x
                 if x > max_width:
                     max_width = x
+        return feedback, positions, max_width
 
-        # Display horizontal scrollbar background
+    def draw_horizontal_scrollbar(self, canvas, ctx, max_width, mouse_y, changes, positions):
+        """Display horizontal scrollbar background and time label"""
         if self.offset_x is None:
             self.offset_x = Math.min(0, -max_width + canvas.width)
-        TIME_DY = 20
         if mouse_y > canvas.height - TIME_DY:
             ctx.fillStyle = "#FF08"
         else:
@@ -990,6 +968,44 @@ class Journal:
                 last_date = date
                 ctx.fillText(display, pos, canvas.height - 5)
                 x = pos + ctx.measureText(display).width + 5
+        return x, width, max_width
+
+    def tree_canvas(self, canvas, event=None):
+        """Draw tree in canvas.
+        Return selected item"""
+        canvas.width = Math.round(canvas.offsetWidth * window.devicePixelRatio)
+        canvas.height = Math.round(canvas.offsetHeight * window.devicePixelRatio)
+
+        if canvas.offsetWidth == 0 or canvas.offsetHeight == 0:
+            return
+        tree = self.tree()
+        zoom = int(window.devicePixelRatio * canvas.width / 100)
+        size = int(4 * zoom)
+        ctx = canvas.getContext("2d")
+        ctx.fillStyle = '#FFF'
+        ctx.strokeStyle = '#000'
+        ctx.fillRect(0, 0, 10000, 10000)
+        if event:
+            buttons = event.buttons
+        else:
+            buttons = None
+        if not event and self.last_event:
+            # The box click trigger coloring, but the highlighted box
+            # must stay highlighted on the next draw.
+            event = self.last_event
+        if event:
+            rect = event.target.getBoundingClientRect()
+            mouse_x = (event.clientX - rect.x + 2) * window.devicePixelRatio
+            mouse_y = (event.clientY - rect.y) * window.devicePixelRatio
+        else:
+            mouse_x = mouse_y = 0
+        self.last_event = None
+        ctx.lineWidth = zoom
+
+        line_list = self.create_line_list(tree)
+        changes = self.get_elements_to_draw(line_list, size + zoom)
+        feedback, positions, max_width = self.draw_changes(ctx, changes, size, zoom, mouse_x, mouse_y)
+        x, width, max_width = self.draw_horizontal_scrollbar(canvas, ctx, max_width, mouse_y, changes, positions)
 
         if mouse_y > canvas.height - TIME_DY:
             if buttons:
