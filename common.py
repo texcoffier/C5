@@ -779,7 +779,7 @@ class Journal:
         """Display all the version changes"""
         font_size = int(5 * size / 5)
         size_id = size - zoom
-        center = zoom/2 - 0.5
+        center = zoom/2
         descent = font_size / 10
         arrow = zoom # Arrow size
 
@@ -822,7 +822,7 @@ class Journal:
             ctx.lineTo(x+1, y-zoom-1)
             ctx.lineTo(x+center+3, y)
             ctx.fill()
-            return 2
+            return 1
         def draw_O(_action, x, y):
             "Connection"
             ctx.strokeStyle = '#88F'
@@ -882,23 +882,33 @@ class Journal:
             'B': draw_B, 'F': draw_F,
             'b': draw_b, 'O': draw_O, 'S': draw_S, 'g': draw_g, '✍': draw_hand,
         }
-
-        x = (self.offset_x or 0) + 0.5
+        x = (self.offset_x or 0)
         feedback = None
         self.positions = positions = {}
         max_width = 0
+        disable_ok = False
         for index, nb_i, nb_d, index_start, line in changes:
             action = self.lines[index] or '✍'
             y = line.y
             width = draw[action[0]](action, x, y)
             if width > 0:
-                if mouse_y < y and mouse_y >= y-size+1 and mouse_x >= x and (mouse_x < x + width or line.items[-1][0] == index) and action != '✍':
-                    lines = []
-                    feedback = (x, y, width, index + 1, lines)
-                    while index_start != index:
+                new_disable_ok = False
+                if mouse_y < y and mouse_y >= y-size+1 and action != '✍':
+                    last = line.items[-1][0] == index
+                    if mouse_y < y - zoom or not action.startswith('c'):
+                        ok = mouse_x >= x and (mouse_x < x + width or last)
+                    else:
+                        # Compilation underline
+                        ok = mouse_x >= x - zoom/2 and (mouse_x < x + width + zoom/2 or last)
+                        new_disable_ok = ok
+                    if ok and not disable_ok:
+                        lines = []
+                        feedback = (x, y, width, index + 1, lines)
+                        while index_start != index:
+                            lines.append(index_start)
+                            index_start = self.children[index_start][0]
                         lines.append(index_start)
-                        index_start = self.children[index_start][0]
-                    lines.append(index_start)
+                disable_ok = new_disable_ok
                 if x != line.last_x and line.last_x:
                     # The works on another version: grey the time
                     ctx.lineWidth = size - zoom + 0.5
@@ -909,7 +919,8 @@ class Journal:
                     ctx.stroke()
                     ctx.lineWidth = zoom
                 if line.last_x == 0 and line.parent_line:
-                    start_x = positions[line.index_start]
+                    start_x = positions[line.index_start] + 0.5
+                    x += 0.5
                     if action[0] == '✍':
                         ctx.font = font_size + "px sans"
                         ctx.fillText(hhmmss(self.timestamps[line.index_start]),
@@ -934,6 +945,7 @@ class Journal:
 
                     ctx.stroke()
                     ctx.lineWidth = zoom
+                    x -= 0.5
                 x += width
                 line.last_x = x
                 positions[index] = x
@@ -986,20 +998,22 @@ class Journal:
             return
         if not self.positions[index]:
             return
-        self.offset_x = self.offset_x - self.positions[index] + canvas.offsetWidth * window.devicePixelRatio - 150
+        self.offset_x = Math.round(
+            self.offset_x - self.positions[index] + canvas.offsetWidth * window.devicePixelRatio - 150)
         if self.offset_x > 0:
             self.offset_x = 0
 
     def tree_canvas(self, canvas, event=None):
         """Draw tree in canvas.
         Return selected item"""
-        canvas.width = Math.round(canvas.offsetWidth * window.devicePixelRatio)
-        canvas.height = Math.round(canvas.offsetHeight * window.devicePixelRatio)
+        box = canvas.getBoundingClientRect()
+        canvas.width = Math.round(box.width * window.devicePixelRatio)
+        canvas.height = Math.round(box.height * window.devicePixelRatio)
 
         if canvas.offsetWidth == 0 or canvas.offsetHeight == 0:
             return
         tree = self.tree()
-        zoom = int(window.devicePixelRatio * canvas.width / 100)
+        zoom = 2 * int(window.devicePixelRatio * canvas.width / 200) # Must be even
         size = int(4 * zoom)
         ctx = canvas.getContext("2d")
         ctx.fillStyle = '#FFF'
@@ -1060,7 +1074,7 @@ class Journal:
             ctx.lineWidth = 1
             ctx.strokeStyle = '#000'
             ctx.beginPath()
-            ctx.rect(pos_x-1, pos_y-size, width+1, size)
+            ctx.rect(pos_x-0.5, pos_y-size, width+1, size)
             ctx.stroke()
             ccccc.version_feedback.innerHTML = self.explain(lines)
             ccccc.version_feedback.style.display = 'block'

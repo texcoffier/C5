@@ -1827,27 +1827,28 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def change_history(self, event):
         """Put an old version in the editor"""
         choosen = event.target.selectedOptions[0].innerHTML
+        JOURNAL.offset_x = None
         if choosen == 'Version mise à jour':
             index = self.journal_question.start + 1
             if JOURNAL.lines[index].startswith('I'):
                 index += 1
             self.goto_line(index)
             self.set_editor_content(self.question_original[self.current_question])
-            return
-        if choosen == "Dernière version":
+        elif choosen == "Dernière version":
             if JOURNAL.pending_goto:
                 self.goto_line(len(JOURNAL.lines)-1)
             else:
                 self.popup_message("Bug: Dernière Version. Utilisez l'arbre pour la retrouver.")
-            return
-        if choosen == "Version initiale":
-            choosen = ''
-        for tag, index in self.journal_question.tags:
-            if tag == choosen:
-                self.goto_line(index)
-                # SHARED_WORKER.goto(index)
-                self.editor.focus()
-                break
+        else:
+            if choosen == "Version initiale":
+                choosen = ''
+            for tag, index in self.journal_question.tags:
+                if tag == choosen:
+                    self.goto_line(index)
+                    # SHARED_WORKER.goto(index)
+                    self.editor.focus()
+                    break
+        self.tree_canvas()
 
     def update_save_history(self):
         """The list of saved versions"""
@@ -2389,6 +2390,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         def do_coloring():
             self.update_gui()
             self.do_coloring = "onresize"
+            JOURNAL.offset_x = None
+            self.tree_canvas()
         window.onresize = do_coloring
         setInterval(bind(self.scheduler, self), 200)
         if GRADING:
