@@ -206,6 +206,7 @@ class Journal:
         self.remote_update = self.question = None
         self._tree = self._tree_question = self.last_event = None
         self.timestamp = 0
+        self.fullscreen_disabled = 0
         self.actions = {
             'G': bind(self.action_G, self),
             'T': bind(self.action_T, self),
@@ -356,8 +357,10 @@ class Journal:
         """Focus"""
     def action_B(self, _value, _start):
         """Blur"""
-    def action_debug(self, _value, _start):
+    def action_debug(self, value, _start):
         """Do nothing: debug message in the logs"""
+        if value.startswith('fullscreen '):
+            self.fullscreen_disabled = int(value.split(' ')[1])
     def action_S(self, _value, _start):
         """Student asked to save"""
     def action_c(self, _value, _start):

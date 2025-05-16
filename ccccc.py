@@ -697,7 +697,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 or  window.innerHeight == screen.height
                 and window.innerWidth  == screen.width
                 )
-            if is_fullscreen:
+            if is_fullscreen or JOURNAL.fullscreen_disabled:
                 self.fullscreen.style.display = 'none'
             else:
                 self.fullscreen.style.display = 'block'

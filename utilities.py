@@ -177,7 +177,7 @@ class State(list): # pylint: disable=too-many-instance-attributes
     """State of the student"""
     slots = [ # The order is fundamental: do not change it
         'active', 'teacher', 'room', 'last_time', 'nr_blurs', 'nr_answers',
-        'hostname', 'bonus_time', 'grade', 'blur_time', 'feedback']
+        'hostname', 'bonus_time', 'grade', 'blur_time', 'feedback', 'fullscreen']
     slot_index = {key: i for i, key in enumerate(slots)}
 
     def __setattr__(self, attr, value):
@@ -285,14 +285,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                     elif len(data) == 3:
                         if data[0] == 'active_teacher_room':
                             state = data[2]
-                            if len(state) <= 10:
-                                if len(state) <= 9:
-                                    if len(state) <= 8:
-                                        if len(state) <= 7:
-                                            state.append(0) # Bonus time
-                                        state.append('') # Grade
-                                    state.append(0) # Blur time
-                                state.append(1) # Feedback default: Student work
+                            if len(state) <= 11:
+                                if len(state) <= 10:
+                                    if len(state) <= 9:
+                                        if len(state) <= 8:
+                                            if len(state) <= 7:
+                                                state.append(0) # Bonus time
+                                            state.append('') # Grade
+                                        state.append(0) # Blur time
+                                    state.append(1) # Feedback default: Student work
+                                state.append(0) # Disable red popup
                             config[data[0]][data[1]] = State(state)
                         else:
                             if data[1] == '+':
@@ -462,7 +464,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             else:
                 place = CONFIG.host_to_place.get(hostname, '')
             # Add to the checkpoint room
-            active_teacher_room = State((0, '', place, now, 0, 0, hostname, 0, '', 0, 1))
+            active_teacher_room = State((0, '', place, now, 0, 0, hostname, 0, '', 0, 1, 0))
             self.set_parameter('active_teacher_room', active_teacher_room, login)
         elif hostname and hostname != active_teacher_room.hostname:
             # Student IP changed

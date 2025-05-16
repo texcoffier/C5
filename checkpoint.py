@@ -1281,6 +1281,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 if minutes is not None:
                     record('checkpoint/TIME_BONUS/' + COURSE + '/'
                             + login + '/' + 60*int(minutes))
+            elif item.startswith("Encart"):
+                record('checkpoint/FULLSCREEN/' + COURSE + '/'
+                       + login + '/' + (1 - student.fullscreen))
             else:
                 alert(item)
         if student.active:
@@ -1296,6 +1299,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         temps = "Temps bonus"
         if student.bonus_time:
             temps += ' (' + int(student.bonus_time / 60) + ' min.)'
+        fullscreen = "Encart rouge bloquant : "
+        if student.fullscreen:
+            fullscreen += "le réactiver"
+        else:
+            fullscreen += "le désactiver"
 
         blur = grades = feedback = None
         if student.blur:
@@ -1317,7 +1325,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 student.firstname + ' ' + student.surname,
                 "", spy,
                 "Naviguer dans le temps",
-                temps, state, grade,
+                temps, fullscreen, state, grade,
                 student.mail or 'Adresse mail inconnue',
                 "",
                 blur, grades, feedback
@@ -1583,6 +1591,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.grade = data[1][8]
         self.blur_time = data[1][9]
         self.feedback = data[1][10]
+        self.fullscreen = data[1][11]
         self.firstname = data[2]['fn'] or '?'
         self.surname = data[2]['sn'] or '?'
         self.mail = data[2]['mail'] or ''
@@ -1995,12 +2004,6 @@ def key_event_handler(event):
         time_jump(event, time_jump.seconds + 5)
     if event.key == 'ArrowLeft' and time_jump.seconds:
         time_jump(event, time_jump.seconds - 5)
-
-def set_time_bonus(element, login):
-    """Recode and update student bonus time"""
-    record('checkpoint/TIME_BONUS/' + COURSE + '/' + login + '/' + 60*int(element.value))
-    element.style.background = "#DFD"
-    STUDENT_DICT[login].bonus_time = element.value
 
 def debug():
     """debug"""

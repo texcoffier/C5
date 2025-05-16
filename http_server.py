@@ -1609,10 +1609,23 @@ async def checkpoint_bonus(request:Request) -> Response:
     session, course = await get_teacher_login_and_course(request)
     if not session.is_proctor(course):
         return utilities.js_message("not_proctor")
-    # Information is stored twice
+    # Information in 2 places
     course.set_parameter('active_teacher_room', int(bonus), student, 7)
     await JournalLink.new(course, student, None, None, False).write(
         f'#bonus_time {bonus} {course.get_stop(student)}')
+    return await update_browser_data(course)
+
+async def checkpoint_fullscreen(request:Request) -> Response:
+    """Set student fullscreen : if 1 deactivate blocking red popup"""
+    student = request.match_info['student']
+    fullscreen = request.match_info['fullscreen']
+    session, course = await get_teacher_login_and_course(request)
+    if not session.is_proctor(course):
+        return utilities.js_message("not_proctor")
+    # Information is stored in 2 places
+    course.set_parameter('active_teacher_room', int(fullscreen), student, 11)
+    await JournalLink.new(course, student, None, None, False).write(
+        f'#fullscreen {fullscreen}')
     return await update_browser_data(course)
 
 async def home(request:Request) -> Response:
@@ -2498,6 +2511,7 @@ def main():
                     web.get('/checkpoint/{course}', checkpoint),
                     web.get('/checkpoint/MESSAGE/{course}/{message:.*}', checkpoint_message),
                     web.get('/checkpoint/TIME_BONUS/{course}/{student}/{bonus}', checkpoint_bonus),
+                    web.get('/checkpoint/FULLSCREEN/{course}/{student}/{fullscreen}', checkpoint_fullscreen),
                     web.get('/checkpoint/HOSTS/*', checkpoint_hosts),
                     web.get('/checkpoint/MAPS/*', checkpoint_maps),
                     web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),
