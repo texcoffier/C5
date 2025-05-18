@@ -1834,6 +1834,23 @@ def compute_diffs_regtest(algorithm):
 compute_diffs = myers_diff
 
 
+def language_delimiters(language):
+    """Returns a tuple:
+        * String commenting until line end («//» for C)
+        * String delimiters («"'» for JavaScript)
+        * String starting a comment bloc («/*» for C)
+        * String ending a comment bloc («*/» for C)
+    """
+    if language in ('python', 'shell'):
+        return '#', '"\'', '\001', ''
+    elif language in ('cpp', 'javascript'):
+        return '//', '"\'', '/*', '*/'
+    elif language == 'lisp':
+        return ';', '"', '\001', ''
+    elif language == 'SQL':
+        return '--', "'", '\001', ''
+    return '\001', '"', '\001', ''
+
 # print(myers_diff('aaaa', 'aaaa'))
 # print(myers_diff('aaaa', ''))
 # print(myers_diff('', 'aaaa'))

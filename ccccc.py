@@ -1309,27 +1309,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         in_string = False
         in_comment = False
         in_comment_bloc = False
-        if self.options['language'] in ('python', 'shell'):
-            start_comment = '#'
-            start_string = '"\''
-            start_comment_bloc = '\001'
-        elif self.options['language'] in ('cpp', 'javascript'):
-            start_comment = '//'
-            start_string = '"\''
-            start_comment_bloc = '/*'
-            end_comment_bloc = '*/'
-        elif self.options['language'] == 'lisp':
-            start_comment = ';'
-            start_string = '"'
-            start_comment_bloc = '\001'
-        elif self.options['language'] == 'SQL':
-            start_comment = '--'
-            start_string = "'"
-            start_comment_bloc = '\001'
-        else:
-            start_comment = '\001'
-            start_string = '"'
-            start_comment_bloc = '\001'
+        start_comment, start_string, start_comment_bloc, end_comment_bloc = \
+            language_delimiters(self.options['language'])
         cursor_position_min = self.cursor_position
         while self.source[cursor_position_min-1] in ' \t\n':
             cursor_position_min -= 1

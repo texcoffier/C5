@@ -24,6 +24,12 @@ BUILDINGS_SORTED.sort()
 
 MAPPER = COURSE in ("=IPS", "=MAPS")
 
+SIMILARITIES = {} # student_id ->  {student_id: similarity}
+SOURCES = {} # student_id -> [ line -> true, line -> true, ...]
+SOURCES_ORIG = {} # student_id -> [ [line, ...], [line, ...], ...]
+GRAPH = {} # student_id -> [ student_id, ...]
+LINES = {} # line -> number of time this line was found for all students
+
 def filters(element):
     """Update student filter"""
     logins = {}
@@ -33,6 +39,9 @@ def filters(element):
     ROOM.update_waiting_room()
 
 filters.logins = {}
+
+def sort_integer(a, b):
+    return b - a
 
 def highlight_buttons():
     if not document.getElementById("checkpoint_time_buttons"):
@@ -113,6 +122,111 @@ def distance2(x_1, y_1, x_2, y_2):
 def distance(x_1, y_1, x_2, y_2):
     """Distance beween 2 points"""
     return distance2(x_1, y_1, x_2, y_2) ** 0.5
+
+STUDENT_DICT = {}
+
+class Student: # pylint: disable=too-many-instance-attributes
+    """To simplify code"""
+    building = column = line = None
+    def __init__(self, data):
+        self.data = data
+        self.login = data[0]
+        self.active = data[1][0]
+        self.teacher = data[1][1]
+        self.room = data[1][2]
+        room = self.room.split(',')
+        self.checkpoint_time = data[1][3]
+        # Show placed students only if
+        #  * It is an exam session
+        #  * or it is in a time span
+        #    The default time span is NOW
+        if (OPTIONS.checkpoint
+            or self.checkpoint_time >= ROOM.time_span[0]
+               and self.checkpoint_time <= ROOM.time_span[1]
+           ):
+            if len(room) >= 3:
+                self.building = room[0]
+                self.column = int(room[1])
+                self.line = int(room[2])
+                self.version = room[3]
+        self.blur = data[1][4]
+        self.nr_questions_done = data[1][5] or 0
+        self.hostname = data[1][6]
+        self.bonus_time = data[1][7]
+        self.grade = data[1][8]
+        self.blur_time = data[1][9]
+        self.feedback = data[1][10]
+        self.fullscreen = data[1][11]
+        self.firstname = data[2]['fn'] or '?'
+        self.surname = data[2]['sn'] or '?'
+        self.mail = data[2]['mail'] or ''
+        if self.hostname in ROOM.ips:
+            unknown_room = 0
+        else:
+            unknown_room = 1
+        self.sort_key = unknown_room + self.surname + '\001' + self.firstname + '\001' + self.login
+        STUDENT_DICT[self.login] = self
+        self.update()
+
+    def is_good_room(self, room_name):
+        """Use IP to compute if the student is in the good room"""
+        if self.hostname not in ROOM.ips: # Unknown IP
+            return True
+        if ROOM.building not in BUILDINGS: # Virtual room
+            return True
+        return ROOM.ips[self.hostname] == ROOM.building + ',' + room_name
+
+    def update(self):
+        """Compute some values for placed students"""
+        self.full_room_name = None
+        self.short_room_name = None
+        self.good_room = None
+        if self.building != ROOM.building:
+            # Not on this map
+            return
+        room_name = ROOM.get_room_name(self.column, self.line)
+        if room_name:
+            self.full_room_name = ROOM.building + ',' + room_name
+            self.short_room_name = room_name
+        self.good_room = self.is_good_room(self.short_room_name)
+
+    def box(self, style=''):
+        """A nice box clickable and draggable"""
+        if seconds() - self.checkpoint_time < BOLD_TIME:
+            style += ';font-weight: bold'
+        if self.filtered():
+            style += ';background: #FF0'
+        return ''.join([
+            '<div class="name" onmousedown="ROOM.start_move_student(event)"',
+            ' onmouseenter="highlight_student(this)"',
+            ' onmouseleave="highlight_student()"',
+            ' style="', style, '"',
+            ' ontouchstart="ROOM.start_move_student(event)" login="',
+            self.login, '">',
+            # '<span>', self.login, '</span>',
+            '<div>', self.surname, ' ', self.firstname, ' ', self.login, '</div>',
+            # '<span>', self.room, '</span>',
+            '</div>'])
+
+    def with_me(self):
+        """The student is in my room"""
+        return self.teacher == LOGIN
+
+    def filtered(self):
+        """THe student must be highlighted"""
+        return filters.logins[self.login]
+
+    def __str__(self):
+        return self.surname + ' ' + self.firstname
+
+    def initials(self):
+        return (self.firstname+'___')[:4] + '.' + (self.surname+'___')[:4]
+
+    def distance(self, student):
+        """Distance to another student. 1e9 if not same building"""
+        if self.building != student.building or len(self.room) < 3:
+            return 1e9
+        return Math.sqrt(Math.pow(self.line - student.line, 2) + Math.pow(self.column - student.column, 2))
 
 class Menu:
     line = column = model = reds = activate = None
@@ -249,6 +363,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     rotate_180 = False
     nr_max_grade = {'a':0, 'b': 0}
     state = 'nostate'
+    similarity_todo_pending = 0
+    similarities = []
     def __init__(self, info):
         self.menu = document.getElementById('top')
         self.the_menu = Menu(self)
@@ -365,6 +481,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def change(self, info):
         """Initialise with a new building"""
         document.getElementById('buildings').value = info.building
+        self.similarity_todo = [] # Student list
         self.building = info.building
         if info.building not in BUILDINGS: # It is a teacher login
             info.building = 'empty'
@@ -647,14 +764,15 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         for student in self.students:
             max_question_done = max(max_question_done, student.question_done)
 
+        students_onscreen = []
         for student in self.students:
-            if (student.column < self.left_column or student.column > self.right_column
-                    or student.line < self.top_line or student.line > self.bottom_line):
-                continue
+            if (student.column >= self.left_column and student.column <= self.right_column
+                    and student.line >= self.top_line and student.line <= self.bottom_line):
+                x_pos, y_pos, x_size, y_size = self.xys(student.column, student.line)
+                students_onscreen.append([student, x_pos, y_pos, x_size, y_size])
 
-            x_pos, y_pos, x_size, y_size = self.xys(student.column, student.line)
+        for student, x_pos, y_pos, x_size, y_size in students_onscreen:
             x_pos -= self.scale / 2
-
             # Lighten the draw zone
             ctx.globalAlpha = 0.8
             ctx.fillStyle = "#FFF"
@@ -751,6 +869,106 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.fillText(student.firstname, x_pos, y_pos)
             y_pos += line_height
             ctx.fillText(student.surname, x_pos, y_pos)
+
+        if len(SIMILARITIES) == 0:
+            return
+        ctx.globalAlpha = 1
+        hide, normal, orange, red = self.color_span()
+        for student, x_pos, y_pos, x_size, y_size in students_onscreen:
+            similarities = SIMILARITIES[student.login]
+            if not similarities:
+                continue
+            for close_student, similarity in similarities.Items():
+                close_student = STUDENT_DICT[close_student]
+                if similarity <= hide or student.login < close_student.login:
+                    continue
+                x_pos2, y_pos2, _x_size2, _y_size2 = self.xys(close_student.column, close_student.line)
+                vec_x = x_pos - x_pos2
+                vec_y = y_pos - y_pos2
+                length = (vec_x**2 + vec_y**2)**0.5 / self.scale * 3
+                vec_x /= length
+                vec_y /= length
+                coord_x = x_pos - vec_x
+                coord_y = y_pos - vec_y
+                x_pos2 += vec_x
+                y_pos2 += vec_y
+                if student.column == close_student.column  and abs(student.line - close_student.line) != 1:
+                    decal = (y_pos - y_pos2 - 1) / 8
+                    coord_x -= decal
+                    x_pos2 -= decal
+                elif student.line == close_student.line and abs(student.column - close_student.column) != 1:
+                    decal = (x_pos - x_pos2 - 1) / 8
+                    coord_y -= decal
+                    y_pos2 -= decal
+                if similarity > red:
+                    ctx.strokeStyle = '#F00'
+                elif similarity > orange:
+                    ctx.strokeStyle = '#FB4'
+                elif similarity > normal:
+                    ctx.strokeStyle = '#880'
+                else:
+                    ctx.strokeStyle = '#DDD'
+                ctx.lineWidth = self.scale * 0.08
+                ctx.beginPath()
+                ctx.moveTo(coord_x, coord_y)
+                ctx.lineTo(x_pos2, y_pos2)
+                ctx.stroke()
+
+                center_x = (coord_x + x_pos2) / 2
+                center_y = (coord_y + y_pos2) / 2
+                for student_source, student_source2 in zip(SOURCES[student.login], SOURCES[close_student.login]):
+                    for line in student_source:
+                        if line in student_source2:
+                            if LINES[line] <= 5:
+                                ctx.globalAlpha = 0.5
+                                ctx.fillStyle = '#FF0'
+                                ctx.beginPath()
+                                ctx.arc(center_x, center_y, x_size/5, 0, Math.PI*2)
+                                ctx.fill()
+                                ctx.globalAlpha = 1
+
+                ctx.fillStyle = '#00F'
+                similarity = str(similarity)
+                box = ctx.measureText(similarity)
+                ctx.fillText(similarity, center_x - box.width/2,
+                    center_y + (box.fontBoundingBoxAscent - box.fontBoundingBoxDescent)/2)
+
+        # Similarity stats
+        histogram = []
+        for i in self.similarities:
+            histogram[i] = (histogram[i] or 0) + 1
+        left = self.menu.offsetWidth + 5
+        top = 300
+        ctx = document.getElementById('canvas').getContext("2d")
+        ctx.fillStyle = "#00F"
+        ctx.font = "16px sans-serif"
+        ctx.fillText("X : Nbr lignes identiques. Y : Nbr de paires d'étudiants proches avec ce nombre de lignes", left, top + 50)
+        ctx.font = "10px sans-serif"
+        ctx.globalAlpha = 1
+        width = 25
+        hide, normal, orange, red = self.color_span()
+        for i, nbr in enumerate(histogram):
+            if nbr:
+                if i > red:
+                    ctx.fillStyle = "#F00"
+                elif i > orange:
+                    ctx.fillStyle = '#FB4'
+                elif i > normal:
+                    ctx.fillStyle = '#880'
+                elif i > hide:
+                    ctx.fillStyle = '#CCC'
+                else:
+                    ctx.fillStyle = '#EEE'
+                ctx.fillRect(left + width*i, top - nbr, width-2, nbr)
+                ctx.fillStyle = "#00F"
+                ctx.fillText(str(i), left + width*i, top + 10)
+                ctx.fillText(str(nbr), left + width*i, top + 25)
+
+    def color_span(self):
+        return [self.similarities[int(len(self.similarities)//6)],
+            self.similarities[int(len(self.similarities)//10)],
+            self.similarities[int(len(self.similarities)//50)],
+            self.similarities[int(len(self.similarities)//100)]]
 
     def draw_map(self, ctx, canvas): # pylint: disable=too-many-locals
         """Draw the character map"""
@@ -1227,6 +1445,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 window.open(BASE + '/adm/answers/' + COURSE + '/'
                     + ','.join(logins) + '/' + COURSE + '__'
                     + self.building + '_' + self.get_room_name(column, line) + '.zip')
+            elif item.startswith('Similarité'):
+                for student in STUDENTS:
+                    student = Student(student) # Fill STUDENT_DICT
+                    self.similarity_todo.append(student.login)
             elif item.startswith('Copier'):
                 def ok():
                     alert("Vous pouvez maintenant coller les " 
@@ -1241,6 +1463,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             "Pour les " + len(room.students) + " étudiants de cette pièce",
             "",
             "Espionner les écrans en temps réel",
+            "Similarité du code avec les voisins",
             "Noter et commenter leur travail",
             "Noter et commenter leur travail (sujet : A)",
             "Noter et commenter leur travail (sujet : B)",
@@ -1270,6 +1493,119 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 close_exam(login)
             elif item.startswith("Rouvrir"):
                 open_exam(login)
+            elif item.startswith("Lignes"):
+                name = student.login + ' ' + student.__str__()
+                txt = ['<title>' + name + '</title>',
+                       '<style>',
+                       '.tipped { display: inline-block; position: relative}',
+                       '.tipped PRE { display: none;',
+                       '              position: absolute; right:5em; top: -8em;',
+                       '              background: #FFE; border: 1px solid #000;',
+                       '              z-index:10; max-width:50em; overflow: auto;}',
+                       '.tipped:hover PRE { display: block;}',
+                       '.tipped:hover { background: #FF0 }',
+                       '.pairs { max-width: 60em; overflow: auto; }',
+                       'HR { margin: 0px }',
+                       '</style>',
+                       '<h1>Voisins de ' + name + '</h1>',
+                       'Le nombre indiqué est le nombre de fois que la ligne a été ',
+                       "tapée par l'ensemble des étudiants. ",
+                       "<ul>",
+                       "<li>Les lignes présentes dans le code initial ont été enlevées.",
+                       "<li>Les « »  «:»  «;»  «,»  «.»  «{»  «}» ont été supprimés des lignes.",
+                       "<li>Les commentaires ont été enlevés.",
+                       "<li>Les lignes ont été passées en minuscules.",
+                       "</ul>"
+                      ]
+                txt.append('<table><tr><td style="vertical-align:top">')
+                for other, similarity in SIMILARITIES[student.login].Items():
+                    other = STUDENT_DICT[other]
+                    txt.append('<h2>' + other.login + ' [' + similarity + ' lignes] '
+                        + other.firstname + ' ' + other.surname + '</h2><pre class="pairs">')
+                    empty = True
+                    for question in range(len(SOURCES[student.login] or [])):
+                        student_source2 = SOURCES[other.login][question]
+                        student_source_orig = SOURCES_ORIG[student.login][question].split('\n')
+                        student_source2_orig = SOURCES_ORIG[other.login][question].split('\n')
+                        if not student_source2:
+                            continue
+                        done = {}
+                        for line_orig in student_source_orig:
+                            line = simplify_line(line_orig)
+                            if line in done:
+                                continue
+                            done[line] = True
+                            if line in student_source2:
+                                empty = False
+                                add = ('Q' + (question+1) + ' ' + LINES[line] + '       ')[:8]
+                                add += html(line_orig) + '<br>'
+                                for line2_orig in student_source2_orig:
+                                    if simplify_line(line2_orig) == line:
+                                        add += '        ' + html(line2_orig) + '<br>'
+                                if LINES[line] <= 2:
+                                    add = '<span style="color: #F00">' + add + '</span>'
+                                elif LINES[line] <= 4:
+                                    add = '<b>' + add + '</b>'
+                                    # Search other student with the line
+                                    for s, q in SOURCES.Items():
+                                        if s != student.login and s != other.login and line in (q[question] or []):
+                                            other =  STUDENT_DICT[s]
+                                            name = s + ' ' + other.__str__()
+                                            if student.distance(other) < 5:
+                                                name = '<b>' + name + '</b>'
+                                            else:
+                                                name = name + '(loin)'
+                                            add += '        Et aussi ' + name + '<br>'
+                                else:
+                                    add = '<span style="color: #888">' + add + '</span>'
+                                txt.append(add)
+                    if empty:
+                        txt.pop()
+                    else:
+                        txt.append('</pre>')
+                txt.append('</td><td style="vertical-align:top">')
+                for i, lines_orig in enumerate(SOURCES_ORIG[student.login]):
+                    txt.append('<pre>Nombre de lignes identiques. Vide=code initial, 1=unique.\n')
+                    txt.append('Et noms des voisins avec la même ligne.\n')
+                    first_lines = SOURCES[student.login][i]
+                    for line, simplified in zip(lines_orig.split('\n'), get_lines(lines_orig)):
+                        nbr = LINES[simplified]
+                        if nbr:
+                            before = [(str(nbr) + '   ')[:4]]
+                            if nbr >= 2 and nbr <= 20:
+                                for other in SIMILARITIES[student.login]:
+                                    if simplified in SOURCES[other][i]:
+                                        tip = []
+                                        lines_other = SOURCES_ORIG[other][i].split('\n')
+                                        for j, line_other in enumerate(lines_other):
+                                            # tip.append(html(line_other))
+                                            if simplify_line(line_other) == simplified:
+                                                for k in lines_other[j-6:j+7]:
+                                                    simplified2 = simplify_line(k)
+                                                    if simplified2 == simplified:
+                                                        tip.append('<b>' + html(k) + '</b>\n')
+                                                    elif simplified2 in first_lines:
+                                                        tip.append(html(k) + '\n')
+                                                    else:
+                                                        tip.append('<span style="color:#666">' + html(k) + '</span>\n')
+                                                tip.append('<hr>')
+                                        tip.pop()
+                                        before.append(
+                                            '<div class="tipped">'
+                                            + STUDENT_DICT[other].initials()
+                                            + '<pre>' + ''.join(tip) + '</pre></div>'
+                                        )
+                                before.sort()
+                        else:
+                            before = ['    ']
+                        while len(before) < 5:
+                            before.append('         ')
+                        txt.append(' '.join(before[:4]) + ' | ' + html(line) + '<br>')
+                    txt.append('</pre>')
+                    txt.append('<hr>')
+                txt.append('</tr><table>')
+                window.open("").document.write(''.join(txt))
+
             elif item.startswith("Noter"):
                 window.open(BASE + '/grade/' + COURSE + '/' + login + '?ticket=' + TICKET)
             elif item.startswith("Temps"):
@@ -1320,15 +1656,23 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 "Code source commenté et barème détaillé"
             ][student.feedback] + " affiché à l'étudiant"
 
+        similarities = ''
+        if SIMILARITIES[student.login] and len(self.similarity_todo) == 0:
+            similarities = 'Lignes identiques avec voisins :'
+            for similarity in SIMILARITIES[student.login].Values():
+                similarities += ' ' + similarity
+
         self.the_menu.open(line, column,
             [
                 student.firstname + ' ' + student.surname,
                 "", spy,
                 "Naviguer dans le temps",
+                similarities,
                 temps, fullscreen, state, grade,
                 student.mail or 'Adresse mail inconnue',
                 "",
                 blur, grades, feedback
+
             ], [], select)
 
     def drag_stop(self, event):
@@ -1557,102 +1901,6 @@ def highlight_student(element):
     else:
         Student.highlight_student = None
         scheduler.draw = "erase «press space»"
-
-STUDENT_DICT = {}
-
-class Student: # pylint: disable=too-many-instance-attributes
-    """To simplify code"""
-    building = column = line = None
-    def __init__(self, data):
-        self.data = data
-        self.login = data[0]
-        self.active = data[1][0]
-        self.teacher = data[1][1]
-        self.room = data[1][2]
-        room = self.room.split(',')
-        self.checkpoint_time = data[1][3]
-        # Show placed students only if
-        #  * It is an exam session
-        #  * or it is in a time span
-        #    The default time span is NOW
-        if (OPTIONS.checkpoint
-            or self.checkpoint_time >= ROOM.time_span[0]
-               and self.checkpoint_time <= ROOM.time_span[1]
-           ):
-            if len(room) >= 3:
-                self.building = room[0]
-                self.column = int(room[1])
-                self.line = int(room[2])
-                self.version = room[3]
-        self.blur = data[1][4]
-        self.nr_questions_done = data[1][5] or 0
-        self.hostname = data[1][6]
-        self.bonus_time = data[1][7]
-        self.grade = data[1][8]
-        self.blur_time = data[1][9]
-        self.feedback = data[1][10]
-        self.fullscreen = data[1][11]
-        self.firstname = data[2]['fn'] or '?'
-        self.surname = data[2]['sn'] or '?'
-        self.mail = data[2]['mail'] or ''
-        if self.hostname in ROOM.ips:
-            unknown_room = 0
-        else:
-            unknown_room = 1
-        self.sort_key = unknown_room + self.surname + '\001' + self.firstname + '\001' + self.login
-        STUDENT_DICT[self.login] = self
-        self.update()
-
-    def is_good_room(self, room_name):
-        """Use IP to compute if the student is in the good room"""
-        if self.hostname not in ROOM.ips: # Unknown IP
-            return True
-        if ROOM.building not in BUILDINGS: # Virtual room
-            return True
-        return ROOM.ips[self.hostname] == ROOM.building + ',' + room_name
-
-    def update(self):
-        """Compute some values for placed students"""
-        self.full_room_name = None
-        self.short_room_name = None
-        self.good_room = None
-        if self.building != ROOM.building:
-            # Not on this map
-            return
-        room_name = ROOM.get_room_name(self.column, self.line)
-        if room_name:
-            self.full_room_name = ROOM.building + ',' + room_name
-            self.short_room_name = room_name
-        self.good_room = self.is_good_room(self.short_room_name)
-
-    def box(self, style=''):
-        """A nice box clickable and draggable"""
-        if seconds() - self.checkpoint_time < BOLD_TIME:
-            style += ';font-weight: bold'
-        if self.filtered():
-            style += ';background: #FF0'
-        return ''.join([
-            '<div class="name" onmousedown="ROOM.start_move_student(event)"',
-            ' onmouseenter="highlight_student(this)"',
-            ' onmouseleave="highlight_student()"',
-            ' style="', style, '"',
-            ' ontouchstart="ROOM.start_move_student(event)" login="',
-            self.login, '">',
-            # '<span>', self.login, '</span>',
-            '<div>', self.surname, ' ', self.firstname, ' ', self.login, '</div>',
-            # '<span>', self.room, '</span>',
-            '</div>'])
-
-    def with_me(self):
-        """The student is in my room"""
-        return self.teacher == LOGIN
-
-    def filtered(self):
-        """THe student must be highlighted"""
-        return filters.logins[self.login]
-
-    def __str__(self):
-        return self.surname + ' ' + self.firstname
 
 def cmp_student_name(student_a, student_b):
     """Compare 2 students keys (static PC, name, surname)"""
@@ -2065,6 +2313,88 @@ def split_time(secs):
         return Math.floor(secs/60) + 'm' + two_digit(secs%60)
     return secs
 
+def simplify_line(line):
+    return (line or '').split(start_comment)[0].replace(RegExp('[ :;,.{}\t]*', 'g'), '').lower()
+
+def get_lines(source):
+    """Remove not important characters"""
+    return [line.split(start_comment)[0].replace(RegExp(';', 'g'), '')
+            for line in (source or '').replace(RegExp('[ :,.{}\t]*', 'g'), '').lower().split('\n')]
+
+start_comment, start_string, start_comment_bloc, end_comment_bloc = \
+            language_delimiters(OPTIONS['language'])
+
+def load_source(login):
+    def record_source(journal):
+        """Record for 'student' ID"""
+        if record_source.done:
+            return
+        SOURCES[login] = []
+        SOURCES_ORIG[login] = []
+        record_source.done = True
+        for q, question in journal.questions.Items():
+            if q >= 0 and question.head >= 0:
+                print('LOADED', len(question.first_source or " "), len(question.source or " "))
+                initial = {}
+                for line in get_lines(question.first_source):
+                    initial[line] = True
+                source = {}
+                SOURCES[login].append(source)
+                SOURCES_ORIG[login].append(question.source)
+                for line in get_lines(question.source):
+                    if line not in initial:
+                        LINES[line] = (LINES[line] or 0) + 1
+                        if line not in source: # Do not count twice the same
+                            source[line] = True
+                shared_worker.close()
+        print("LOADED", login, len(journal.questions))
+        ROOM.similarity_todo_pending -= 1
+    print("LOAD", login)
+    ROOM.similarity_todo_pending += 1
+    shared_worker, _journal = create_shared_worker(login, record_source)
+
+def compute_similarities():
+    student = ROOM.similarity_todo[-1]
+
+    if not GRAPH[student]:
+        student_obj = STUDENT_DICT[student]
+        GRAPH[student] = graph = []
+        for student2 in STUDENTS:
+            student2 = student2[0]
+            if student2 != student:
+                if student_obj.distance(STUDENT_DICT[student2]) < 4.13:
+                    graph.append(student2)
+
+    if student not in SOURCES:
+        load_source(student)
+    for student2 in GRAPH[student]:
+        if student2 not in SOURCES:
+            load_source(student2)
+    if ROOM.similarity_todo_pending:
+        # Wait all necessary sources
+        return
+
+    if not SIMILARITIES[student]:
+        SIMILARITIES[student] = {}
+    for student2 in GRAPH[student]:
+        similarity = SIMILARITIES[student][student2]
+        if similarity >= 0:
+            continue
+        common = 0
+        for student_source, student_source2 in zip(SOURCES[student], SOURCES[student2]):
+            for line in student_source:
+                if line in student_source2:
+                    common += 1
+        ROOM.similarities.append(common)
+        ROOM.similarities.sort(sort_integer)
+        SIMILARITIES[student][student2] = common
+        if not SIMILARITIES[student2]:
+            SIMILARITIES[student2] = {}
+        SIMILARITIES[student2][student] = common
+        scheduler.draw = "similarity"
+
+    ROOM.similarity_todo.pop()
+
 def scheduler():
     """To not redraw needlessly"""
     if document.getElementById('buildings').value != ROOM.building:
@@ -2129,6 +2459,8 @@ def scheduler():
         ROOM.update_messages()
     scheduler.draw_square_feedback = False
     scheduler.draw = ROOM.highlight_disk
+    if len(ROOM.similarity_todo) and not ROOM.similarity_todo_pending:
+        compute_similarities()
 
     # Display circle to indicate time before allowed to be moved
     if ROOM.moving == True and ROOM.student_clicked and not ROOM.moved and not ROOM.the_menu.opened:
