@@ -863,16 +863,19 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if student.bonus_time:
                 bonus += '+' + (student.bonus_time//60) + 'm'
             if bonus:
-                y_pos -= line_height / 2
+                y_pos -= line_height
                 ctx.fillText(bonus, x_pos, y_pos)
                 y_pos += line_height
             ctx.fillText(student.firstname, x_pos, y_pos)
             y_pos += line_height
             ctx.fillText(student.surname, x_pos, y_pos)
+            if student.grade:
+                y_pos += line_height
+                ctx.fillText(student.grade[0], x_pos, y_pos)
 
         if len(SIMILARITIES) == 0:
             return
-        ctx.globalAlpha = 1
+        ctx.globalAlpha = 0.8
         hide, normal, orange, red = self.color_span()
         for student, x_pos, y_pos, x_size, y_size in students_onscreen:
             similarities = SIMILARITIES[student.login]
@@ -925,7 +928,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                                 ctx.beginPath()
                                 ctx.arc(center_x, center_y, x_size/5, 0, Math.PI*2)
                                 ctx.fill()
-                                ctx.globalAlpha = 1
+                                ctx.globalAlpha = 0.8
 
                 ctx.fillStyle = '#00F'
                 similarity = str(similarity)
