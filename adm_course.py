@@ -2,8 +2,9 @@
 Generate the home page for a course.
 """
 
-WHAT = ['bonus_time', 'status', 'nr_answered', 'grades', 'comments', 'version', 'graders',
-        'nr_blurs', 'blur_time']
+WHAT = ['bonus_time', 'status', 'nr_answered', 'grades', 'comments', 'version',
+        'feedback', 'graders',
+        'nr_blurs', 'blur_time', 'fullscreen']
 
 sums = {}
 
@@ -17,10 +18,10 @@ def show(what):
     ths = document.getElementById('report').rows[0]
     label = ths.cells[WHAT.indexOf(what.split('\001')[0]) + 2].textContent
     if '\001' in what:
-        status = "done"
+        status = "Status=" + what.split('\001')[1]
     else:
-        status = "any"
-    dialog.innerHTML = ('<button onclick="hide()">×</button> <b>' + label + '</b> Status=' + status
+        status = "Status=any"
+    dialog.innerHTML = ('<button onclick="hide()">×</button> <b>' + label + '</b> ' + status
                         + '<br><br><textarea>' + html(sums[what]) + '</textarea>')
     dialog.showModal()
 
@@ -38,6 +39,7 @@ def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-stat
     for what in WHAT:
         sums[what] = ''
         sums[what + '\001done']  = ''
+        sums[what + '\001feedback']  = ''
     text = ["""<!DOCTYPE html>
 <style>
 BODY { font-family: sans-serif; }
@@ -46,10 +48,11 @@ TABLE TD { vertical-align: top; border: 1px solid #888; padding: 0px; white-spac
 BUTTON { width: 100% }
 E { font-family: emoji }
 TABLE#report TR:first-child, TABLE#TOMUSS TR:first-child {
-  height: 3em; z-index: 100;position: sticky; top: 0px; background: #FFFD; }
+  z-index: 100;position: sticky; top: 0px; background: #FFFD; }
 TABLE#report > TBODY > TR:hover > TD { background: #DDD }
 TABLE#report > TBODY > TR > TD:nth-child(2) > DIV { font-size: 60% }
-BUTTON.download { width: calc(100% - 2px); font-size: 150%; height: 1.5em; margin: 1px;}
+TABLE#report DIV.rotate { writing-mode: sideways-lr; font-size: 70%; font-weight: normal; height: 6em; }
+BUTTON.download { width: calc(100% - 2px); height: 1.5em; margin: 1px;}
 DIALOG { position: fixed; right: 0px; top: 0px; border: 4px solid #0F0 }
 DIALOG BUTTON { font-size: 200%; width: 2em }
 DIALOG TEXTAREA { width: 40em ; height: 40em }
@@ -61,16 +64,18 @@ DIV[onclick]:hover { background: #EEE }
 <table id="report" border><tbody><tr>
 <th><div onclick="sort_report(0)">Login</div>
 <th><div onclick="sort_report(1)">Name</div>
-<th><div onclick="sort_report(2)">Minutes<br>Bonus</div>
+<th><div onclick="sort_report(2)" class="rotate">Minutes<br>Bonus</div>
 <th><div onclick="sort_report(3)">Status</div>
-<th><div onclick="sort_report(4)">Questions<br>Validated</div>
-<th><div onclick="sort_report(5)">Grade</div>
-<th><div onclick="sort_report(6)">Comments</div>
-<th><div onclick="sort_report(7)">Version</div>
-<th><div onclick="sort_report(8)">Graders</div>
-<th><div onclick="sort_report(9)">Window<br>Blur</div>
-<th><div onclick="sort_report(10)">Blur<br>time</div>
-<th><div onclick="sort_report(11)">Files</div></tr>
+<th><div onclick="sort_report(4)" class="rotate">Questions<br>Validated</div>
+<th><div onclick="sort_report(5)" class="rotate">Grade</div>
+<th><div onclick="sort_report(6)" class="rotate">Comments</div>
+<th><div onclick="sort_report(7)" class="rotate">Version</div>
+<th><div onclick="sort_report(8)" class="rotate">Feedback<br>to students</div>
+<th><div onclick="sort_report(9)">Graders</div>
+<th><div onclick="sort_report(10)" class="rotate">Number of<br>focus lost</div>
+<th><div onclick="sort_report(11)" class="rotate">Blur time<br>in seconds</div>
+<th><div onclick="sort_report(12)" class="rotate">Allow not<br>fullscreen</div>
+<th><div onclick="sort_report(13)">Files</div></tr>
 """]
     cache = {}
     for login in students:
@@ -110,6 +115,11 @@ DIV[onclick]:hover { background: #EEE }
             print(login, "In LOGS but not in session.cf")
             continue
         version = journal['version'] = STUDENT_DICT[login][2].split(',')[3]
+        journal['feedback'] = STUDENT_DICT[login][10]
+        if STUDENT_DICT[login][11]:
+            journal['fullscreen'] = '**'
+        else:
+            journal['fullscreen'] = ''
         grading = parse_grading(student['grades'])
         grade = 0
         graders = []
@@ -158,6 +168,8 @@ DIV[onclick]:hover { background: #EEE }
             sums[what] += login + '\t' + stats[what] + '\n'
             if student.status == 'done':
                 sums[what + '\001done'] += login + '\t' + stats[what] + '\n'
+            if stats['feedback'] == 5:
+                sums[what + '\001feedback'] += login + '\t' + stats[what] + '\n'
 
         text.append('<td>')
         for filename in student.files:
@@ -171,7 +183,7 @@ DIV[onclick]:hover { background: #EEE }
             text.append('">')
             text.append(filename)
             text.append('</a>')
-    text.append('''<tr><td><tt>login value</tt>\nStatus=Any<td rowspan="2"
+    text.append('''<tr><td><tt>login value</tt>\nStatus=Any<td rowspan="3"
 ><div style="vertical-align:top;font-size:80%">All sources codes:<br>
 <button onclick="window.open(BASE + '/adm/answers/' + COURSE + '/*/' + COURSE + '.zip')"
  style="background: #EEE">Sources<br>txt ZIP</button></div>''')
@@ -185,6 +197,11 @@ DIV[onclick]:hover { background: #EEE }
     for what in WHAT:
         text.append('<td><button  class="download" onclick="show(\''
                     + what + '\001done' + '\')">📥</button>')
+    text.append('</tr>')
+    text.append('<tr><td><tt>login value</tt>\nFeedback=5')
+    for what in WHAT:
+        text.append('<td><button  class="download" onclick="show(\''
+                    + what + '\001feedback' + '\')">📥</button>')
     text.append('</tr>')
     text.append('</tbody></table>')
 
