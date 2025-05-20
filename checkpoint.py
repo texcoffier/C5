@@ -30,6 +30,14 @@ SOURCES_ORIG = {} # student_id -> [ [line, ...], [line, ...], ...]
 GRAPH = {} # student_id -> [ student_id, ...]
 LINES = {} # line -> number of time this line was found for all students
 
+if OPTIONS.notation:
+    NR_MAX_GRADE = {
+        'a': Grades(OPTIONS.notation).nr_grades_and_competences(),
+        'b': Grades(OPTIONS.notationB).nr_grades_and_competences()
+        }
+else:
+    NR_MAX_GRADE = {'a': 0, 'b': 0}
+
 def filters(element):
     """Update student filter"""
     logins = {}
@@ -361,7 +369,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     ctrl = False # Control key pressed
     time_span = [0, 1e50]
     rotate_180 = False
-    nr_max_grade = {'a':0, 'b': 0}
     state = 'nostate'
     similarity_todo_pending = 0
     similarities = []
@@ -826,7 +833,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Draw grading (2 triangles: done and visible)
             if student.grade[1]:
                 ctx.fillStyle = "#0F0"
-                if student.grade[1] == ROOM.nr_max_grade[student.version]:
+                if student.grade[1] == NR_MAX_GRADE[student.version]:
                     ctx.beginPath()
                     ctx.moveTo(left + width/2, top + height)
                     ctx.lineTo(left + width  , top + height)
@@ -1649,7 +1656,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             blur = ' ' + student.blur + ' pertes de focus (' + student.blur_time + ' secs)'
 
         if student.grade != '':
-            grades = ' Somme des ' + student.grade[1] + '/' + ROOM.nr_max_grade[student.version] + ' notes → ' + student.grade[0]
+            grades = ' Somme des ' + student.grade[1] + '/' + NR_MAX_GRADE[student.version] + ' notes → ' + student.grade[0]
             feedback = ' ' + [
                 "Rien d'affiché à l'étudiant",
                 "Code source commenté",
@@ -2136,14 +2143,11 @@ def update_page():
     students.sort(cmp_student_name)
     ROOM.students = []
     ROOM.waiting_students = []
-    ROOM.nr_max_grade = {'a': 0, 'b': 0}
     for student in students:
         if student.building == ROOM.building:
             ROOM.students.append(student)
         elif not student.active:
             ROOM.waiting_students.append(student)
-        if student.grade != '' and student.grade[1] > ROOM.nr_max_grade[student.version]:
-            ROOM.nr_max_grade[student.version] = student.grade[1]
 
     if ROOM.moving and ROOM.moving != True: # pylint: disable=singleton-comparison
         student = STUDENT_DICT[ROOM.moving['login']]

@@ -27,6 +27,7 @@ def show(what):
 def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Create the admin home page"""
     notation = Grades(NOTATION)
+    notationb = Grades(NOTATIONB)
     document.title = "👁" + COURSE.split('=')[1]
     students = []
     for student in STUDENTS:
@@ -72,7 +73,6 @@ DIV[onclick]:hover { background: #EEE }
 <th><div onclick="sort_report(11)">Files</div></tr>
 """]
     cache = {}
-    nr_grades_max = {'a': 0, 'b': 0}
     for login in students:
         print(login)
         student = STUDENTS[login]
@@ -113,19 +113,26 @@ DIV[onclick]:hover { background: #EEE }
         grading = parse_grading(student['grades'])
         grade = 0
         graders = []
+        nbr_grades = 0
         for grd in notation.grades:
-            if grd.is_competence:
-                continue # It'a a competence
             value = grading[grd.key]
             if not value or value[0] == '?':
                 continue
             grade += Number(value[0])
             grader = value[1].split('\n')[1]
+            nbr_grades += 1
             if grader not in graders:
                 graders.append(grader)
-        nr_grades[login] = len(grading)
-        nr_grades_max[version] = max(nr_grades_max[version], len(grading))
-        if len(grading) == 0 and student.status == 'done':
+        for grd in notation.competences:
+            value = grading[grd.key]
+            if not value or value[0] == '?':
+                continue
+            grader = value[1].split('\n')[1]
+            nbr_grades += 1
+            if grader not in graders:
+                graders.append(grader)
+        nr_grades[login] = nbr_grades
+        if nbr_grades == 0 and student.status == 'done':
             ungraded.append(login)
             journal['grades'] = ''
         else:
@@ -221,6 +228,10 @@ DIV[onclick]:hover { background: #EEE }
 
     by_teacher = {}
     partially_graded = []
+    nr_grades_max = {
+        'a': notation.nr_grades_and_competences(),
+        'b': notationb.nr_grades_and_competences(),
+    }
     for login, nrg in nr_grades.Items():
         if nrg and nrg < nr_grades_max[cache[login]['version']]:
             partially_graded.append(login)
