@@ -2409,7 +2409,7 @@ async def live_link(request:Request) -> StreamResponse:
                 warn('close but no journal')
             journals.pop(port, None)
             continue
-        if journa and session.login != journa.login:
+        if journa and session.login != journa.login and journa.login:
             if not session.is_grader(journa.course) or message.split(' ', 1)[1][0] not in 'bGTtLH':
                 # Grader is not allowed to insert or deletes character
                 # in the student source code.
