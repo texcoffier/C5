@@ -1548,10 +1548,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                             if line in student_source2:
                                 empty = False
                                 add = ('Q' + (question+1) + ' ' + LINES[line] + '       ')[:8]
-                                add += html(line_orig) + '<br>'
+                                line_orig_strip = line_orig.strip()
+                                add += html(line_orig_strip) + '<br>'
                                 for line2_orig in student_source2_orig:
-                                    if simplify_line(line2_orig) == line:
-                                        add += '        ' + html(line2_orig) + '<br>'
+                                    if simplify_line(line2_orig) == line and line2_orig.strip() != line_orig_strip:
+                                        add += '        ' + html(line2_orig.strip()) + '<br>'
                                 if LINES[line] <= 2:
                                     add = '<span style="color: #F00">' + add + '</span>'
                                 elif LINES[line] <= 4:
