@@ -1842,8 +1842,13 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         for tag in self.journal_question.tags[::-1]:
             content.append('<option>' + (html(tag[0] or "Version initiale")) + '</option>')
         original = self.question_original[self.current_question].strip() 
-        if original != '' and original != self.journal_question.first_source.strip():
+        if self.source == '' and original != '' and original != self.journal_question.first_source.strip():
             content.append('<option>Version mise à jour</option>')
+            if JOURNAL.content.strip() == '':
+                # In some rare case, the default source code is not
+                # displayed on screen.
+                # But 'question_original' contains it.
+                self.set_editor_content(self.question_original[self.current_question])
         self.save_history.innerHTML = ''.join(content)
 
     def save(self):
