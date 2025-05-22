@@ -653,8 +653,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 # Remote scroll
                 line = (self.line_numbers.childNodes[JOURNAL.scroll_line]
                     or self.editor.childNodes[JOURNAL.scroll_line])
-                top = line.offsetTop
-                self.layered.scrollTo({'top': top, 'behavior': 'instant'}) # NOT SMOOTH REQUIRED
+                if line:
+                    top = line.offsetTop
+                    self.layered.scrollTo({'top': top, 'behavior': 'instant'}) # NOT SMOOTH REQUIRED
                 remote_scroll = True
                 JOURNAL.old_scroll_line = JOURNAL.scroll_line
                 self.old_scroll_top = self.layered.scrollTop
