@@ -1636,9 +1636,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             state = "Clôturer l'examen"
         else:
             state = "Rouvrir l'examen"
-        grade = "Noter l'étudiant"
-        if self.state == 'done':
-            grade = '*' + grade
+        if OPTIONS['state'] == 'Grade':
+            grade = "*Noter l'étudiant"
+        elif self.state == 'done' or OPTIONS['state'] == 'Done':
+            grade = "Noter l'étudiant"
+        else:
+            grade = 'Notation impossible : examen en cours'
         spy = "Espionner l'écran en temps réel"
         if self.state == 'running':
             spy = '*' + spy
