@@ -100,6 +100,7 @@ class Server:
                 client.close()
     def print(self, message):
         """Tell all client to print a message in their console"""
+        return
         for client in CLIENTS:
             if client:
                 client.postMessage('M' + self.start_time + ' ' + message)
