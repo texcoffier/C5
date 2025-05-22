@@ -1528,52 +1528,30 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                        "</ul>"
                       ]
                 txt.append('<table><tr><td style="vertical-align:top">')
-                for other, similarity in SIMILARITIES[student.login].Items():
+                sorted_similarities = []
+                for i in SIMILARITIES[student.login].Items():
+                    if i[1] > 0:
+                        sorted_similarities.append(i)
+                def cmp_similarity(a, b):
+                    return b[1] - a[1]
+                sorted_similarities.sort(cmp_similarity)
+                for other, similarity in sorted_similarities[:7]:
                     other = STUDENT_DICT[other]
-                    txt.append('<h2>' + other.login + ' [' + similarity + ' lignes] '
+                    content = []
+                    content.append('<h2>' + other.login + ' [' + similarity + ' lignes] '
                         + other.firstname + ' ' + other.surname + '</h2><pre class="pairs">')
-                    empty = True
-                    for question in range(len(SOURCES[student.login] or [])):
-                        student_source2 = SOURCES[other.login][question]
-                        student_source_orig = SOURCES_ORIG[student.login][question].split('\n')
-                        student_source2_orig = SOURCES_ORIG[other.login][question].split('\n')
-                        if not student_source2:
-                            continue
-                        done = {}
-                        for line_orig in student_source_orig:
-                            line = simplify_line(line_orig)
-                            if line in done:
-                                continue
-                            done[line] = True
-                            if line in student_source2:
-                                empty = False
-                                add = ('Q' + (question+1) + ' ' + LINES[line] + '       ')[:8]
-                                line_orig_strip = line_orig.strip()
-                                add += html(line_orig_strip) + '<br>'
-                                for line2_orig in student_source2_orig:
-                                    if simplify_line(line2_orig) == line and line2_orig.strip() != line_orig_strip:
-                                        add += '        ' + html(line2_orig.strip()) + '<br>'
-                                if LINES[line] <= 2:
-                                    add = '<span style="color: #F00">' + add + '</span>'
-                                elif LINES[line] <= 4:
-                                    add = '<b>' + add + '</b>'
-                                    # Search other student with the line
-                                    for s, q in SOURCES.Items():
-                                        if s != student.login and s != other.login and line in (q[question] or []):
-                                            other =  STUDENT_DICT[s]
-                                            name = s + ' ' + other.__str__()
-                                            if student.distance(other) < 5:
-                                                name = '<b>' + name + '</b>'
-                                            else:
-                                                name = name + '(loin)'
-                                            add += '        Et aussi ' + name + '<br>'
-                                else:
-                                    add = '<span style="color: #888">' + add + '</span>'
-                                txt.append(add)
-                    if empty:
-                        txt.pop()
-                    else:
-                        txt.append('</pre>')
+                    for question, other_source in enumerate(SOURCES_ORIG[other.login] or []): 
+                        student_source = SOURCES[student.login][question]
+                        for line_orig in other_source.split('\n'):
+                            if simplify_line(line_orig) in student_source:
+                                content.append('<b>' + html(line_orig) + '</b><br>')
+                            else:
+                                content.append(html(line_orig) + '<br>')
+                        content.append('<hr>')
+                    content.append('</pre>')
+                    txt.append('<button onclick="document.getElementById(\'other\').innerHTML=unescape(\''
+                        + escape(''.join(content)) + '\')">' + other.initials() + ' ' + similarity + '</button>')
+                txt.append('<div id="other" style="background: #FEE"></div>')
                 txt.append('</td><td style="vertical-align:top">')
                 for i, lines_orig in enumerate(SOURCES_ORIG[student.login]):
                     txt.append('<pre>Nombre de lignes identiques. Vide=code initial, 1=unique.\n')
