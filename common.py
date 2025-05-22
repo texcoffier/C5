@@ -1436,7 +1436,7 @@ def journal_regtest():
 
 journal_regtest()
 
-def create_shared_worker(login='', hook=None):
+def create_shared_worker(login='', hook=None, readonly=False):
     print("Start shared worker for communication")
     journal = Journal()
     print(millisecs())
@@ -1642,7 +1642,7 @@ def create_shared_worker(login='', hook=None):
         login = '_FOR_EDITOR_' + login
     else:
         course = COURSE
-    shared_worker.port.postMessage(['TICKET', window.location.search, course, login, BASE])
+    shared_worker.port.postMessage(['TICKET', window.location.search, course, login, BASE, readonly])
     window.onbeforeunload = shared_worker_close
     return shared_worker, journal
 

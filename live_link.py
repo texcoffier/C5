@@ -121,7 +121,9 @@ def my_onconnect(event):
             port.session = event.data[2]
             SERVER.ticket = event.data[1]
             SERVER.base = event.data[4]
-            SERVER.send(port.my_index + ' ' + port.session + ' ' + event.data[3])
+            SERVER.readonly = event.data[5]
+            SERVER.send(port.my_index + ' ' + port.session + ' ' + event.data[3]
+                + ' ' + (SERVER.readonly and 'ro' or 'rw'))
             return
         if event.data[0] == 'CLOSE':
             if port.my_index is not None: # Not closed by server

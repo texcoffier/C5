@@ -2361,7 +2361,7 @@ def load_source(login):
         ROOM.similarity_todo_pending -= 1
     print("LOAD", login)
     ROOM.similarity_todo_pending += 1
-    shared_worker, _journal = create_shared_worker(login, record_source)
+    shared_worker, _journal = create_shared_worker(login, record_source, readonly=True)
 
 def compute_similarities():
     student = ROOM.similarity_todo[-1]
@@ -2596,7 +2596,7 @@ def create_timetravel(login):
     student = STUDENT_DICT[login]
     letter = spy_letter(student)
     document.getElementById('tt_students').appendChild(div)
-    div.shared_worker, journal = create_shared_worker(login, nothing)
+    div.shared_worker, journal = create_shared_worker(login, nothing, readonly=True)
     TIME_TRAVEL_STUDENTS.append([div, div.shared_worker, journal, student, letter])
     document.getElementById('timeline').style.display = 'block'
 
@@ -2632,7 +2632,7 @@ def create_realtime_spy(student):
         if not journal.remote_update:
             return
         display_student_screen(journal, feedback, student, letter)
-    feedback.shared_worker, _journal = create_shared_worker(student.login, update_real_time)
+    feedback.shared_worker, _journal = create_shared_worker(student.login, update_real_time, readonly=True)
 
 try:
     INFO = JSON.parse(decodeURI(location.hash[1:]))
