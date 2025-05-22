@@ -220,7 +220,7 @@ def get_login(request, use_match=False):
     if not utilities.C5_VALIDATE:
         return login # Regression tests use login with uppercase
     login = xxx_local.normalize_login(login)
-    if re.match('^[-_.a-z0-9]*$', login):
+    if re.match('^[-.\\w]*$', login):
         return login
     raise ValueError(f"Invalid login name: «{login}»")
 
