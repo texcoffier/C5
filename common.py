@@ -1726,6 +1726,53 @@ def compute_diffs_fast(old, rep):
         position += insert_pos
     return diffs
 
+def compute_diffs_fast_line(old, rep):
+    """Returns a list of change to change text from 'old' to 'rep'
+    Triples:
+       * [True, position, line to insert]
+       * [False, position, number of lines to delete]
+    """
+    diffs = []
+    old_length = len(old)
+    rep_length = len(rep)
+    old_i = 0
+    rep_i = 0
+
+    while old_i != old_length and rep_i != rep_length:
+        if old[old_i] == rep[rep_i]:
+            old_i += 1
+            rep_i += 1
+            continue
+        synced = False
+        i = 0
+        while True:
+            if old_i+i == old_length or rep_i+1 == rep_length:
+                break
+            if old[old_i+i] == rep[rep_i]:
+                diffs.append([False, rep_i, i])
+                old_i += i + 1
+                rep_i += 1
+                synced = True
+                break
+            if old[old_i] == rep[rep_i+i]:
+                for j in range(i):
+                    diffs.append([True, rep_i+j, rep[rep_i+j]])
+                rep_i += i + 1
+                old_i += 1
+                synced = True
+                break
+            i += 1
+        if not synced:
+            break
+    #print(old_length, old_i, rep_length, rep_i)
+    nbr_del = old_length - old_i
+    if nbr_del:
+        diffs.append([False, rep_i, nbr_del])
+    for i in rep[rep_i:]:
+        diffs.append([True, rep_i, i])
+        rep_i += 1
+    return diffs
+
 def myers_diff(a_lines, b_lines, merge=True):
     """
     An implementation of the Myers diff algorithm.
@@ -1786,7 +1833,9 @@ def myers_diff(a_lines, b_lines, merge=True):
                 if last[0] is not None:
                     compacted.append(last)
                 return compacted
-            if len(frontier) > 1000:
+            if len(frontier) > 500:
+                if a_lines.splice:
+                    return compute_diffs_fast_line(a_lines, b_lines)
                 return compute_diffs_fast(a_lines, b_lines)
             frontier[k] = (x, history)
 
@@ -1860,7 +1909,10 @@ def language_delimiters(language):
 # compute_diffs_regtest(myers_diff)
 # print(time.time() - start)
 # start = time.time()
-# compute_diffs_regtest(compute_diffs)
+# compute_diffs_regtest(compute_diffs_fast)
+# print(time.time() - start)
+# start = time.time()
+# compute_diffs_regtest(compute_diffs_fast_line)
 # print(time.time() - start)
 
 def session_tree(sessions, remove=0):
