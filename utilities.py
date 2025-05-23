@@ -369,7 +369,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.highlight = self.config['highlight']
         self.allow_ip_change = int(self.config['allow_ip_change'])
         self.notation = self.config['notation']
+        self.notation_parsed = common.Grades(self.notation)
         self.notationB = self.config['notationB']
+        self.notationB_parsed = common.Grades(self.notationB)
         self.theme = self.config['theme']
         self.active_teacher_room = self.config['active_teacher_room']
         self.messages = self.config['messages']
@@ -535,19 +537,29 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             return self.feedback
         return min(self.feedback, active_teacher_room.feedback)
 
-    def get_notation(self, login:str) -> str:
-        """Return the notation for the student"""
+    def get_version(self, login:str) -> str:
+        """Return the version for the student"""
         active_teacher_room = self.active_teacher_room.get(login)
         if active_teacher_room:
             version = active_teacher_room[2].split(',')
         else:
-            return self.notation
+            return 'a'
         if len(version) < 3:
-            return self.notation
+            return 'a'
         version = version[3]
         if version == 'b' and self.notationB:
-            return self.notationB
-        return self.notation
+            return 'b'
+        return 'a'
+    def get_notation(self, login:str) -> str:
+        """Return the notation for the student"""
+        if self.get_version(login) == 'a':
+            return self.notation
+        return self.notationB
+    def get_notation_parsed(self, login:str) -> str:
+        """Return the notation for the student"""
+        if self.get_version(login) == 'a':
+            return self.notation_parsed
+        return self.notationB_parsed
 
     def get_comments(self, login:str) -> str:
         """Get the comments DEPRECATED"""
@@ -575,17 +587,20 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         with open(grade_file, "a", encoding='utf-8') as file:
             file.write(json.dumps(grade) + '\n')
         grades = self.get_grades(login)
-        grading = {}
-        for line in grades.split('\n'):
-            if line:
-                line = json.loads(line)
-                if line[3] == '?':
-                    grading[line[2]] = '?'
-                elif line[3]:
-                    grading[line[2]] = float(line[3])
-                else:
-                    grading.pop(line[2], None)
-        new_value = [sum(i for i in grading.values() if i != '?'), len(grading)]
+        grading = common.parse_grading(grades, fast=True)
+        notation = self.get_notation_parsed(login)
+        values = []
+        for grade in notation.grades:
+            value = grading.get(grade.key, None)
+            if value is not None:
+                values.append(float(value))
+        competences = []
+        for grade in notation.competences:
+            value = grading.get(grade.key, None)
+            if value is not None and value != '?':
+                competences.append(float(value))
+        new_value = [sum(values), len(values),
+                     sum(competences)/len(competences) if competences else 0, len(competences)]
         self.set_parameter('active_teacher_room', new_value, login, 8)
         return grades
 

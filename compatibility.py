@@ -99,19 +99,6 @@ def record(action):
         pass
     document.body.append(script)
 
-def parse_grading(history):
-    """Get grading dictionary from text history"""
-    grading = {}
-    if not history:
-        return grading
-    d = Date()
-    for line in history.split('\n'):
-        if line:
-            line = JSON.parse(line)
-            d.setTime(line[0]*1000)
-            grading[line[2]] = [line[3], d + '\n' + line[1]]
-    return grading
-
 def two_digit(number):
     """ 6 → 06 """
     return ('0' + str(int(number)))[-2:]

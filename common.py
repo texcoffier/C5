@@ -154,6 +154,35 @@ class Grades:
             content.append(grade.with_key())
         return ''.join(content)
 
+try:
+    nice_date(0)
+except: # pylint: disable=bare-except
+    time = __import__('time')
+    def nice_date(seconds, secs=False):
+        if secs:
+            time_format = '%Y-%m-%d %H:%M:%S'
+        else:
+            time_format = '%Y-%m-%d %H:%M'
+        return time.strftime(time_format, time.localtime(seconds))
+
+def parse_grading(history, fast=False):
+    """Get grading dictionary from text history"""
+    grading = {}
+    if not history:
+        return grading
+    for line in history.split('\n'):
+        if line:
+            seconds, login, key, grade = eval(line)
+            if grade:
+                if fast:
+                    grading[key] = grade
+                else:
+                    grading[key] = [grade, nice_date(seconds, secs=True) + '\n' + login]
+            else:
+                if key in grading:
+                    del grading[key]
+    return grading
+
 # Journal management.
 # Common between server and browser.
 #

@@ -878,7 +878,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.fillText(student.surname, x_pos, y_pos)
             if student.grade:
                 y_pos += line_height
-                ctx.fillText(student.grade[0], x_pos, y_pos)
+                grade = student.grade[0]
+                if student.grade[3]:
+                    grade += ' c:' + (student.grade[2]/student.grade[3]).toFixed(1)
+                ctx.fillText(grade, x_pos, y_pos)
 
         if len(SIMILARITIES) == 0:
             return
@@ -1627,7 +1630,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         temps = "Temps bonus"
         if student.bonus_time:
             temps += ' (' + int(student.bonus_time / 60) + ' min.)'
-        fullscreen = "Encart rouge bloquant : "
+        fullscreen = "Encart rouge plein écran bloquant : "
         if student.fullscreen:
             fullscreen += "le réactiver"
         else:
