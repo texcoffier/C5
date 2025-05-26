@@ -2271,6 +2271,9 @@ def set_visibility(attr):
 
 def reader(event): # pylint: disable=too-many-branches
     """Read the live journal"""
+    if event.target.readyState == XMLHttpRequest.DONE:
+        reload_on_error()
+        return
     length = len(event.target.responseText)
     while True: # Because it is a critical section
         chunk = event.target.responseText.substr(event.target.last_size or 0)
@@ -2663,8 +2666,8 @@ else:
     def reload_on_error(event):
         if isinstance(event, ProgressEvent):
             return
-        print('Connexion closed')
         print(event)
+        alert('Connexion closed: page will be reloaded.')
         window.location.reload()
 
     if COURSE == "=IPS":
@@ -2673,6 +2676,8 @@ else:
         XHR = eval('new XMLHttpRequest()') # pylint: disable=eval-used
         XHR.addEventListener('readystatechange', reader)
         XHR.addEventListener('error', reload_on_error)
+        XHR.addEventListener('abort', reload_on_error)
+        XHR.addEventListener('timeout', reload_on_error)
         XHR.open("GET", 'journal/' + COURSE + '?ticket=' + TICKET)
         XHR.send()
 

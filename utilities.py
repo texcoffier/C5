@@ -1456,6 +1456,11 @@ With Firefox:
         do
             pkill --uid \$(id -u) --oldest -f python3\ ./\$I
         done
+        sleep 0.1
+        for I in http_server compile_server infos_server dns_server
+        do
+            pkill -1 --uid \$(id -u) --oldest -f python3\ ./\$I
+        done
         """,
     'open': f"""
         xdg-open https://{C5_URL}/{'=' + sys.argv[2] if len(sys.argv) >= 3 else ''}
