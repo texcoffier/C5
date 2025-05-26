@@ -1543,22 +1543,32 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     content = []
                     content.append('<h2>' + other.login + ' [' + similarity + ' lignes] '
                         + other.firstname + ' ' + other.surname + '</h2><pre class="pairs">')
+                    red = False
                     for question, other_source in enumerate(SOURCES_ORIG[other.login] or []): 
                         student_source = SOURCES[student.login][question]
                         for line_orig in other_source.split('\n'):
-                            if simplify_line(line_orig) in student_source:
-                                content.append('<b>' + html(line_orig) + '</b><br>')
+                            simplified = simplify_line(line_orig)
+                            if simplified in student_source:
+                                line_orig = html(line_orig)
+                                if LINES[simplified] <= 3:
+                                    red = True
+                                    line_orig = '<span style="color: #F00">' + line_orig + '<span>'
+                                content.append('<b>' + line_orig + '</b><br>')
                             else:
                                 content.append(html(line_orig) + '<br>')
                         content.append('<hr>')
                     content.append('</pre>')
+                    initials = other.initials()
+                    if red:
+                        initials = '<span style="color: #F00">' + initials + '<span>'
                     txt.append('<button onclick="document.getElementById(\'other\').innerHTML=unescape(\''
-                        + escape(''.join(content)) + '\')">' + other.initials() + ' ' + similarity + '</button>')
+                        + escape(''.join(content)) + '\')">' + initials + ' ' + similarity + '</button>')
                 txt.append('<div id="other" style="background: #FEE"></div>')
                 txt.append('</td><td style="vertical-align:top">')
                 for i, lines_orig in enumerate(SOURCES_ORIG[student.login]):
                     txt.append('<pre>Nombre de lignes identiques. Vide=code initial, 1=unique.\n')
                     txt.append('Et noms des voisins avec la même ligne.\n')
+                    txt.append('Rouge : ligne tapée 2 ou 3 fois par l\'ensemble des étudiants.\n')
                     first_lines = SOURCES[student.login][i]
                     for line, simplified in zip(lines_orig.split('\n'), get_lines(lines_orig)):
                         nbr = LINES[simplified]
@@ -1592,7 +1602,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                             before = ['    ']
                         while len(before) < 5:
                             before.append('         ')
-                        txt.append(' '.join(before[:4]) + ' | ' + html(line) + '<br>')
+                        line = html(line)
+                        if nbr != 1 and nbr <= 3:
+                            line = '<span style="color:#F00">' + line + '</span>'
+                        txt.append(' '.join(before[:4]) + ' | ' + line + '<br>')
                     txt.append('</pre>')
                     txt.append('<hr>')
                 txt.append('</tr><table>')
