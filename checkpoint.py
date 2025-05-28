@@ -376,6 +376,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     state = 'nostate'
     similarity_todo_pending = 0
     similarities = []
+    debug = False
     def __init__(self, info):
         self.menu = document.getElementById('top')
         self.the_menu = Menu(self)
@@ -476,6 +477,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.rotate = (self.rotate + angle) % 360
         self.write_location()
         self.update_visible()
+        scheduler.update_page = True
+    def do_debug(self):
+        self.debug = not self.debug
         scheduler.update_page = True
     def get_event(self, event):
         """Get event coordinates"""
@@ -1061,7 +1065,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.lineTo(x_end, y_end)
             ctx.stroke()
 
-        if LOGIN in CONFIG.roots:
+        if self.debug:
             ctx.lineWidth = 0.025
             ctx.strokeStyle = "#DDD"
             for room in self.rooms.Values():
@@ -1313,7 +1317,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.write_location()
         ctx = canvas.getContext("2d")
         ctx.reset()
-        if LOGIN in CONFIG.roots and len(self.draw_times) > 10:
+        if self.debug and len(self.draw_times) > 10:
             self.draw_times = self.draw_times[1:]
             ctx.font = "16px sans-serif"
             ctx.fillStyle = '#000'
@@ -1332,7 +1336,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.top_line = min(lin1, lin2)
         self.right_column = max(col1, col2)
         self.bottom_line = max(lin1, lin2)
-        if LOGIN in CONFIG.roots:
+        if self.debug:
             ctx.lineWidth = 0.01
             ctx.strokeStyle = "#DDD"
             for column in range(0, len(self.columns_x)/2):
@@ -2195,6 +2199,8 @@ def create_page(building_name):
         <button onclick="ROOM.do_rotate(90)" style="float:right;"><span style="font-family:emoji;font-size:200%; line-height:0.4px">↺</span><br>90°</button>
         <div id="TTL" style="line-height: 0.1em; padding-top: 0.7em"></div>
         ''']
+    if LOGIN in CONFIG.roots:
+        content.append('<button onclick="ROOM.do_debug()" style="font-family:emoji;margin-top:0.3em;font-size:150%;">🐞</button>')
     content.append(
         '<span class="course" id="display_session_name">'
         + COURSE.split('=')[1].replace(RegExp('_', 'g'), ' ')
