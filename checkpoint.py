@@ -13,7 +13,6 @@ TOP_ACTIVE = '#8F8D'
 ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
 LONG_CLICK = 500
-MENU_FONT = "18px sans-serif"
 SPY_FONT = 12
 
 if COURSE in ('=MAPS', '=IPS'):
@@ -268,56 +267,60 @@ class Menu:
         if not self.opened:
             return
         def set_font(message):
+            font = '16px sans-serif'
             if message.startswith('*'):
-                ctx.font = "bold " + MENU_FONT
+                ctx.font = "bold " + font
                 message = message[1:]
             elif message.startswith('→'):
-                ctx.font = MENU_FONT.replace('sans-serif', 'monospace')
+                ctx.font = font.replace('sans-serif', 'monospace')
             else:
-                ctx.font = MENU_FONT
+                ctx.font = font
             return message
-        scale = self.room.scale
-        x_pos, y_pos, _x_size, _y_size = self.room.xys(self.column - 0.5, self.line - 0.5)
-        if self.room.rotate_180:
-            x_pos -= scale
-            y_pos -= scale
-        padding = 10
+
+        x_pos, y_pos, _x_size, _y_size = self.room.xys(self.column, self.line)
+        ctx.fillStyle = '#FF08'
+        ctx.fillRect(x_pos, y_pos, 1, 1)
+
+        x_pos, y_pos = self.room.normal_top_right(x_pos, y_pos)
+
+
+        ctx.save()
+        ctx.resetTransform()
+
+        padding = 4
         menu_width = 0
-        y_size = 0
+        y_size = 0.6
         for message in self.model:
             set_font(message)
             box = ctx.measureText(message)
             menu_width = max(box.width, menu_width)
-            descent = box.fontBoundingBoxDescent
-            y_size = max(box.fontBoundingBoxAscent + descent, y_size)
         menu_width += 2 * padding
-        menu_line = y_size * 1.1
-        menu_height = len(self.model) * menu_line
+        menu_line = y_size * 40
+        menu_height = len(self.model) * menu_line + padding
 
         ctx.fillStyle = "#FFC"
         ctx.globalAlpha = 0.9
-        ctx.fillRect(x_pos + scale, y_pos, menu_width, menu_height)
+        ctx.fillRect(x_pos + 1, y_pos, menu_width, menu_height)
 
         ctx.strokeStyle = "#000"
-        ctx.lineWidth = 2
+        ctx.lineWidth = 1
         ctx.lineCap = 'round'
         ctx.beginPath()
         ctx.moveTo(x_pos, y_pos)
-        ctx.lineTo(x_pos + scale + menu_width, y_pos)
-        ctx.lineTo(x_pos + scale + menu_width, y_pos + menu_height)
-        ctx.lineTo(x_pos + scale, y_pos + menu_height)
-        ctx.lineTo(x_pos + scale, y_pos + scale)
-        ctx.lineTo(x_pos, y_pos + scale)
+        ctx.lineTo(x_pos + menu_width, y_pos)
+        ctx.lineTo(x_pos + menu_width, y_pos + menu_height)
+        ctx.lineTo(x_pos, y_pos + menu_height)
         ctx.lineTo(x_pos, y_pos)
         ctx.stroke()
 
-        x_pos += scale + padding
+        event_x, event_y = self.room.inverse(self.room.event_x, self.room.event_y)
+        x_pos += 1 + padding
         ctx.globalAlpha = 1
         ctx.fillStyle = "#000"
         self.selected = None
         for i, message in enumerate(self.model):
             message = set_font(message)
-            y_item = y_pos + menu_line * i
+            y_item = y_pos + menu_line * i + 0.1
             if message in self.reds:
                 ctx.fillStyle = "#FDD"
                 ctx.fillRect(x_pos, y_item, menu_width - 2 * padding, menu_line)
@@ -325,16 +328,17 @@ class Menu:
             if (i > 1 # pylint: disable=too-many-boolean-expressions
                     and message != ''
                     and not message.startswith(' ')
-                    and self.room.event_x > x_pos
-                    and self.room.event_x < x_pos + menu_width
-                    and self.room.event_y > y_item
-                    and self.room.event_y < y_item + menu_line
+                    and event_x > x_pos
+                    and event_x < x_pos + menu_width
+                    and event_y > y_item
+                    and event_y < y_item + menu_line
                ):
                 ctx.fillStyle = "#FF0"
                 ctx.fillRect(x_pos, y_item, menu_width - 2 * padding, menu_line)
                 ctx.fillStyle = "#000"
                 self.selected = message
-            ctx.fillText(message, x_pos, y_item + menu_line - descent)
+            ctx.fillText(message, x_pos, y_item + menu_line - 6)
+        ctx.restore()
 
 class Room: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Graphic display off rooms"""
@@ -368,7 +372,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     student_clicked = None # The student that may be moved
     ctrl = False # Control key pressed
     time_span = [0, 1e50]
-    rotate_180 = False
+    rotate = 0
     state = 'nostate'
     similarity_todo_pending = 0
     similarities = []
@@ -391,43 +395,86 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.start_timestamp = strptime(OPTIONS['start'])
         self.stop_timestamp = strptime(OPTIONS['stop'])
     def xys(self, column, line):
-        """Change coordinates system"""
-        return [self.left + self.scale * self.columns_x[2*column],
-                self.top + self.scale * self.lines_y[2*line],
-                2 * self.scale * self.columns_width[2*column],
-                2 * self.scale * self.lines_height[2*line]]
-    def get_column_row(self, pos_x, pos_y):
+        """Change coordinates system.
+        If column and line are integer: the top left of the cell
+        If there is 0.5 more : center of the cell.
+        """
+        return [self.columns_x[2*column],
+                self.lines_y[2*line],
+                2 * self.columns_width[2*column],
+                2 * self.lines_height[2*line]]
+    def inverse(self, pos_x, pos_y):
+        point = eval('new DOMPoint(pos_x, pos_y)')
+        point = document.getElementById('canvas').getContext("2d").getTransform(
+            ).invertSelf().transformPoint(point)
+        return point.x, point.y
+    def normal(self, pos_x, pos_y):
+        point = eval('new DOMPoint(pos_x, pos_y)')
+        point = document.getElementById('canvas').getContext("2d").getTransform(
+            ).transformPoint(point)
+        return point.x, point.y
+    def normal_points(self, pos_x, pos_y, width=1, height=1):
+        transform = document.getElementById('canvas').getContext("2d").getTransform()
+        point = eval('new DOMPoint(0, 0)')
+        points = []
+        for i in range(2):
+            point.x = pos_x + i*width
+            for j in range(2):
+                point.y = pos_y + j*height
+                points.append(transform.transformPoint(point))
+        return points
+    def normal_top_right(self, pos_x, pos_y):
+        def cmp(a, b):
+            return (b.x - b.y) - (a.x - a.y)
+        points = self.normal_points(pos_x, pos_y)
+        points.sort(cmp)
+        return points[0].x, points[0].y
+    def normal_top_left(self, pos_x, pos_y, width, height):
+        def cmp(a, b):
+            return (-b.x - b.y) - (-a.x - a.y)
+        points = self.normal_points(pos_x, pos_y, width, height)
+        points.sort(cmp)
+        return points[0].x, points[0].y
+    def normal_bounding_box(self, pos_x, pos_y, width, height):
+        xmin = ymin = 1e9
+        xmax = ymax = -1e9
+        for point in self.normal_points(pos_x, pos_y, width, height):
+            xmin = min(point.x, xmin)
+            xmax = max(point.x, xmax)
+            ymin = min(point.y, ymin)
+            ymax = max(point.y, ymax)
+        return xmin, ymin, xmax, ymax
+
+    def get_column_row(self, screen_x, screen_y, truncate=False):
         """Return character position in the character map"""
-        if pos_y < self.real_top or pos_x < self.real_left:
-            return [-1, -1]
+        pos_x, pos_y = self.inverse(screen_x, screen_y)
         column = -1
-        for i, position in enumerate(self.columns_x):
-            if self.rotate_180:
-                if position <= (pos_x - self.left) / self.scale:
-                    column = int(i/2)
+        if pos_x >= 0:
+            for i, position in enumerate(self.columns_x):
+                if pos_x + 1 >= position and position > pos_x:
+                    column = int((i-1)/2)
                     break
-            else:
-                if position > (pos_x - self.left) / self.scale:
-                    column = int(i/2)
-                    break
+            if column == -1 and truncate:
+                column = int((len(self.columns_x) - 1)/2)
+        else:
+            if truncate:
+                column = 0
         line = -1
-        for i, position in enumerate(self.lines_y):
-            if self.rotate_180:
-                if position <= (pos_y - self.top) / self.scale:
-                    line = int(i/2)
+        if pos_y >= 0:
+            for i, position in enumerate(self.lines_y):
+                if pos_y + 1 >= position and position > pos_y:
+                    line = int((i-1)/2)
                     break
-            else:
-                if position > (pos_y - self.top) / self.scale:
-                    line = int(i/2)
-                    break
-        if column >= 0 and column <= self.x_max and line >= 0 and line < len(self.lines):
-            return [column, line]
-        return [-1, -1]
-    def do_rotate_180(self):
+            if line == -1:
+                line = len(self.lines) - 1
+        else:
+            if truncate:
+                line = 0
+        return [column, line]
+    def do_rotate(self, angle):
         """Rotate the display"""
-        self.rotate_180 = not self.rotate_180
-        self.left = -self.left + self.width + self.menu.offsetWidth - (self.x_max+1) * self.scale
-        self.top = -self.top + self.height - (len(self.lines)+1) * self.scale
+        self.rotate = (self.rotate + angle) % 360
+        self.write_location()
         self.update_visible()
         scheduler.update_page = True
     def get_event(self, event):
@@ -459,8 +506,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             for radius in range(1, 10):
                 for dir_x in range(-radius, radius + 1):
                     for dir_y in range(-radius, radius + 1):
-                        event_x2 = event_x + dir_x*self.scale/2
-                        event_y2 = event_y + dir_y*self.scale/2
+                        event_x2 = event_x + dir_x/2
+                        event_y2 = event_y + dir_y/2
                         col2, lin2 = self.get_column_row(event_x2, event_y2)
                         if (lin2 >= 0 and col2 >= 0 and self.lines[lin2][col2] in ' cab'
                                and self.columns_width[2*col2] == 0.5
@@ -502,6 +549,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.drag_y_current = self.drag_y_start = None
         self.moving = False
         self.scale = info.scale or 0
+        self.rotate = info.rotate or 0
         self.update_sizes(0.5)
         self.update_visible()
         self.search_rooms()
@@ -595,8 +643,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     self.columns_width[i] = 0.5
                 for i in range(2*line_start, 2*(line_start + room_height)):
                     self.lines_height[i] = 0.5
-        self.left = self.real_left
-        self.top = self.real_top
+        self.left = self.real_left / self.scale
+        self.top = self.real_top / self.scale
         self.update_visible()
     def update_visible(self):
         """Update lines/columns positions from their heights/widths"""
@@ -606,17 +654,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         for width in self.columns_width:
             self.columns_x.append(position)
             position += width
-        if self.rotate_180:
-            for i, _value in enumerate(self.columns_x):
-                self.columns_x[i] = position - self.columns_x[i] + width
         position = 0
         self.lines_y = []
         for height in self.lines_height:
             self.lines_y.append(position)
             position += height
-        if self.rotate_180:
-            for i in range(len(self.lines_y)): # pylint: disable=consider-using-enumerate
-                self.lines_y[i] = position - self.lines_y[i] + height
     def get_room(self, column, line):
         """Get room position : col_min, lin_min, width, height, center_x, center_y"""
         if not self.lines[line] or not self.lines[line][column]: # Called outside the map
@@ -680,7 +722,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                         continue
                     if last_char == '+':
                         x_pos -= 0.5
-                    lines.append([start-0.5, y_pos, x_pos-0.5, y_pos])
+                    lines.append([start, y_pos + 0.5, x_pos, y_pos + 0.5])
                     start = -1
                 last_char = char
     def prepare_verticals(self, chars, min_size, lines):
@@ -702,7 +744,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                         continue
                     if last_char == '+':
                         y_pos -= 0.5
-                    lines.append([x_pos, start-0.5, x_pos, y_pos-0.5])
+                    lines.append([x_pos + 0.5, start, x_pos + 0.5, y_pos])
                     start = -1
                 last_char = char
     def prepare_map(self):
@@ -754,18 +796,15 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.globalAlpha = 0.5
         for building, column, line, _message, _time in CONFIG.computers:
             if building == self.building:
-                x_pos, y_pos, x_size, y_size = self.xys(column - 0.5, line - 0.5)
+                x_pos, y_pos, x_size, y_size = self.xys(column, line)
                 ctx.fillRect(x_pos, y_pos, x_size, y_size)
         ctx.globalAlpha = 1
     def draw_students(self, ctx): # pylint: disable=too-many-branches
         """Draw students names"""
         now = seconds()
-        line_height = self.scale/4
+        line_height = 1./4
         ctx.font = line_height + "px sans-serif"
-        if self.rotate_180:
-            self.students.sort(cmp_student_position_reverse)
-        else:
-            self.students.sort(cmp_student_position)
+        self.students.sort(cmp_student_position)
         char_size = ctx.measureText('x')
         max_question_done = 0
         for student in self.students:
@@ -776,21 +815,32 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if (student.column >= self.left_column and student.column <= self.right_column
                     and student.line >= self.top_line and student.line <= self.bottom_line):
                 x_pos, y_pos, x_size, y_size = self.xys(student.column, student.line)
-                students_onscreen.append([student, x_pos, y_pos, x_size, y_size])
+                if x_size == 1 and y_size == 1:
+                    students_onscreen.append([student, x_pos, y_pos])
 
-        for student, x_pos, y_pos, x_size, y_size in students_onscreen:
-            x_pos -= self.scale / 2
+        if self.rotate == 180:
+            students_onscreen = students_onscreen[::-1]
+        elif self.rotate == 90:
+            def cmp_pos_90(a, b):
+                return a[2] - b[2]
+            students_onscreen.sort(cmp_pos_90)
+        elif self.rotate == 270:
+            def cmp_pos_270(a, b):
+                return b[2] - a[2]
+            students_onscreen.sort(cmp_pos_270)
+
+        for student, x_pos, y_pos in students_onscreen:
             # Lighten the draw zone
             ctx.globalAlpha = 0.8
             ctx.fillStyle = "#FFF"
-            ctx.fillRect(x_pos, y_pos - y_size/2, x_size, y_size)
+            ctx.fillRect(x_pos, y_pos, 1, 1)
             ctx.globalAlpha = 0.6
 
             # Square border
             if student.with_me():
-                ctx.lineWidth = 0.1 * self.scale
+                ctx.lineWidth = 0.1
             else:
-                ctx.lineWidth = 0.05 * self.scale
+                ctx.lineWidth = 0.05
 
             # Draw square border
             if student.good_room:
@@ -808,21 +858,21 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     border_color = "#F90"
             ctx.strokeStyle = border_color
             ctx.beginPath()
-            ctx.rect(x_pos + ctx.lineWidth/2, y_pos - y_size/2 + ctx.lineWidth/2,
-                     x_size - ctx.lineWidth, y_size - ctx.lineWidth)
+            ctx.rect(x_pos + ctx.lineWidth/2, y_pos + ctx.lineWidth/2,
+                     1 - ctx.lineWidth, 1 - ctx.lineWidth)
             ctx.closePath()
             ctx.stroke()
 
             # Following graphics must be in the square
             left = x_pos + ctx.lineWidth
-            top = y_pos - y_size/2 + ctx.lineWidth
-            width = x_size - 2*ctx.lineWidth
-            height = y_size - 2*ctx.lineWidth
+            top = y_pos + ctx.lineWidth
+            width = 1 - 2*ctx.lineWidth
+            height = 1 - 2*ctx.lineWidth
 
             # Draw focus lost time
             if student.blur_time: # student.blur contains the number of blur
                 ctx.fillStyle = "#F44"
-                ctx.fillRect(left, top, min(2*width, student.blur_time*self.scale/20), height/2)
+                ctx.fillRect(left, top, min(2*width, student.blur_time/20), height/2)
 
             # Draw question done correctly
             if student.nr_questions_done and max_question_done:
@@ -851,7 +901,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Draw instant focus lost
             if student.data.blurred and student.active:
                 ctx.fillStyle = "#F0F"
-                ctx.fillRect(x_pos - x_size/2, y_pos - y_size, 2*x_size, 2*y_size)
+                ctx.fillRect(x_pos - 0.5, y_pos - 0.5, 2, 2)
 
             # Draw student name
             if (self.lines_height[2*student.line] < 0.5
@@ -862,7 +912,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
             ctx.globalAlpha = 1
             ctx.fillStyle = "#000"
-            y_pos = y_pos - char_size.fontBoundingBoxDescent
+            if self.rotate:
+                ctx.save()
+                ctx.translate(x_pos + 0.5, y_pos + 0.5)
+                ctx.rotate(Math.PI*self.rotate/180)
+                ctx.translate(-x_pos - 0.5, -y_pos - 0.5)
+            y_pos = y_pos + line_height
             if student.login in OPTIONS['tt']:
                 bonus = '⅓'
             else:
@@ -870,9 +925,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if student.bonus_time:
                 bonus += '+' + (student.bonus_time//60) + 'm'
             if bonus:
-                y_pos -= line_height
                 ctx.fillText(bonus, x_pos, y_pos)
-                y_pos += line_height
+            y_pos += line_height
             ctx.fillText(student.firstname, x_pos, y_pos)
             y_pos += line_height
             ctx.fillText(student.surname, x_pos, y_pos)
@@ -882,23 +936,27 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 if student.grade[3]:
                     grade += ' c:' + (student.grade[2]/student.grade[3]).toFixed(1)
                 ctx.fillText(grade, x_pos, y_pos)
+            if self.rotate:
+                ctx.restore()
 
         if len(SIMILARITIES) == 0:
             return
         ctx.globalAlpha = 0.8
         hide, normal, orange, red = self.color_span()
-        for student, x_pos, y_pos, x_size, y_size in students_onscreen:
+        for student, x_pos, y_pos in students_onscreen:
             similarities = SIMILARITIES[student.login]
             if not similarities:
                 continue
+            x_pos += 0.5
+            y_pos += 0.5
             for close_student, similarity in similarities.Items():
                 close_student = STUDENT_DICT[close_student]
                 if similarity <= hide or student.login < close_student.login:
                     continue
-                x_pos2, y_pos2, _x_size2, _y_size2 = self.xys(close_student.column, close_student.line)
+                x_pos2, y_pos2, _x_size2, _y_size2 = self.xys(close_student.column+0.5, close_student.line+0.5)
                 vec_x = x_pos - x_pos2
                 vec_y = y_pos - y_pos2
-                length = (vec_x**2 + vec_y**2)**0.5 / self.scale * 3
+                length = (vec_x**2 + vec_y**2)**0.5 * 3
                 vec_x /= length
                 vec_y /= length
                 coord_x = x_pos - vec_x
@@ -921,7 +979,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     ctx.strokeStyle = '#880'
                 else:
                     ctx.strokeStyle = '#DDD'
-                ctx.lineWidth = self.scale * 0.08
+                ctx.lineWidth = 0.08
                 ctx.beginPath()
                 ctx.moveTo(coord_x, coord_y)
                 ctx.lineTo(x_pos2, y_pos2)
@@ -936,15 +994,14 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                                 ctx.globalAlpha = 0.5
                                 ctx.fillStyle = '#FF0'
                                 ctx.beginPath()
-                                ctx.arc(center_x, center_y, x_size/5, 0, Math.PI*2)
+                                ctx.arc(center_x, center_y, 0.2, 0, Math.PI*2)
                                 ctx.fill()
                                 ctx.globalAlpha = 0.8
 
                 ctx.fillStyle = '#00F'
                 similarity = str(similarity)
                 box = ctx.measureText(similarity)
-                ctx.fillText(similarity, center_x - box.width/2,
-                    center_y + (box.fontBoundingBoxAscent - box.fontBoundingBoxDescent)/2)
+                ctx.fillText(similarity, center_x - box.width/2, center_y + 0.1)
 
         # Similarity stats
         histogram = []
@@ -953,10 +1010,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         left = self.menu.offsetWidth + 5
         top = 300
         ctx = document.getElementById('canvas').getContext("2d")
+        ctx.save()
+        ctx.resetTransform()
         ctx.fillStyle = "#00F"
-        ctx.font = "16px sans-serif"
+        ctx.font = "12px sans-serif"
         ctx.fillText("X : Nbr lignes identiques. Y : Nbr de paires d'étudiants proches avec ce nombre de lignes", left, top + 50)
-        ctx.font = "10px sans-serif"
         ctx.globalAlpha = 1
         width = 25
         hide, normal, orange, red = self.color_span()
@@ -976,6 +1034,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.fillStyle = "#00F"
                 ctx.fillText(str(i), left + width*i, top + 10)
                 ctx.fillText(str(nbr), left + width*i, top + 25)
+        ctx.restore()
 
     def color_span(self):
         return [self.similarities[int(len(self.similarities)//6)],
@@ -985,8 +1044,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
     def draw_map(self, ctx, canvas): # pylint: disable=too-many-locals
         """Draw the character map"""
-        canvas.setAttribute('width', self.width)
-        canvas.setAttribute('height', self.height)
         #ctx.fillStyle = "#EEE"
         #ctx.fillRect(0, 0, self.width, self.height)
 
@@ -1005,11 +1062,19 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             ctx.stroke()
 
         if LOGIN in CONFIG.roots:
+            ctx.lineWidth = 0.025
             ctx.strokeStyle = "#DDD"
             for room in self.rooms.Values():
                 coord_x, coord_y, width, height = room.position
+                coord_x, coord_y = self.xys(coord_x + 0.5, coord_y + 0.5)
                 line(coord_x, coord_y, coord_x + width, coord_y + height)
                 line(coord_x + width, coord_y, coord_x, coord_y + height)
+                coord_x, coord_y = self.normal_top_left(coord_x, coord_y, width, height)
+                ctx.save()
+                ctx.resetTransform()
+                ctx.fillStyle = '#DDD'
+                ctx.fillRect(coord_x, coord_y, 10, 10)
+                ctx.restore()
 
         if self.highlight_disk:
             age = millisecs() - self.highlight_disk[2]
@@ -1022,7 +1087,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 ctx.beginPath()
                 pos_x, pos_y, scalex, _scaley = self.xys(
                     self.highlight_disk[0], self.highlight_disk[1])
-                ctx.arc(pos_x, pos_y, 2*scalex, 0, 2*Math.PI)
+                ctx.arc(pos_x+0.5, pos_y+0.5, 1, 0, 2*Math.PI)
                 ctx.fill()
                 ctx.globalAlpha = 1
 
@@ -1030,7 +1095,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.draw_move_timer()
 
         ctx.lineCap = 'round'
-        ctx.lineWidth = self.scale / 4
+        ctx.lineWidth = 0.25
         ctx.strokeStyle = "#999"
         for coords in self.walls:
             line(*coords)
@@ -1046,9 +1111,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
         ctx.strokeStyle = "#000"
         ctx.fillStyle = "#000"
-        ctx.font = self.scale + "px sans-serif,emoji"
+        ctx.font = "1px sans-serif,emoji"
         for char, chars in self.chars.Items():
-            char_size = ctx.measureText(char)
+            move_up = -0.86
+            move_left = 0
+            if char == '💻':
+                move_up = -0.75
+                move_left = 0.15
             for column, line in chars:
                 if (column < self.left_column or column > self.right_column
                         or line < self.top_line or line > self.bottom_line):
@@ -1061,34 +1130,33 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     continue
                 if self.columns_width[2*column] < 0.5:
                     continue
-                x_pos, y_pos, _x_size, y_size = self.xys(column, line)
-                rotate = self.rotate_180 and char.charCodeAt() < 256
+                x_pos, y_pos, _x_size, _y_size = self.xys(column, line)
+                rotate = char in 'ⒶⒷ' and self.rotate
                 if rotate:
                     ctx.save()
-                    ctx.translate(x_pos, y_pos)
-                    ctx.rotate(Math.PI)
-                    ctx.translate(-x_pos, -y_pos)
-                ctx.fillText(char, x_pos - char_size.width/2, y_pos + y_size/2 - char_size.fontBoundingBoxDescent)
+                    ctx.translate(x_pos+0.5, y_pos+0.5)
+                    ctx.rotate(Math.PI * rotate / 180)
+                    ctx.translate(-x_pos-0.5, -y_pos-0.5)
+                x_pos -= move_left
+                y_pos -= move_up
+                ctx.fillText(char, x_pos, y_pos)
                 if rotate:
                     ctx.restore()
     def draw_square_feedback(self, ctx):
         """Single square feedback"""
         column, line = self.get_coord(self.event_x, self.event_y, True)
-        if self.rotate_180:
-            x_pos, y_pos, x_size, y_size = self.xys(column + 0.5, line + 0.5)
-        else:
-            x_pos, y_pos, x_size, y_size = self.xys(column - 0.5, line - 0.5)
+        x_pos, y_pos, x_size, y_size = self.xys(column, line)
         ctx.fillStyle = "#0F0"
         ctx.globalAlpha = 0.5
         ctx.fillRect(x_pos, y_pos, x_size, y_size)
         ctx.globalAlpha = 1
     def draw_help(self, ctx): # pylint: disable=too-many-statements
         """Display documentation"""
-        size = self.scale * 1.5
-        indent = 2 * self.scale
-        ctx.font = size + "px sans-serif"
+        size = 1.5
+        indent = 2
+        ctx.font = "1.5px sans-serif"
         ctx.fillStyle = "#000"
-        line_top = self.top - 2.7 * size * 2
+        line_top = -6 * size
 
         def draw_messages(column, texts):
             line = line_top
@@ -1110,7 +1178,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 line += size
             return max_width + 2*size
 
-        column = self.left
+        column = 0
         column += draw_messages(column, [
             "Navigation sur le plan :",
             "Utilisez la molette pour zoomer.",
@@ -1140,8 +1208,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def draw_teachers(self, ctx):
         """Display teacher names in front of rooms"""
         ctx.fillStyle = "#000"
-        size = self.scale * 0.5
-        ctx.font = size + "px sans-serif"
+        ctx.font = "0.5px sans-serif"
         for room in self.rooms.Values():
             if room['teachers']:
                 column, line = room['label']
@@ -1149,30 +1216,35 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     or self.columns_width[2*column] < 0.5):
                     continue
                 x_pos, y_pos, _x_size, _y_size = self.xys(column, line)
-                if self.rotate_180:
-                    x_pos -= ctx.measureText(room['teachers']).width
-                ctx.fillText(room['teachers'], x_pos, y_pos)
+                if self.rotate == 180:
+                    width = ctx.measureText(room['teachers']).width
+                    ctx.save()
+                    ctx.rotate(-Math.PI)
+                    ctx.translate(-2*x_pos - width, -2*y_pos - 1)
+                ctx.fillText(room['teachers'], x_pos + 0.5, y_pos + 0.75)
+                if self.rotate == 180:
+                    ctx.restore()
     def draw_ips(self, ctx):
         """Display used IP in room"""
         if not MAPPER:
             return
-        ctx.font = self.scale/3 + "px sans-serif"
+        ctx.font = "0.3px sans-serif"
         if self.ctrl or COURSE == "=MAPS":
             for room, hosts in CONFIG.ips_per_room.Items():
                 if room.split(',')[0] == self.building:
                     for host in hosts.split(RegExp(' +')):
                         place = host.split(',')
                         if len(place) == 3:
-                            x_pos, y_pos, _x_size, y_size = self.xys(place[1]-0.5, place[2])
+                            x_pos, y_pos, _, _ = self.xys(place[1], place[2])
                             ip_addr = place[0].split('.')[0]
                             ctx.fillStyle = "#FFF"
                             ctx.globalAlpha = 0.8
                             ctx.beginPath()
-                            ctx.rect(x_pos, y_pos - y_size/2, ctx.measureText(ip_addr).width, y_size)
+                            ctx.rect(x_pos, y_pos, ctx.measureText(ip_addr).width, 1)
                             ctx.fill()
                             ctx.fillStyle = "#000"
                             ctx.globalAlpha = 1
-                            ctx.fillText(ip_addr, x_pos, y_pos)
+                            ctx.fillText(ip_addr, x_pos, y_pos + 0.6)
             return
         for room, ips in self.all_ips.Items():
             if room not in self.rooms:
@@ -1183,11 +1255,14 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 x_pos, y_pos, _x_size, _y_size = self.xys(left, top)
                 ctx.fillText(line, x_pos, y_pos)
         ctx.fillStyle = "#F00"
+        ctx.strokeStyle = "#FFF"
+        ctx.lineWidth = 0.1
         for i_y, line in enumerate(self.lines):
             for i_x, char in enumerate(line):
                 if char in ('a', 'b'):
                     x_pos, y_pos, _x_size, _y_size = self.xys(i_x, i_y)
-                    ctx.fillText(i_x + ',' + i_y, x_pos, y_pos)
+                    ctx.strokeText(i_x + ',' + i_y, x_pos, y_pos + 0.6)
+                    ctx.fillText(i_x + ',' + i_y, x_pos, y_pos + 0.6)
         for full_ip, places_nr in IP_TO_PLACE.Items():
             if len(places_nr[0]) != 1:
                 continue
@@ -1213,6 +1288,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         canvas = document.getElementById('canvas')
         self.width = canvas.offsetWidth
         self.height = canvas.offsetHeight
+        canvas.setAttribute('width', self.width)
+        canvas.setAttribute('height', self.height)
         if self.scale == 0:
             my_rooms = False
             if document.getElementById('my_rooms') and document.getElementById('my_rooms').checked:
@@ -1227,27 +1304,65 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             else:
                 help_lines = HELP_LINES
             self.scale = self.min_scale = min(
-                (self.width - self.real_left) / max(self.columns_x[0], self.columns_x[2 * self.x_max - 1]),
-                (self.height - self.real_top) / max(self.lines_y[0], self.lines_y[2 * len(self.lines) - 1 - help_lines]))
+                (self.width - self.real_left) / self.columns_x[-1],
+                (self.height - self.real_top) / (self.lines_y[-1] + help_lines))
+            self.left = self.real_left / self.scale
             self.top = self.real_top
             if not my_rooms:
-                self.top += help_lines * self.scale
+                self.top += help_lines
             self.write_location()
         ctx = canvas.getContext("2d")
-        self.left_column, self.top_line = self.get_column_row(0, self.real_top+1)
-        self.right_column, self.bottom_line = self.get_column_row(self.width, self.height)
-        if self.rotate_180:
-            self.left_column, self.top_line, self.right_column, self.bottom_line = (
-                self.right_column, self.bottom_line, self.left_column, self.top_line)
-        self.left_column = max(self.left_column, 0) - 1
-        self.top_line = max(self.top_line, 0) - 2
-        if self.right_column == -1:
-            self.right_column = self.x_max
-        if self.bottom_line == -1:
-            self.bottom_line = len(self.lines)
+        ctx.reset()
+        if LOGIN in CONFIG.roots and len(self.draw_times) > 10:
+            self.draw_times = self.draw_times[1:]
+            ctx.font = "16px sans-serif"
+            ctx.fillStyle = '#000'
+            ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms',
+                         self.width - 70, 50)
+        if self.rotate:
+            ctx.translate(self.width/2, self.height/2)
+            ctx.rotate(-Math.PI * self.rotate / 180)
+            ctx.translate(-self.width/2, -self.height/2)
+        ctx.scale(self.scale, self.scale)
+        ctx.translate(self.left, self.top)
+
+        col1, lin1 = self.get_column_row(0         , self.real_top, truncate=True)
+        col2, lin2 = self.get_column_row(self.width, self.height, truncate=True)
+        self.left_column = min(col1, col2)
+        self.top_line = min(lin1, lin2)
+        self.right_column = max(col1, col2)
+        self.bottom_line = max(lin1, lin2)
+        if LOGIN in CONFIG.roots:
+            ctx.lineWidth = 0.01
+            ctx.strokeStyle = "#DDD"
+            for column in range(0, len(self.columns_x)/2):
+                x_start, y_start, _, _ = self.xys(column, 0)
+                x_end, y_end, _, _     = self.xys(column, len(self.lines_y)/2-1)
+                ctx.beginPath()
+                ctx.moveTo(x_start, y_start)
+                ctx.lineTo(x_end, y_end)
+                ctx.stroke()
+            for line in range(0, len(self.lines_y)/2):
+                x_start, y_start, _, _ = self.xys(0                    , line)
+                x_end, y_end, _, _     = self.xys(len(self.columns_x)/2-1, line)
+                ctx.beginPath()
+                ctx.moveTo(x_start, y_start)
+                ctx.lineTo(x_end, y_end)
+                ctx.stroke()
+            left_column, top_line = self.xys(self.left_column, self.top_line)
+            right_column, bottom_line = self.xys(self.right_column, self.bottom_line)
+            ctx.strokeStyle = "#F008"
+            ctx.lineWidth = 2
+            ctx.beginPath()
+            ctx.rect(left_column, top_line,
+                right_column - left_column, bottom_line - top_line)
+            ctx.closePath()
+            ctx.stroke()
+
+
         self.draw_map(ctx, canvas)
         self.draw_students(ctx)
-        ctx.font = self.scale/2 + "px sans-serif"
+        ctx.font = "0.5px sans-serif"
         self.draw_teachers(ctx)
         if square_feedback:
             self.draw_square_feedback(ctx)
@@ -1255,17 +1370,21 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.draw_help(ctx)
         self.draw_times.append(Date().getTime() - start)
         ctx.font = "16px sans-serif"
-        if LOGIN == 'thierry.excoffier' and len(self.draw_times) > 10:
-            self.draw_times = self.draw_times[1:]
-            ctx.fillText(int(sum(self.draw_times) / len(self.draw_times)) + 'ms',
-                         self.width - 70, 50)
         self.draw_computer_problems(ctx)
         self.draw_ips(ctx)
         self.the_menu.draw(ctx)
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
-        self.left += (pos_x - self.left) * (1 - new_scale/self.scale)
-        self.top += (pos_y - self.top) * (1 - new_scale/self.scale)
+        old_x, old_y = self.inverse(pos_x, pos_y) # Old zoom point
+        ctx = document.getElementById('canvas').getContext('2d')
+        ctx.save()
+        ctx.translate(-self.left, -self.top)
+        ctx.scale(new_scale/self.scale, new_scale/self.scale)
+        ctx.translate(self.left, self.top)
+        new_x, new_y = self.inverse(pos_x, pos_y) # new zoom point
+        ctx.restore()
+        self.left -= old_x - new_x
+        self.top -= old_y - new_y
         self.scale = new_scale
         self.compute_rooms_on_screen()
         self.update_waiting_room()
@@ -1347,8 +1466,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.moved = self.moved or distance2(self.drag_x_start, self.drag_y_start,
                                              self.event_x, self.event_y) > 10
         if self.moving == True: # pylint: disable=singleton-comparison
-            self.left += self.event_x - self.drag_x_current
-            self.top += self.event_y - self.drag_y_current
+            p1x, p1y = self.inverse(self.event_x, self.event_y)
+            p2x, p2y = self.inverse(self.drag_x_current, self.drag_y_current)
+            self.left += p1x - p2x
+            self.top += p1y - p2y
             self.drag_x_current = self.event_x
             self.drag_y_current = self.event_y
         else:
@@ -1377,17 +1498,30 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
     def drag_stop_click_on_room(self, event, column, line):
         """Click on a room to zoom"""
-        (_col_start, _line_start, room_width, room_height, center_x, center_y
+        (col_start, line_start, room_width, room_height, center_x, center_y
         ) = self.get_room(column, line)
         if room_width < 0 or room_height < 0:
             return
         nr_frame = 10
         def linear(start, end, i):
+            if i == 0:
+                print(start, end, i)
             return (start*i + end*(nr_frame-i)) / nr_frame
-        final_scale = Math.min(event.target.offsetWidth / room_width,
-                                event.target.offsetHeight / room_height) / 2
-        final_left = (event.target.offsetWidth + self.menu.offsetWidth)/2 - center_x * final_scale
-        final_top = event.target.offsetHeight/2 - center_y * final_scale
+        ctx = document.getElementById('canvas').getContext('2d')
+        ctx.save()
+        ctx.resetTransform()
+        ctx.translate(self.width/2, self.height/2)
+        ctx.rotate(Math.PI * self.rotate / 180)
+        ctx.translate(-self.width/2, -self.height/2)
+        xmin, ymin, xmax, ymax = self.normal_bounding_box(col_start-1, line_start-1, room_width+2, room_height+2)
+        final_scale = Math.min((event.target.offsetWidth - 1.5*self.menu.offsetWidth) / (xmax - xmin),
+                               event.target.offsetHeight / (ymax - ymin))
+        ctx.scale(final_scale, final_scale)
+        final_left, final_top = self.inverse(event.target.offsetWidth/2, event.target.offsetHeight/2)
+        ctx.restore()
+        final_left = -center_x + final_left - 0.5
+        final_top = -center_y + final_top - 0.5
+
         self.transitions = [
             [
                 linear(self.scale, final_scale, i),
@@ -1404,7 +1538,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             {'building':self.building,
              'scale': Math.round(self.scale),
              'left': Math.round(self.left),
-             'top': Math.round(self.top)})
+             'top': Math.round(self.top),
+             'rotate': self.rotate})
     def open_computer_menu(self, line, column):
         def select(item):
             if item[-1] == '!':
@@ -1576,7 +1711,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                             before = [(str(nbr) + '   ')[:4]]
                             if nbr >= 2 and nbr <= 20:
                                 for other in SIMILARITIES[student.login]:
-                                    if simplified in SOURCES[other][i]:
+                                    if SOURCES[other] and simplified in SOURCES[other][i]:
                                         tip = []
                                         lines_other = SOURCES_ORIG[other][i].split('\n')
                                         for j, line_other in enumerate(lines_other):
@@ -1882,12 +2017,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if STUDENT_DICT[self.student_clicked['login']].grade:
             return # Do not move graded student
         ctx = document.getElementById('canvas').getContext("2d")
-        x_pos, y_pos, x_size, _y_size = self.xys(self.student_clicked['column'], self.student_clicked['line'])
+        x_pos, y_pos, _x_size, _y_size = self.xys(self.student_clicked['column'], self.student_clicked['line'])
         ctx.strokeStyle = "#FF00FF80"
-        ctx.lineWidth = 0.2 * self.scale
+        ctx.lineWidth = 0.15
         angle = min(1, (millisecs() - self.drag_millisec_start) / LONG_CLICK)
         ctx.beginPath()
-        ctx.arc(x_pos, y_pos, x_size/1.8, 0, Math.PI*2*angle)
+        ctx.arc(x_pos+0.5, y_pos+0.5, 0.5, 0, Math.PI*2*angle)
         ctx.stroke()
     def pointer_enter_student_list(self):
         document.getElementById('pointer_on_student_list').style.display = 'block'
@@ -1919,9 +2054,6 @@ def cmp_student_name(student_a, student_b):
 def cmp_student_position(student_a, student_b):
     """Compare 2 students column"""
     return student_a.column - student_b.column
-def cmp_student_position_reverse(student_a, student_b):
-    """Compare 2 students column"""
-    return student_b.column - student_a.column
 
 def create_room_selector(building_name):
     return (
@@ -2060,7 +2192,7 @@ def create_page(building_name):
         >
         <span class="icon" onclick="send_alert()">🚨</span>
         <span class="icon" onclick="search_student()">🔍</span>
-        <button onclick="ROOM.do_rotate_180()" style="float:right;"><span style="font-family:emoji;font-size:200%; line-height:0.4px">↺</span><br>180°</button>
+        <button onclick="ROOM.do_rotate(90)" style="float:right;"><span style="font-family:emoji;font-size:200%; line-height:0.4px">↺</span><br>90°</button>
         <div id="TTL" style="line-height: 0.1em; padding-top: 0.7em"></div>
         ''']
     content.append(
@@ -2667,8 +2799,10 @@ else:
         if isinstance(event, ProgressEvent):
             return
         print(event)
-        alert('Connexion closed: page will be reloaded.')
-        window.location.reload()
+        def do_reload():
+            alert('Connexion closed: page will be reloaded.')
+            window.location.reload()
+        setTimeout(do_reload, 2000)
 
     if COURSE == "=IPS":
         clean_up_bad_placements()
