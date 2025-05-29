@@ -1801,8 +1801,16 @@ async def adm_building(request:Request) -> Response:
     <title>{building}</title>
     <form action="adm/building/{building}?ticket={session.ticket}" method="POST">
     <input type="submit">
-    <b>Legend</b> <span style="font-family: emoji">
-    |-+:walls d:doors w:window s→💻 c→⑁ p→🖨 r→🚻 l→↕ h→♿ g→📝 a→Ⓐ b→Ⓑ</span><br>
+    <b>Legend</b> :
+    <style>
+    TABLE {{ display:inline-block; vertical-align: middle }}
+    TABLE TD {{ background: #F8F8F8 ; text-align: center }}
+    </style>
+    <table><tr>
+    <td>| - +<td>d    <td>w     <td>s <td>c<td>p<td>r <td>l<td>h<td>g <td>a <td>b <td>e<td>v<td>^<td>&gt;<td>&lt;
+    </tr><tr>
+    <td>walls<td>doors<td>window<td>💻<td>⑁<td>🖨<td>🚻<td>↕<td>♿<td>📝<td>Ⓐ<td>Ⓑ<td>👁<td>↓<td>↑<td>→   <td>←
+    </tr></table><br>
     <textarea cols={width} spellcheck="false" style="height:calc(100vh - 5em)"
      name="map">{content}</textarea></form>''')
 

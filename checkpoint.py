@@ -474,10 +474,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         return [column, line]
     def do_rotate(self, angle):
         """Rotate the display"""
-        self.rotate = (self.rotate + angle) % 360
-        self.write_location()
-        self.update_visible()
-        scheduler.update_page = True
+        self.start_animation(self.scale, self.left, self.top, self.rotate + angle)
     def do_debug(self):
         self.debug = not self.debug
         scheduler.update_page = True
@@ -756,7 +753,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         # 🪑 🛗 not working on phone
         translate = {'c': '⑁', 's': '💻', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
                      'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' ', 'a': 'Ⓐ', 'b': 'Ⓑ',
-                     'g': '📝'}
+                     'g': '📝', '>': '→', '<': '←', 'v': '↓', '^': '↑', 'e': '👁'}
         if MAPPER:
             translate['g'] = ' '
         self.chars = {}
@@ -1122,6 +1119,19 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if char == '💻':
                 move_up = -0.75
                 move_left = 0.15
+            elif char == '👁':
+                move_left = 0.15
+            elif char in '↓':
+                move_left = -0.1
+                move_up = -0.6
+            elif char in '↑':
+                move_left = -0.1
+                move_up = -1.2
+            elif char == '→':
+                move_left = 0.15
+            elif char == '←':
+                move_left = -0.15
+
             for column, line in chars:
                 if (column < self.left_column or column > self.right_column
                         or line < self.top_line or line > self.bottom_line):
@@ -1332,10 +1342,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
         col1, lin1 = self.get_column_row(0         , self.real_top, truncate=True)
         col2, lin2 = self.get_column_row(self.width, self.height, truncate=True)
-        self.left_column = min(col1, col2)
-        self.top_line = min(lin1, lin2)
-        self.right_column = max(col1, col2)
-        self.bottom_line = max(lin1, lin2)
+        col3, lin3 = self.get_column_row(0         , self.height, truncate=True)
+        col4, lin4 = self.get_column_row(self.width, self.real_top, truncate=True)
+        self.left_column = min(col1, col2, col3, col4)
+        self.top_line = min(lin1, lin2, lin3, lin4)
+        self.right_column = max(col1, col2, col3, col4)
+        self.bottom_line = max(lin1, lin2, lin3, lin4)
         if self.debug:
             ctx.lineWidth = 0.01
             ctx.strokeStyle = "#DDD"
@@ -1409,7 +1421,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         return None
     def drag_start(self, event):
         """Start moving the map"""
-        if event.button != 0:
+        if event.button != 0 or self.animation_running:
             return
         self.get_event(event)
         window.onmousemove = window.ontouchmove = bind(self.drag_move, self)
@@ -1500,22 +1512,41 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             record('checkpoint/' + COURSE + '/' + self.moving['login'] + '/EJECT')
             self.force_update_waiting_room = True
 
-    def drag_stop_click_on_room(self, event, column, line):
+    def start_animation(self, scale, left, top, rotate):
+        self.animation_running = True
+        nr_frame = 20
+        def linear(start, end, i):
+            return (start*i + end*(nr_frame-i)) / nr_frame
+        self.transitions = [
+            [
+                linear(self.scale , scale , i),
+                linear(self.left  , left  , i),
+                linear(self.top   , top   , i),
+                linear(self.rotate, rotate, i),
+            ]
+            for i in range(0, nr_frame + 1)
+        ]
+        setTimeout(bind(self.animate_zoom, self), 40)
+        self.animate_zoom()
+
+    def drag_stop_click_on_room(self, event, column, line, rotate=None):
         """Click on a room to zoom"""
+        if rotate is None:
+            rotate = self.rotate
+        else:
+            if self.rotate == 0 and rotate == 270:
+                rotate = -90
+            elif self.rotate == 270 and rotate == 0:
+                rotate = 360
         (col_start, line_start, room_width, room_height, center_x, center_y
         ) = self.get_room(column, line)
         if room_width < 0 or room_height < 0:
             return
-        nr_frame = 10
-        def linear(start, end, i):
-            if i == 0:
-                print(start, end, i)
-            return (start*i + end*(nr_frame-i)) / nr_frame
         ctx = document.getElementById('canvas').getContext('2d')
         ctx.save()
         ctx.resetTransform()
         ctx.translate(self.width/2, self.height/2)
-        ctx.rotate(Math.PI * self.rotate / 180)
+        ctx.rotate(Math.PI * rotate / 180)
         ctx.translate(-self.width/2, -self.height/2)
         xmin, ymin, xmax, ymax = self.normal_bounding_box(col_start-1, line_start-1, room_width+2, room_height+2)
         final_scale = Math.min((event.target.offsetWidth - 1.5*self.menu.offsetWidth) / (xmax - xmin),
@@ -1525,17 +1556,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         ctx.restore()
         final_left = -center_x + final_left - 0.5
         final_top = -center_y + final_top - 0.5
+        self.start_animation(final_scale, final_left, final_top, rotate)
 
-        self.transitions = [
-            [
-                linear(self.scale, final_scale, i),
-                linear(self.left, final_left, i),
-                linear(self.top, final_top, i)
-            ]
-            for i in range(0, nr_frame + 1)
-        ]
-        setTimeout(bind(self.animate_zoom, self), 40)
-        self.animate_zoom()
     def write_location(self):
         """Add the current location in the URL"""
         location.hash = '#' + JSON.stringify(
@@ -1851,6 +1873,18 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     self.open_computer_menu(line, column)
                 elif self.lines[line][column] == 'g':
                     self.open_room_menu(line, column)
+                elif self.lines[line][column] == '>' or (
+                        self.lines[line][column] == 'e' and self.lines[line][column+1] == '>'):
+                    self.drag_stop_click_on_room(event, column, line, 90)
+                elif self.lines[line][column] == '<' or (
+                        self.lines[line][column] == 'e' and self.lines[line][column-1] == '<'):
+                    self.drag_stop_click_on_room(event, column, line, 270)
+                elif self.lines[line][column] == 'v' or (
+                        self.lines[line][column] == 'e' and self.lines[line+1][column] == 'v'):
+                    self.drag_stop_click_on_room(event, column, line, 180)
+                elif self.lines[line][column] == '^' or (
+                        self.lines[line][column] == 'e' and self.lines[line-1][column] == '^'):
+                    self.drag_stop_click_on_room(event, column, line, 0)
                 elif self.student_clicked:
                     self.open_student_menu(line, column,
                         STUDENT_DICT[self.student_clicked['login']])
@@ -1872,12 +1906,19 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def animate_zoom(self):
         """Transition from zoom"""
         if len(self.transitions): # pylint: disable=len-as-condition
-            self.scale, self.left, self.top = self.transitions.pop()
+            self.scale, self.left, self.top, self.rotate = self.transitions.pop()
+            if self.rotate >= 359.9:
+                self.rotate = 0
+            elif self.rotate < 0:
+                self.rotate += 360
             scheduler.draw = "animate_zoom"
-            setTimeout(bind(self.animate_zoom, self), 50)
+            setTimeout(bind(self.animate_zoom, self), 40)
         else:
             self.compute_rooms_on_screen()
             self.update_waiting_room()
+            self.write_location()
+            self.update_visible()
+            self.animation_running = False
     def compute_rooms_on_screen(self):
         """Compute the list of rooms on screen"""
         self.rooms_on_screen = {}
@@ -1931,7 +1972,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             messages.scrollTop = 1000000 # messages.offsetHeight does not works
     def start_move_student(self, event):
         """Move student bloc"""
-        if event.button != 0:
+        if event.button != 0 or self.animation_running:
             return
         self.get_event(event)
         login = event.currentTarget.getAttribute('login')
