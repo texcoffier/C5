@@ -1320,7 +1320,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 help_lines = 2
             else:
                 help_lines = HELP_LINES
-            self.zoom_on(-8, -help_lines, self.columns_x[-1], self.lines_y[-1] + help_lines, self.rotate)
+            self.scale = 1
+            self.left = self.real_left
+            self.top = self.real_top
+            left, top, _, _ = self.xys(0, 0)
+            right, bottom, _, _ = self.xys(len(self.columns_x)/2-1, len(self.lines)-1)
+            real_left_column = self.real_left * (right - left)/(self.width - self.real_left)
+            self.zoom_on(left - real_left_column/2, top - help_lines, right - left, bottom - top + help_lines, self.rotate)
         ctx = canvas.getContext("2d")
         ctx.reset()
         if self.debug and len(self.draw_times) > 10:
