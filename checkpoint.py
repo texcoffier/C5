@@ -474,7 +474,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         return [column, line]
     def do_rotate(self, angle):
         """Rotate the display"""
-        self.start_animation(self.scale, self.left, self.top, self.rotate + angle)
+        if not self.animation_running:
+            self.start_animation(self.scale, self.left, self.top, self.rotate + angle)
     def do_debug(self):
         self.debug = not self.debug
         scheduler.update_page = True
@@ -1317,14 +1318,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 help_lines = 2
             else:
                 help_lines = HELP_LINES
-            self.scale = self.min_scale = min(
-                (self.width - self.real_left) / self.columns_x[-1],
-                (self.height - self.real_top) / (self.lines_y[-1] + help_lines))
-            self.left = self.real_left / self.scale
-            self.top = self.real_top
-            if not my_rooms:
-                self.top += help_lines
-            self.write_location()
+            self.zoom_on(-8, -help_lines, self.columns_x[-1], self.lines_y[-1] + help_lines, self.rotate)
         ctx = canvas.getContext("2d")
         ctx.reset()
         if self.debug and len(self.draw_times) > 10:
@@ -1529,6 +1523,23 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         setTimeout(bind(self.animate_zoom, self), 40)
         self.animate_zoom()
 
+    def zoom_on(self, col_start, line_start, width, height, rotate):
+        ctx = document.getElementById('canvas').getContext('2d')
+        ctx.save()
+        ctx.resetTransform()
+        ctx.translate(self.width/2, self.height/2)
+        ctx.rotate(Math.PI * rotate / 180)
+        ctx.translate(-self.width/2, -self.height/2)
+        xmin, ymin, xmax, ymax = self.normal_bounding_box(col_start-1, line_start-1, width+2, height+2)
+        final_scale = Math.min((self.width - 1.5*self.menu.offsetWidth) / (xmax - xmin),
+                               self.height / (ymax - ymin))
+        ctx.scale(final_scale, final_scale)
+        final_left, final_top = self.inverse(self.width/2, self.height/2)
+        ctx.restore()
+        final_left = -(col_start + width/2) + final_left - 0.5
+        final_top = -(line_start + height/2) + final_top - 0.5
+        self.start_animation(final_scale, final_left, final_top, rotate)
+
     def drag_stop_click_on_room(self, event, column, line, rotate=None):
         """Click on a room to zoom"""
         if rotate is None:
@@ -1538,25 +1549,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 rotate = -90
             elif self.rotate == 270 and rotate == 0:
                 rotate = 360
-        (col_start, line_start, room_width, room_height, center_x, center_y
-        ) = self.get_room(column, line)
+        col_start, line_start, room_width, room_height, _, _ = self.get_room(column, line)
         if room_width < 0 or room_height < 0:
             return
-        ctx = document.getElementById('canvas').getContext('2d')
-        ctx.save()
-        ctx.resetTransform()
-        ctx.translate(self.width/2, self.height/2)
-        ctx.rotate(Math.PI * rotate / 180)
-        ctx.translate(-self.width/2, -self.height/2)
-        xmin, ymin, xmax, ymax = self.normal_bounding_box(col_start-1, line_start-1, room_width+2, room_height+2)
-        final_scale = Math.min((event.target.offsetWidth - 1.5*self.menu.offsetWidth) / (xmax - xmin),
-                               event.target.offsetHeight / (ymax - ymin))
-        ctx.scale(final_scale, final_scale)
-        final_left, final_top = self.inverse(event.target.offsetWidth/2, event.target.offsetHeight/2)
-        ctx.restore()
-        final_left = -center_x + final_left - 0.5
-        final_top = -center_y + final_top - 0.5
-        self.start_animation(final_scale, final_left, final_top, rotate)
+        self.zoom_on(col_start - 1, line_start - 1, room_width + 2, room_height + 2, rotate)
 
     def write_location(self):
         """Add the current location in the URL"""
@@ -2050,13 +2046,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.change({"building": student.building})
             scheduler.update_page = True
             document.getElementById('buildings').value = student.building
-        self.scale = self.width / 5
-        self.left = self.top = 0
-        left, top, _dx, _dy = self.xys(student.column, student.line)
-        self.left = self.real_left - left + (self.width - self.real_left) / 2
-        self.top = self.real_top - top + (self.height - self.real_top) / 2
-        scheduler.draw = "zoom_student"
-        self.write_location()
+        col, lin, _, _ = self.xys(student.column, student.line)
+        self.zoom_on(col - 1, lin - 1, 2, 2, self.rotate)
     def draw_move_timer(self):
         """Circle indicating the time before the student move is allowed"""
         if STUDENT_DICT[self.student_clicked['login']].grade:
