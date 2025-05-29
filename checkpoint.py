@@ -545,13 +545,15 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.x_max = max(*[len(line) for line in self.lines]) + 1
         self.real_left = self.menu.offsetWidth
         self.real_top = document.getElementById('canvas').offsetTop
-        self.left = info.left or self.real_left
-        self.top = info.top or self.real_top
+        if not self.animation_running:
+            self.left = info.left or self.real_left
+            self.top = info.top or self.real_top
         self.drag_x_current = self.drag_x_start = None
         self.drag_y_current = self.drag_y_start = None
         self.moving = False
-        self.scale = info.scale or 0
-        self.rotate = info.rotate or 0
+        if not self.animation_running:
+            self.scale = info.scale or 0
+            self.rotate = info.rotate or 0
         self.update_sizes(0.5)
         self.update_visible()
         self.search_rooms()
@@ -2043,9 +2045,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         if not student.building:
             return
         if student.building != self.building:
-            self.change({"building": student.building})
-            scheduler.update_page = True
             document.getElementById('buildings').value = student.building
+            # self.change({"building": student.building})
+            update_page()
         col, lin, _, _ = self.xys(student.column, student.line)
         self.zoom_on(col - 1, lin - 1, 2, 2, self.rotate)
     def draw_move_timer(self):
