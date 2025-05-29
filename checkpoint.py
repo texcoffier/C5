@@ -2596,35 +2596,38 @@ def scheduler():
         ROOM.draw(scheduler.draw_square_feedback)
         hostname = STUDENT_DICT[Student.moving_student or Student.highlight_student].hostname
         if hostname in ROOM.positions:
+            circle_width = ROOM.scale / 10
+            font_size = 30
             col, row = ROOM.positions[hostname]
-            x_pos, y_pos, x_size, y_size = ROOM.xys(col, row)
+            col, row, _, _ = ROOM.xys(col, row)
+            x_min, y_min, x_max, y_max = ROOM.normal_bounding_box(col, row, 1, 1)
             ctx = document.getElementById('canvas').getContext("2d")
+            ctx.save()
+            ctx.resetTransform()
             ctx.globalAlpha = 1
-            ctx.lineWidth = x_size / 10
+            ctx.lineWidth = circle_width
             if millisecs() % 1000 > 500:
                 ctx.strokeStyle = "#000"
             else:
                 ctx.strokeStyle = "#0F0"
             ctx.beginPath()
-            ctx.arc(x_pos, y_pos - 0.1*y_size, x_size/1.8, 0, Math.PI*2, True)
+            ctx.arc((x_min+x_max)/2, (y_min+y_max)/2, (x_max-x_min)/2, 0, Math.PI*2, True)
             ctx.closePath()
             ctx.stroke()
             if not Student.moving_student:
-                ctx.save()
-                ctx.font = "20px sans-serif"
+                ctx.font = '' + font_size + 'px sans-serif'
                 ctx.fillStyle = "#00F"
                 ctx.strokeStyle = "#FFF"
-                ctx.lineWidth = 4
+                ctx.lineWidth = 8
+                y_max += circle_width/2 + font_size
                 label = "Appuyez sur Espace pour placer"
-                x_coord = x_pos + x_size / 1.8
-                y_coord = y_pos + 0.15 * y_size
-                ctx.strokeText(label, x_coord, y_coord)
-                ctx.fillText(label, x_coord, y_coord)
+                ctx.strokeText(label, x_min, y_max)
+                ctx.fillText(label, x_min, y_max)
                 label = STUDENT_DICT[Student.highlight_student].__str__()
-                y_coord += 25
-                ctx.strokeText(label, x_coord, y_coord)
-                ctx.fillText(label, x_coord, y_coord)
-                ctx.restore()
+                y_max += font_size
+                ctx.strokeText(label, x_min, y_max)
+                ctx.fillText(label, x_min, y_max)
+            ctx.restore()
         return
     if scheduler.update_page:
         scheduler.update_page = False
