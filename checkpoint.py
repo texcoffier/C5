@@ -130,6 +130,11 @@ def distance(x_1, y_1, x_2, y_2):
     """Distance beween 2 points"""
     return distance2(x_1, y_1, x_2, y_2) ** 0.5
 
+def get_ctx():
+    if not get_ctx.ctx:
+        get_ctx.ctx = document.getElementById('canvas').getContext("2d")
+    return get_ctx.ctx
+
 STUDENT_DICT = {}
 
 class Student: # pylint: disable=too-many-instance-attributes
@@ -1013,7 +1018,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             histogram[i] = (histogram[i] or 0) + 1
         left = self.menu.offsetWidth + 5
         top = 300
-        ctx = document.getElementById('canvas').getContext("2d")
+        ctx = get_ctx()
         ctx.save()
         ctx.resetTransform()
         ctx.fillStyle = "#00F"
@@ -1327,7 +1332,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             right, bottom, _, _ = self.xys(len(self.columns_x)/2-1, len(self.lines)-1)
             real_left_column = self.real_left * (right - left)/(self.width - self.real_left)
             self.zoom_on(left - real_left_column/2, top - help_lines, right - left, bottom - top + help_lines, self.rotate)
-        ctx = canvas.getContext("2d")
+        ctx = get_ctx()
         ctx.reset()
         if self.debug and len(self.draw_times) > 10:
             self.draw_times = self.draw_times[1:]
@@ -1394,7 +1399,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def do_zoom(self, pos_x, pos_y, new_scale):
         """Do zoom"""
         old_x, old_y = self.inverse(pos_x, pos_y) # Old zoom point
-        ctx = document.getElementById('canvas').getContext('2d')
+        ctx = get_ctx()
         ctx.save()
         ctx.translate(-self.left, -self.top)
         ctx.scale(new_scale/self.scale, new_scale/self.scale)
@@ -1549,7 +1554,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.animate_zoom()
 
     def zoom_on(self, col_start, line_start, width, height, rotate):
-        ctx = document.getElementById('canvas').getContext('2d')
+        ctx = get_ctx()
         ctx.save()
         ctx.resetTransform()
         ctx.translate(self.width/2, self.height/2)
@@ -2061,7 +2066,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         """Circle indicating the time before the student move is allowed"""
         if STUDENT_DICT[self.student_clicked['login']].grade:
             return # Do not move graded student
-        ctx = document.getElementById('canvas').getContext("2d")
+        ctx = get_ctx()
         x_pos, y_pos, _x_size, _y_size = self.xys(self.student_clicked['column'], self.student_clicked['line'])
         ctx.strokeStyle = "#FF00FF80"
         ctx.lineWidth = 0.15
@@ -2613,7 +2618,7 @@ def scheduler():
             col, row = ROOM.positions[hostname]
             col, row, _, _ = ROOM.xys(col, row)
             x_min, y_min, x_max, y_max = ROOM.normal_bounding_box(col, row, 1, 1)
-            ctx = document.getElementById('canvas').getContext("2d")
+            ctx = get_ctx()
             ctx.save()
             ctx.resetTransform()
             ctx.globalAlpha = 1
