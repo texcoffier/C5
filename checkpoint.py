@@ -1586,12 +1586,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
     def write_location(self):
         """Add the current location in the URL"""
-        location.hash = '#' + JSON.stringify(
+        window.history.replaceState(None, None,
+            location.origin + location.pathname + location.search + '#' + JSON.stringify(
             {'building':self.building,
              'scale': Math.round(self.scale),
              'left': Math.round(self.left),
              'top': Math.round(self.top),
-             'rotate': self.rotate})
+             'rotate': self.rotate}))
     def open_computer_menu(self, line, column):
         def select(item):
             if item[-1] == '!':
