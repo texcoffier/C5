@@ -504,23 +504,22 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 return [col, lin] # Not 2 students at the same place
         if free_slot:
             # Current slot is not free: search around
+            col_float, line_float = self.inverse(event_x, event_y)
             distances = []
-            for radius in range(1, 10):
-                for dir_x in range(-radius, radius + 1):
-                    for dir_y in range(-radius, radius + 1):
-                        event_x2 = event_x + dir_x/2
-                        event_y2 = event_y + dir_y/2
-                        col2, lin2 = self.get_column_row(event_x2, event_y2)
-                        if (lin2 >= 0 and col2 >= 0 and self.lines[lin2][col2] in ' cab'
-                               and self.columns_width[2*col2] == 0.5
-                               and self.lines_height[2*lin2] == 0.5
-                           ):
-                            if not self.student_from_column_line(col2, lin2):
-                                distances.append([
-                                    # +1000 because of string javascript sort
-                                    1000 + distance(event_x, event_y, event_x2, event_y2), col2, lin2])
-                if len(distances): # pylint: disable=len-as-condition
-                    break
+            for dir_y in range(-5, 6):
+                lin2 = lin + dir_y
+                if not self.lines[lin2]:
+                    continue
+                for dir_x in range(-5, 6):
+                    col2 = col + dir_x
+                    if (self.lines[lin2][col2] in ' cab'
+                            and self.columns_width[2*col2] == 0.5
+                            and self.lines_height[2*lin2] == 0.5
+                        ):
+                        if not self.student_from_column_line(col2, lin2):
+                            distances.append([
+                                # +1000 because of string javascript sort
+                                1000 + distance(col_float, line_float, col2+0.5, lin2+0.5), col2, lin2])
             if len(distances): # pylint: disable=len-as-condition
                 distances.sort()
                 return [distances[0][1], distances[0][2]]
