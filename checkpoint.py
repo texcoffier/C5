@@ -64,10 +64,10 @@ def highlight_buttons():
         nr_students = 0
         nr_total_students = 0
         date = date.split(' ')[0]
-        for student in STUDENTS:
-            if nice_date(student[1][3]).split(' ')[0] == date:
+        for student in STUDENT_DICT.Values():
+            if nice_date(student.checkpoint_time).split(' ')[0] == date:
                 nr_total_students += 1
-                if student[1][2].split(',')[0] == ROOM.building:
+                if student.building == ROOM.building:
                     nr_students += 1
         child.innerHTML = (
             child.innerHTML.split('<div>')[0]
@@ -88,9 +88,9 @@ def update_checkpoint_time(element, keep=False):
     if not keep:
         after = 1e99
         before = 0
-        for student in STUDENTS:
-            if student[1][2].split(',')[0] == ROOM.building:
-                t = student[1][3]
+        for student in STUDENT_DICT.Values():
+            if student.building == ROOM.building:
+                t = student.checkpoint_time
                 if t > timestamp and t < after:
                     after = t
                 if t < timestamp and t > before:
@@ -134,8 +134,6 @@ def get_ctx():
     if not get_ctx.ctx:
         get_ctx.ctx = document.getElementById('canvas').getContext("2d")
     return get_ctx.ctx
-
-STUDENT_DICT = {}
 
 class Student: # pylint: disable=too-many-instance-attributes
     """To simplify code"""
@@ -920,7 +918,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                         ctx.measureText(student.surname).width)
 
             ctx.globalAlpha = 1
-            ctx.fillStyle = "#000"
             if self.rotate:
                 ctx.save()
                 ctx.translate(x_pos + 0.5, y_pos + 0.5)
@@ -933,8 +930,14 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 bonus = ''
             if student.bonus_time:
                 bonus += '+' + (student.bonus_time//60) + 'm'
+            if student.data.nbr_ip_change:
+                ctx.fillStyle = "#F00"
+                bonus += ' ' + student.data.nbr_ip_change + 'IP'
+            else:
+                ctx.fillStyle = "#000"
             if bonus:
                 ctx.fillText(bonus, x_pos, y_pos)
+            ctx.fillStyle = "#000"
             y_pos += line_height
             ctx.fillText(student.firstname, x_pos, y_pos)
             y_pos += line_height
@@ -1647,9 +1650,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                     + ','.join(logins) + '/' + COURSE + '__'
                     + self.building + '_' + self.get_room_name(column, line) + '.zip')
             elif item.startswith('Similarité'):
-                for student in STUDENTS:
-                    student = Student(student) # Fill STUDENT_DICT
-                    self.similarity_todo.append(student.login)
+                for login in STUDENT_DICT:
+                    self.similarity_todo.append(login)
             elif item.startswith('Copier'):
                 def ok():
                     alert("Vous pouvez maintenant coller les " 
@@ -2322,7 +2324,7 @@ def update_page():
         line = student.line
         column = student.column
 
-    students = [Student(student) for student in STUDENTS if student[0]]
+    students = [student for student in STUDENT_DICT.Values() if student.login]
     students.sort(cmp_student_name)
     ROOM.students = []
     ROOM.waiting_students = []
@@ -2484,10 +2486,13 @@ def reader(event): # pylint: disable=too-many-branches
                     student.blurred = True
                 elif data[3] == 9: # Focus because blur time change
                     student.blurred = False
+                elif data[3] == 6:
+                    MESSAGES.append([data[2], seconds(), student[1][6] + ' → ' + data[1]])
+                    student.nbr_ip_change = (student.nbr_ip_change or 0) + 1
+                    scheduler.update_messages = True
                 student[1][data[3]] = data[1]
             else:
                 student = [data[2], data[1], { 'fn': "?", 'sn': "?" }]
-                STUDENTS.append(student)
             Student(student) # Update structure from data
             scheduler.update_page = True
         elif data[0] == "infos":
@@ -2552,11 +2557,10 @@ def compute_similarities():
     if not GRAPH[student]:
         student_obj = STUDENT_DICT[student]
         GRAPH[student] = graph = []
-        for student2 in STUDENTS:
-            student2 = student2[0]
-            if student2 != student:
-                if student_obj.distance(STUDENT_DICT[student2]) < 4.13:
-                    graph.append(student2)
+        for student2 in STUDENT_DICT.Values():
+            if student2.login != student:
+                if student_obj.distance(student2) < 4.13:
+                    graph.append(student2.login)
 
     if student not in SOURCES:
         load_source(student)
@@ -2845,6 +2849,9 @@ if COURSE == "=MAPS":
 else:
     create_page(INFO.building)
     ROOM = Room(INFO)
+    STUDENT_DICT = {}
+    for student in STUDENTS:
+        Student(student)
     update_page()
     if STUDENT_DICT[INFO['student']]:
         ROOM.zoom_student(INFO['student'])

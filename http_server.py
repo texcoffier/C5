@@ -1611,6 +1611,7 @@ async def checkpoint_bonus(request:Request) -> Response:
         return utilities.js_message("not_proctor")
     # Information in 2 places
     course.set_parameter('active_teacher_room', int(bonus), student, 7)
+    # course.set_parameter('active_teacher_room', 'toto' + str(bonus), student, 6) # Fake IP change for debug
     await JournalLink.new(course, student, None, None, False).write(
         f'#bonus_time {bonus} {course.get_stop(student)}')
     return await update_browser_data(course)
