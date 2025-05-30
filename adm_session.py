@@ -23,10 +23,6 @@ def load_config():
     add(script)
     select_tab('Config')
 
-def do_grade(login):
-    """Open the window to grade the student"""
-    window.open(BASE + '/grade/' + COURSE + '/' + login + '?ticket=' + TICKET)
-
 def update_course_config(config, feedback): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Update the HTML with the configuration.
     This function is called by server answer.
@@ -92,21 +88,37 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
             elif attr == 'active_teacher_room':
                 content = [
                     '''
-                    <style>TABLE.students TD:nth-child(2) { font-size: 50% }</style>
+                    <style>
+                    TABLE.students TD:nth-child(2) { font-size: 50% }
+                    TABLE.students DIV {overflow:hidden; white-space:nowrap }
+                    TABLE.students TD:nth-child(4) DIV { width: 80px }
+                    TABLE.students TD:nth-child(5) DIV { width: 80px }
+                    TABLE.students TD:nth-child(9) DIV { width: 140px }
+                    TABLE.students TD:hover {
+                        padding: 0px;
+                        }
+                    TABLE.students TD DIV:hover {
+                        font-size: 60%;
+                        white-space:normal;
+                        line-height: 1.1em;
+                        }
+                    </style>
                     <table class="students">
                     <tr>
                     <th colspan="2">Student
-                    <th>Closed
+                    <th style="writing-mode: sideways-lr">Active
                     <th>Proctor
                     <th>Room
-                    <th>Last student action
-                    <th>#Blurs
-                    <th>#Questions
+                    <th>Last<br>student action
+                    <th style="writing-mode: sideways-lr">#Blurs
+                    <th style="writing-mode: sideways-lr">#Questions
                     <th>Last hostname
-                    <th>Time bonus
-                    <th>Grade,#items graded
+                    <th style="writing-mode: sideways-lr">Time bonus
+                    <th><small>ΣGrade<br>Avg competences
                     </th>
                     ''']
+                grade_a = Grades(State.config.notation)
+                grade_b = Grades(State.config.notationB)
                 for login in value:
                     active, teacher, room, timestamp, nr_blurs, nr_questions, \
                         hostname, time_bonus, grade = value[login]
@@ -126,20 +138,36 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     date = nice_date(date.getTime() / 1000)
                     # do_grade_login
                     infos = STUDENTS[login] or {'sn': '?', 'fn': '?'}
+                    if room and room[-1] == 'a':
+                        version = grade_a
+                    else:
+                        version = grade_b
+                    txt_grade = '<tt>'
+                    if grade[1] > 0:
+                        nbr = grade[1]
+                        if nbr != version.nr_grades:
+                            nbr = '<span style="color:red">' + nbr + '</span>'
+                        txt_grade += replace_all(str(grade[0]).rjust(4), ' ', ' '
+                            ) + '<sub><small>' + nbr + '</small></sub>'
+                    if grade[3] > 0:
+                        nbr = grade[3]
+                        if nbr != version.nr_competences:
+                            nbr = '<span style="color:red">' + nbr + '</span>'
+                        txt_grade += '  ' + grade[2].toFixed(2) + '<sub><small>' + nbr + '</small></sub>'
+                    txt_grade += '</tt>'
                     content.append(
                         '<tr><td><span style="width:' + 2*nr_blurs + 'px"></span>'
-                        + '<a target="_blank" href="grade/' + COURSE + '/'
-                        + login + '?ticket=' + TICKET + '">' + login + '</a>'
+                        + login_links(login, room != '')
                         + '<td>' + infos.sn + '<br>' + infos.fn + '</td>'
                         + '<td>' + active + '</td>'
-                        + '<td>' + teacher + '</td>'
-                        + '<td>' + room + '</td>'
+                        + '<td><div>' + teacher + '</div></td>'
+                        + '<td><div>' + room + '</div></td>'
                         + '<td>' + date + '</td>'
                         + '<td>' + nr_blurs + '</td>'
                         + '<td>' + nr_questions + '</td>'
-                        + '<td>' + hostname + '</td>'
+                        + '<td><div>' + hostname + '</div></td>'
                         + '<td>' + time_bonus + '</td>'
-                        + '<td>' + grade + '</td>'
+                        + '<td>' + txt_grade + '</td>'
                         + '</tr>')
                 content.append('</table>')
                 element.innerHTML = ''.join(content)
@@ -677,8 +705,8 @@ def update_interface():
     notation = document.getElementById("notation")
     notationB = document.getElementById("notationB")
     if grading_sum and notation:
-        grade_a = Grades(notation.value)
-        grade_b = Grades(notationB.value)
+        update_interface.grade_a = grade_a = Grades(notation.value)
+        update_interface.grade_b = grade_b = Grades(notationB.value)
 
         if grade_a.max_grade or grade_b.max_grade:
             message = 'Maximum possible grade: <b>'

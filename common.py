@@ -1976,3 +1976,14 @@ def session_tree(sessions, remove=0):
         ],
         keys['']
         ]
+
+def login_links(login, onmap=True):
+    if not onmap:
+        return login
+    return (login
+            + ' <a target="_blank" href="checkpoint/' + COURSE + '?ticket=' + TICKET
+            + '#{&quot;student&quot;:&quot;' + login
+            + '&quot;}" target="_blank">map</a>/'
+            + '<a target="_blank" href="grade/' + COURSE + '/' + login + '?ticket=' + TICKET
+            + '">grade</a>')
+

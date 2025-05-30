@@ -154,11 +154,7 @@ DIV[onclick]:hover { background: #EEE }
         student = STUDENTS[login]
         stats = cache[login]
         text.append('<tr><td>')
-        if student.status != 'checkpoint':
-            text.append('<a href="checkpoint/' + COURSE + '?ticket=' + TICKET + '#{&quot;student&quot;:&quot;' + login
-                + '&quot;}" target="_blank">' + login + '</a>')
-        else:
-            text.append(login)
+        text.append(login_links(login, student.status != 'checkpoint'))
         text.append('<td><div>')
         infos = window.parent.STUDENTS[login] or {'sn': '?', 'fn': '?'}
         text.append(infos.sn + '<br>' + infos.fn)
