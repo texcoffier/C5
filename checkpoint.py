@@ -564,6 +564,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.all_ips = {}
         self.force_update_waiting_room = True
         scheduler.update_messages = True
+        scheduler.update_page = True
         self.the_menu.close()
         self.time_span = [0, 1e10]
         self.write_location()
@@ -2103,7 +2104,7 @@ def cmp_student_position(student_a, student_b):
 def create_room_selector(building_name):
     return (
         '''<select style="width:100%;margin-top:0.7em" id="buildings"
-                   onchange="ROOM.change({'building':this.value}); scheduler.update_page = true;">'''
+                   onchange="ROOM.change({'building':this.value});">'''
         + ''.join(['<option'
                    + (building == building_name and ' selected' or '')
                    + '>' + building.replace('empty', LOGIN) + '</option>'
@@ -2601,6 +2602,9 @@ def scheduler():
             message = 'Fin dans ' + split_time(ROOM.stop_timestamp - secs)
             ROOM.state = 'running'
         document.getElementById('TTL').innerHTML = message
+    if scheduler.update_page:
+        scheduler.update_page = False
+        update_page()
     if Student.moving_student or Student.highlight_student:
         ROOM.draw(scheduler.draw_square_feedback)
         hostname = STUDENT_DICT[Student.moving_student or Student.highlight_student].hostname
@@ -2638,10 +2642,7 @@ def scheduler():
                 ctx.fillText(label, x_min, y_max)
             ctx.restore()
         return
-    if scheduler.update_page:
-        scheduler.update_page = False
-        update_page()
-    elif scheduler.draw:
+    if scheduler.draw:
         scheduler.draw = False
         ROOM.draw(scheduler.draw_square_feedback)
     if scheduler.update_messages:
