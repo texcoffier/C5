@@ -1514,20 +1514,37 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             record('checkpoint/' + COURSE + '/' + self.moving['login'] + '/EJECT')
             self.force_update_waiting_room = True
 
+    def animate_zoom(self):
+        """Transition from zoom"""
+        if len(self.transitions): # pylint: disable=len-as-condition
+            self.scale, self.left, self.top, self.rotate = self.transitions.pop()
+            if self.rotate >= 359.9:
+                self.rotate = 0
+            elif self.rotate < 0:
+                self.rotate += 360
+            scheduler.draw = "animate_zoom"
+            setTimeout(bind(self.animate_zoom, self), 40)
+        else:
+            self.compute_rooms_on_screen()
+            self.update_waiting_room()
+            self.write_location()
+            self.update_visible()
+            self.animation_running = False
     def start_animation(self, scale, left, top, rotate):
         self.animation_running = True
         nr_frame = 20
         def linear(start, end, i):
             return (start*i + end*(nr_frame-i)) / nr_frame
-        self.transitions = [
+        self.transitions = []
+        for i in range(0, nr_frame + 1):
+            s = linear(self.scale , scale , i)
+            self.transitions.append(
             [
-                linear(self.scale , scale , i),
-                linear(self.left  , left  , i),
-                linear(self.top   , top   , i),
+                s,
+                linear(self.left * self.scale  , left * scale  , i) / s,
+                linear(self.top * self.scale   , top * scale , i) / s,
                 linear(self.rotate, rotate, i),
-            ]
-            for i in range(0, nr_frame + 1)
-        ]
+            ])
         setTimeout(bind(self.animate_zoom, self), 40)
         self.animate_zoom()
 
@@ -1907,22 +1924,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         window.onmouseup = None
         window.ontouchend = None
         self.moving = False
-    def animate_zoom(self):
-        """Transition from zoom"""
-        if len(self.transitions): # pylint: disable=len-as-condition
-            self.scale, self.left, self.top, self.rotate = self.transitions.pop()
-            if self.rotate >= 359.9:
-                self.rotate = 0
-            elif self.rotate < 0:
-                self.rotate += 360
-            scheduler.draw = "animate_zoom"
-            setTimeout(bind(self.animate_zoom, self), 40)
-        else:
-            self.compute_rooms_on_screen()
-            self.update_waiting_room()
-            self.write_location()
-            self.update_visible()
-            self.animation_running = False
     def compute_rooms_on_screen(self):
         """Compute the list of rooms on screen"""
         self.rooms_on_screen = {}
