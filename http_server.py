@@ -1934,19 +1934,20 @@ async def adm_export(request:Request) -> Response:
             dirname = f'C5/COMPILE_{course.course.replace("=", "/")}'
             zipper.writestr(f'{dirname}/session.cf', course.create_config(what))
             await asyncio.sleep(0)
-            for login in os.listdir(course.dir_log):
-                if 'Journal' in what:
-                    journa = f'{course.dir_log}/{login}/journal.log'
-                    if os.path.exists(journa):
-                        zipper.writestr(f'{dirname}/LOGS/{login}/journal.log',
-                            pathlib.Path(journa).read_text(encoding='utf-8'))
-                await asyncio.sleep(0)
-                if 'Grades' in what:
-                    grades = f'{course.dir_log}/{login}/grades.log'
-                    if os.path.exists(grades):
-                        zipper.writestr(f'{dirname}/LOGS/{login}/grades.log',
-                            pathlib.Path(grades).read_text(encoding='utf-8'))
-                await asyncio.sleep(0)
+            if os.path.exists(course.dir_log) and ('Journal' in what or 'Grades' in what):
+                for login in os.listdir(course.dir_log):
+                    if 'Journal' in what:
+                        journa = f'{course.dir_log}/{login}/journal.log'
+                        if os.path.exists(journa):
+                            zipper.writestr(f'{dirname}/LOGS/{login}/journal.log',
+                                pathlib.Path(journa).read_text(encoding='utf-8'))
+                    await asyncio.sleep(0)
+                    if 'Grades' in what:
+                        grades = f'{course.dir_log}/{login}/grades.log'
+                        if os.path.exists(grades):
+                            zipper.writestr(f'{dirname}/LOGS/{login}/grades.log',
+                                pathlib.Path(grades).read_text(encoding='utf-8'))
+                    await asyncio.sleep(0)
             if 'Media' in what:
                 if os.path.exists(course.dir_media):
                     for media in os.listdir(course.dir_media):
