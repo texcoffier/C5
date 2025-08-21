@@ -1928,6 +1928,7 @@ async def adm_export(request:Request) -> Response:
     data = io.BytesIO()
     with zipfile.ZipFile(data, mode="w", compression=zipfile.ZIP_DEFLATED) as zipper:
         for course in configs:
+            log(f'ZIP {course.course}')
             if not session.is_admin(course):
                 continue
             what = request.match_info['what'].split(' ')
@@ -1965,10 +1966,17 @@ async def adm_export(request:Request) -> Response:
             if what:
                 log(f'BUG WHAT={what}')
 
+    log(f'ZIP big send')
     stream = web.StreamResponse()
     stream.content_type = 'application/zip'
     await stream.prepare(request)
-    await stream.write(data.getvalue())
+    data.seek(0)
+    while True:
+        chunk = data.read(1000000)
+        await stream.write(chunk)
+        if not chunk:
+            break
+    log(f'ZIP end send')
     return stream
 
 async def adm_reset(request:Request) -> Response:
