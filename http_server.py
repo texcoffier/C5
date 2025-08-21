@@ -2002,13 +2002,13 @@ async def adm_reset(request:Request) -> Response:
             continue
         if 'Source' in what:
             await write('Delete session<br>')
-            move_to_trash(config.dir_session)
-            del CourseConfig.configs[config.dir_session]
+            move_to_trash(course.dir_session)
+            del CourseConfig.configs[course.dir_session]
             await asyncio.sleep(0)
             continue
         if 'Journal' in what and 'Grades' in what:
             await write('Delete students works, comments and grades<br>')
-            move_to_trash(config.dir_log)
+            move_to_trash(course.dir_log)
             await asyncio.sleep(0)
         else:
             if 'Journal' in what:
@@ -2024,7 +2024,7 @@ async def adm_reset(request:Request) -> Response:
         await asyncio.sleep(0)
         if 'Media' in what:
             await write('Delete all media<br>')
-            move_to_trash(config.dir_media)
+            move_to_trash(course.dir_media)
             await asyncio.sleep(0)
         for i in ('Journal', 'Grades', 'Media'):
             if i in what:
@@ -2049,9 +2049,12 @@ async def adm_reset(request:Request) -> Response:
         if changed:
             await write(f'Reset config attributes {sorted(changed)}<br>')
             await asyncio.sleep(1)
-            config.record_config()
+            course.record_config()
             await write('Config history has been erased<br>')
-            del CourseConfig.configs[config.dir_session]
+            del CourseConfig.configs[course.dir_session]
+            await asyncio.sleep(0)
+            if 'Source' not in what:
+                CourseConfig.get(course.dir_session)
             await asyncio.sleep(0)
         if what:
             await write(f'<b>BUG : {what}</b>')
