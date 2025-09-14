@@ -122,7 +122,7 @@ class File:
             self.mtime = mtime
             with open(self.filename, "rb") as file:
                 content = file.read()
-                self.cache = len(content) > 200000 # checkpoint.js must no yet be cached
+                self.cache = 'COMPILE_' not in self.filename
                 if self.charset is not None:
                     self.content = content.decode(self.charset)
                 else:
