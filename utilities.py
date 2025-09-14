@@ -1055,7 +1055,10 @@ class Session:
             client_ip, _port = request.transport.get_extra_info('peername')
         except AttributeError:
             # websocket
-            headers = request.request_headers
+            try:
+                headers = request.request.headers
+            except:
+                headers = request.request_headers # Deprecated
             client_ip, _port = request.remote_address
         forward = headers.get('x-forwarded-for', '')
         if forward:
@@ -1088,7 +1091,7 @@ class Session:
             return session
         message = "Votre session a expiré ou bien vous avez changé d'adresse IP."
         message_js = json.dumps(message)
-        raise web.HTTPUnauthorized(body=f"""
+        raise web.HTTPAccepted(body=f"""
     // {message} <!--
     try {{
         window.parent.ccccc.record_not_done({message_js}
@@ -1395,6 +1398,7 @@ DNS.6 = {local_ip()}:{C5_SOCK}
 DNS.7 = {C5_HOST}:{C5_SOCK}
 DNS.8 = {C5_URL}
 ' >domains.ext
+        cat domains.ext
         openssl req -new -nodes -newkey rsa:2048 -keyout localhost.key -out localhost.csr -subj '/C=US/ST=YourState/L=YourCity/O=Example-Certificates/CN=localhost.local'
         openssl x509 -req -sha256 -days 1024 -in localhost.csr -CA RootCA.pem -CAkey RootCA.key -CAcreateserial -extfile domains.ext -out localhost.crt
 

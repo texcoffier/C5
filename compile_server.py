@@ -449,8 +449,12 @@ def search_leak():
         OBJECTS.update(numbers)
     print(flush=True)
 
-async def echo(websocket:WebSocketServerProtocol, path:str) -> None: # pylint: disable=too-many-branches
+async def echo(websocket:WebSocketServerProtocol) -> None: # pylint: disable=too-many-branches
     """Analyse the requests from one websocket connection"""
+    try:
+        path = websocket.request.path
+    except AttributeError:
+        path = websocket.path
     print(time.strftime('%Y%m%d%H%M%S'), path, flush=True)
 
     if time.time() < echo.next_allowed_start_time:

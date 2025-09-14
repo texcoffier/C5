@@ -20,6 +20,9 @@ import utilities
 
 URL = "https://127.0.0.1:4301/"
 
+BY_SELECTOR = selenium.webdriver.common.by.By.CSS_SELECTOR
+BY_XPATH = selenium.webdriver.common.by.By.XPATH
+
 urllib3.disable_warnings()
 
 def retry(test, required=True, nbr=30):
@@ -298,7 +301,7 @@ class Tests: # pylint: disable=too-many-public-methods
         print('\tCHECK', path, checks, expected, end=' ')
         def get_errors():
             print('*', end='', flush=True)
-            elements = self.driver.find_elements_by_css_selector(path)
+            elements = self.driver.find_elements(BY_SELECTOR, path)
             if len(elements) != expected:
                 return f'Expected {expected} elements with the path «{path}» found {len(elements)}'
             if len(elements) == 1:
@@ -306,7 +309,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 self.move_to_element(element)
                 for attr, check in checks.items():
                     if attr.startswith('..'):
-                        obj = element.find_element_by_xpath('..')
+                        obj = element.find_element(BY_XPATH, '..')
                         attr = attr[2:]
                     else:
                         obj = element
@@ -385,14 +388,14 @@ class Tests: # pylint: disable=too-many-public-methods
         """Set the cursor at the position and click"""
         if path == '.editor':
             path = '.layered'
-        element = self.driver.find_elements_by_css_selector(path)[0]
+        element = self.driver.find_elements(BY_SELECTOR, path)[0]
         self.move_to_element(element)
         action = selenium.webdriver.ActionChains(self.driver)
         action.move_to_element_with_offset(element, relative_x, relative_y)
         action.click()
         action.perform()
         if path == '.layered':
-            return self.driver.find_elements_by_css_selector('.editor')[0]
+            return self.driver.find_elements(BY_SELECTOR, '.editor')[0]
         return element
     def test_f9(self):
         """Check if F9 launch compilation"""
@@ -503,7 +506,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.wait_save()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§¤')})
-        self.move_cursor('.editor', 30, 500)
+        self.move_cursor('.editor', 30, 200)
         for _ in range(6):
             self.check('.editor').send_keys(Keys.BACKSPACE)
         self.click('.save_button')
@@ -596,7 +599,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.overlay', {'innerHTML': ~Contains('§')})
         self.control('y')
         self.check('.overlay', {'innerHTML': Contains('§')})
-        while '§' in self.driver.find_elements_by_css_selector('.overlay')[0].get_attribute('innerHTML'):
+        while '§' in self.driver.find_elements(BY_SELECTOR, '.overlay')[0].get_attribute('innerHTML'):
             self.control('z')
             time.sleep(0.2)
         #for line in sys.stdin:
@@ -913,14 +916,14 @@ return sum ;
             self.goto('adm/session/REMOTE=test')
             self.click('#state OPTION[value="Grade"]')
             self.goto(f'grade/REMOTE=test/{student}')
-            while len(self.driver.find_elements_by_css_selector(
+            while len(self.driver.find_elements(BY_SELECTOR,
                 '.grade_unselected:first-child')) == 0:
                 time.sleep(0.1)
             time.sleep(0.1)
-            for grade in self.driver.find_elements_by_css_selector(
+            for grade in self.driver.find_elements(BY_SELECTOR,
                 '.grade_unselected:first-child'):
                 grade.click()
-            while len(self.driver.find_elements_by_css_selector(
+            while len(self.driver.find_elements(BY_SELECTOR,
                 '.grade_unselected:first-child')) != 0:
                 time.sleep(0.1)
         for admin_feeback, grader_feedback, check in cases:
@@ -1152,11 +1155,11 @@ class Q1(Question):
             self.goto('adm/session/REMOTE=grapic')
             self.click('#Media')
             self.driver.switch_to.frame(0)
-            retry(lambda: len(self.driver.find_elements_by_css_selector('BUTTON')) != 2)
-            for i in self.driver.find_elements_by_css_selector('BUTTON'):
+            retry(lambda: len(self.driver.find_elements(BY_SELECTOR, 'BUTTON')) != 2)
+            for i in self.driver.find_elements(BY_SELECTOR, 'BUTTON'):
                 if 'grapic/delete/xxx-test.png' in i.get_attribute('outerHTML'):
                     i.click()
-            retry(lambda: len(self.driver.find_elements_by_css_selector('BUTTON')) != 1)
+            retry(lambda: len(self.driver.find_elements(BY_SELECTOR, 'BUTTON')) != 1)
             self.driver.switch_to.default_content()
 
     def test_git(self):
@@ -1437,7 +1440,7 @@ class Q1(Question):
             # second_item = menu.split(',')[1]
             # # Selenium bug: selector «.completion OPTION:nth-child(2)» is rejected
             # # self.move_cursor('.completion OPTION:nth-child(2)', 3, 3)
-            # for i in self.driver.find_elements_by_css_selector('OPTION:nth-child(2)'):
+            # for i in self.driver.find_elements(BY_SELECTOR, 'OPTION:nth-child(2)'):
             #     if i.get_attribute('innerHTML') == second_item:
             #         action = selenium.webdriver.ActionChains(self.driver)
             #         action.move_to_element(i)
@@ -1455,9 +1458,9 @@ class Q1(Question):
             self.goto('adm/session/REMOTE=test')
             self.click('#Manage')
             tree = self.check('#tree')
-            labels = self.driver.find_elements_by_css_selector('#tree LABEL')
-            inputs = self.driver.find_elements_by_css_selector('#tree INPUT')
-            export_button, _import_button, _reset_button = self.driver.find_elements_by_css_selector('#tree_menu BUTTON')
+            labels = self.driver.find_elements(BY_SELECTOR, '#tree LABEL')
+            inputs = self.driver.find_elements(BY_SELECTOR, '#tree INPUT')
+            export_button, _import_button, _reset_button = self.driver.find_elements(BY_SELECTOR, '#tree_menu BUTTON')
             retry(lambda: not export_button.get_attribute('disabled'))
             state = self.driver.execute_script("return get_state()")
             assert state == ''
@@ -1546,7 +1549,7 @@ class Q1(Question):
 
             output = send('sequential Source Journal Grades Media', 'REMOTE=XXX')
             assert output == '<br>C5/COMPILE_REMOTE/test/session.cf<br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log<br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log<br>C5/COMPILE_REMOTE/test/MEDIA/foo.png<br>C5/COMPILE_REMOTE/test/questions.py<h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/XXX</h2><pre>COMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.js OK\nCOMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.json OK\n</pre>'
-            
+
             assert os.path.exists('COMPILE_REMOTE/XXX/questions.py')
             assert os.path.exists('COMPILE_REMOTE/XXX/session.cf')
             assert os.path.exists('COMPILE_REMOTE/XXX/MEDIA/foo.png')
@@ -1567,7 +1570,7 @@ class Q1(Question):
         rm -r C5
         make COMPILE_REMOTE/xxx/questions.js
         ''')
-        # inflating: C5/COMPILE_REMOTE/test/questions.py  
+        # inflating: C5/COMPILE_REMOTE/test/questions.py
         with self.admin_rights():
             for filename, what, message in (
                     ('MEDIA'                    , 'Media'          , 'Delete all media'),
@@ -1649,7 +1652,12 @@ try:
             OPTIONS.add_argument('ignore-certificate-errors')
             OPTIONS.add_argument('--password-store=basic')
             OPTIONS.add_argument('--use-mock-keychain')
-            TESTS = Tests(selenium.webdriver.Chrome(options=OPTIONS))
+            try:
+                driver = selenium.webdriver.Chrome(options=OPTIONS)
+            except selenium.common.exceptions.WebDriverException:
+                service = selenium.webdriver.ChromeService(executable_path="/bin/chromedriver")
+                driver = selenium.webdriver.Chrome(service=service, options=OPTIONS)
+            TESTS = Tests(driver)
             TESTS.run()
             TESTS = None
 
