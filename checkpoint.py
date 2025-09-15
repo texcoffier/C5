@@ -1897,7 +1897,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Simple click
             if self.the_menu.selected:
                 self.the_menu.select_and_close()
-            elif column != -1 and not MAPPER and not self.the_menu.opened_at(line, column):
+            elif column != -1 and self.lines[line] and not MAPPER and not self.the_menu.opened_at(line, column):
                 if self.lines[line][column] == 's':
                     self.open_computer_menu(line, column)
                 elif self.lines[line][column] == 'g':
