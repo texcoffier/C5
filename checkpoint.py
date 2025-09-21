@@ -2323,7 +2323,6 @@ def update_page():
         student = STUDENT_DICT[ROOM.moving['login']]
         line = student.line
         column = student.column
-
     students = [student for student in STUDENT_DICT.Values() if student.login]
     students.sort(cmp_student_name)
     ROOM.students = []
@@ -2845,6 +2844,7 @@ if COURSE == "=MAPS":
         ></canvas><div id="waiting" style="display:none"></div><div id="checkpoint_time_buttons"></div>'''
     )
     ROOM = Room(INFO)
+    STUDENT_DICT = {}
     scheduler.update_page = True
 else:
     create_page(INFO.building)
