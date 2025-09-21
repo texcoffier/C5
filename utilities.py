@@ -275,8 +275,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             config = self.config
             try: # pylint: disable=too-many-nested-blocks
                 for binary_line in file:
-                    data = eval(binary_line.decode('utf-8')) # pylint: disable=eval-used
-                    self.parse_position += len(binary_line) # file.tell() forbiden here
+                    line = binary_line.decode('utf-8')
+                    line_len = len(line)
+                    self.parse_position += line_len # file.tell() forbiden here
+                    if line_len <= 1:
+                        continue
+                    data = eval(line) # pylint: disable=eval-used
                     if len(data) == 2:
                         if data[1] in ('0', '1', True, False):
                             config[data[0]]  = int(data[1]) # XXX To read old files (to remove)
