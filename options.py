@@ -42,6 +42,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['feedback_for_all'     ,0, "Allow an empty feedback (with the examination questions) to students who did not attend to the session"],
     ['sequential'           ,1, "Questions must be answered from first to last"],
     ['git_url'              ,'', "The GIT url to fetch updates. <b>You must only commit 'questions.py' and 'MEDIA/*' nothing else.</b>"],
+    ['key_stats'            ,'', 'API key for statistics (ID #good #lines):<br>https://.../adm/stats/COMPILER=session_name/API_key'],
 
     'Set <button onclick="exam_mode(1)" style="font-size:100%">Examination</button> or <button onclick="exam_mode(0)" style="font-size:100%">Course</button> modes for attributes:',
 

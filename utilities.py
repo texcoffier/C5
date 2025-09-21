@@ -17,6 +17,7 @@ import atexit
 import html
 import copy
 import traceback
+import random
 import urllib.request
 import urllib.parse
 import asyncio
@@ -218,6 +219,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.to_send = [] # Data to send
         self.send_journal_running = False
         self.doing_grading = {}
+        # Add the API key stats if there is none:
+        if not self.config['key_stats']:
+            self.set_parameter('key_stats', f'{random.randrange(1 << 63, 1 << 64):x}')
 
     def get_config(self):
         """Config not leaking informations to students"""

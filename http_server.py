@@ -1757,6 +1757,26 @@ async def adm_history(request:Request) -> Response:
         content.append(date[3:] + ' ' + line)
     return answer('\n'.join(content[::-1]), content_type="text/plain")
 
+async def adm_stats(request:Request) -> Response:
+    """Session statistics"""
+    course = CourseConfig.get(utilities.get_course(request.match_info['course']))
+    if not course:
+        return answer('Cours inconnu', content_type="text/plain")
+    if request.match_info['key_stats'] != course.config['key_stats']:
+        return answer('Bad key', content_type="text/plain")
+    stream = web.StreamResponse()
+    stream.content_type = 'text/plain'
+    stream.charset = 'utf-8'
+    await stream.prepare(request)
+    for login, state in course.active_teacher_room.items():
+        journal = course.get_journal(login)
+        nr_lines = 0
+        if hasattr(journal, 'questions'):
+            for i, question in journal.questions.items():
+                nr_lines += len(re.split('[\n\t\r ]*\n[\n\t\r ]*', question.source))
+        await stream.write(f'{login}\t{state.nr_answers}\t{nr_lines}\n'.encode('utf-8'))
+    return stream
+
 async def adm_session(request:Request) -> Response:
     """Session configuration for administrators"""
     session, config = await get_course_config(request)
@@ -2524,6 +2544,7 @@ def main():
                     web.get('/adm/building/{building}', adm_building),
                     web.get('/adm/export/{course}/{what}/{filename}', adm_export),
                     web.get('/adm/reset/{course}/{what}', adm_reset),
+                    web.get('/adm/stats/{course}/{key_stats}', adm_stats),
                     web.get('/config/reload', config_reload),
                     web.get('/course_config/{course}', course_config),
                     web.get('/checkpoint/*', checkpoint_list),
