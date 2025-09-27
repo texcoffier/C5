@@ -3,6 +3,7 @@
 //   * The SECCOMP_SYSCALL_ALLOW value
 //   * The UID
 //   * The HOME path
+//   * CPU max
 // Create a process group named C5_UID and make it killable by C5 UID
 // Limit to 100MB of memory and 10 concurrent threads.
 
@@ -10,6 +11,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <grp.h>
 #include <sys/stat.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -104,9 +106,19 @@ int main(int argc, char **argv)
         return 43;
     }
 
+    // Give the right to read in parent (for the sandbox.so and the executable)
+    chmod("..", 0755);
+
     // Drop root rights
-    setreuid(uid, uid);
-    setregid(uid, uid);
+    if (setgroups(0, NULL)) {
+        return 45;
+    }
+    if (setregid(uid, uid)) {
+        return 44;
+    }
+    if (setreuid(uid, uid) ) {
+        return 46;
+    }
 
     // Execute
     snprintf(execname, sizeof(execname), "../%s", argv[1]);

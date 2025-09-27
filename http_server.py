@@ -2519,7 +2519,7 @@ def main():
     #     log('TO TRANSLATE ALL «http_server.log»+«comments.log» to «journal.log»')
     #     log('='*60)
     #     sys.exit(1)
-
+    os.umask(0o077)
     app = web.Application(client_max_size=1024*1024*1024**2)
     app.add_routes([web.get('/', home),
                     web.get('/{filename}', handle()), # Only editor
