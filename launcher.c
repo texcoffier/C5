@@ -15,6 +15,8 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+extern char **environ ;
+
 void chown_dir(const char *dir, int uid)
 {
     DIR *content;
@@ -32,6 +34,19 @@ void chown_dir(const char *dir, int uid)
                 chown_dir(buffer, uid);
             }
     }
+}
+
+void setup_env(char **argv) {
+    // Do not leak information
+    for(int i=0; environ[i]; i++) {
+        memset(environ[i], 0, strlen(environ[i]));
+        environ[i] = NULL;
+    }
+    setenv("HOME", argv[4], 1);
+    setenv("PATH", "/bin:/usr/bin", 1);
+    setenv("LANG", "fr_FR.UTF-8", 1);
+    setenv("LD_PRELOAD", "../libsandbox.so", 1);
+    setenv("SECCOMP_SYSCALL_ALLOW", argv[2], 1);
 }
 
 int main(int argc, char **argv)
@@ -80,9 +95,8 @@ int main(int argc, char **argv)
     // The created files must be writable/destroyable by compile_server
     umask(7);
 
-    // Setup environment
-    setenv("LD_PRELOAD", "../libsandbox.so", 1);
-    setenv("SECCOMP_SYSCALL_ALLOW", argv[2], 1);
+    // Do not leak environment variables
+    setup_env(argv);
 
     // Goto home
     if (chdir(argv[4])) {
