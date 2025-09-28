@@ -30,6 +30,7 @@ import shutil
 import gc
 import collections
 import websockets
+import re
 from websockets import WebSocketServerProtocol
 import utilities
 
@@ -302,6 +303,9 @@ class Process: # pylint: disable=too-many-instance-attributes
             await self.websocket.send(json.dumps(['compiler', "Bravo, il n'y a aucune erreur"]))
             return
         stderr = ''
+        forbiden = re.findall(r'(^\s*#.*(((/\.|\./|</|"/).*)|\\)$)', source, re.MULTILINE)
+        if forbiden:
+            stderr += f'Ligne interdite : «{forbiden[0][0]}»\n'
         if compiler not in ('gcc', 'g++'):
             stderr += f'Compilateur non autorisé : «{compiler}»\n'
         for option in compile_options:
