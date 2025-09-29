@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 """
 Send many requests to the compile server
-   . 127 ; ./compile_server.py load_testing       # In a window
-   . 127 ; ./load_testing.py [racket]             # In another window
+   . PIPENV/bin/activate ; . 127 ; python3 compile_server.py load_testing # In a window
+   . PIPENV/bin/activate ; . 127 ; python3 load_testing.py [racket]       # In another window
 
 """
 

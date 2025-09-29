@@ -1390,7 +1390,7 @@ System calls allowable for g++/gcc:
         Lancez ces commandes (Ubuntu) :
     </p>
     <pre>sudo apt update
-sudo apt install python3-websockets python3-aiohttp astyle curl npm racket zip # nginx certbot
+sudo apt install astyle curl npm racket zip # nginx certbot
 git clone https://github.com/texcoffier/C5.git
 cd C5
 make</pre>
@@ -1482,7 +1482,7 @@ server {
     <table>
         <tr>
             <td>127
-            <td>Administre C5 sur la machine locale (même paramètres que utilities.py).
+            <td>Administre C5 sur la machine locale (même paramètres que c5.py).
         </tr>
         <tr>
             <td>BUILDINGS/Ariane<br>
@@ -1552,6 +1552,27 @@ server {
             <td>COMPILE_TEXT/demo/questions.py
             <td>Exemple d'utilisation de compile_text pour la saisie de texte libre.
         </tr>
+        <tr class="executable">
+            <td>c5.py
+            <td>Script d'administration du serveur.
+                Il ne doit pas être lancé directement mais être
+                inclu dans un script comme '127' qui définit la configuration.
+                <p>
+                S'il est lancé sans arguments, cela affiche :
+                <ul>
+                    <li> Les explications pour l'utiliser.</li>
+                    <li> La configuration par défaut extraite des variables d'environnement.</li>
+                    <li> Les processus serveur en train de tourner.</li>
+                </ul>
+                Ce script est appelé par le script <tt>127</tt>.
+                faites une copie de <tt>127</tt> avec votre propre configuration
+                et utiliser-la pour gérer vos différents serveurs C5.
+                <p>
+                    <b>Ce programme ne tourne pas dans pipenv,
+                        par contre il active pipenv avant de lancer les autres.
+                    </b>
+                </p>
+        </tr>
         <tr>
             <td>DOCUMENTATION/c5.svg
             <td>Lien vers «c5.svg»
@@ -1606,7 +1627,7 @@ server {
         </tr>
         <tr>
             <td>Makefile
-            <td>Utilisé par <tt>utilities.py</tt>, pas directement.
+            <td>Utilisé par <tt>c5.py</tt> et d'autres, pas directement.
         </tr>
         <tr>
             <td>README.rst
@@ -1757,19 +1778,9 @@ server {
             <td>Passage de la version 1 à la version 2 de C5 en créant <tt>journal.log</tt>
                 (<tt>http_server.log</tt> et <tt>comments.log</tt> peuvent être détruit)
         </tr>
-        <tr class="executable">
+        <tr class="">
             <td>utilities.py
-            <td>Classes et fonctions nécessaires pour les serveurs,
-                mais c'est aussi le script d'administration du serveur.
-                S'il est lancé sans arguments, cela affiche :
-                <ul>
-                    <li> Les explications pour l'utiliser.</li>
-                    <li> La configuration par défaut extraite des variables d'environnement.</li>
-                    <li> Les processus serveur en train de tourner.</li>
-                </ul>
-                Ce script est appelé par le script <tt>127</tt>.
-                faites une copie de <tt>127</tt> avec votre propre configuration
-                et utiliser-la pour gérer vos serveurs C5.
+            <td>Classes et fonctions nécessaires pour les serveurs.
         </tr>
     </table>
 

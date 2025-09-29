@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# This script calls utilities.py with the configuration defined here.
-# Run ./utilities.py to display explanation of variables
+# This script calls ./c5.py with the configuration defined here.
+# Run ./c5.py to display explanation of variables
 
 export C5_HOST="127.0.0.1"
 export C5_IP="127.0.0.1"
@@ -22,5 +22,5 @@ export C5_LDAP_PASSWORD="admin"
 export C5_LDAP_BASE="DC=univ-lyon1,DC=fr"
 export C5_CUSTOMIZE="local_my.py"
 
-./utilities.py $@
+./c5.py $@
 

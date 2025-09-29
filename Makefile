@@ -11,7 +11,7 @@ $(C5_CUSTOMIZE):
 	echo '"""Redefine «common.py» functions here (as in «local_ucbl.py»)"""' >$@
 
 default:all
-	@./utilities.py open # Open page on browser
+	@./c5.py open # Open page on browser
 
 JS:
 	mkdir JS
@@ -39,11 +39,11 @@ prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js node_modules/ala
 	JS/checkpoint.js JS/checkpoint_list.js JS/home.js JS/stats.js \
 	favicon.ico node_modules/@jcubic/lips
 	@$(MAKE) -j $$(nproc) $$(echo COMPILE_*/*/*.py | sed 's/\.py/.js/g')
-	@if [ ! -d SSL ] ; then ./utilities.py SSL-SS ; fi
+	@if [ ! -d SSL ] ; then ./c5.py SSL-SS ; fi
 
 all:prepare
 	@echo
-	@./utilities.py start
+	@./c5.py start
 
 ############# Utilities ############
 RapydScript:
@@ -91,8 +91,8 @@ pre-commit:
 
 # Update document from sources
 
-options.html:options.py utilities.py
-	./utilities.py options.html >options.html
+options.html:options.py c5.py utilities.py
+	./c5.py options.html >options.html
 
 DOCUMENTATION/index.html:options.html Makefile
 	awk '/START_OPTIONS/ { D=1; print $$0; next; } \
