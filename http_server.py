@@ -2502,6 +2502,7 @@ async def live_link(request:Request) -> StreamResponse:
             # log(f'New journalLink {asked_login}/{login} {for_editor} msg_id:{journa.msg_id}')
     JournalLink.closed_socket(socket)
     log(f'WebSocket close: {id(socket)} {socket}')
+    return socket
 
 def log(message):
     """Formatte http_server messages (same beginning than aiohttp messages)"""
