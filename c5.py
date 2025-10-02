@@ -410,13 +410,11 @@ def main() -> None:
         else:
             action = f'ssh {C5_ROOT}@{C5_HOST} "' + action + '"'
     elif '#C5_LOGIN' in action:
-        acyion = r'''
+        action = r'''
 . /etc/profile
 [ -e /etc/bash.bashrc ] && bash -c '
     PS1=TORUNBASHRC
     . /etc/bash.bashrc
-    hostname
-    pwd
     echo export http_proxy=\$http_proxy >~/xxx.proxy
     echo export https_proxy=\$https_proxy >>~/xxx.proxy
     ' && pwd && hostname && . \$HOME/xxx.proxy
@@ -425,6 +423,7 @@ def main() -> None:
             action = 'cd ..; sh -c "' + action + '"'
         else:
             action = f'ssh {C5_LOGIN}@{C5_HOST} "' + action + '"'
+    # print(action)
     sys.exit(os.system(action))
 
 if __name__ == '__main__':

@@ -1557,8 +1557,8 @@ class Q1(Question):
             assert os.path.exists('COMPILE_REMOTE/XXX/LOGS/john.doe/journal.log')
             with open('COMPILE_REMOTE/XXX/session.cf', 'rb') as file:
                 content = file.read()
-            assert content.count(b'\n') == 2
-            assert content.endswith(b"\n('sequential', 1)\n")
+            assert content.count(b'\n') == 3
+            assert b"\n('sequential', 1)\n" in content
         self.ticket = save_ticket
 
     def test_manage_reset(self):

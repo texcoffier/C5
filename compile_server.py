@@ -525,7 +525,7 @@ N'actualisez PAS la page."""]))
             process.log(("EXCEPTION", 'Because killed'))
     finally:
         process.log(("STOP", len(PROCESSES), len(FREE_USERS)))
-        process.cleanup(erase_executable=True, erase_sandbox=True)
+        #process.cleanup(erase_executable=True, erase_sandbox=True)
         PROCESSES.remove(process)
         FREE_USERS.append(process.launcher)
     # search_leak()

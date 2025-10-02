@@ -16,8 +16,8 @@ default:all
 JS:
 	mkdir JS
 
-sandbox:
-	git clone "https://github.com/cloudflare/sandbox.git"
+sandbox/libsandbox.so:
+	-[ ! -d sandbox ] && git clone "https://github.com/cloudflare/sandbox.git"
 	(cd sandbox ; \
 	curl -L -O https://github.com/seccomp/libseccomp/releases/download/v2.4.3/libseccomp-2.4.3.tar.gz ; \
     tar xf libseccomp-2.4.3.tar.gz && mv libseccomp-2.4.3 libseccomp ; \
@@ -34,7 +34,7 @@ killer:killer.c
 favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
-prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js node_modules/alasql sandbox killer \
+prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js node_modules/alasql sandbox/libsandbox.so killer \
 	JS/ccccc.js JS/live_link.js JS/adm_root.js JS/adm_course.js JS/adm_session.js \
 	JS/checkpoint.js JS/checkpoint_list.js JS/home.js JS/stats.js \
 	favicon.ico node_modules/@jcubic/lips
