@@ -31,7 +31,6 @@ import gc
 import collections
 import websockets
 import re
-from websockets import WebSocketServerProtocol
 import utilities
 
 MIN_TIME_BETWEEN_CONNECT = 0.2 # Racket start time
@@ -67,7 +66,7 @@ def set_racket_limits() -> None:
 
 class Process: # pylint: disable=too-many-instance-attributes
     """A websocket session"""
-    def __init__(self, websocket:WebSocketServerProtocol, login:str, course:str,
+    def __init__(self, websocket, login:str, course:str,
                  launcher:int) -> None:
         self.websocket = websocket
         self.conid = str(id(websocket))
@@ -430,7 +429,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.stdin_w = 0
         self.tasks = [asyncio.ensure_future(self.runner())]
 
-async def bad_session(websocket:WebSocketServerProtocol) -> None:
+async def bad_session(websocket) -> None:
     """Tail the browser that the session is bad"""
     await websocket.send(json.dumps(['stop', 'Session expired']))
     await asyncio.sleep(10)
@@ -453,7 +452,7 @@ def search_leak():
         OBJECTS.update(numbers)
     print(flush=True)
 
-async def echo(websocket:WebSocketServerProtocol) -> None: # pylint: disable=too-many-branches
+async def echo(websocket) -> None: # pylint: disable=too-many-branches
     """Analyse the requests from one websocket connection"""
     try:
         path = websocket.request.path
