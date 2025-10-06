@@ -111,7 +111,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Get the source code and do all the jobs"""
         self.post('state', "started")
         try:
-            if source == self.previous_source:
+            if source == self.previous_source and source != '':
                 self.run_after_compile()
             else:
                 self.previous_source = source
