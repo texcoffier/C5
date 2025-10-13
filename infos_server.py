@@ -31,7 +31,7 @@ os.symlink(logname, 'LOGS/infos_server')
 
 print(f"\nStart at {time.ctime()}", file=sys.stderr)
 
-if C5_LDAP_LOGIN == 'admin' and C5_LDAP_PASSWORD == 'admin':
+if C5_LDAP_LOGIN in ('admin', '') and C5_LDAP_PASSWORD in ('admin', ''):
     for line in sys.stdin:
         login = line.strip()
         print("About:", login, file=sys.stderr)
