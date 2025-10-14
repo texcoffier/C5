@@ -77,6 +77,13 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                 if data[0] == 'return':
                     self.post('state', "stopped")
                     self.run_tester()
+                if self.options['compiler'] == 'coqc':
+                    for err in data[1].split('File "./test.v", line ')[1:]:
+                        self.post('error',
+                            [int(err.split(' ')[0]),
+                             int(err.split(', characters')[1].split('-')[0])+1
+                            ])
+                        self.nr_warnings += 1
             elif data[0] == 'input':
                 try:
                     line = self.read_input()
@@ -180,5 +187,9 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                     elif char == ';':
                         break
             self.post('editor', '\n'.join(lines))
+            return
+        if self.options.language == 'coq':
+            # Do not indent
+            self.post('editor', source)
             return
         self.socket.send(JSON.stringify(['indent', source]))

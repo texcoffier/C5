@@ -53,10 +53,10 @@ HIGHLIGHT:
 	@mkdir $@
 	cd $@ && HERE=$$(pwd) && \
 	cd /tmp && \
-	git clone https://github.com/highlightjs/highlight.js.git && \
+	(git clone https://github.com/highlightjs/highlight.js.git || true) && \
 	cd highlight.js && \
 	npm install commander && \
-	node tools/build.js -t browser :common :lisp && \
+	node tools/build.js -t browser :common lisp coq && \
 	cp build/highlight.min.js $$HERE/highlight.js && \
 	cp -r src/styles/* $$HERE
 	rm -rf /tmp/highlight.js

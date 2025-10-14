@@ -64,6 +64,10 @@ def set_racket_limits() -> None:
     resource.setrlimit(resource.RLIMIT_CPU, (3600, 3600))
     resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
 
+def set_coq_limits() -> None:
+    """Do not allow big processes"""
+    resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
+    resource.setrlimit(resource.RLIMIT_DATA, (600*1024*1024, 600*1024*1024))
 class Process: # pylint: disable=too-many-instance-attributes
     """A websocket session"""
     def __init__(self, websocket, login:str, course:str,
@@ -298,7 +302,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.cleanup(erase_executable=True)
         with open(self.source_file, "w", encoding="utf-8") as file:
             file.write(source)
-        if compiler == 'racket':
+        if compiler in ('racket', 'coqc'):
             await self.websocket.send(json.dumps(['compiler', "Bravo, il n'y a aucune erreur"]))
             return
         stderr = ''
@@ -362,6 +366,32 @@ class Process: # pylint: disable=too-many-instance-attributes
             await self.websocket.send(json.dumps(['return', "Non compilé"]))
             return
         self.cleanup()
+        if self.compiler == 'coqc':
+            # Should use a runner in order to read values
+            try:
+                os.unlink(self.dir + '/test.v')
+            except FileNotFoundError:
+                pass
+            os.symlink(self.conid + '.cpp', self.dir + '/test.v')
+            self.process = await asyncio.create_subprocess_exec(
+                'coqc', 'test.v',
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                preexec_fn=set_coq_limits,
+                close_fds=True,
+                cwd=self.dir
+                )
+            assert self.process.stdout
+            while True:
+                line = await self.process.stdout.readline()
+                if line:
+                    await self.websocket.send(json.dumps(['executor', line.decode("utf-8", "replace")]))
+                else:
+                    break
+            await self.websocket.send(json.dumps(
+                ['return', f"\nCode de fin d'exécution = {await self.process.wait()}"]))
+            self.cleanup()
+            return
         if self.compiler == 'racket':
             self.log("RUN RACKET")
             if not self.process:
