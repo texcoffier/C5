@@ -1149,9 +1149,15 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             rect = self.get_rect(self.meter)
             if move_right:
                 move_right = rect['width']
-            element.style.top = rect['top'] + 'px'
+            top = rect['top'] + 'px'
+            left = 'calc(' + (rect['left'] + move_right) + 'px - var(--pad))'
+            if class_name == 'error char ERROR':
+                # Draw border outside the char
+                top = 'calc(' + top + ' - var(--char-border))'
+                left = 'calc(' + left + ' - var(--char-border))'
+            element.style.top = top
             element.style.height = rect['height'] + 'px'
-            element.style.left = 'calc(' + (rect['left'] + move_right) + 'px - var(--pad))'
+            element.style.left = left
             element.style.width = width * rect['width'] + 'px'
             element.className = class_name
             self.overlay.appendChild(element)

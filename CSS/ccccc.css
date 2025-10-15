@@ -7,6 +7,7 @@ BODY {
     --header_height: 2.4vw;
     --bubble_handle_size: 0.5vw;
     --target_feedback_width: 0.15vw;
+    --char-border: 0.2vw;
     overflow: hidden;
 }
 
@@ -196,7 +197,7 @@ DIV.executor>DIV:first-child {
 }
 
 .char {
-    border: 0.2vw solid #000
+    border: var(--char-border) solid #000
 }
 
 .char.cursor,
