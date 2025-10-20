@@ -547,10 +547,12 @@ async def adm_force_grading_done(request:Request) -> Response:
         await stream.write(b'</pre>')
     return stream
 
-def move_to_trash(path):
+def move_to_trash(path, timestamp=None):
     """Move a file to the Trash"""
+    path = str(path)
     if os.path.exists(path):
-        timestamp = time.strftime('%Y%m%d%H%M%S')
+        if timestamp is None:
+            timestamp = time.strftime('%Y%m%d%H%M%S')
         os.rename(path, f'Trash/{timestamp}-{path.replace("/", "_")}')
 
 async def adm_media(request:Request) -> Response:
@@ -2120,6 +2122,7 @@ async def adm_import(request:Request) -> Response:
     else:
         destination = None
         courses = set()
+    timestamp = time.strftime('%Y%m%d%H%M%S')
     course = ''
     for filename in session_zip.namelist():
         try:
@@ -2167,31 +2170,49 @@ async def adm_import(request:Request) -> Response:
             if 'Source' not in what:
                 await skip()
                 continue
+        path.mkdir(parents=True, exist_ok=True)
+        path = path / data[-1]
+        more = ''
+        zip_time = time.mktime(session_zip.getinfo(filename).date_time + (0, 0, 0))
         with session_zip.open(filename, "r") as file:
-            path.mkdir(parents=True, exist_ok=True)
-            path = path / data[-1]
             content = file.read()
-            if data[0] == 'session.cf':
-                content = content.split(b'\n')
-                content = [line
-                           for line in content
-                           if not line or line.split(b"'", 2)[1] in binary_what
-                          ]
-                if len(content) > 1:
-                    if path.exists():
-                        content = b'\n'.join(content)
-                        with path.open("ab") as file:
-                            file.write(content)
-                    else:
-                        content.insert(0, f"('creator', {repr(session.login)})".encode('utf-8'))
-                        content = b'\n'.join(content)
-                        path.write_bytes(content)
+        if path.exists():
+            if content == path.read_bytes():
+                more = 'Unchanged content. '
+            elif data[0] != 'session.cf':
+                more = 'moved to Trash. '
+                if zip_time < path.stat().st_mtime:
+                    more += '<span style="background:#F00;color:#FFF">THE OVERWRITTEN FILE WAS MORE RECENT</span>'
+                move_to_trash(path, timestamp=timestamp)
+        if data[0] == 'session.cf' and more != 'Unchanged content. ':
+            content_orig = content.split(b'\n')
+            content = [line
+                        for line in content_orig
+                        if not line or line.split(b"'", 2)[1] in binary_what
+                        ]
+            if len(content) > 1:
+                if path.exists():
+                    more += f'Merge {len(content)} lines into the current file. {len(content_orig)-len(content)} not appended. '
+                    content.append(b'')
+                    content = b'\n'.join(content)
+                    with path.open("ab") as file:
+                        file.write(content)
                 else:
-                    await skip()
-                    continue
+                    content.insert(0, f"('creator', {repr(session.login)})".encode('utf-8'))
+                    content = b'\n'.join(content)
+                    path.write_bytes(content)
             else:
-                path.write_bytes(content)
-            await write(f'<br>{filename}')
+                await skip()
+                continue
+        else:
+            path.write_bytes(content)
+            os.utime(path, (0, zip_time))
+        if data[0] == 'questions.py':
+            journal_log = path / 'journal.log'
+            if journal_log.exists():
+                move_to_trash(journal_log)
+                more += '«journal.log» moved to Trash. '
+        await write(f'<br>{filename} {more}')
 
     await write('<h1>Compile and Load configs</h1>')
     for course in courses:
