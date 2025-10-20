@@ -54,6 +54,8 @@ ALLOWABLE = {'brk', 'access', 'arch_prctl',
 
 resource.setrlimit(resource.RLIMIT_NOFILE, (10000, 10000))
 
+RACKETS = [] # Pool of racket processes
+
 def set_compiler_limits() -> None:
     """Do not allow big processes"""
     resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
@@ -61,7 +63,7 @@ def set_compiler_limits() -> None:
 
 def set_racket_limits() -> None:
     """These limits should never be reached because enforced by racket sandbox itself"""
-    resource.setrlimit(resource.RLIMIT_CPU, (3600, 3600))
+    # resource.setrlimit(resource.RLIMIT_CPU, (3600, 3600))
     resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
 
 def set_coq_limits() -> None:
@@ -97,6 +99,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.stdout:Optional[asyncio.StreamReader] = None
         self.filetree_in = ()
         self.filetree_out = ()
+        self.use_pool = False # True if compile option 'use_pool'
 
     def log(self, more:Union[str,Tuple]) -> None:
         """Log"""
@@ -141,6 +144,13 @@ class Process: # pylint: disable=too-many-instance-attributes
                 pass
             self.stdin_w = 0
 
+    def cancel_tasks(self):
+        """Stop reading data"""
+        for task in self.tasks:
+            self.log("CANCEL")
+            task.cancel()
+        self.tasks = []
+
     def cleanup(self, erase_executable:bool=False, kill:bool=False, erase_sandbox:bool=False) -> None:
         """Close connection"""
         self.log('CLEANUP')
@@ -160,10 +170,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 pass
 
         if self.compiler != 'racket' or erase_executable or kill:
-            for task in self.tasks:
-                self.log("CANCEL")
-                task.cancel()
-            self.tasks = []
+            self.cancel_tasks()
         self.close_fildes()
         self.waiting = False
         if self.process:
@@ -273,7 +280,14 @@ class Process: # pylint: disable=too-many-instance-attributes
             if b'\001\002RACKETFini !\001' in line:
                 self.log(("EXIT", 0))
                 await self.websocket.send(json.dumps(['return', "\n"]))
-                continue # For Racket (no cleanup)
+                if self.use_pool:
+                    self.process.racket_free = True
+                    self.process = None
+                    self.cancel_tasks()
+                    self.close_fildes()
+                    break
+                else:
+                    continue # For Racket (no cleanup)
         if self.process:
             return_value = await self.process.wait()
             self.log(("EXIT", return_value))
@@ -296,6 +310,7 @@ class Process: # pylint: disable=too-many-instance-attributes
     async def compile(self, data:Tuple) -> None:
         """Compile"""
         _course, _question, compiler, compile_options, ld_options, allowed, source = data
+        self.use_pool = 'use_pool' in compile_options
         self.compiler = compiler
         self.log(("COMPILE", data[:6]))
         if compiler != 'racket':
@@ -312,7 +327,8 @@ class Process: # pylint: disable=too-many-instance-attributes
         if compiler not in ('gcc', 'g++'):
             stderr += f'Compilateur non autorisé : «{compiler}»\n'
         for option in compile_options:
-            if option not in ('-Wall', '-pedantic', '-pthread', '-std=c++11', '-std=c++20'):
+            if option not in ('-Wall', '-pedantic', '-pthread', '-std=c++11', '-std=c++20',
+                              'use_pool'):
                 stderr += f'Option de compilation non autorisée : «{option}»\n'
         for option in ld_options:
             if option not in ('-lm',):
@@ -394,6 +410,14 @@ class Process: # pylint: disable=too-many-instance-attributes
             return
         if self.compiler == 'racket':
             self.log("RUN RACKET")
+            if self.use_pool:
+                for process in RACKETS:
+                    if process.racket_free:
+                        self.process = process
+                        process.racket_free = False
+                        self.stdout = self.process.stdout
+                        self.tasks = [asyncio.ensure_future(self.runner())]
+                        break
             if not self.process:
                 self.log("LAUNCH-RACKET")
                 self.process = await asyncio.create_subprocess_exec(
@@ -410,6 +434,9 @@ class Process: # pylint: disable=too-many-instance-attributes
                 )
                 self.stdout = self.process.stdout
                 self.tasks = [asyncio.ensure_future(self.runner())]
+                if self.use_pool:
+                    self.process.racket_free = False
+                    RACKETS.append(self.process)
             assert self.process.stdin
             self.process.stdin.write(self.source_file.encode('utf-8') + b'\n')
             return

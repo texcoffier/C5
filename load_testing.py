@@ -23,7 +23,7 @@ if 'racket' in sys.argv:
 (require racket/math)
 (display "Bonjour")
 """
-    COMPILER = ['compile', [COURSE, '0', 'racket', [], [], [], SOURCE]]
+    COMPILER = ['compile', [COURSE, '0', 'racket', ['use_pool'], [], [], SOURCE]]
     def check_exec(answer):
         return 'Bonjour' in answer and 'RACKETFini' in answer
 else:
@@ -68,7 +68,7 @@ def check_compile(answer):
 
 async def one_student():
     """Emulate one student work"""
-    async with websockets.connect(URL, extra_headers=HEADERS, ssl=CERT) as websocket: # pylint: disable=no-member
+    async with websockets.connect(URL, additional_headers=HEADERS, ssl=CERT) as websocket: # pylint: disable=no-member
         while True:
             await asyncio.sleep(10 + 30*random.random())
             start = time.time()
