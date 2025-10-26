@@ -206,6 +206,10 @@ class Process: # pylint: disable=too-many-instance-attributes
             if not error and buffer[0] == 0:
                 await asyncio.sleep(period) # Let the runner display the message
                 self.log("ASK")
+                if self.keep:
+                    flush = self.keep.decode("utf-8", "replace")
+                    self.keep = b''
+                    await self.websocket.send(json.dumps(['executor', flush]))
                 await self.websocket.send(json.dumps(['input', '']))
                 await self.input_done.wait()
                 self.input_done.clear()
@@ -221,48 +225,51 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.cleanup()
             return
         size = 0
-        keep = b''
+        self.keep = b''
         do_not_read = False
         self.log("RUNNER_START")
         assert self.stdout
         if self.compiler != 'racket':
+            # Wait sandbox start message
             while True:
                 line = await self.stdout.read(1000000)
                 if not line:
                     break
                 if self.canary in line:
-                    keep = line.split(self.canary, 1)[1]
-                    if keep:
+                    self.keep = line.split(self.canary, 1)[1]
+                    if self.keep:
                         do_not_read = True
                     break
+            # If the process is not displaying: we assume it is reading
+            # And so display an INPUT to the user.
             self.tasks.append(asyncio.ensure_future(self.timeout()))
         self.log("RUNNER_START_REAL")
         while True:
             if do_not_read:
-                line = keep
+                line = self.keep
                 do_not_read = False
             else:
                 to_add = await self.stdout.read(10000000)
                 if to_add:
-                    line = keep + to_add
+                    line = self.keep + to_add
                 else:
-                    if keep:
-                        line = keep + b'\n\001\002RACKETFini !\001'
+                    if self.keep:
+                        line = self.keep + b'\n\001\002RACKETFini !\001'
                     else:
                         break # Never here
-            keep = b''
+            self.keep = b''
             if self.compiler == 'racket' and (line == b'\001' or b'\001' not in line):
                 # cout << '\001' : freeze the server
-                keep = line
+                self.keep = line
                 continue
             if b"\002WAIT" in line:
                 self.waiting = True
             if b'\001' in line and not line.endswith(b'\001'):
-                line, keep = line.rsplit(b'\001', 1)
+                line, self.keep = line.rsplit(b'\001', 1)
                 line += b'\001'
-            if not keep and not line.endswith((b'\n', b'\001')) and b'\n' in line:
+            if not self.keep and not line.endswith((b'\n', b'\001')) and b'\n' in line:
                 # To not truncate a line in 2 DIV browser side.
-                line, keep = line.rsplit(b'\n', 1)
+                line, self.keep = line.rsplit(b'\n', 1)
                 line += b'\n'
             if to_check is not self.process:
                 return
