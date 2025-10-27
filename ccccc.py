@@ -69,59 +69,7 @@ def cleanup(txt):
     """Remove character badly handled by browser with getSelection().toString()"""
     return txt.replace(RegExp('[  \n\r\t]', 'g'), '')
 
-def walk(node, pos=None, depth=0):
-    """Count the number of characters.
-    pos[0] = current position.
-    pos[1] is True if we are on a newline
-    """
-    if pos is None:
-        pos = [0, True]
-        # print(''.join([(i.outerHTML or i.textContent)  for i in node.childNodes]))
-    for child in node.childNodes:
-        # print('        '[:4*depth+1], '=' + str(pos),
-        #       '/// Tag=' + child.tagName,
-        #       '/// HTML=' + child.innerHTML,
-        #       '/// Text=' + child.textContent)
-        if child.tagName == 'BR':
-            # print('        '[:4*depth+1], 'BR+1')
-            pos[0] += 1
-            pos[1] = True
-        elif child.tagName == 'DIV':
-            if not pos[1]:
-                # print('        '[:4*depth+1], 'DIV+1')
-                pos[0] += 1
-            walk(child, pos, depth + 1)
-        else:
-            # print('        '[:4*depth+1], 'TEXT+' + child.textContent.length)
-            pos[0] += child.textContent.length
-            pos[1] = False # child.textContent[-1] == '\n'
-    return pos[0]
-
-def walk_regtests():
-    """To debug walk"""
-    div = document.createElement('DIV')
-    for innerHTML, expected in [
-        ["", 0],
-        ["a", 1],
-        ["<br>", 1],
-        ["<br>#", 1],
-        ["<br>a", 2],
-        ["<div>a<br></div><div></div>", 2],
-        ["<div>a<br></div><div>b</div>", 3],
-        ["<div>a</div><div>b</div>", 3],
-        ["a<div>b</div>", 3],
-        ['a<span>b</span><div><span>c</span></div>', 4],
-        ]:
-        div.innerHTML = innerHTML
-        if innerHTML[-1] == '#':
-            div.childNodes[-1].textContent = ''
-        computed = walk(div)
-        if computed != expected:
-            print("=======================================================")
-            print("Found " + computed + " in place of " + expected)
-            print("=======================================================")
-
-walk_regtests()
+WALK_DEBUG = False
 
 def get_bubble(event):
     bubble = event.target
@@ -857,7 +805,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
         cleaned = replace_all(cleaned, '\n', '<br>') # All element must be on a single line
         cleaned = cleaned.replace(RegExp('<([a-zA-Z]+)[^>]*>', 'g'), '<$1>') # Remove tag attributes
         cleaned = cleaned.replace(RegExp('</?span>', 'gi'), '') # Remove <span> tags
+        if WALK_DEBUG:
+            self.executor.innerText = self.editor.innerHTML + '\n' + cleaned + '\n' + self.cursor_position
         if cleaned != original:
+            self.update_cursor_position_now()
             self.editor.innerHTML = cleaned
         state = {
             'node': self.editor,
@@ -874,6 +825,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         self.source = ''.join(state['text'])
         self.send_diff_to_journal()
+
+        if cleaned != original:
+            line, column = self.get_line_column(self.cursor_position)
+            document.getSelection().collapse(self.editor_lines[line-1], column)
 
     def record_pending_goto(self):
         """Must be recorded because action in the past"""
@@ -1428,22 +1383,42 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def update_cursor_position_now(self):
         """Get the cursor position
         pos = [current_position, do_div_br_collapse]
+
+        To check is all works : WALK_DEBUG=1
+        and
+        ccccc.editor.innerHTML =
+            '<div>a</div><div>b</div>' // a \n b
+            + '<div>c</div><div></div><div>d</div>' // c \n d
+            + '<div>e</div><div><br></div><div>f</div>' // e \n \n f
+            + '<div>g<br></div><div></div><div>h</div>' // g \n h
+            + '<div>i</div><div></div><div><br>j</div>' // i \n \n j
+            + '<div>k</div><br><div></div><div>l</div>' // k \n \n l
+            + '<div>m</div><div></div><br><div>n</div>' // m \n \n n
+            + '<div>o</div><div><br></div><br><div>p</div>' // o \n \n \n p
+            + '<div>q</div><br><div><br></div><div>r</div>' // q \n \n \n r
+            + '<div>s<br></div><br><div><br></div><br><div><br>t</div>' // s \n \n \n \n \n t
+            ;
+        And move one by one from start to end to verify that pos is incremented.
+        With Firefox there is a bug after 'k' and 'q' the Selection.toString does not work.
+
         """
         if self.completion_running:
             return
         self.clear_cursor_markers()
         self.do_coloring = "update_cursor_position_now"
-        try:
-            cursor = document.getSelection().getRangeAt(0).cloneRange()
-        except: # pylint: disable=bare-except
-            self.cursor_position = 0
-            return
-        if not self.editor.firstChild:
-            self.cursor_position = 0
-            return
-        cursor.setStart(self.editor.firstChild, 0)
-        left = cursor.cloneContents()
-        self.cursor_position = walk(left)
+
+        selection = document.getSelection()
+        original_range = selection.getRangeAt(0)
+        selection.empty()
+        range_from_start = original_range.cloneRange()
+        range_from_start.setStart(self.editor, 0)
+        selection.addRange(range_from_start)
+        self.cursor_position = len(selection.toString())
+        if WALK_DEBUG:
+            self.compiler.textContent = JSON.stringify(selection.toString())
+        selection.empty()
+        selection.addRange(original_range)
+
         self.highlight_unbalanced()
         try:
             self.highlight_word()
@@ -1721,6 +1696,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         elif event.key == 'F8':
             self.do_indent()
         elif event.key == 'Enter' and event.target is self.editor:
+            if event.shiftKey:
+                source = self.source[:self.cursor_position] + '\n' + self.source[self.cursor_position:]
+                self.set_editor_content(source, self.cursor_position + 1)
+                stop_event(event)
+                return
             # Automatic indent
             self.update_source()
             self.update_cursor_position_now()
@@ -2341,7 +2321,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     break
         self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
 
-    def set_editor_content(self, message): # pylint: disable=too-many-branches,too-many-statements
+    def set_editor_content(self, message, position=None): # pylint: disable=too-many-branches,too-many-statements
         """Set the editor content (question change or reset)"""
         self.overlay_hide()
         self.editor.innerText = message
@@ -2352,7 +2332,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         else:
             top = 0
         self.old_scroll_top = self.layered.scrollTop = top
-        line, column = self.get_line_column(JOURNAL.position)
+        line, column = self.get_line_column(position or JOURNAL.position)
         document.getSelection().collapse(self.editor_lines[line-1], column)
         self.highlight_errors = {}
         self.do_coloring = "set_editor_content"
