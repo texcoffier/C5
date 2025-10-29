@@ -827,8 +827,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.send_diff_to_journal()
 
         if cleaned != original:
-            line, column = self.get_line_column(self.cursor_position)
-            document.getSelection().collapse(self.editor_lines[line-1], column)
+            self.set_cursor_position(self.cursor_position)
 
     def record_pending_goto(self):
         """Must be recorded because action in the past"""
@@ -1381,8 +1380,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.highlight_errors[key] = None
 
     def update_cursor_position_now(self):
-        """Get the cursor position
-        pos = [current_position, do_div_br_collapse]
+        """Set the cursor position from screen position
 
         To check is all works : WALK_DEBUG=1
         and
@@ -1718,6 +1716,24 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 or event.ctrlKey and event.key in ('b', 'h')
                 ):
             # Disables these keys to not lost focus
+            stop_event(event)
+            return
+        elif event.key == 'Home' and not event.ctrlKey and not event.shiftKey:
+            i = self.cursor_position - 1
+            while i >= 0 and self.source[i] != '\n':
+                i -= 1
+            if i == self.cursor_position - 1 or self.source[i:self.cursor_position].strip() != '':
+                # Yet at the line beginning
+                # or some non-spaces on the left.
+                # Move to the text start (if there is one)
+                i += 1
+                while self.source[i] in ' \t':
+                    i += 1
+                if self.source[i] != '\n' and self.source[i]:
+                    self.set_cursor_position(i)
+            else:
+                # Only spaces left: move to the line start
+                self.set_cursor_position(i+1)
             stop_event(event)
             return
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
@@ -2321,6 +2337,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     break
         self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
 
+    def set_cursor_position(self, position):
+        """Change the onscreen position"""
+        line, column = self.get_line_column(position)
+        document.getSelection().collapse(self.editor_lines[line-1], column)
+
     def set_editor_content(self, message, position=None): # pylint: disable=too-many-branches,too-many-statements
         """Set the editor content (question change or reset)"""
         self.overlay_hide()
@@ -2332,8 +2353,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         else:
             top = 0
         self.old_scroll_top = self.layered.scrollTop = top
-        line, column = self.get_line_column(position or JOURNAL.position)
-        document.getSelection().collapse(self.editor_lines[line-1], column)
+        self.set_cursor_position(position or JOURNAL.position)
         self.highlight_errors = {}
         self.do_coloring = "set_editor_content"
         self.source = message
