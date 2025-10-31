@@ -94,7 +94,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     indent_button = layered = canvas = None
     top = None # Top page HTML element
     source = None # The source code to compile
-    source_with_newlines = None
     old_source = None
     highlight_errors = {}
     question_original = {}
@@ -112,7 +111,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     grading_history = ''
     focus_on_next_input = False
     cursor_position = 0
-    insert_on_keyup = None
     do_coloring = "default"
     do_update_cursor_position = True
     mouse_pressed = -1
@@ -819,10 +817,11 @@ class CCCCC: # pylint: disable=too-many-public-methods
         clear_text(state)
         if state['last']:
             self.editor_lines.append(state['last'])
-        self.source_with_newlines = ''.join(state['text'])
-        while state['text'][-1] == '\n':
-            state['text'].pop()
-
+        if WALK_DEBUG:
+            texts = ''
+            for i, line in enumerate(self.editor_lines):
+                texts += '[' + i + '] = ' + (line.outerHTML or line.nodeValue) + ' '
+            print(texts)
         self.source = ''.join(state['text'])
         self.send_diff_to_journal()
 
@@ -863,7 +862,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     def coloring(self): # pylint: disable=too-many-statements,too-many-branches
         """Coloring of the text editor with an overlay."""
         self.update_source()
-        self.overlay.innerHTML = html(self.source_with_newlines)
+        self.overlay.innerHTML = html(self.source)
         self.overlay.className = 'overlay language-' + self.options['language']
         if self.options['coloring']:
             del self.overlay.dataset.highlighted
@@ -1064,7 +1063,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 number.style.background = ""
             for insert, position, _value in diffs:
                 if insert:
-                    self.line_numbers.childNodes[position].style.background = "#0F0"
+                    if self.line_numbers.childNodes[position]:
+                        self.line_numbers.childNodes[position].style.background = '#0F0'
 
         self.overlay_show()
         self.line_numbers.style.height = self.comments.style.height = self.overlay.offsetHeight + 'px'
@@ -1404,18 +1404,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             return
         self.clear_cursor_markers()
         self.do_coloring = "update_cursor_position_now"
-
-        selection = document.getSelection()
-        original_range = selection.getRangeAt(0)
-        selection.empty()
-        range_from_start = original_range.cloneRange()
-        range_from_start.setStart(self.editor, 0)
-        selection.addRange(range_from_start)
-        self.cursor_position = len(selection.toString())
-        if WALK_DEBUG:
-            self.compiler.textContent = JSON.stringify(selection.toString())
-        selection.empty()
-        selection.addRange(original_range)
+        self.cursor_position = self.get_cursor_position()
 
         self.highlight_unbalanced()
         try:
@@ -1694,22 +1683,25 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         elif event.key == 'F8':
             self.do_indent()
         elif event.key == 'Enter' and event.target is self.editor:
-            if event.shiftKey:
-                source = self.source[:self.cursor_position] + '\n' + self.source[self.cursor_position:]
-                self.set_editor_content(source, self.cursor_position + 1)
-                stop_event(event)
-                return
-            # Automatic indent
+            self.update_source() # New because the scheduler may have not yet do its job.
+            self.update_cursor_position_now()
+            to_insert = '\n'
+            if not event.shiftKey:
+                # Automatic indent
+                i = self.cursor_position
+                while i > 0 and self.source[i-1] != '\n':
+                    i -= 1
+                j = i
+                while j < self.cursor_position and self.source[j] in '\t ':
+                    j += 1
+                if j != i:
+                    to_insert += self.source[i:j]
+            source = self.source[:self.cursor_position] + to_insert + self.source[self.cursor_position:]
+            self.set_editor_content(source, self.cursor_position + len(to_insert))
             self.update_source()
             self.update_cursor_position_now()
-            i = self.cursor_position
-            while i > 0 and self.source[i-1] != '\n':
-                i -= 1
-            j = i
-            while j < self.cursor_position and self.source[j] in '\t ':
-                j += 1
-            if j != i:
-                self.insert_on_keyup = self.source[i:j]
+            stop_event(event)
+            return
         elif not self.options['allow_copy_paste'] and (
                 event.key == 'OS'
                 or len(event.key) > 1 and event.key.startswith('F') and event.key not in ('F8', 'F9', 'F11')
@@ -1748,9 +1740,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         if event.target.tagName == 'TEXTAREA':
             # The teacher enter a comment
             return
-        if self.insert_on_keyup:
-            document.execCommand('insertHTML', False, self.insert_on_keyup)
-            self.insert_on_keyup = None
         self.do_coloring = "onkeyup"
         if JOURNAL.pending_goto:
             JOURNAL.version_tree_show(self.canvas, int(JOURNAL.lines[-1][1:]))
@@ -2337,10 +2326,51 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     break
         self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
 
+    def display_selection(self):
+        """For debug purpose"""
+        if WALK_DEBUG:
+            try:
+                range = document.getSelection().getRangeAt(0)
+                print('Ancestor:', range.commonAncestorContainer.tagName or range.commonAncestorContainer.nodeValue,
+                'Start:', range.startOffset, range.startContainer.tagName or range.startContainer.nodeValue,
+                'End:', range.endOffset, range.endContainer.tagName or range.endContainer.nodeValue)
+            except:
+                print('No selection')
+
+    def get_cursor_position(self):
+        """Get cursor position"""
+        self.display_selection()
+        selection = document.getSelection()
+        try:
+            original_range = selection.getRangeAt(0)
+        except:
+            return -1
+        selection.empty()
+        range_from_start = original_range.cloneRange()
+        range_from_start.setStart(self.editor, 0)
+        selection.addRange(range_from_start)
+        if WALK_DEBUG:
+            self.compiler.textContent = JSON.stringify(selection.toString())
+        position = len(selection.toString())
+        # Restore original range
+        selection.empty()
+        selection.addRange(original_range)
+        return position
+
     def set_cursor_position(self, position):
         """Change the onscreen position"""
+        self.display_selection()
         line, column = self.get_line_column(position)
-        document.getSelection().collapse(self.editor_lines[line-1], column)
+        if self.editor_lines[line-1].tagName == 'BR':
+            for i, element in enumerate(self.editor.childNodes):
+                if element is self.editor_lines[line-1]:
+                    document.getSelection().collapse(self.editor, i)
+        else:
+            document.getSelection().collapse(self.editor_lines[line-1], column)
+
+        if self.get_cursor_position() != position:
+            print('********************************** want', position,
+                'get', self.get_cursor_position(), 'line', line, 'column', column)
 
     def set_editor_content(self, message, position=None): # pylint: disable=too-many-branches,too-many-statements
         """Set the editor content (question change or reset)"""
