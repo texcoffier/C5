@@ -1,6 +1,13 @@
 #!/usr/bin/python3
 """
 Compiling and executing server
+
+To detect that a process is reading its standard input :
+   * \r is sent to its standard input
+   * The \r is not taken into account by 'cin >> char'
+   * FIONREAD allow to check if the process readed the \r
+     and so need an INPUT to be displayed.
+
 """
 
 from typing import Union, List, Tuple, Optional

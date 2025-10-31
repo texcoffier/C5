@@ -107,6 +107,8 @@ class Tests: # pylint: disable=too-many-public-methods
 
     def run(self):
         """Run the tests"""
+        os.system('./127 restart') # Clear all server states
+
         self.driver.set_window_size(1024, 1024)
         for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction', 'COMPILE_JS/example'):
             course = utilities.CourseConfig(course_name)
@@ -306,15 +308,18 @@ class Tests: # pylint: disable=too-many-public-methods
                 return f'Expected {expected} elements with the path «{path}» found {len(elements)}'
             if len(elements) == 1:
                 element = elements[0]
-                self.move_to_element(element)
-                for attr, check in checks.items():
-                    if attr.startswith('..'):
-                        obj = element.find_element(BY_XPATH, '..')
-                        attr = attr[2:]
-                    else:
-                        obj = element
-                    if not check.run(obj.get_attribute(attr)):
-                        return f'«{path}.{attr}» = «{element.get_attribute(attr)}» {check}'
+                try:
+                    self.move_to_element(element)
+                    for attr, check in checks.items():
+                        if attr.startswith('..'):
+                            obj = element.find_element(BY_XPATH, '..')
+                            attr = attr[2:]
+                        else:
+                            obj = element
+                        if not check.run(obj.get_attribute(attr)):
+                            return f'«{path}.{attr}» = «{element.get_attribute(attr)}» {check}'
+                except selenium.common.exceptions.WebDriverException:
+                    return f"Element «{path}» deleted just after getting it"
                 get_errors.element = element
             return None
         get_errors.element = None
@@ -579,12 +584,14 @@ class Tests: # pylint: disable=too-many-public-methods
         with self.root_rights():
             self.goto('adm/root')
             self.select_all('.ticket_ttl')
+            self.check('.ticket_ttl').click()
             self.check('.ticket_ttl').send_keys('X')
             self.check('.ticket_ttl').send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains('Invalid')})
             self.select_all('.ticket_ttl')
             self.check('.ticket_ttl').send_keys(str(ttl))
             self.check('.ticket_ttl').send_keys(Keys.ENTER)
+            time.sleep(0.1)
             self.check('#more', {'innerText': Contains(f'to {ttl} seconds')})
             self.click('.remove_olds')
             self.check('#more', {'innerText': Contains('tickets deleted')})
@@ -667,6 +674,19 @@ return sum ;
         self.goto('=JS=example')
         self.check('BODY', {'innerHTML': Contains(utilities.CONFIG.config['messages']['pending'])
                           & Contains('SN') & Contains('Fn')})
+
+    def save_file(self, name=None, use_enter=False):
+        """Set the name of the saved file"""
+        self.control('s')
+        time.sleep(0.2)
+        self.check('#popup_input').click()
+        if name:
+            self.check('#popup_input').send_keys(name)
+        if use_enter:
+            self.check('#popup_input').send_keys(Keys.ENTER)
+        else:
+            self.click('#popup_ok')
+
     def test_history(self): # pylint: disable=too-many-statements
         """Test history managing and TAGs"""
         self.load_page('=TEXT=demo')
@@ -682,30 +702,24 @@ return sum ;
         self.check('.save_history', {'length': Equal('2')}) # Has been saved
 
         # Tag the good anwser on first question
-        self.control('s')
-        self.check('#popup_input').send_keys('A')
-        self.click('#popup_ok')
-        self.check('.save_history', {'innerHTML': Contains('>A1<') & Contains('<option>Vers')})
+        self.save_file('A')
+        self.check('.save_history', {'innerHTML': Contains('>1A<') & Contains('<option>Vers')})
 
         # Change the answer and then change the question without saving
         editor.send_keys(' every')
         # self.check('.save_history', {'innerHTML': Contains('>Non')}, nbr=300)
         # time.sleep(0.2)
-        self.control('s')
-        self.click('#popup_ok')
+        self.save_file()
 
         self.click(question(4)) # goto the second question
         self.wait_save() # No save needed
         self.check('.save_history', {'length': Equal('2')}) # Only initial version
         self.click(question(3)) # Returns to the first question
         self.check('.save_history', {'length': Equal('4')}) # A new save !
-        self.control('s')
-        self.check('#popup_input').send_keys('B')
-        self.check('#popup_input').send_keys(Keys.ENTER)
+        self.save_file('B', use_enter=True)
         self.check('.save_history', {'length': Equal('5')}, nbr=200)
-        self.check('.save_history', {'innerHTML': Contains('>A1<') & Contains('>B3<') & Contains('<option>Vers')})
-        self.control('s')
-        self.check('#popup_input').send_keys(Keys.ENTER)
+        self.check('.save_history', {'innerHTML': Contains('>1A<') & Contains('>3B<') & Contains('<option>Vers')})
+        self.save_file(use_enter=True)
         self.wait_save()
 
         # Goto in the past (A) and change question: no saving done
@@ -726,14 +740,12 @@ return sum ;
         # self.check('.save_history', {'value': Equal("Non sauvegardé")})
 
         # Tag the new save
-        self.control('s')
-        self.check('#popup_input').send_keys('C')
-        self.check('#popup_input').send_keys(Keys.ENTER)
+        self.save_file('C', use_enter=True)
         self.wait_save()
         time.sleep(0.1)
         self.check('.save_history', {'length': Equal('7')})
-        self.check('.save_history', {'innerHTML': Contains('>A1<') & Contains('>B3<')
-            & Contains('>C5<') & Contains('<option>Vers')})
+        self.check('.save_history', {'innerHTML': Contains('>1A<') & Contains('>3B<')
+            & Contains('>5C<') & Contains('<option>Vers')})
 
         # Navigate in history and change question
         self.click('.save_history OPTION:nth-child(5)')
@@ -752,13 +764,13 @@ return sum ;
         """Test IP change on C5 admin"""
         with self.root_rights():
             self.goto('')
-            try:
-                self.check('.add_author').send_keys('titi')
-            except: # pylint: disable=bare-except
-                time.sleep(10000)
+            self.check('.add_author').click()
+            self.check('.add_author').send_keys('titi')
             self.check('.add_author').send_keys(Keys.ENTER)
+            time.sleep(0.1)
             self.check('#more', {'innerText': Contains('Author add «titi»')})
             self.click('.del_author_titi')
+            time.sleep(0.1)
             self.check('#more', {'innerText': Contains('Author del «titi»')})
             with self.change_ip():
                 self.check('.add_author').send_keys('titi')
@@ -860,15 +872,15 @@ return sum ;
 
     def click(self, path):
         """Click on an element, retry if not yet possible"""
-        try:
-            element = self.check(path)
-            element.click()
-        except (selenium.common.exceptions.ElementNotInteractableException,
-                selenium.common.exceptions.StaleElementReferenceException):
-            time.sleep(0.5)
-            element = self.check(path)
-            element.click()
-        return element
+        for _ in range(3):
+            try:
+                element = self.check(path)
+                element.click()
+                return element
+            except (selenium.common.exceptions.ElementNotInteractableException,
+                    selenium.common.exceptions.StaleElementReferenceException):
+                time.sleep(0.5)
+        raise ValueError(f'Element {path} no clickable')
 
     def test_dates(self, start, end, check, state):
         """No feedback exam even if allowed"""
@@ -1103,21 +1115,23 @@ class Q1(Question):
             self.check('BODY', {'innerHTML': Contains('«REMOTE=xxx» Renamed as «REMOTE=xxxx»')})
         self.delete_session_xxx()
 
+    def load_zip_real(self, url):
+        # Using self.goto() will lock selenium firefox driver
+        for _ in range(2): # Sometime ZIP loading fails
+            self.driver.execute_script(
+                f"window.open('{URL}{url}/test.zip?ticket={self.ticket}')")
+            for _ in range(20):
+                time.sleep(0.1)
+                names = glob.glob(os.path.expanduser('~/*/test.zip'))
+                if names:
+                    return names
+                names = glob.glob(os.path.expanduser('~/test.zip'))
+                if names:
+                    return names
+        raise ValueError('Downloaded file not found')
     def load_zip(self, url):
         """Retrieve a ZIP and returns the filename list"""
-            # Using self.goto() will lock selenium firefox driver
-        self.driver.execute_script(
-            f"window.open('{URL}{url}/test.zip?ticket={self.ticket}')")
-        for _ in range(20):
-            time.sleep(0.1)
-            names = glob.glob(os.path.expanduser('~/*/test.zip'))
-            if names:
-                break
-            names = glob.glob(os.path.expanduser('~/test.zip'))
-            if names:
-                break
-        else:
-            raise ValueError('Downloaded file not found')
+        names = self.load_zip_real(url)
         print('\t\t', names)
         self.goto('x')
         name = names[0]
@@ -1484,6 +1498,7 @@ class Q1(Question):
             retry(lambda: not export_button.get_attribute('disabled'))
 
             # Export
+            time.sleep(0.1)
             files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
             for name in (b'session.cf', b'questions.py'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
@@ -1629,7 +1644,6 @@ class Q1(Question):
 
 IN_DOCKER = not os.getenv('DISPLAY')
 
-os.system('./127 start')
 PORT = 3
 while os.path.exists(f'/tmp/.X{PORT}.lock'):
     PORT += 1
@@ -1665,7 +1679,8 @@ try:
             TESTS = Tests(driver)
             TESTS.run()
             TESTS = None
-
+        if 'CHROME' in sys.argv:
+            continue # Not running Firefox
         PROFILE = selenium.webdriver.FirefoxProfile()
         PROFILE.set_preference("browser.download.dir", "/path/to/download_directory")  # Set your download directory
         PROFILE.set_preference("browser.download.folderList", 2)
