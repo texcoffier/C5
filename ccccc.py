@@ -2351,7 +2351,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         selection.addRange(range_from_start)
         if WALK_DEBUG:
             self.compiler.textContent = JSON.stringify(selection.toString())
-        position = len(selection.toString())
+        position = len(replace_all(selection.toString(), '\r\n', '\n'))
         # Restore original range
         selection.empty()
         selection.addRange(original_range)
@@ -2360,6 +2360,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def set_cursor_position(self, position):
         """Change the onscreen position"""
         self.display_selection()
+        if not self.editor_lines[0]:
+            return # Empty source
         line, column = self.get_line_column(position)
         if self.editor_lines[line-1].tagName == 'BR':
             for i, element in enumerate(self.editor.childNodes):
