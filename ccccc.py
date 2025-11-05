@@ -2363,6 +2363,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         if not self.editor_lines[0]:
             return # Empty source
         line, column = self.get_line_column(position)
+        if not self.editor_lines[line-1]: # Cursor after the end
+            line = len(self.editor_lines)
+            column = len(self.editor_lines[line-1])
         if self.editor_lines[line-1].tagName == 'BR':
             for i, element in enumerate(self.editor.childNodes):
                 if element is self.editor_lines[line-1]:
