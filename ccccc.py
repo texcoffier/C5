@@ -1696,8 +1696,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     j += 1
                 if j != i:
                     to_insert += self.source[i:j]
-            source = self.source[:self.cursor_position] + to_insert + self.source[self.cursor_position:]
-            self.set_editor_content(source, self.cursor_position + len(to_insert))
+            to_delete = len(replace_all(document.getSelection().toString(), '\r\n', '\n'))
+            source = self.source[:self.cursor_position-to_delete] + to_insert + self.source[self.cursor_position:]
+            self.set_editor_content(source, self.cursor_position + len(to_insert) - to_delete)
             self.update_source()
             self.update_cursor_position_now()
             stop_event(event)
