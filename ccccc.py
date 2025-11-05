@@ -2344,17 +2344,24 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         try:
             original_range = selection.getRangeAt(0)
         except:
-            return -1
-        selection.empty()
+            return 1
+        # Save original selection
+        anchorNode = selection.anchorNode
+        anchorOffset = selection.anchorOffset
+        focusNode = selection.focusNode
+        focusOffset = selection.focusOffset
+        selection.removeAllRanges()
         range_from_start = original_range.cloneRange()
         range_from_start.setStart(self.editor, 0)
         selection.addRange(range_from_start)
         if WALK_DEBUG:
             self.compiler.textContent = JSON.stringify(selection.toString())
         position = len(replace_all(selection.toString(), '\r\n', '\n'))
-        # Restore original range
-        selection.empty()
-        selection.addRange(original_range)
+        # Restore original selection
+        selection.removeAllRanges()
+        selection.collapse(anchorNode, anchorOffset)
+        selection.extend(focusNode, focusOffset)
+
         return position
 
     def set_cursor_position(self, position):
