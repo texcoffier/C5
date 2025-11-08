@@ -656,6 +656,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.do_update_cursor_position:
             # print('do_update_cursor_position', self.do_update_cursor_position)
             self.update_source()
+            self.save_current_selection()
             self.update_cursor_position_now()
             self.do_update_cursor_position = False
 
@@ -1168,6 +1169,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.mouse_pressed = event.button
         self.stop_completion()
 
+    def get_current_selection(self):
+        return replace_all(window.getSelection().toString(), '\r\n', '\n')
+
+    def save_current_selection(self):
+        self.current_selection = self.get_current_selection()
+
     def onmouseup(self, event):
         """Mouse up"""
         self.mouse_pressed = -1
@@ -1175,10 +1182,21 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         if not self.editor.contains(selection.anchorNode) or not self.editor.contains(event.target):
             return
         # Selection in source code
+        if event.button == 1:
+            if self.allow_edit and (self.options['allow_copy_paste'] or self.text_allowed(self.current_selection)):
+                self.update_cursor_position_now()
+                source = self.source[:self.cursor_position] + self.current_selection + self.source[self.cursor_position:]
+                self.set_editor_content(source, self.cursor_position + len(self.current_selection))
+                self.update_source()
+                self.update_cursor_position_now()
+            stop_event(event)
+            return
+        self.save_current_selection()
+
         self.update_cursor_position_now()
         if REAL_GRADING and self.add_comments:
             pos_end = self.cursor_position
-            pos_start = pos_end - len(selection.toString())
+            pos_start = pos_end - len(self.current_selection)
             if pos_start != pos_end:
                 self.record_pending_goto()
                 SHARED_WORKER.bubble(SESSION_LOGIN, pos_start, pos_end, 0, 0, 30, 2, '')
@@ -1198,7 +1216,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Copy"""
         if self.options['allow_copy_paste']:
             return
-        text = cleanup(window.getSelection().toString())
+        text = cleanup(self.get_current_selection())
         if not self.text_allowed(text):
             self.popup_message(self.options['forbiden'])
             stop_event(event)
@@ -1439,6 +1457,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         if self.span_highlighted and self.span_highlighted != span:
             self.span_highlighted.style.background = ''
         self.span_highlighted = span
+
     def update_cursor_position(self):
         """Queue cursor update position"""
         self.do_update_cursor_position = "update_cursor_position"
@@ -1696,7 +1715,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     j += 1
                 if j != i:
                     to_insert += self.source[i:j]
-            to_delete = len(replace_all(document.getSelection().toString(), '\r\n', '\n'))
+            to_delete = len(self.get_current_selection())
             source = self.source[:self.cursor_position-to_delete] + to_insert + self.source[self.cursor_position:]
             self.set_editor_content(source, self.cursor_position + len(to_insert) - to_delete)
             self.update_source()
@@ -2357,7 +2376,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         selection.addRange(range_from_start)
         if WALK_DEBUG:
             self.compiler.textContent = JSON.stringify(selection.toString())
-        position = len(replace_all(selection.toString(), '\r\n', '\n'))
+        position = len(self.get_current_selection())
         # Restore original selection
         selection.removeAllRanges()
         selection.collapse(anchorNode, anchorOffset)
