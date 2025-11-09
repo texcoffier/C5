@@ -605,6 +605,8 @@ class Tests: # pylint: disable=too-many-public-methods
         self.goto_initial_version()
         self.check('.overlay', {'innerHTML': ~Contains('§')})
         self.control('y')
+        self.control('y')
+        self.control('y')
         self.check('.overlay', {'innerHTML': Contains('§')})
         while '§' in self.driver.find_elements(BY_SELECTOR, '.overlay')[0].get_attribute('innerHTML'):
             self.control('z')
@@ -636,9 +638,9 @@ class Tests: # pylint: disable=too-many-public-methods
         self.control(Keys.END)
         editor.send_keys('/')
         editor.send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains(');/\n')})
+        self.check('.overlay', {'innerHTML': Contains(');\n\n/\n')})
         editor.send_keys('/')
-        self.check('.overlay', {'innerHTML': Contains(');/\n/\n')})
+        self.check('.overlay', {'innerHTML': Contains(');\n\n/\n/\n')})
     def test_many_inputs(self):
         """Test IP change in grader editor"""
         nbr = 5
@@ -1384,7 +1386,7 @@ class Q1(Question):
         base = 'aa aaa aab ab abb bbb dd\n'
         def check(expected):
             retry(lambda: self.driver.execute_script("return ccccc.source")
-                          if self.driver.execute_script("return ccccc.source") != expected
+                          if self.driver.execute_script("return ccccc.source").strip() != expected
                           else False)
         def options(expected):
             completion = self.check('.completion')
