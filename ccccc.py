@@ -765,6 +765,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.overlay.removeChild(self.overlay.lastChild)
         if update_cursor:
             self.update_cursor_position()
+
+        for b in document.getElementsByClassName('coq'):
+            b.innerHTML = 'Relancez la compilation pour voir les buts.'
     def set_editor_visibility(self, visible):
         """Show/hide editor without changing its content"""
         if visible:
@@ -1430,6 +1433,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         except: # pylint: disable=bare-except
             pass # May happen when text deletion and the cursor is outside source
         self.highlight_error()
+        self.highlight_coq()
         if self.options['compiler'] == 'racket' and self.old_source == self.source:
             self.highlight_output()
 
@@ -1447,6 +1451,16 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                         '<b style="color:#FFF;background:#F00">$1</b>')
         if errors != self.compiler.innerHTML:
             self.compiler.innerHTML = errors
+
+    def highlight_coq(self):
+        """More efficient way to highlight thing on cursor move"""
+        style = document.getElementById('highlight_style')
+        if not style:
+            style = document.createElement('STYLE')
+            style.id = 'highlight_style'
+            document.body.appendChild(style)
+        line, column = self.get_line_column(self.cursor_position)
+        style.textContent = '.coq { display: none; color: #0A0 } #coq' + str(line-1) + '{ display: block }'
 
     def highlight_output(self):
         """Highlight the error in the compiler output"""
@@ -1642,7 +1656,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if self.completion_running != 'search' or event.key == 'Escape':
                 self.stop_completion()
         if event.target is self.editor and event.key not in (
-                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'):
+                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'Home', 'End'):
             self.clear_highlight_errors()
 
         if event.target.tagName == 'TEXTAREA':
@@ -1805,13 +1819,16 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 event.target.run_on_change = True
 
     def clear_if_needed(self, box):
-        """Clear only once the new content starts to come"""
+        """Clear only once the new content starts to come
+        Returns True if a clear was done
+        """
         if box in self.do_not_clear:
-            return
+            return False
         self.do_not_clear[box] = True
         if self[box]: # pylint: disable=unsubscriptable-object
             self[box].innerHTML = '' # pylint: disable=unsubscriptable-object
             self[box].content_size = 0
+        return True
 
     def onerror(self, event): # pylint: disable=no-self-use
         """When the worker die?"""
@@ -2131,7 +2148,18 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 SHARED_WORKER.good()
                 self.tree_canvas() # Here because scheduler do not call coloring
         elif what == 'executor':
-            self.clear_if_needed(what)
+            if self.options['compiler'] == 'coqc':
+                if self.clear_if_needed(what) or not self.coqc_content:
+                    self.coqc_content = ''
+                self.coqc_content += value
+                if "Code de fin d'exécution" in value:
+                    header, content = self.coqc_content.split('</h2>')
+                    self.executor.innerHTML = header + '</h2>'
+                    output = document.createElement('DIV')
+                    output.innerHTML = self.coqc(content)
+                    self.executor.appendChild(output)
+                return
+
             for value in value.split('\001'):
                 if not value:
                     continue
@@ -2457,6 +2485,29 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.completion.className = 'completion'
         self.completion.style.display = 'none'
         self.update_gui()
+
+    def coqc(self, lines):
+        html = []
+        forger_line = False
+        for line in lines.split('\n'):
+            show = line.split('     = "lInE ')
+            if len(show) == 2:
+                forget_line = True
+                line_number = int(show[1].split('"')[0])
+                html.append('<B class="coq" id="coq' + line_number + '">')
+            elif line == '     = "dOnE"':
+                forget_line = True
+                html.append('</B>')
+            elif 'Error:' in line:
+                html.append('</B>')
+                html.append(line)
+                forget_line = False
+            else:
+                if forget_line:
+                    forget_line = False
+                else:
+                    html.append(line + '\n')
+        return ''.join(html)
 
     def racket(self, text):
         """Parse messages from the Racket remote compiler"""

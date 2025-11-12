@@ -120,13 +120,29 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
         socket.onclose = event_error
         self.connecting = True
 
-    def run_compiler(self, source):
+    def run_compiler(self, orig_source):
         """Compile, display errors and return the executable"""
+        if self.options['compiler'] == 'coqc':
+            lines = orig_source.split('\n')
+            updated = []
+            allowed = False
+            for i, line in enumerate(lines):
+                s = line.strip()
+                if s.startswith('Goal ') or s.startswith('Lemma ') or s.startswith('Theorem ') or s.startswith('Example '):
+                    allowed = True
+                if 'Qed.' in line or 'Admitted.' in line:
+                    allowed = False
+                if allowed:
+                    line += ' Compute "lInE ' + i + '". Show. Compute "dOnE". '
+                updated.append(line)
+            source = "Require Import Coq.Strings.String. Local Open Scope string_scope. " + '\n'.join(updated)
+        else:
+            source = orig_source
         try:
             if not self.socket:
                 self.connect()
                 def retry():
-                    self.run_compiler(source)
+                    self.run_compiler(orig_source)
                 setTimeout(retry, 1000)
                 return eval("function _() {}") # pylint: disable=eval-used
             self.socket.send(JSON.stringify( # pylint: disable=undefined-variable
