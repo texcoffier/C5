@@ -1612,6 +1612,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
             self.search_input.line, self.search_input.column = self.get_line_column(self.cursor_position)
             self.search_input.scroll = self.layered.scrollTop
+            update_search()
         self.search_input.focus()
 
     def onkeydown(self, event): # pylint: disable=too-many-branches
