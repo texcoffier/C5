@@ -143,6 +143,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     eval_error_recorded = False
     content_old = None
     wait_indent = False
+    disable_on_paste = 0
 
     def init(self):
         self.options = options = COURSE_CONFIG
@@ -1194,6 +1195,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.set_editor_content(source, self.cursor_position + len(self.current_selection))
                 self.update_source()
                 self.update_cursor_position_now()
+            self.disable_on_paste = millisecs()
             stop_event(event)
             return
         self.save_current_selection()
@@ -1269,6 +1271,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
             return
         if self.add_comments:
+            stop_event(event)
+            return
+        if millisecs() - self.disable_on_paste < 100:
+            # Texte pasted from middle button
             stop_event(event)
             return
         text = (event.clipboardData or event.dataTransfer).getData("text/plain")
