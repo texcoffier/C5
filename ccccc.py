@@ -2161,6 +2161,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     output.innerHTML = self.coqc(content)
                     self.executor.appendChild(output)
                 return
+            else:
+                self.clear_if_needed(what)
 
             for value in value.split('\001'):
                 if not value:
