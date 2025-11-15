@@ -2495,7 +2495,7 @@ async def live_link(request:Request) -> StreamResponse:
                         journa.erase_comment_history(int(message[2:].split(' ')[0]))
                     await journa.write(message)
             else:
-                warn('Bad message ID')
+                warn(f'Bad message ID: {msg_id}')
                 await socket.send_str(f'{port} R')
                 journa.close(socket, port)
         else:

@@ -847,6 +847,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if JOURNAL.remote_update:
             # SHARED_WORKER.debug("Diff not done because remote update")
             return
+        if COURSE_CONFIG.state in ('Grade', 'Done', 'Archive'):
+            return
         # SHARED_WORKER.debug("Diff begin")
         old = JOURNAL.content
         replace = self.source
