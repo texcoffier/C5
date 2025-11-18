@@ -1179,7 +1179,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         return replace_all(window.getSelection().toString(), '\r\n', '\n')
 
     def save_current_selection(self):
-        self.current_selection = self.get_current_selection()
+        new_selection = self.get_current_selection()
+        if new_selection:
+            self.current_selection = new_selection
 
     def onmouseup(self, event):
         """Mouse up"""
