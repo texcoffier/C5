@@ -2455,7 +2455,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             top = self.get_element_box(current_line)['top']
         else:
             top = 0
-        self.old_scroll_top = self.layered.scrollTop = top
+        if abs(self.layered.scrollTop - top) > self.line_height:
+            self.old_scroll_top = self.layered.scrollTop = top
         self.set_cursor_position(position or JOURNAL.position)
         self.highlight_errors = {}
         self.do_coloring = "set_editor_content"
