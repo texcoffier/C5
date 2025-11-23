@@ -1873,6 +1873,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def update_save_history(self):
         """The list of saved versions"""
+        if self.update_save_history_running:
+            return
         if self.save_history == document.activeElement:
             return
         content = ['<option selected>Retourner sur</option>']
@@ -1887,7 +1889,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 # In some rare case, the default source code is not
                 # displayed on screen.
                 # But 'question_original' contains it.
+                self.update_save_history_running = True
                 self.set_editor_content(self.question_original[self.current_question])
+                self.update_save_history_running = False
         self.save_history.innerHTML = ''.join(content)
 
     def save(self):
