@@ -1205,7 +1205,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.update_cursor_position_now()
         if REAL_GRADING and self.add_comments:
             pos_end = self.cursor_position
-            pos_start = pos_end - len(self.current_selection)
+            pos_start = pos_end - len(self.get_current_selection())
             if pos_start != pos_end:
                 self.record_pending_goto()
                 SHARED_WORKER.bubble(SESSION_LOGIN, pos_start, pos_end, 0, 0, 30, 2, '')
