@@ -172,6 +172,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_manage_tree,
                     self.test_manage_import,
                     self.test_manage_reset,
+                    self.test_comments,
                     # self.test_git,
                     ):
                 print('*'*99)
@@ -853,24 +854,85 @@ return sum ;
             self.check('[g="1"]:nth-child(2)',
                 {'className': Contains('grade_selected')})
 
-            return # XXX tester la saisie de commentaires
+    def test_comments(self):
+        """Test comments in grader editor"""
+        for dirname in ('COMPILE_REMOTE/test/LOGS', 'COMPILE_REMOTE/test/LOGS/xxx'):
+            try:
+                os.mkdir(dirname)
+            except FileExistsError:
+                pass
+        with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'wb') as file:
+            file.write(
+                b'T1763742492\n'
+                b'Oxxx 127.0.0.1 0\n'
+                b'Q0\n'
+                b'I'
+                b'LineLineLineLineLineLineLineLineLineLine 1\x00'
+                b'LineLineLineLineLineLineLineLineLineLine 2\x00'
+                b'LineLineLineLineLineLineLineLineLineLine 3\x00'
+                b'LineLineLineLineLineLineLineLineLineLine 4\x00'
+                b'LineLineLineLineLineLineLineLineLineLine 5\x00'
+                b'\n'
+            )
+        with self.admin_rights():
+            self.goto('adm/session/REMOTE=test')
+            self.click('#state OPTION[value="Grade"]')
 
-            self.check('.comments TEXTAREA:first-child', {'className': Equal('empty')}).click()
+            self.goto(f'grade/REMOTE=test/xxx')
+            editor = self.click('.editor')
+            width = int(editor.get_attribute('offsetWidth'))
+            height = int(editor.get_attribute('offsetHeight'))
+
+            # Create a comment
+
+            action = selenium.webdriver.ActionChains(self.driver)
+            action.move_to_element_with_offset(editor, -width//2 + 2, -height//2 + 2)
+            action.click_and_hold()
+            action.move_by_offset(20, 0)
+            action.release()
+            action.perform()
+
+            self.check('.bubble_target', {'style': Contains('calc(2.0') & Contains('width: 18')})
+            # self.click('.bubble_content > TEXTAREA')
+            self.check('.bubble_content > TEXTAREA').send_keys('A comment\nDone')
+            editor.click()
             time.sleep(0.1)
-            self.check('.comments TEXTAREA:first-child').send_keys(f'=={student}==')
-            self.click('[g="1"]:nth-child(2)')
-            self.check('.comments TEXTAREA:first-child', {'className': Equal('filled')}).click()
+            with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
+                content = file.read()
+                assert b'\nb+' in content
+                assert b' 0 3 0 0 30 2 \n' in content
+                assert b'\nbC0 A comment\x00Done\n' in content
 
-            with self.change_ip():
-                self.check('[g="1"]:nth-child(2)',
-                    {'className': Contains('grade_unselected') & Contains('grade_undefined')}).click()
-                self.check_dialog('session a expiré', accept=True, required=True)
+            # Move a comment
 
-                self.click('.comments TEXTAREA:first-child')
-                self.control('a')
-                self.check('.comments TEXTAREA:first-child').send_keys(Keys.BACKSPACE)
-                self.click('.question H2')
-                self.check_dialog('session a expiré', accept=True, required=True)
+            header = self.check('.bubble_content > DIV')
+            action = selenium.webdriver.ActionChains(self.driver)
+            action.move_to_element(header)
+            action.click_and_hold()
+            action.move_by_offset(20, 20)
+            action.release()
+            action.perform()
+            time.sleep(0.1)
+            with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
+                content = file.read()
+                assert b'\nbP0 1.50 3.25\n' in content
+
+            # Change comment
+
+            self.check('.bubble_content > TEXTAREA').send_keys('*')
+            editor.click()
+            with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
+                content = file.read()
+                assert b'\nbC0 ??????????????\n' in content
+
+            # Delete comment
+
+            self.check('.bubble_content > DIV > SPAN').click()
+            with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
+                content = file.read()
+                assert b'\nb-0\n' in content
+                assert b'\nbC0 ???????????????\n' in content
+
 
     def click(self, path):
         """Click on an element, retry if not yet possible"""
