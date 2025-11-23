@@ -2491,7 +2491,7 @@ async def live_link(request:Request) -> StreamResponse:
                     warn('Hacker')
                 else:
                     # warn(f'Record')
-                    if message.startswith('bC'):
+                    if message.startswith(('bC', 'b-')):
                         journa.erase_comment_history(int(message[2:].split(' ')[0]))
                     await journa.write(message)
             else:
