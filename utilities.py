@@ -88,6 +88,7 @@ class Process: # pylint: disable=invalid-name
             if self.started is None:
                 self.started = False
                 await self.start()
+                self.started = True
             else:
                 while not hasattr(self, "process"):
                     await asyncio.sleep(0.1)
