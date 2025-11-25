@@ -569,6 +569,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         scheduler.update_page = True
         self.the_menu.close()
         self.time_span = [0, 1e10]
+        if STUDENT_DICT:
+            for student in STUDENT_DICT.Values():
+                student.update()
         self.write_location()
     def prepare_draw(self):
         """Compile information to draw quickly the map"""
