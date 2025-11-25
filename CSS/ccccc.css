@@ -602,6 +602,11 @@ H2:hover .timer SPAN DIV {
 .timer SPAN.minus60 DIV {
     font-size: 300%;
     background: #FFF;
+    position: absolute;
+    white-space: pre;
+    right: 0px;
+    top: 0px;
+    border: 0.1vw solid #000;
 }
 
 .timer SPAN.minus120 DIV,
