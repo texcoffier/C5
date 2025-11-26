@@ -1830,6 +1830,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             grade = "Noter l'étudiant"
         else:
             grade = 'Notation impossible : examen en cours'
+        grade += ' (sujet ' + student.version.upper() + ')'
         spy = "Espionner l'écran en temps réel"
         if self.state == 'running':
             spy = '*' + spy
