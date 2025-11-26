@@ -130,9 +130,9 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                 s = line.strip()
                 if s.startswith('Goal ') or s.startswith('Lemma ') or s.startswith('Theorem ') or s.startswith('Example '):
                     allowed = True
-                if 'Qed.' in line or 'Admitted.' in line or s[-1] != '.':
+                if 'Qed.' in line or 'Admitted.' in line:
                     allowed = False
-                if allowed:
+                if allowed and s[-1] == '.':
                     s += ' Compute "lInE ' + i + '". Show. Compute "dOnE". '
                 updated.append(s)
             source = "Require Import Coq.Strings.String. Local Open Scope string_scope. " + '\n'.join(updated)
