@@ -1024,10 +1024,14 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 for line in range(line1+1, line2):
                     add_marker(0, line, -1)
                 add_marker(0, line2, column2)
-
+            if line2 == 0:
+                top = 0
+            else:
+                last_line = self.line_numbers.childNodes[line2-1] or self.line_numbers.lastChild
+                top = last_line.offsetTop + self.line_height
             bubble_elm.relative_to = [
                 min(column1, column2) * self.char_width,
-                self.line_numbers.childNodes[line2].offsetTop
+                top
             ]
             left = (bubble_elm.relative_to[0] + bubble.column * self.char_width) % self.editor.offsetWidth
             left = min(left, self.editor.offsetWidth - 100)
