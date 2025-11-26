@@ -1972,7 +1972,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             if i in MESSAGES_TO_HIDE:
                 continue
             login, date, message = infos
-            message = html(message)
+            message = replace_all(html(message), '\n', '<br>')
             message = message.replace(
                 RegExp('(@[a-zA-Z]+)','g'),
                 '<span style="background:#FF8">$1</span>')
@@ -2482,20 +2482,24 @@ def reader(event): # pylint: disable=too-many-branches
                     MESSAGES.append(message)
             scheduler.update_messages = True
         elif data[0] == "active_teacher_room":
-            if STUDENT_DICT[data[2]]:
-                student = STUDENT_DICT[data[2]].data
+            student = STUDENT_DICT[data[2]]
+            if student:
+                student_data = student.data
                 if data[3] == 4: # Blur because nbr blurs change
-                    student.blurred = True
+                    student_data.blurred = True
                 elif data[3] == 9: # Focus because blur time change
-                    student.blurred = False
+                    student_data.blurred = False
                 elif data[3] == 6:
-                    MESSAGES.append([data[2], seconds(), student[1][6] + ' → ' + data[1]])
-                    student.nbr_ip_change = (student.nbr_ip_change or 0) + 1
+                    MESSAGES.append([data[2] + ' ' + student.firstname + ' ' + student.surname,
+                        seconds(),
+                        '\nAncienne IP : ' +  student_data[1][6] + '\n'
+                        + 'Nouvelle IP : ' + data[1]])
+                    student_data.nbr_ip_change = (student_data.nbr_ip_change or 0) + 1
                     scheduler.update_messages = True
-                student[1][data[3]] = data[1]
+                student_data[1][data[3]] = data[1]
             else:
-                student = [data[2], data[1], { 'fn': "?", 'sn': "?" }]
-            Student(student) # Update structure from data
+                student_data = [data[2], data[1], { 'fn': "?", 'sn': "?" }]
+            Student(student_data) # Update structure from data
             scheduler.update_page = True
         elif data[0] == "infos":
             student = STUDENT_DICT[data[1]].data
