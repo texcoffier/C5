@@ -545,12 +545,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
         Mettez le curseur sur <span>⏱</span> pour voir le temps restant.
         <p>
         Cliquez sur
-        <button onclick="ccccc.start_fullscreen()"
-        >plein écran</button>
+        →<button onclick="ccccc.start_fullscreen()"
+        >plein écran</button>←
         pour commencer à travailler.
+        N'utilisez pas la touche «F11».
         <p style="font-size:80%">
         Si cet encart ne disparaît pas après avoir cliqué sur le bouton :<br>
-        quittez complètement ce navigateur Web et lancez Firefox.
+        quittez complètement ce navigateur Web et lancez Firefox.<br>
         </p>
         """
         self.top.appendChild(self.fullscreen)
