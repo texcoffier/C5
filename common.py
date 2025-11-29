@@ -1568,7 +1568,11 @@ def create_shared_worker(login='', hook=None, readonly=False):
     def shared_worker_blur():
         """Window lost focus or fullscreen"""
         if not shared_worker.focused:
-            return # Blurred yet sent
+            # Record the focus lost on loading if it is not the first time
+            if len(journal.lines) < 5 or shared_worker.focused is False:
+                shared_worker.focused = False
+                return # Blurred yet sent
+            # Send the Blur because it is a reload in the middle of an exam.
         shared_worker.focused = False
         shared_worker_timestamp(int(millisecs() / 1000))
         shared_worker.post('B')

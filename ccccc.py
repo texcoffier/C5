@@ -130,7 +130,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     current_key = None
     meter = document.createRange()
     span_highlighted = None # Racket eval result line highlighted
-    focused = False
     need_grading_update = True
     dialog_on_screen = False
     completion_running = False
@@ -649,7 +648,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.fullscreen.style.display = 'none'
             else:
                 self.fullscreen.style.display = 'block'
-            if is_fullscreen and self.focused:
+            if is_fullscreen and document.hasFocus():
                 SHARED_WORKER.focus()
             else:
                 SHARED_WORKER.blur()
@@ -1798,12 +1797,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Key press"""
     def onblur(self, _event):
         """Window blur"""
-        self.focused = False
         if not GRADING and self.options['checkpoint']:
             self.record_pending_goto()
     def onfocus(self, _event):
         """Window focus"""
-        self.focused = True
         if not GRADING and self.options['checkpoint'] and self.fullscreen.style.display == 'none':
             self.record_pending_goto()
     def memorize_inputs(self):
