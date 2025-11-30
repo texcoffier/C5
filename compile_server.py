@@ -567,10 +567,10 @@ N'actualisez PAS la page."""]))
             if not session.is_admin() and not process.course_running() and not session.is_grader(process.course):
                 if action == 'compile':
                     await process.websocket.send(json.dumps(
-                        ['compiler', "La session est terminée"]))
+                        ['compiler', f"La session est terminée pour {login}"]))
                 if action == 'run':
                     await process.websocket.send(json.dumps(
-                        ['return', "La session est terminée"]))
+                        ['return', f"La session est terminée pour {login}"]))
                 continue
             if action == 'compile':
                 await process.compile(data)
