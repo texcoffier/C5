@@ -197,6 +197,11 @@ class Tests: # pylint: disable=too-many-public-methods
             if 'Failed to decode response from marionette' not in traceback.format_exc():
                 raise
 
+    def debug(self):
+        return
+        with open('LOGS/compile_server', 'rb') as file:
+            if b"SyntaxError: unmatched ')'" in file.read():
+                debug_stop
     @staticmethod
     def update_config(key, value):
         """Update the configuration by running action."""
@@ -266,6 +271,7 @@ class Tests: # pylint: disable=too-many-public-methods
         # It says there is a popup by deny dismissing it (sometime randomly)
         self.driver.execute_script("GRADING = true")
         self.driver.get(f"{URL}{url}?ticket={self.ticket}")
+        self.debug()
     @contextlib.contextmanager
     def change_ip(self):
         """Change the session IP and so break it"""
@@ -326,6 +332,7 @@ class Tests: # pylint: disable=too-many-public-methods
         get_errors.element = None
         retry(get_errors, nbr=nbr)
         print()
+        self.debug()
         return get_errors.element
     def get_alert(self):
         """Return the alert or None"""
