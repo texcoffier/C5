@@ -267,9 +267,13 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             #     config.update(data)
             #     self.record_config()
             except: # pylint: disable=bare-except
-                print('Filename:', self.file_cf)
-                print('Line:', binary_line, flush=True)
-                traceback.print_exc()
+                try:
+                    # Parse from start
+                    self.__init__(self.dir_session)
+                except:
+                    print('Filename:', self.file_cf)
+                    print('Line:', binary_line, flush=True)
+                    traceback.print_exc()
 
     def record_config(self):
         """Record the default start configuration"""
