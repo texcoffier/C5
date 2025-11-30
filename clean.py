@@ -16,7 +16,7 @@ def cleanup_c5():
         line = 'start'
         while line:
             line = file.readline()
-            if 'Anon_' in line:
+            if 'anonyme_' in line:
                 file.truncate(pos)
                 break
             pos = file.tell()
@@ -32,7 +32,7 @@ def remove_tickets():
 def remove_log_dirs():
     """Remove log dirs"""
     print('Remove log dirs: ', end='')
-    for dirname in glob.glob('COMPILE_*/*/LOGS/Anon_*'):
+    for dirname in glob.glob('COMPILE_*/*/LOGS/anonyme_*'):
         print('*', end='')
         shutil.rmtree(dirname)
     print()
@@ -46,7 +46,7 @@ def cleanup_session_config():
             line = 'start'
             while line:
                 line = file.readline()
-                if 'Anon_' in line or line.startswith("('proctors', 'REGTESTS"):
+                if 'anonyme_' in line or line.startswith("('proctors', 'REGTESTS"):
                     print(cfname, end=' ')
                     file.truncate(pos)
                     break

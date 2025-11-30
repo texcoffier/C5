@@ -210,7 +210,7 @@ class Tests: # pylint: disable=too-many-public-methods
     def make_me_admin(self):
         """Make admin the current login"""
         print(f'\t{self.ticket} become admin')
-        self.update_config('masters', utilities.CONFIG.masters + ['Anon_' + self.ticket])
+        self.update_config('masters', utilities.CONFIG.masters + ['anonyme_' + self.ticket])
         self.goto('config/reload')
         self.check_alert(required=False, nbr=2)
         time.sleep(0.1)
@@ -222,7 +222,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.goto('config/reload')
     def make_me_root(self):
         """Make root the current login"""
-        self.update_config('roots', utilities.CONFIG.roots + ['Anon_' + self.ticket])
+        self.update_config('roots', utilities.CONFIG.roots + ['anonyme_' + self.ticket])
         self.goto('config/reload')
         self.check_alert(required=False, nbr=2)
     def clean_up_root(self):
@@ -820,7 +820,7 @@ return sum ;
         self.check('.editor').send_keys('/**/')
         self.check('.save_button', {'state': Equal('ok')}).click()
         self.check('#popup_input').send_keys(Keys.ENTER)
-        student = f'Anon_{self.ticket}'
+        student = f'anonyme_{self.ticket}'
         self.ticket = None
         self.goto('')
         self.check_alert(accept=True, required=False, nbr=10)
@@ -837,7 +837,7 @@ return sum ;
             self.click('#Access')
             self.move_cursor('#graders')
             self.control('a')
-            self.check('#graders').send_keys(f'\nAnon_{self.ticket}')
+            self.check('#graders').send_keys(f'\nanonyme_{self.ticket}')
             self.click('#creator')
             self.check('#graders', {'className': Contains('changed')})
 
@@ -973,7 +973,7 @@ return sum ;
 
     def test_feedback(self):
         """Test feedback"""
-        student = f'Anon_{self.ticket}'
+        student = f'anonyme_{self.ticket}'
         no_grades = Contains('GRADES = null')
         no_grade = Contains('GRADE = null')
         no_details = Contains('NOTATION = ""')
@@ -1078,9 +1078,9 @@ return sum ;
         self.wait_start()
         with self.admin_rights():
             self.goto('checkpoint/REMOTE=test')
-            self.check(f'DIV[login=Anon_{student}]', {'innerHTML': Contains(student)})
+            self.check(f'DIV[login=anonyme_{student}]', {'innerHTML': Contains(student)})
             self.driver.execute_script(
-                f"record('checkpoint/REMOTE=test/Anon_{student}/Nautibus,42,42,a')")
+                f"record('checkpoint/REMOTE=test/anonyme_{student}/Nautibus,42,42,a')")
             admin = self.ticket
             time.sleep(0.1)
 
@@ -1573,7 +1573,7 @@ class Q1(Question):
             files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
             for name in (b'session.cf', b'questions.py'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
-            assert files.count(b' C5/') - files.count(b'/Anon_') == 2
+            assert files.count(b' C5/') - files.count(b'/anonyme_') == 2
 
             if not os.path.exists('COMPILE_REMOTE/test/MEDIA'):
                 os.mkdir('COMPILE_REMOTE/test/MEDIA')
@@ -1588,7 +1588,7 @@ class Q1(Question):
             for name in (b'session.cf', b'questions.py', b'MEDIA/foo.png',
                          b'LOGS/john.doe/journal.log', b'LOGS/john.doe/grades.log'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
-            assert files.count(b' C5/') - files.count(b'/Anon_') == 5
+            assert files.count(b' C5/') - files.count(b'/anonyme_') == 5
 
             # Filtered export (do not check individual session attributes)
             state.discard('Grades')
@@ -1597,7 +1597,7 @@ class Q1(Question):
             files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
             for name in (b'session.cf', b'questions.py'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
-            assert files.count(b' C5/') - files.count(b'/Anon_') == 2
+            assert files.count(b' C5/') - files.count(b'/anonyme_') == 2
 
     def test_manage_import(self):
         """Test filtered import"""
@@ -1775,7 +1775,7 @@ try:
             # Exit after one test
             EXIT_CODE = 0
             break
-        os.system('find . -name "Anon_*" -exec rm -r {} +')
+        os.system('find . -name "anonyme_*" -exec rm -r {} +')
 except KeyboardInterrupt:
     log('^C')
 except: # pylint: disable=bare-except

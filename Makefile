@@ -77,7 +77,7 @@ lint:
 	-mypy dns_server.py infos_server.py http_server.py compile_server.py
 	pylint [^x]*.py
 clean:
-	-rm -r xxx* COMPILE_REMOTE/test/LOGS/Anon* COMPILE_REMOTE/test/session.cf \
+	-rm -r xxx* COMPILE_REMOTE/test/LOGS/anonyme_* COMPILE_REMOTE/test/session.cf \
 	      *.log *.js *~ COMPILE_*/*~ COMPILE_*/questions.js COMPILE_*/questions.json \
 
 kill:

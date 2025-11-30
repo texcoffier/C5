@@ -954,7 +954,7 @@ class Session:
                 raise web.HTTPFound(C5_REDIRECT + urllib.parse.quote(service))
         else:
             if self.ticket and self.ticket.isdigit():
-                self.login = f'Anon_{self.ticket}'
+                self.login = f'anonyme_{self.ticket}'
                 self.infos = {'fn': 'fn' + self.ticket, 'sn': 'sn' + self.ticket}
                 LDAP.cache[self.login] = self.infos
                 self.record()
