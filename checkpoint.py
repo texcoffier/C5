@@ -2503,8 +2503,10 @@ def reader(event): # pylint: disable=too-many-branches
             Student(student_data) # Update structure from data
             scheduler.update_page = True
         elif data[0] == "infos":
-            student = STUDENT_DICT[data[1]].data
-            student[2] = data[2]
+            student_data = STUDENT_DICT[data[1]].data
+            student_data[2] = data[2]
+            Student(student_data) # Update structure from data
+            scheduler.update_page = True
         else:
             window.OPTIONS[data[0]] = data[1]
 

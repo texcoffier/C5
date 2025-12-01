@@ -94,8 +94,6 @@ class Process: # pylint: disable=invalid-name
                     await asyncio.sleep(0.1)
         if not self.process.stdin:
             raise ValueError('Bug')
-        while not self.process:
-            await asyncio.sleep(0.1)
         if key not in self.cache:
             # Get data from cache file if it is possible
             if '/' not in key and os.path.exists(self.cache_dir + key):
