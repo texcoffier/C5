@@ -54,6 +54,14 @@ class Process: # pylint: disable=invalid-name
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
 
+    if False:
+        def log(self, _txt):
+            return
+    else:
+        log_file = open(time.strftime('LOGS/%Y%m%d-process'), 'a', encoding='utf-8')
+        def log(self, txt):
+            self.log_file.write(f'{time.strftime("%Y%m%d-%H%M%S")} {txt}\n')
+
     async def start(self) -> None:
         """
         Start a process reading login on stdin and write information on stdout
@@ -65,45 +73,60 @@ class Process: # pylint: disable=invalid-name
             )
         asyncio.ensure_future(self.reader())
         atexit.register(self.process.kill)
-        print(self.process, self.command)
+        self.log(f'Start {self.process} {self.command}')
 
     async def reader(self) -> None:
         """Parse infos from process"""
         if not self.process.stdout:
             raise ValueError('Bug')
+        self.log(f'Start reader {self.process}')
         while True:
             infos = await self.process.stdout.readline()
+            self.log(f'Read {infos}')
             if not infos:
                 print('FAIL READ', self.process, self.process.stdout, flush=True)
                 return
             infos = json.loads(infos)
+            self.log('Write in memory cache')
             self.cache[infos[0]] = infos[1]
             if '/' not in infos[0]:
+                self.log('Write on disc cache')
                 with open(self.cache_dir + infos[0], 'w', encoding='latin1') as file:
                     file.write(json.dumps(infos[1]))
+            self.log('Done')
 
     async def infos(self, key:str) -> Dict[str, str]:
         """Get the informations about key"""
+        self.log(f'Ask about «{key}»')
         if not self.started:
             if self.started is None:
+                self.log('Start')
                 self.started = False
                 await self.start()
                 self.started = True
             else:
+                self.log('Start wait')
                 while not hasattr(self, "process"):
                     await asyncio.sleep(0.1)
+            self.log('Started')
         if not self.process.stdin:
             raise ValueError('Bug')
         if key not in self.cache:
             # Get data from cache file if it is possible
+            self.log('Not in memory cache')
             if '/' not in key and os.path.exists(self.cache_dir + key):
                 with open(self.cache_dir + key, 'r', encoding='ascii') as file:
                     self.cache[key] = json.loads(file.read())
+                self.log(f'Read from disc cache: {self.cache[key]}')
+            else:
+                self.log('Not in disc cache')
         if key not in self.cache or time.time() > self.cache[key].get('time', 0) + 86400:
             # Ask to update the cache
+            self.log('Ask for cache creating or updating')
             self.process.stdin.write(key.encode('utf-8') + b'\n')
         while key not in self.cache:
             await asyncio.sleep(0.1) # Wait the reader task
+        self.log(f'Answer about «{key}»: {self.cache[key]}')
         return self.cache[key]
 
 LDAP = Process('infos_server.py', 'LDAP')
