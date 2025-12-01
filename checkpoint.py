@@ -171,9 +171,12 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.surname = data[2]['sn'] or '?'
         self.mail = data[2]['mail'] or ''
         if self.hostname in ROOM.ips:
-            unknown_room = 0
+            if ROOM.ips[self.hostname].split(',')[0] == ROOM.building:
+                unknown_room = '0' # In  my building
+            else:
+                unknown_room = '1' # In another known building
         else:
-            unknown_room = 1
+            unknown_room = '1' # On an unknown computer
         self.sort_key = unknown_room + self.surname + '\001' + self.firstname + '\001' + self.login
         STUDENT_DICT[self.login] = self
         self.update()
@@ -1958,11 +1961,11 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 if room and self.building in BUILDINGS:
                     building, room_name = room.split(',')
                     if building != self.building:
-                        continue
-                    if not self.rooms_on_screen[room_name]:
+                        style = 'background: #CFF'
+                    elif not self.rooms_on_screen[room_name]:
                         continue
                 else:
-                    style = 'background: #FFCA'
+                    style = 'background: #FFC'
                 if student.checkpoint_time >= self.time_span[0] and student.checkpoint_time <= self.time_span[1]:
                     content.append(student.box(style))
         document.getElementById('waiting').innerHTML = ' '.join(content)
