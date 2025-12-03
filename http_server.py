@@ -2447,7 +2447,11 @@ async def live_link(request:Request) -> StreamResponse:
         raise
 
     def warn(txt):
-        msg = f'{time.strftime("%Y-%m-%d %H:%M:%S")} WS  {session.login} port={port} msg={message:.5} '
+        if '-' in session.ticket:
+            ticket = session.ticket.split("-", 2)[1]
+        else:
+            ticket = session.ticket
+        msg = f'     WS {ticket} {session.login} socket={id(socket)} port={port} msg={message:.5} '
         if journa:
             msg += f'{journa.login} {journa.course.course} {journa.msg_id} {allow_edit} '
         log(msg + txt)
@@ -2522,7 +2526,7 @@ async def live_link(request:Request) -> StreamResponse:
                 await journa.write(f'O{session.login} {session.client_ip} {port}')
             # log(f'New journalLink {asked_login}/{login} {for_editor} msg_id:{journa.msg_id}')
     JournalLink.closed_socket(socket)
-    log(f'WebSocket close: {id(socket)} {socket}')
+    warn(f'Close socket')
     return socket
 
 def log(message):
