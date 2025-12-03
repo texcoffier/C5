@@ -2627,10 +2627,12 @@ def scheduler():
     if scheduler.update_page:
         scheduler.update_page = False
         update_page()
-    if Student.moving_student or Student.highlight_student:
+    login = Student.moving_student or Student.highlight_student
+    if login:
         ROOM.draw(scheduler.draw_square_feedback)
-        hostname = STUDENT_DICT[Student.moving_student or Student.highlight_student].hostname
-        if hostname in ROOM.positions:
+        student = STUDENT_DICT[login]
+        hostname = student.hostname
+        if hostname in ROOM.positions and student.waiting_color != '#FEE':
             circle_width = ROOM.scale / 10
             font_size = 30
             col, row = ROOM.positions[hostname]
