@@ -170,14 +170,6 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.firstname = data[2]['fn'] or '?'
         self.surname = data[2]['sn'] or '?'
         self.mail = data[2]['mail'] or ''
-        if self.hostname in ROOM.ips:
-            if ROOM.ips[self.hostname].split(',')[0] == ROOM.building:
-                unknown_room = '0' # In  my building
-            else:
-                unknown_room = '1' # In another known building
-        else:
-            unknown_room = '1' # On an unknown computer
-        self.sort_key = unknown_room + self.surname + '\001' + self.firstname + '\001' + self.login
         STUDENT_DICT[self.login] = self
         self.update()
 
@@ -194,6 +186,24 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.full_room_name = None
         self.short_room_name = None
         self.good_room = None
+
+        if self.hostname in ROOM.ips:
+            building, room_name = (ROOM.ips[self.hostname] or '?,?').split(',')
+            if building == ROOM.building:
+                if ROOM.rooms_on_screen[room_name]:
+                    unknown_room = '0' # In my room
+                    self.waiting_color = '#EEE'
+                else:
+                    unknown_room = '1' # In my building
+                    self.waiting_color = '#FFE'
+            else:
+                unknown_room = '1' # In another known building
+                self.waiting_color = '#FEE'
+        else:
+            unknown_room = '1' # On an unknown computer
+            self.waiting_color = '#EFF'
+        self.sort_key = unknown_room + self.surname + '\001' + self.firstname + '\001' + self.login
+
         if self.building != ROOM.building:
             # Not on this map
             return
@@ -1956,16 +1966,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         content = []
         for student in self.waiting_students:
             if student.room == '' or student.room.startswith('?'):
-                room = self.ips[student.hostname]
-                style = ''
-                if room and self.building in BUILDINGS:
-                    building, room_name = room.split(',')
-                    if building != self.building:
-                        style = 'background: #CFF'
-                    elif not self.rooms_on_screen[room_name]:
-                        continue
-                else:
-                    style = 'background: #FFC'
+                style = 'background:' + (student.waiting_color or '#F00')
                 if student.checkpoint_time >= self.time_span[0] and student.checkpoint_time <= self.time_span[1]:
                     content.append(student.box(style))
         document.getElementById('waiting').innerHTML = ' '.join(content)
