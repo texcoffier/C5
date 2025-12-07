@@ -1794,4 +1794,6 @@ finally:
         XNEST.terminate()
     os.system('./127 stop')
     os.system('./clean.py')
+    if EXIT_CODE:
+        print('********** TESTS FAILED ***********')
     sys.exit(EXIT_CODE)
