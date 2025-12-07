@@ -8,7 +8,8 @@ if False: # pylint: disable=using-constant-test
 
 COURSE_OPTIONS = {
     'title': "Session utilisée uniquement pour éditer les questionnaires",
-    'allow_copy_paste': 0,
+    'allow_copy_paste': 1,
+    'forbid_question_copy': 0,
     'state': 'Ready',
     'checkpoint': 0,
     'expected_students_required': 1, # Do not display to student
