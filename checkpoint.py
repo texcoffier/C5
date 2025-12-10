@@ -404,6 +404,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     similarity_todo_pending = 0
     similarities = []
     debug = False
+    need_update_waiting_room = False # New student when cursor on waiting room
     def __init__(self, info):
         self.menu = document.getElementById('top')
         self.the_menu = Menu(self)
@@ -1969,8 +1970,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def update_waiting_room(self):
         """Update HTML with the current waiting student for the rooms on screen"""
         if self.pointer_on_student_list and not self.force_update_waiting_room:
+            self.need_update_waiting_room = True
             return
-        self.force_update_waiting_room = False
+        self.need_update_waiting_room = self.force_update_waiting_room = False
 
         self.compute_rooms_on_screen()
         for student in STUDENT_DICT.Values():
@@ -2638,6 +2640,8 @@ def scheduler():
     if scheduler.update_page:
         scheduler.update_page = False
         update_page()
+    elif ROOM.need_update_waiting_room:
+        ROOM.update_waiting_room()
     login = Student.moving_student or Student.highlight_student
     if login:
         ROOM.draw(scheduler.draw_square_feedback)
