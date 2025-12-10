@@ -1,6 +1,11 @@
 """
 Display checkpoint page
 
+To debug waiting list by changing the student hostname :
+
+a = 'p2409318'; STUDENT_DICT[a].data[1][6] = STUDENT_DICT[a].hostname = 'b761pc1301.univ-lyon1.fr' ; create_or_update_student(STUDENT_DICT[a].data) ; ROOM.update_waiting_room()
+
+
 """
 # pylint: disable=chained-comparison,singleton-comparison,use-implicit-booleaness-not-len
 
@@ -137,7 +142,6 @@ def get_ctx():
 
 class Student: # pylint: disable=too-many-instance-attributes
     """To simplify code"""
-    building = column = line = None
     def __init__(self, data):
         self.data = data
         self.login = data[0]
@@ -150,6 +154,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         #  * It is an exam session
         #  * or it is in a time span
         #    The default time span is NOW
+        self.building = self.column = self.line = None
         if (OPTIONS.checkpoint
             or self.checkpoint_time >= ROOM.time_span[0]
                and self.checkpoint_time <= ROOM.time_span[1]
@@ -251,6 +256,12 @@ class Student: # pylint: disable=too-many-instance-attributes
             return 1e9
         return Math.sqrt(Math.pow(self.line - student.line, 2) + Math.pow(self.column - student.column, 2))
 
+def create_or_update_student(data):
+    student = STUDENT_DICT[data[0]]
+    if student:
+        student.__init__(data)
+    else:
+        Student(data)
 class Menu:
     line = column = model = reds = activate = None
     def __init__(self, room):
@@ -572,6 +583,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.update_sizes(0.5)
         self.update_visible()
         self.search_rooms()
+        self.compute_rooms_on_screen()
         self.prepare_draw()
         try:
             self.prepare_ips()
@@ -583,8 +595,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.the_menu.close()
         self.time_span = [0, 1e10]
         if STUDENT_DICT:
-            for student in STUDENT_DICT.Values():
-                student.update()
+            self.update_waiting_room()
         self.write_location()
     def prepare_draw(self):
         """Compile information to draw quickly the map"""
@@ -1428,7 +1439,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         self.left -= old_x - new_x
         self.top -= old_y - new_y
         self.scale = new_scale
-        self.compute_rooms_on_screen()
         self.update_waiting_room()
         scheduler.draw = "do_zoom"
         self.write_location()
@@ -1549,7 +1559,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             scheduler.draw = "animate_zoom"
             setTimeout(bind(self.animate_zoom, self), 40)
         else:
-            self.compute_rooms_on_screen()
             self.update_waiting_room()
             self.write_location()
             self.update_visible()
@@ -1941,7 +1950,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.the_menu.close()
         else:
             # Panning: recompute waiting room list
-            self.compute_rooms_on_screen()
             self.update_waiting_room()
         if not self.the_menu.opened:
             window.onmousemove = None
@@ -1956,13 +1964,18 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             left, top, width, height = room['position'][:4]
             right, bottom, _x_size, _y_size = self.xys(left + width, top + height)
             left, top, _x_size, _y_size = self.xys(left, top)
-            if left > -5 and top > -5 and right < self.width + 5 and bottom < self.height + 5:
+            if left > self.left_column - 5 and top > self.top_line - 5 and right < self.right_column + 5 and bottom < self.bottom_line + 5:
                 self.rooms_on_screen[room_name] = True
     def update_waiting_room(self):
         """Update HTML with the current waiting student for the rooms on screen"""
         if self.pointer_on_student_list and not self.force_update_waiting_room:
             return
         self.force_update_waiting_room = False
+
+        self.compute_rooms_on_screen()
+        for student in STUDENT_DICT.Values():
+            student.update()
+        self.waiting_students.sort(cmp_student_name)
         content = []
         for student in self.waiting_students:
             if student.room == '' or student.room.startswith('?'):
@@ -2332,7 +2345,6 @@ def update_page():
         line = student.line
         column = student.column
     students = [student for student in STUDENT_DICT.Values() if student.login]
-    students.sort(cmp_student_name)
     ROOM.students = []
     ROOM.waiting_students = []
     for student in students:
@@ -2348,7 +2360,6 @@ def update_page():
 
     ROOM.put_students_in_rooms()
     ROOM.draw()
-    ROOM.compute_rooms_on_screen()
     ROOM.update_waiting_room()
     highlight_buttons()
 
@@ -2504,12 +2515,12 @@ def reader(event): # pylint: disable=too-many-branches
                 student_data[1][data[3]] = data[1]
             else:
                 student_data = [data[2], data[1], { 'fn': "?", 'sn': "?" }]
-            Student(student_data) # Update structure from data
+            create_or_update_student(student_data) # Update structure from data
             scheduler.update_page = True
         elif data[0] == "infos":
             student_data = STUDENT_DICT[data[1]].data
             student_data[2] = data[2]
-            Student(student_data) # Update structure from data
+            create_or_update_student(student_data) # Update structure from data
             scheduler.update_page = True
         else:
             window.OPTIONS[data[0]] = data[1]
@@ -2867,7 +2878,8 @@ else:
     ROOM = Room(INFO)
     STUDENT_DICT = {}
     for student in STUDENTS:
-        Student(student)
+        create_or_update_student(student)
+
     update_page()
     if STUDENT_DICT[INFO['student']]:
         ROOM.zoom_student(INFO['student'])
