@@ -107,7 +107,7 @@ def update_checkpoint_time(element, keep=False):
     ROOM.time_span = [timestamp - 12*3600, timestamp + 12 * 3600]
     element.value = nice_date(timestamp)
     update_page()
-    ROOM.force_update_waiting_room = True
+    ROOM.force_update_waiting_room = millisecs()
     ROOM.update_waiting_room()
 
 def button_checkpoint_time(element):
@@ -394,7 +394,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     highlight_disk = None
     all_ips = {}
     pointer_on_student_list = False # If True disable list update
-    force_update_waiting_room = False
+    force_update_waiting_room = millisecs()
     drag_millisec_start = 0 # To compute static clic duration
     student_clicked = None # The student that may be moved
     ctrl = False # Control key pressed
@@ -590,7 +590,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             self.prepare_ips()
         except: # pylint: disable=bare-except
             self.all_ips = {}
-        self.force_update_waiting_room = True
+        self.force_update_waiting_room = millisecs()
         scheduler.update_messages = True
         scheduler.update_page = True
         self.the_menu.close()
@@ -1547,7 +1547,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Move the student from map to waiting room.
             self.highlight_disk = None
             record('checkpoint/' + COURSE + '/' + self.moving['login'] + '/EJECT')
-            self.force_update_waiting_room = True
+            self.force_update_waiting_room = millisecs()
 
     def animate_zoom(self):
         """Transition from zoom"""
@@ -1969,10 +1969,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 self.rooms_on_screen[room_name] = True
     def update_waiting_room(self):
         """Update HTML with the current waiting student for the rooms on screen"""
-        if self.pointer_on_student_list and not self.force_update_waiting_room:
+        if self.pointer_on_student_list and millisecs() - self.force_update_waiting_room > 200:
             self.need_update_waiting_room = True
             return
-        self.need_update_waiting_room = self.force_update_waiting_room = False
+        self.need_update_waiting_room = False
 
         self.compute_rooms_on_screen()
         for student in STUDENT_DICT.Values():
@@ -2075,7 +2075,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         Student.moving_student = None
         Student.moving_element = None
         if pos[0] == -1:
-            self.force_update_waiting_room = True
+            self.force_update_waiting_room = millisecs()
             scheduler.update_page = True
     def zoom_student(self, login):
         "Zoom on this student"
@@ -2436,7 +2436,7 @@ def key_event_handler(event):
         if hostname in ROOM.positions:
             col, row = ROOM.positions[hostname]
             ROOM.move_student_to(student, col, row)
-            ROOM.force_update_waiting_room = True
+            ROOM.force_update_waiting_room = millisecs()
     if len(event.key) == 1:
         spy = document.getElementById('SPY-' + event.key.upper())
         if spy:
