@@ -1985,6 +1985,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 if student.checkpoint_time >= self.time_span[0] and student.checkpoint_time <= self.time_span[1]:
                     content.append(student.box(style))
         document.getElementById('waiting').innerHTML = ' '.join(content)
+        Student.highlight_student = None
     def update_messages(self): # pylint: disable=no-self-use
         """Update HTML with the messages"""
         content = []
