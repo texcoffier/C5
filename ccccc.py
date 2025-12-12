@@ -539,10 +539,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
         Tout ce que vous faites est enregistré et pourra être
         retenu contre vous en cas de tricherie.
         <p>
-        Si une autre personne a utilisé vos identifiants, c'est vous qui
-        serez tenu comme responsable de ses crimes.
+        Si une autre personne a utilisé vos identifiants,<br>
+        c'est vous qui serez tenu comme responsable de ses crimes.
         <p>
         Mettez le curseur sur <span>⏱</span> pour voir le temps restant.
+        <div style="text-align:center">
+        <p style="background:#000;display:inline-block;margin:auto">
+        Enlevez vos capuches, casquettes, oreillettes.<br>
+        Rangez tous vos objets connectés dans votre sac :<br>
+        téléphones, montres, lunettes...
+        </div>
         <p>
         Cliquez sur
         →<button onclick="ccccc.start_fullscreen()"
