@@ -58,7 +58,8 @@ class Process: # pylint: disable=invalid-name
         def log(self, _txt):
             return
     else:
-        log_file = open(time.strftime('LOGS/%Y%m%d-process'), 'a', encoding='utf-8')
+        log_file = open(time.strftime('LOGS/%Y%m%d-process-')
+                        + sys.argv[0].split('/')[-1], 'a', encoding='utf-8')
         def log(self, txt):
             self.log_file.write(f'{time.strftime("%Y%m%d-%H%M%S")} {txt}\n')
 
