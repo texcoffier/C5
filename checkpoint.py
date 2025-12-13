@@ -2764,7 +2764,7 @@ def display_student_screen(journal, feedback, student, letter):
     feedback.innerHTML = (
         '<b>Q' + (journal.question+1)
         + '<var style="font-weight: normal; color: #888">(«<i id="SPY-'
-        + letter + '">' + letter + '</i>» pour fermer)</var> '
+        + letter + '" style="color:#000;font-weight:bold">' + letter + '</i>» pour fermer)</var> '
         + student.surname + ' ' + student.firstname
         + '</b><div>'
         + before + '<span style="color:#FFF;background:#000">' + cursor + '</span>'
