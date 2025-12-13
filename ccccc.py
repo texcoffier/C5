@@ -655,7 +655,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.fullscreen.style.display = 'none'
             else:
                 self.fullscreen.style.display = 'block'
-            if is_fullscreen and document.hasFocus():
+            if (is_fullscreen or JOURNAL.fullscreen_disabled) and document.hasFocus():
                 SHARED_WORKER.focus()
             else:
                 SHARED_WORKER.blur()
