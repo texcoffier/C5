@@ -2269,7 +2269,7 @@ def create_page(building_name):
         >
         <span class="icon" onclick="send_alert()">🚨</span>
         <span class="icon" onclick="search_student()">🔍</span>
-        <button onclick="ROOM.do_rotate(90)" style="float:right;"><span style="font-family:emoji;font-size:200%; line-height:0.4px">↺</span><br>90°</button>
+        <button onclick="ROOM.do_rotate(90);this.blur()" style="float:right;"><span style="font-family:emoji;font-size:200%; line-height:0.4px">↺</span><br>90°</button>
         <div id="TTL" style="line-height: 0.1em; padding-top: 0.7em"></div>
         ''']
     if LOGIN in CONFIG.roots:
