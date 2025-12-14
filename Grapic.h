@@ -24,6 +24,14 @@ void winInit(const char *title, int width, int height) {
     CW("G.init(%d,%d)", width, height);
     gettimeofday(&canvas_time, NULL);
 }
+void winInit(const char *title, int width, int height, int posx, int posy, bool fullscreen) {
+    winInit(title, width, height);
+}
+
+void getScreenSize(int &w, int &h) {
+    w = h = 512;
+}
+
 float elapsedTime() {
     struct timeval now;
     gettimeofday(&now, NULL);
@@ -375,5 +383,35 @@ int image_width(Image &im) {
 int image_height(Image &im) {
     return images[im.id][1];
 }
+
+void drawArrow(int xa, int ya, int xb, int yb)
+{
+    // Dessiner la tige de la flèche
+    line(xa, ya, xb, yb);
+
+    // Calculer les coordonnées pour la pointe de la flèche
+    int dx = xb - xa;
+    int dy = yb - ya;
+    int length = sqrt(dx*dx + dy*dy);
+    int arrowSize = 10; // Taille de la pointe de la flèche
+
+    int x1 = xb - (arrowSize * dx) / length;
+    int y1 = yb - (arrowSize * dy) / length;
+
+    // Dessiner la pointe de la flèche
+    line(xb, yb, x1, y1);
+
+    // Calculer les coordonnées pour les "ailes" de la flèche
+    int x2 = x1 + (arrowSize * dy) / length;
+    int y2 = y1 - (arrowSize * dx) / length;
+    int x3 = x1 - (arrowSize * dy) / length;
+    int y3 = y1 + (arrowSize * dx) / length;
+
+    // Dessiner les "ailes" de la flèche
+    line(xb, yb, x2, y2);
+    line(xb, yb, x3, y3);
+}
+
+
 
 }
