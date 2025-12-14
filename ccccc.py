@@ -1491,7 +1491,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             style.id = 'highlight_style'
             document.body.appendChild(style)
         line, column = self.get_line_column(self.cursor_position)
-        style.textContent = '.coq { display: none; color: #0A0 } #coq' + str(line-1) + '{ display: block }'
+        lines = self.source.split('\n')
+        while line > 0 and lines[line-1].strip() == '':
+            line -= 1
+        css = '.coq { display: none; color: #0A0 } #coq' + str(line-1) + '{ display: block }'
+        style.textContent = css
 
     def highlight_output(self):
         """Highlight the error in the compiler output"""
@@ -1767,6 +1771,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.update_source()
             self.update_cursor_position_now()
             stop_event(event)
+            if self.options['compiler'] == 'coqc':
+                i = self.cursor_position - 1
+                while self.source[i] in (' ', '\n'):
+                    i -= 1
+                if self.source[i] == '.':
+                    self.compile_now = True
             return
         elif not self.options['allow_copy_paste'] and (
                 event.key == 'OS'
