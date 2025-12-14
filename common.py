@@ -390,6 +390,12 @@ class Journal:
         """Do nothing: debug message in the logs"""
         if value.startswith('fullscreen '):
             self.fullscreen_disabled = int(value.split(' ')[1])
+        elif value.startswith('bonus_time '):
+            self.bonus_time = int(value.split(' ')[1])
+        elif value.startswith('update_stop '):
+            self.stop_timestamp = int(value.split(' ')[1])
+        elif value.startswith('tt '):
+            self.tt = int(value.split(' ')[1])
     def action_S(self, _value, _start):
         """Student asked to save"""
     def action_c(self, _value, _start):
@@ -1531,9 +1537,6 @@ def create_shared_worker(login='', hook=None, readonly=False):
                     + '<br>' + error)
                 return
                 # window.location.reload()
-            print("Add line to journal: " + message)
-            if message.startswith('#bonus_time '):
-                ccccc.stop_timestamp = int(message.split(' ')[2])
             journal.append(message)
             journal.remote_update = True
             if hook:

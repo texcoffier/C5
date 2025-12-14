@@ -335,9 +335,6 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.start_timestamp = time.mktime(time.strptime(self.start, '%Y-%m-%d %H:%M:%S'))
         self.stop = self.config['stop']
         self.stop_timestamp = time.mktime(time.strptime(self.stop, '%Y-%m-%d %H:%M:%S'))
-        self.stop_tt_timestamp = self.start_timestamp + (
-            self.stop_timestamp - self.start_timestamp) * 4 / 3
-        self.stop_tt = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.stop_tt_timestamp))
         self.tt_list = set_of_logins(self.config['tt'])
         self.tt_list.add('')
         if 'teachers' in self.config:
@@ -435,7 +432,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         else:
             bonus_time = 0
         if login in self.tt_list:
-            return self.stop_tt_timestamp + bonus_time
+            bonus_time += (self.stop_timestamp - self.start_timestamp) / 3
         return self.stop_timestamp + bonus_time
     def update_checkpoint(self, login:str, hostname:Optional[str], now:int) -> Optional[State]:
         """Update active_teacher_room"""

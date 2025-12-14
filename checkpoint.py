@@ -2527,6 +2527,10 @@ def reader(event): # pylint: disable=too-many-branches
             scheduler.update_page = True
         else:
             window.OPTIONS[data[0]] = data[1]
+            ROOM.start_timestamp = strptime(OPTIONS['start'])
+            ROOM.stop_timestamp = strptime(OPTIONS['stop'])
+            if data[0] == 'tt':
+                scheduler.update_page = True
 
     set_visibility('display_student_filter')
     set_visibility('display_my_rooms')

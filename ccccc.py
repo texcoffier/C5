@@ -121,7 +121,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     add_comments = GRADING
      # These options are synchronized between GUI and compiler/session
     options = {}
-    stop_timestamp = 0
     last_save = 0
     allow_edit = 0
     version = 0 # version being graded
@@ -170,13 +169,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
         options['INFOS'] = INFOS                           # Student identity
         options['GRADING'] = GRADING                       # True if in grading mode
         options['ADMIN'] = ADMIN                           # True if administrator
-        options['STOP'] = STOP                             # True if the session is stopped
 
         print("GUI: start")
         window.onerror = bind(self.onJSerror, self)
         self.start_time = millisecs()
         self.course = COURSE
-        self.stop_timestamp = STOP
+        JOURNAL.stop_timestamp = STOP   # Normal end session timestamp
+        JOURNAL.tt = TT                 # True if TT
+
         self.worker_url = BASE + '/' + COURSE + "?ticket=" + TICKET
         if REAL_GRADING:
             self.worker_url += '&login=' + LOGIN
@@ -689,7 +689,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.seconds = seconds
             timer = document.getElementById('timer')
             if timer:
-                delta = self.stop_timestamp - seconds + self.server_time_delta # pylint: disable=undefined-variable
+                delta = JOURNAL.stop_timestamp - seconds + self.server_time_delta # pylint: disable=undefined-variable
+                delta += JOURNAL.bonus_time or 0
+                if JOURNAL.tt:
+                    delta += int((JOURNAL.stop_timestamp - START) / 3)
                 if delta < 0:
                     if timer.className != 'done':
                         timer.className = "done"

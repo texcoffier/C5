@@ -162,7 +162,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
         course = CourseConfig.get('COMPILE_PYTHON/editor')
         login = session.login
     else:
-        stop = course.get_stop(login)
+        stop = course.stop_timestamp
     infos = await utilities.LDAP.infos(login)
     if grading or feedback >= 5:
         notation = f"NOTATION = {json.dumps(course.get_notation(login))};"
@@ -199,6 +199,8 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             SOCK = "wss://{utilities.C5_WEBSOCKET}";
             ADMIN = {int(is_admin)};
             STOP = {stop};
+            START = {course.start_timestamp};
+            TT = {int(session.login in course.tt_list)};
             INFOS = {json.dumps(infos)};
             WHERE = {json.dumps(course.active_teacher_room.get(
                 login, utilities.State((False, '?', '?,0,0,a', 0, 0, 0, 'ip', 0, '', 0, 0))))};
@@ -604,6 +606,10 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         if fixed:
             config.set_parameter('stop', fixed)
             feedback = f"«{course}» Stop date updated to «{fixed}»"
+            stop = int(time.mktime(time.strptime(value, '%Y-%m-%d %H:%M:%S')))
+            for student in config.active_teacher_room:
+                await JournalLink.new(config, student, None, None, False).write(
+                    f'#update_stop {stop}')
         else:
             feedback = f"«{course}» Stop date invalid: «{value}»!"
     elif action == 'start':
@@ -618,11 +624,11 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
         old_list = set(config.tt_list)
         config.set_parameter('tt', value)
         feedback = f"«{course}» TT list updated with «{value}»"
-        for student in old_list ^ set(config.tt_list):
+        new_list = set(config.tt_list)
+        for student in old_list ^ new_list:
             if student in config.active_teacher_room:
-                bonus = config.active_teacher_room[student].bonus_time
                 await JournalLink.new(config, student, None, None, False).write(
-                    f'#bonus_time {bonus} {config.get_stop(student)}')
+                    f'#tt {int(student in new_list)}')
     elif action == 'expected_students':
         value = xxx_local.normalize_logins(value)
         config.set_parameter('expected_students', value)
@@ -1447,11 +1453,11 @@ async def checkpoint_list(request:Request) -> Response:
     add_header("Sessions running")
     checkpoint_table(session, courses,
         lambda course: course.state == 'Ready'
-                       and course.start_timestamp <= now <= course.stop_tt_timestamp,
+                       and course.start_timestamp <= now <= course.stop_timestamp,
         content, done)
     add_header("Sessions finished (to move in «grade» or «done» tables)")
     checkpoint_table(session, courses,
-        lambda course: course.state == 'Ready' and now > course.stop_tt_timestamp,
+        lambda course: course.state == 'Ready' and now > course.stop_timestamp,
         content, done)
     add_header("Sessions to grade")
     checkpoint_table(session, courses,
@@ -1615,7 +1621,7 @@ async def checkpoint_bonus(request:Request) -> Response:
     course.set_parameter('active_teacher_room', int(bonus), student, 7)
     # course.set_parameter('active_teacher_room', 'toto' + str(bonus), student, 6) # Fake IP change for debug
     await JournalLink.new(course, student, None, None, False).write(
-        f'#bonus_time {bonus} {course.get_stop(student)}')
+        f'#bonus_time {bonus}')
     return await update_browser_data(course)
 
 async def checkpoint_fullscreen(request:Request) -> Response:
