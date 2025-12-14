@@ -2501,7 +2501,7 @@ async def live_link(request:Request) -> StreamResponse:
                     warn('Hacker')
                 else:
                     # warn(f'Record')
-                    if message.startswith('bC') or message.startswith('b-') and not session.is_student():
+                    if message.startswith('bC') or message.startswith('b-') and journa.course.is_grader(session.login):
                         journa.erase_comment_history(int(message[2:].split(' ')[0]))
                     await journa.write(message)
             else:

@@ -588,7 +588,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def running(self, login:str, hostname:str=None) -> bool:
         """If the session running for the user"""
-        return self.status(login, hostname).startswith('running') or not CONFIG.is_student(login)
+        return self.status(login, hostname).startswith('running') or not CONFIG.is_student(login) or self.is_grader(login)
 
     async def get_students(self) -> List[List[Any]]:
         """Get all the students"""

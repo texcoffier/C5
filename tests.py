@@ -107,6 +107,14 @@ class Tests: # pylint: disable=too-many-public-methods
 
     def run(self):
         """Run the tests"""
+        for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction', 'COMPILE_JS/example'):
+            with open(f'{course_name}/session.cf', 'rb') as file:
+                content = file.readlines()
+            with open(f'{course_name}/session.cf', 'wb') as file:
+                for line in content:
+                    if not line.startswith(b"('active_teacher_room"):
+                        file.write(line)
+
         os.system('./127 restart') # Clear all server states
 
         self.driver.set_window_size(1024, 1024)
@@ -884,6 +892,11 @@ return sum ;
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
             self.click('#state OPTION[value="Grade"]')
+            self.click('#Access')
+            self.move_cursor('#graders')
+            self.control('a')
+            self.check('#graders').send_keys(f'\nanonyme_{self.ticket}')
+            self.check('#proctors').click()
 
             self.goto(f'grade/REMOTE=test/xxx')
             editor = self.click('.editor')
@@ -903,7 +916,7 @@ return sum ;
             # self.click('.bubble_content > TEXTAREA')
             self.check('.bubble_content > TEXTAREA').send_keys('A comment\nDone')
             editor.click()
-            time.sleep(0.1)
+            time.sleep(0.2)
             with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
                 content = file.read()
                 assert b'\nb+' in content
@@ -915,11 +928,12 @@ return sum ;
             header = self.check('.bubble_content > DIV')
             action = selenium.webdriver.ActionChains(self.driver)
             action.move_to_element(header)
+            action.move_by_offset(-10, 0)
             action.click_and_hold()
             action.move_by_offset(20, 20)
             action.release()
             action.perform()
-            time.sleep(0.1)
+            time.sleep(0.2)
             with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
                 content = file.read()
                 assert b'\nbP0 1.50 3.25\n' in content
@@ -928,13 +942,18 @@ return sum ;
 
             self.check('.bubble_content > TEXTAREA').send_keys('*')
             editor.click()
+            time.sleep(0.2)
             with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
                 content = file.read()
                 assert b'\nbC0 ??????????????\n' in content
 
             # Delete comment
 
-            self.check('.bubble_content > DIV > SPAN').click()
+            try:
+                self.check('.bubble_content > DIV > SPAN').click()
+            except: # pylint: disable=bare-except
+                pass
+            time.sleep(0.5)
             with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
                 content = file.read()
                 assert b'\nb-0\n' in content
@@ -1211,6 +1230,8 @@ class Q1(Question):
         p = subprocess.run(['unzip', '-l', name], capture_output=True, check=True)
         # subprocess.run(['cp', name, '/tmp/toto.zip'], check=True)
         os.unlink(name)
+        for i in p.stdout.split(b'\n'):
+            print(f'\t\t{i}')
         return p.stdout
 
     def test_zip(self):
