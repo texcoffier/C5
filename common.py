@@ -681,6 +681,10 @@ class Journal:
             elif line.startswith('c'):
                 i = int(line[1:])
                 text = 'Compilation avec ' + int(i/100) + ' erreurs et ' + i%100 + ' warnings'
+            elif line.startswith('B'):
+                text = 'Perte de focus ou plein écran'
+            elif line.startswith('F'):
+                text = 'Récupération du focus ou plein écran'
             else:
                 continue
             lines.append(text)
@@ -891,20 +895,18 @@ class Journal:
             return draw_char('#', x, y, font="px sans")
         def draw_B(_action, x, y):
             draw_B.start = (x, y)
-            return 0
+            return 1
         def draw_F(_action, x, y):
             if draw_B.start:
                 ctx.strokeStyle = '#000'
-                ctx.lineWidth = 3 * zoom
                 ctx.lineCap = "round"
                 ctx.beginPath()
-                ctx.moveTo(draw_B.start[0], draw_B.start[1] - size/2)
-                ctx.lineTo(x + 1, y - size/2)
+                ctx.moveTo(draw_B.start[0], draw_B.start[1] - size/2 - zoom/2)
+                ctx.lineTo(x + 1, y - size/2 - zoom/2)
                 ctx.stroke()
                 ctx.lineCap = "butt"
                 draw_B.start = None
-                ctx.lineWidth = zoom
-            return 0
+            return 1
         def draw_S(_action, x, y):
             return draw_char('📩', x, y)
         def draw_g(_action, x, y):
