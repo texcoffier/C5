@@ -2088,6 +2088,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # self.change({"building": student.building})
             update_page()
         col, lin, _, _ = self.xys(student.column, student.line)
+        self.highlight_disk = [col, lin, millisecs()]
         self.zoom_on(col - 1, lin - 1, 2, 2, self.rotate)
     def draw_move_timer(self):
         """Circle indicating the time before the student move is allowed"""
