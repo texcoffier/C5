@@ -468,7 +468,6 @@ H2 {
 }
 
 .index>DIV {
-    font-size: 80%;
     background: #FFF;
 }
 
@@ -515,18 +514,12 @@ H2 {
     visibility: visible;
 }
 
-.timer,
 .compiler LABEL {
     padding-left: 0.5vw;
     padding-right: 0.5vw;
     margin-right: 0.5vw;
 }
 
-.timer {
-    float: right;
-}
-
-.timer,
 LABEL {
     display: inline-block;
     font-size: 60%;
@@ -544,54 +537,21 @@ LABEL:hover,
 }
 
 .stop_button {
-    position: absolute;
-    right: 10vw;
     font-family: emoji;
-    display: inline-block;
-    line-height: 1vw;
-    cursor: pointer;
-    border: 0.1vw solid #800;
-    font-family: sans-serif;
-    font-weight: bold;
-    font-size: 60%;
-    color: #F00;
-    background: #FFF;
-    border-radius: 0.5vw;
-    padding: 0.1vw;
-    margin-top: -3px;
+    font-size: 100%;
 }
 
 LABEL SPAN {
     font-size: 80%;
 }
 
-LABEL *,
-.timer * {
+LABEL * {
     vertical-align: middle
 }
 
 .timer {
-    display: inline-block;
-    background: #DFD;
-    border: 0.1vw solid #0F0;
-    height: 1.8vw;
-    margin-top: -0.3vw
-}
-
-.timer SPAN {
-    display: inline-block;
-}
-
-H2:hover .timer SPAN DIV {
-    visibility: visible;
-}
-
-.timer SPAN DIV {
-    visibility: hidden;
-}
-
-.timer SPAN.done DIV {
-    visibility: visible;
+    font-family: emoji;
+    font-size: 100%;
 }
 
 .timer .done {
@@ -599,24 +559,24 @@ H2:hover .timer SPAN DIV {
     color: #FFF;
 }
 
-.timer SPAN.minus60 DIV {
+.minus60 {
+    background: #F00;
+    color: #FFF;
     font-size: 300%;
-    background: #FFF;
-    position: absolute;
-    white-space: pre;
-    right: 0px;
-    top: 0px;
-    border: 0.1vw solid #000;
 }
-
-.timer SPAN.minus120 DIV,
-.timer SPAN.minus60 DIV {
+.minus120 {
     color: #F00;
-    visibility: visible;
+    font-size: 200%;
+}
+.minus300 {
+    color: #000;
+}
+.longtime {
+    color: #888;
 }
 
-.timer SPAN.minus300 DIV {
-    visibility: visible;
+.timer, .longtime, .minus120, .minus300 {
+    background: #FF4;
 }
 
 .fullscreen {

@@ -542,7 +542,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         Si une autre personne a utilisé vos identifiants,<br>
         c'est vous qui serez tenu comme responsable de ses crimes.
         <p>
-        Mettez le curseur sur <span>⏱</span> pour voir le temps restant.
+        Le temps restant est affiché dans la colonne de gauche.
         <div style="text-align:center">
         <p style="background:#000;display:inline-block;margin:auto">
         Enlevez vos capuches, casquettes, oreillettes.<br>
@@ -711,27 +711,35 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 hours = two_digit((delta/3600) % 24)
                 days = int(delta/86400)
                 opts = self.options
+                msg = ''
+                if delta >= 86400:
+                    msg += days + ' ' + opts['time_d']
+                if delta >= 3600:
+                    msg += hours + ' ' + opts['time_h']
+                if delta >= 60:
+                    msg += mins + ' ' + opts['time_m']
+                msg += secs + ' ' + opts['time_seconds']
+
                 if delta < 60:
-                    delta = str(delta) + ' ' + opts['time_seconds']
-                    if timer.className != 'done':
-                        timer.className = "minus60"
+                    name = "minus60" # Background big red
                 elif delta < 120:
-                    delta = mins + opts['time_m'] + secs
-                    if timer.className != 'done':
-                        timer.className = "minus120"
-                elif delta < 3600:
-                    if delta < 300 and timer.className != 'done':
-                        timer.className = "minus300"
-                    delta = mins + opts['time_m'] + secs
-                elif delta < 24*60*60:
-                    delta = hours + opts['time_h'] + mins + opts['time_m']
-                elif delta < 10*24*60*60:
-                    delta = days + opts['time_d'] + hours + opts['time_h']
+                    name = "minus120" # text big red
+                elif delta < 300:
+                    name = "minus300" # text black
                 else:
-                    delta = days + opts['time_days']
-                if delta != self.old_delta:
-                    timer.innerHTML = message + '<br><div>' + delta + '</div>'
-                    self.old_delta = delta
+                    name = 'longtime'
+
+                if msg != self.old_delta:
+                    self.old_delta = msg
+                    timer.innerHTML = message + ' ' + msg
+                    if days == 0:
+                        document.getElementById('timer_hour').innerHTML = hours
+                        document.getElementById('timer_min').innerHTML = mins
+                        document.getElementById('timer_sec').innerHTML = secs
+                        if timer.className != 'done':
+                            document.getElementById('timer_hour').className = name
+                            document.getElementById('timer_min').className = name
+                            document.getElementById('timer_sec').className = name
 
     def compilation_toggle(self, element):
         """Toggle the automatic compilation flag"""
@@ -2274,6 +2282,21 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     + self.options['icon_home'] + '</a>')
                 tips.append(' ')
                 links.append(' ')
+            if not self.options['GRADING'] and self.options['checkpoint'] and not self.options['feedback']:
+                tips.append("Terminer l'examen")
+                links.append('<a id="stop_button" class="stop_button" onclick="ccccc.stop()">'
+                    + self.options['icon_stop'] + '</a>')
+            if not self.options['GRADING'] and self.options['display_timer'] and not self.options['feedback']:
+                tips.append(' ')
+                links.append(' ')
+                tips.append('<span id="timer"></span>')
+                links.append('<span class="timer">⏱</span>')
+                tips.append('heure')
+                links.append('<span id="timer_hour"> </span>')
+                tips.append('minute')
+                links.append('<span id="timer_min"> </span>')
+                tips.append(self.options['time_seconds'])
+                links.append('<span id="timer_sec"> </span>')
             if self.options['display_local_zip']:
                 tips.append("Sauvegarder un ZIP de toutes les questions sur la machine locale")
                 links.append('<a target="_blank" href="zip/' + COURSE + window.location.search

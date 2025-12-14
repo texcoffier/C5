@@ -233,14 +233,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        title = '<h2>' + self.options['question_title']
-        if not self.options['GRADING'] and self.options['checkpoint'] and not self.options['feedback']:
-            title += (' <tt id="stop_button" class="stop_button" onclick="ccccc.stop()">'
-                + self.options['icon_stop'] + '</tt>')
-        if not self.options['GRADING'] and self.options['display_timer'] and not self.options['feedback']:
-            title += ' <div class="timer"><span id="timer"></span>⏱</div>'
-        title += '</h2>'
-        return title
+        return '<h2>' + self.options['question_title'] +'</h2>'
     def tester_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         return "<h2>" + self.options['tester_title'] + "</h2>"
