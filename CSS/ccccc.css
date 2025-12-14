@@ -679,9 +679,8 @@ BUTTON.grade_unselected[onclick]:hover {
     transition: background 0s
 }
 
-.index>.version {
+.version {
     background: #0F0;
-    font-size: 100%;
 }
 
 .grading {

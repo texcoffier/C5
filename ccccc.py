@@ -2308,6 +2308,13 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 tips.append("Sauvegarder sur la machine locale avec l'historique dans GIT")
                 links.append('<a target="_blank" href="git/' + COURSE + window.location.search
                      + '">' + self.options['icon_git'] + '</a>')
+            if (GRADING or self.options['feedback']) and ',' in WHERE[2]:
+                tips.append("Version du sujet. Cliquez pour voir le plan")
+                links.append(
+                    '<a class="version" target="_blank" href="/checkpoint/'
+                    + COURSE + '?ticket=' + TICKET + '#{%22student%22:%22' + LOGIN + '%22}">'
+                    + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ')
+                    + '</a>')
             tips.append(' ')
             links.append(' ')
             content = ['<div class="questions"><div class="tips">']
@@ -2317,11 +2324,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             for item in links:
                 content.append('<div>' + item + '</div>')
             content.append('</div>') # End links
-            if (GRADING or self.options['feedback']) and ',' in WHERE[2]:
-                content.append(
-                    '<div class="version">'
-                    + WHERE[2].split(',')[3].replace('a', 'Ⓐ').replace('b', 'Ⓑ')
-                    + '</div>')
             content.append(value)
             if what in self: # pylint: disable=unsupported-membership-test
                 self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
