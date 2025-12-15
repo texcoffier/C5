@@ -293,7 +293,7 @@ DIV.executor>DIV:first-child {
     border: 0px;
     left: 0.1vw;
     right: 0.1vw;
-    bottom: 0px;
+    bottom: 0.08vw;
     position: absolute;
     top: var(--bubble_handle_size);
     background: #FF8;
