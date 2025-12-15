@@ -1772,6 +1772,10 @@ try:
             TESTS.run()
             TESTS = None
         if 'CHROME' in sys.argv:
+            if '1' in sys.argv or 'screenshots' in sys.argv:
+                # Exit after one test
+                EXIT_CODE = 0
+                break
             continue # Not running Firefox
         PROFILE = selenium.webdriver.FirefoxProfile()
         PROFILE.set_preference("browser.download.dir", "/path/to/download_directory")  # Set your download directory
