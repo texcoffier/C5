@@ -1054,6 +1054,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             left = min(left, self.editor.offsetWidth - 100)
             top = bubble_elm.relative_to[1] + bubble.line * self.line_height
             width = bubble.width * self.char_width
+            width = min(width, self.editor.offsetWidth - left) # MUST NOT OVERFLOW
             bubble_elm.style.left = left + 'px'
             bubble_elm.style.top = top + 'px'
             bubble_elm.style.width = width + 'px'
