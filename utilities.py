@@ -380,7 +380,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 nb_active += 1
         return nb_active
 
-    def set_parameter(self, parameter:str, value:Any, key:str=None, index:int=None):
+    def set_parameter(self, parameter:str, value:Any, key:str=None, index:int=None, who:str=''):
         """Set one of the parameters"""
         if key:
             if key == '+':
@@ -399,14 +399,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             self.config[parameter] = value
             self.update() # Only update for top config changes
         with open(self.file_cf, 'a', encoding='utf-8') as file:
-            timestamp = f' # {time.strftime("%Y-%m-%d %H:%M:%S")}\n'
+            timestamp = f' # {time.strftime("%Y-%m-%d %H:%M:%S")}'
+            if who:
+                timestamp += ' ' + who
             if key:
                 if index is None:
-                    file.write(f'{(parameter, key, value)}{timestamp}')
+                    file.write(f'{(parameter, key, value)}{timestamp}\n')
                 else:
                     file.write(f'{(parameter, key, index, value)}\n')
             else:
-                file.write(f'{(parameter, value)}{timestamp}')
+                file.write(f'{(parameter, value)}{timestamp}\n')
         self.time = time.time()
         self.to_send.append((parameter, value, key, index))
         if not self.send_journal_running:

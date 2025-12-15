@@ -596,7 +596,7 @@ def fix_date(value):
     except ValueError:
         return None
 
-async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union[Response,str]: # pylint: disable=too-many-branches,too-many-statements
+async def adm_config_course(config:CourseConfig, action:str, value:str, who:str) -> Union[Response,str]: # pylint: disable=too-many-branches,too-many-statements
     """Configure a course"""
     course = config.course
     if value == 'now':
@@ -604,7 +604,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
     if action == 'stop':
         fixed = fix_date(value)
         if fixed:
-            config.set_parameter('stop', fixed)
+            config.set_parameter('stop', fixed, who=who)
             feedback = f"«{course}» Stop date updated to «{fixed}»"
             stop = int(time.mktime(time.strptime(value, '%Y-%m-%d %H:%M:%S')))
             for student in config.active_teacher_room:
@@ -615,14 +615,14 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
     elif action == 'start':
         fixed = fix_date(value)
         if fixed:
-            config.set_parameter('start', fixed)
+            config.set_parameter('start', fixed, who=who)
             feedback = f"«{course}» Start date updated to «{fixed}»"
         else:
             feedback = f"«{course}» Start date invalid: «{value}»!"
     elif action == 'tt':
         value = xxx_local.normalize_logins(value)
         old_list = set(config.tt_list)
-        config.set_parameter('tt', value)
+        config.set_parameter('tt', value, who=who)
         feedback = f"«{course}» TT list updated with «{value}»"
         new_list = set(config.tt_list)
         for student in old_list ^ new_list:
@@ -631,83 +631,83 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
                     f'#tt {int(student in new_list)}')
     elif action == 'expected_students':
         value = xxx_local.normalize_logins(value)
-        config.set_parameter('expected_students', value)
+        config.set_parameter('expected_students', value, who=who)
         feedback = f"«{course}» Expected student list updated with «{value}»"
     elif action == 'admins':
         value = xxx_local.normalize_logins(value)
-        config.set_parameter('admins', value)
+        config.set_parameter('admins', value, who=who)
         feedback = f"«{course}» Admins list updated with «{value}»"
     elif action == 'graders':
         value = xxx_local.normalize_logins(value)
-        config.set_parameter('graders', value)
+        config.set_parameter('graders', value, who=who)
         feedback = f"«{course}» Graders list updated with «{value}»"
     elif action == 'proctors':
         value = xxx_local.normalize_logins(value)
-        config.set_parameter('proctors', value)
+        config.set_parameter('proctors', value, who=who)
         feedback = f"«{course}» Proctors list updated with «{value}»"
     elif action == 'theme':
         if os.path.exists(f'HIGHLIGHT/{value}.css'):
-            config.set_parameter('theme', value)
+            config.set_parameter('theme', value, who=who)
             feedback = f"«{course}» Highlight theme updated to «{value}»"
         else:
             feedback = f"«{course}» Highlight theme «{value}» does not exists!"
     elif action == 'state':
         if value in ('Draft', 'Ready', 'Grade', 'Done', 'Archive'):
-            config.set_parameter('state', value)
+            config.set_parameter('state', value, who=who)
             feedback = f"«{course}» state updated to «{value}»"
         else:
             feedback = f"«{course}» state «{value}» does not exists!"
     elif action == 'allow_copy_paste':
-        config.set_parameter('allow_copy_paste', int(value))
+        config.set_parameter('allow_copy_paste', int(value), who=who)
         feedback = f"«{course}» Copy Paste «{'not' if value == '0' else ''} allowed»"
     elif action == 'allow_ip_change':
-        config.set_parameter('allow_ip_change', int(value))
+        config.set_parameter('allow_ip_change', int(value), who=who)
         feedback = f"«{course}» Allow IP change «{'not' if value == '0' else ''} allowed»"
     elif action == 'coloring':
-        config.set_parameter('coloring', int(value))
+        config.set_parameter('coloring', int(value), who=who)
         feedback = f"«{course}» Syntax coloring: «{value != '0'}»"
     elif action == 'save_unlock':
-        config.set_parameter('save_unlock', int(value))
+        config.set_parameter('save_unlock', int(value), who=who)
         yes_no = 'not' if value == '0' else ''
         feedback = f"«{course}» Unlock next question on save «{yes_no} allowed»"
     elif action == 'checkpoint':
-        config.set_parameter('checkpoint', int(value))
+        config.set_parameter('checkpoint', int(value), who=who)
         if value == '0':
             feedback = f"«{course}» Automatic access to the session"
         else:
             feedback = f"«{course}» Need teacher approval to start"
     elif action == 'sequential':
-        config.set_parameter('sequential', int(value))
+        config.set_parameter('sequential', int(value), who=who)
         if value == '0':
             feedback = f"«{course}» All questions are accessible in a random order."
         else:
             feedback = f"«{course}» Questions are accessible only if the previous are corrects."
     elif action == 'notation':
-        config.set_parameter('notation', value)
+        config.set_parameter('notation', value, who=who)
         feedback = f"«{course}» Notation version A set to {value[:100]}"
     elif action == 'notationB':
-        config.set_parameter('notationB', value)
+        config.set_parameter('notationB', value, who=who)
         feedback = f"«{course}» Notation version B set to {value[:100]}"
     elif action == 'notation_max':
-        config.set_parameter('notation_max', float(value))
+        config.set_parameter('notation_max', float(value), who=who)
         feedback = f"«{course}» Maximum grade set to {value[:100]}"
     elif action == 'highlight':
         assert re.match('^#[0-9A-Z]{3}$', value)
-        config.set_parameter('highlight', value)
+        config.set_parameter('highlight', value, who=who)
         feedback = f"«{course}» The session color is now {value}"
     elif action == 'display_student_filter':
-        config.set_parameter('display_student_filter', int(value))
+        config.set_parameter('display_student_filter', int(value), who=who)
         feedback = f"«{course}» «{'do not' if value == '0' else ''} display student filter."
     elif action == 'display_session_name':
-        config.set_parameter('display_session_name', int(value))
+        config.set_parameter('display_session_name', int(value), who=who)
         feedback = f"«{course}» «{'do not' if value == '0' else ''} display session name."
     elif action == 'display_my_rooms':
-        config.set_parameter('display_my_rooms', int(value))
+        config.set_parameter('display_my_rooms', int(value), who=who)
         feedback = f"«{course}» «{'do not' if value == '0' else ''} display «My rooms»."
     elif action == 'default_building':
         buildings = set(utilities.get_buildings())
         if value in buildings:
-            config.set_parameter('default_building', value)
+            config.set_parameter('default_building', value, who=who)
             feedback = f"«{course}» default building is «{value}»."
         else:
             feedback = f"«{course}» «{value}» not in {buildings}!"
@@ -721,7 +721,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str) -> Union
             value = float(value)
         elif isinstance(default_value, (list, dict)):
             value = json.loads(value)
-        config.set_parameter(action, value)
+        config.set_parameter(action, value, who=who)
         feedback = f"«{course}» {action}={value}"
 
     return answer(
@@ -743,10 +743,10 @@ async def adm_config(request:Request) -> Response: # pylint: disable=too-many-br
         # Configuration of multiple session with regular expression
         the_answers = []
         for conf in CourseConfig.courses_matching(course, session):
-            the_answers.append(await adm_config_course(conf, action, value))
+            the_answers.append(await adm_config_course(conf, action, value, session.login))
     else:
         # Configuration of a single session
-        the_answers = [await adm_config_course(config, action, value)]
+        the_answers = [await adm_config_course(config, action, value, session.login)]
     if the_answers:
         if isinstance(the_answers[0], str):
             return answer('<br>'.join(str(i) for i in the_answers))
@@ -1757,12 +1757,13 @@ async def adm_history(request:Request) -> Response:
             continue
         if not line:
             continue
-        date = line[-22:]
-        if re.match(' # [-0-9: ]*$', date):
-            line = line[:-22]
-        else:
-            date = ' # ????-??-?? ??:??:??'
-        content.append(date[3:] + ' ' + line)
+        date_hour_login = '????-??-?? ??:??:?? ?'
+        if '# ' in line:
+            trimmed_line, date_hour_login = line.rsplit('# ', 1)
+            if re.match('[-0-9]* [:0-9]*( [-.a-z0-9]+)?', date_hour_login):
+                line = trimmed_line
+        date, hour, login = (date_hour_login + ' ?').split(' ')[:3]
+        content.append(f'{date} {hour} {login:20.20} {line}')
     return answer('\n'.join(content[::-1]), content_type="text/plain")
 
 async def adm_stats(request:Request) -> Response:
