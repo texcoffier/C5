@@ -920,7 +920,7 @@ return sum ;
             with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
                 content = file.read()
                 assert b'\nb+' in content
-                assert b' 0 3 0 0 30 2 \n' in content
+                assert b' 0 3 0 0 30 2.3 \n' in content
                 assert b'\nbC0 A comment\x00Done\n' in content
 
             # Move a comment

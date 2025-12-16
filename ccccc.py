@@ -1284,7 +1284,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             pos_start = pos_end - len(self.get_current_selection())
             if pos_start != pos_end:
                 self.record_pending_goto()
-                SHARED_WORKER.bubble(SESSION_LOGIN, pos_start, pos_end, 0, 0, 30, 2, '')
+                SHARED_WORKER.bubble(SESSION_LOGIN, pos_start, pos_end, 0, 0, 30, 2.3, '')
     def onmousemove(self, event):
         """Mouse move"""
         if event.target.tagName == 'CANVAS':
