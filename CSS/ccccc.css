@@ -304,6 +304,38 @@ DIV.executor>DIV:first-child {
     border-color: #000;
 }
 
+COMMENTS {
+    position: absolute;
+    color: #000;
+    background: #EEE;
+    border: 1px solid #888;
+    overflow: hidden;
+}
+
+COMMENTS P {
+    position: relative;
+    margin: 0.1em ;
+    white-space: nowrap;
+    font-size: 80%;
+    width: 20em;
+}
+COMMENTS P:hover {
+    background: #FFF;
+}
+
+COMMENTS SPAN:last-child {
+    position: absolute;
+    color: #CC0;
+    background: #EEE8;
+    width: 2em;
+    right: 0px;
+    text-align: right;
+}
+
+COMMENTS .first_quartile {
+    font-weight: bold;
+}
+
 .line_numbers {
     text-align: right;
     font-size: 50%;

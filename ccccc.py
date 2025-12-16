@@ -883,6 +883,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
             raise ValueError('Bug ' + replace + '!=' + JOURNAL.content)
         # SHARED_WORKER.debug("Diff end")
 
+    def choose_comment(self, event):
+        p = event.target
+        while p.tagName != 'P':
+            p = p.parentNode
+        if p.parentNode.tagName == 'COMMENTS':
+            p.parentNode.bubble.value = p.firstChild.textContent
+            p.parentNode.bubble.focus()
+
     def coloring(self): # pylint: disable=too-many-statements,too-many-branches
         """Coloring of the text editor with an overlay."""
         self.update_source()
@@ -997,6 +1005,38 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 if event.target.value != JOURNAL.bubbles[bubble_index].comment:
                     self.record_pending_goto()
                     SHARED_WORKER.bubble_comment(bubble_index, event.target.value)
+                    if event.target.value != '':
+                        comments = JSON.parse(localStorage['comments:' + COURSE] or '{}')
+                        comments[event.target.value] = (comments[event.target.value] or 0) + 1
+                        localStorage['comments:' + COURSE] = JSON.stringify(comments)
+
+        def focus_bubble(event):
+            for i in document.getElementsByTagName('COMMENTS'):
+                i.remove()
+            bubble_index = get_bubble(event).bubble_index
+            bubble = JOURNAL.bubbles[bubble_index]
+            if get_bubble(event).getElementsByTagName('TEXTAREA')[0].value == '':
+                comments = JSON.parse(localStorage['comments:' + COURSE] or '{}')
+                if len(comments) == 0:
+                    return
+                nbrs = [1000000+i for i in comments.Values()]
+                nbrs.sort()
+                quartile = nbrs[len(nbrs) - len(nbrs) // 4 - 1] - 1000000
+                t = []
+                for comment, nbr in comments.Items():
+                    comment = '<span>' + html(comment) + '</span><span>' + nbr + '</span>'
+                    if nbr >= quartile:
+                        comment = '<P class="first_quartile">' + comment
+                    else:
+                        comment = '<P>' + comment
+                    t.append(comment + '</P>')
+                t.sort()
+                select = document.createElement('COMMENTS')
+                select.style.top = bubble.height * self.line_height + 'px'
+                select.onclick = bind(self.choose_comment, self)
+                select.bubble = event.target
+                select.innerHTML = ''.join(t)
+                get_bubble(event).appendChild(select)
 
         def bubble_move_start(event):
             self.bubble_save_change()
@@ -1073,11 +1113,13 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             bubble_elm.bubble_index = j
             bubble_elm.bubble = self.comments.lastChild
             bubble_elm.onmouseenter = enter_bubble
+            bubble_elm.lastChild.onfocus = focus_bubble
             # Title bar
             bubble_elm.firstChild.onmousedown = bubble_move_start
             # TEXTAREA configure
             textarea = bubble_elm.lastChild
             textarea.onchange = comment_change
+            textarea.onblur = comment_change
             if bubble.login != SESSION_LOGIN:
                 textarea.setAttribute('readonly', 1)
             if bubble.comment:
@@ -1584,7 +1626,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def bubble_save_change(self):
         """The bubble texte content must be saved"""
-        if document.activeElement and document.activeElement.tagName == 'TEXTAREA':
+        if document.activeElement and document.activeElement.tagName == 'TEXTAREA' and document.activeElement.onchange:
             document.activeElement.onchange({'target': document.activeElement})
             document.activeElement.disable_next_change = True
 
