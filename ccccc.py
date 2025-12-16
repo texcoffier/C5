@@ -1002,12 +1002,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 event.target.disable_next_change = False # See 'goto_line'
             else:
                 bubble_index = get_bubble(event).bubble_index
-                if event.target.value != JOURNAL.bubbles[bubble_index].comment:
+                comment = event.target.value.strip()
+                if comment != JOURNAL.bubbles[bubble_index].comment:
                     self.record_pending_goto()
-                    SHARED_WORKER.bubble_comment(bubble_index, event.target.value)
+                    SHARED_WORKER.bubble_comment(bubble_index, comment)
                     if event.target.value != '':
                         comments = JSON.parse(localStorage['comments:' + COURSE] or '{}')
-                        comments[event.target.value] = (comments[event.target.value] or 0) + 1
+                        comments[event.target.value] = (comments[comment] or 0) + 1
                         localStorage['comments:' + COURSE] = JSON.stringify(comments)
 
         def focus_bubble(event):
