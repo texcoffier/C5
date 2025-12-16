@@ -978,14 +978,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 ((self.moving_bubble.offsetLeft - x) / self.char_width).toFixed(2))
             self.do_coloring = 'bubble_move'
 
-            width = 0
-            lines = JOURNAL.bubbles[self.moving_bubble.bubble_index].comment.split('\n')
-            for line in lines:
-                width = max(width, len(line))
-            if (width < JOURNAL.bubbles[self.moving_bubble.bubble_index].width
-                    and len(lines) < JOURNAL.bubbles[self.moving_bubble.bubble_index].height):
-                SHARED_WORKER.bubble_size(self.moving_bubble.bubble_index,
-                    0.8 * width + 2, 0.85 * len(lines) + 0.6)
+            if JOURNAL.bubbles[self.moving_bubble.bubble_index].comment:
+                width = 0
+                lines = JOURNAL.bubbles[self.moving_bubble.bubble_index].comment.split('\n')
+                for line in lines:
+                    width = max(width, len(line))
+                if (width < JOURNAL.bubbles[self.moving_bubble.bubble_index].width
+                        and len(lines) < JOURNAL.bubbles[self.moving_bubble.bubble_index].height):
+                    SHARED_WORKER.bubble_size(self.moving_bubble.bubble_index,
+                        0.8 * width + 2, 0.85 * len(lines) + 0.6)
 
             stop_event(event)
         def comment_change(event):
