@@ -1656,7 +1656,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def onkeydown(self, event): # pylint: disable=too-many-branches
         """Key down"""
-        if not self.allow_edit:
+        if not self.allow_edit or event.key == 'F12' or event.key == 'F11' and not GRADING and self.options['checkpoint']:
             stop_event(event)
             return
         self.current_key = event.key
