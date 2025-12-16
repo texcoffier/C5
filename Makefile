@@ -1,11 +1,11 @@
 
-JS/%.js:JS %.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
+JS/%.js: JS %.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
 	@./py2js $* || true
-%.js:%.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
+%.js: %.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
 	@./py2js $* || true
 
-xxx_local.py:common.py $(C5_CUSTOMIZE)
-	cat common.py $(C5_CUSTOMIZE) >$@
+xxx_local.py:common.py coach.py $(C5_CUSTOMIZE)
+	cat common.py coach.py $(C5_CUSTOMIZE) >$@
 
 $(C5_CUSTOMIZE):
 	echo '"""Redefine «common.py» functions here (as in «local_ucbl.py»)"""' >$@

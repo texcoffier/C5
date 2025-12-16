@@ -106,6 +106,20 @@ DEFAULT_COURSE_OPTIONS = [
     ['stop_done', "<h1>C'est fini.</h1>", "Alert"],
     ['good', ["Bravo !", "Excellent !", "Super !", "Génial !", "Vous êtes trop fort !"], "Alert on success"],
 
+    'Keyboard coach <b style="color:#F00">EXPERIMENTAL DO NOT ACTIVATE</b>',
+
+    ['coach_tip_level',              1, "Coaching tip level (1: Often, 2: Common, 3: Sometime, 4: Rarely, 99: Never)"],
+    ['coach_mouse_short_move',       0, "Détecter les petits déplacements souris (1-3 caractères ou lignes) et suggérer les flèches clavier."],
+    ['coach_mouse_line_bounds',      0, "Alerter quand la souris est utilisée pour aller au début/fin de ligne au lieu de Home/End."],
+    ['coach_retype_after_delete',    0, "Suggérer Ctrl+Z/Ctrl+Y lorsqu'un texte long supprimé est retapé à l'identique."],
+    ['coach_many_horizontal_arrows', 0, "Rappeler Ctrl+←/→ ou Home/End après de nombreuses flèches gauche/droite consécutives."],
+    ['coach_arrow_then_backspace',   0, "Signaler la séquence → puis Backspace pour proposer la touche Suppr."],
+    ['coach_many_vertical_arrows',   0, "Suggérer PgUp/PgDn ou Ctrl+Home/End après de nombreuses flèches haut/bas."],
+    ['coach_scroll_full_document',   0, "Rappeler Ctrl+Home/End quand l'étudiant atteint le début/la fin via un long défilement."],
+    ['coach_letter_select_word',     0, "Inviter au double-clic ou Ctrl+Shift+flèches lorsqu'un mot est sélectionné lettre par lettre."],
+    ['coach_letter_select_line',     0, "Inviter au triple-clic ou Home+Shift+End pour sélectionner une longue ligne."],
+    ['coach_completion_ignored',     0, "Prévenir lorsqu'une complétion automatique substantielle a été ignorée."],
+
     "Bloc titles",
 
     ['question_title', 'Question', "Bloc title"],

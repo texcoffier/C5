@@ -19,6 +19,9 @@ try:
 except: # pylint: disable=bare-except
     pass
 
+# Coaching code is now in coach.py and will be concatenated by py2js
+# No import needed because py2js concatenates: compatibility.py + xxx_local.py + options.py + coach.py + ccccc.py
+
 DEPRECATED = ('save_button', 'local_button', 'stop_button', 'reset_button', 'line_numbers')
 
 REAL_GRADING = GRADING
@@ -142,9 +145,14 @@ class CCCCC: # pylint: disable=too-many-public-methods
     content_old = None
     wait_indent = False
     disable_on_paste = 0
+    coach = None
+    coach_previous_position = 0
+    current_selection = ''
 
     def init(self):
         self.options = options = COURSE_CONFIG
+        # Initialize coach with adapter for platform independence
+        self.coach = create_coach(self.options, self)
 
         # Fix missing bloc position
         for infos in DEFAULT_COURSE_OPTIONS:
@@ -206,6 +214,30 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if options['state'] == 'Ready':
             self.add_comments = 0
 
+    def coach_analyse(self, event, previous_position):
+        """Analyse event for coaching (called from onmouseup and onkeydown)"""
+        if not self.coach or self.coach.get_level_factor() >= 99:
+            return
+
+        prev_pos = previous_position or self.coach_previous_position or 0
+
+        result = self.coach.analyse(event, self.source or '', self.cursor_position or 0, prev_pos)
+
+        if result:
+            # Handle actions
+            if 'actions' in result:
+                actions = result['actions']
+                if 'restore_cursor_position' in actions:
+                    self.set_cursor_position(actions['restore_cursor_position'])
+                    self.coach_previous_position = actions['restore_cursor_position']
+            # Show message
+            if 'message' in result and not self.dialog_on_screen:
+                message = result['message']
+                if message:
+                    self.popup_message(message)
+
+        self.coach_previous_position = self.cursor_position or 0
+
     def onSocketError(self):
         """Can't start the worker"""
         window.location = self.worker_url # Because it contains the error message
@@ -227,6 +259,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.dialog_on_screen:
             return
         self.dialog_on_screen = True
+        lastFocusedElement = document.activeElement
         popup = document.createElement('DIALOG')
         txt = '<div class="dialog_content">' + txt + '</div>'
         if title:
@@ -248,6 +281,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.dialog_on_screen = False
             try:
                 document.body.removeChild(popup)
+                lastFocusedElement.focus()
             except: # pylint: disable=bare-except
                 # On examination termination : body.innerHTLM = ''
                 pass
@@ -1261,6 +1295,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def onmouseup(self, event):
         """Mouse up"""
+        # Save event for coach analysis
+        self.coach_last_event = event
+        self.coach_last_event_type = 'mouseup'
+
         self.mouse_pressed = -1
         selection = window.getSelection()
         if not self.editor.contains(selection.anchorNode) or not self.editor.contains(event.target):
@@ -1285,6 +1323,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if pos_start != pos_end:
                 self.record_pending_goto()
                 SHARED_WORKER.bubble(SESSION_LOGIN, pos_start, pos_end, 0, 0, 30, 2.3, '')
+
+        # Coach analysis for mouse events
+        self.coach_analyse(event, self.coach_previous_position or 0)
+
     def onmousemove(self, event):
         """Mouse move"""
         if event.target.tagName == 'CANVAS':
@@ -1703,6 +1745,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
             return
         self.current_key = event.key
+        self.coach_analyse(event, 0)
         if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9') and self.completion_running != 'search':
             return
         if self.completion_running == 'search' or self.completion_running and event.target is self.editor:
