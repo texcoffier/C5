@@ -108,9 +108,13 @@ class Tests: # pylint: disable=too-many-public-methods
     def run(self):
         """Run the tests"""
         for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction', 'COMPILE_JS/example'):
-            with open(f'{course_name}/session.cf', 'rb') as file:
-                content = file.readlines()
-            with open(f'{course_name}/session.cf', 'wb') as file:
+            filename = f'{course_name}/session.cf'
+            if os.path.exists(filename):
+                with open(filename, 'rb') as file:
+                    content = file.readlines()
+            else:
+                content = []
+            with open(filename, 'wb') as file:
                 for line in content:
                     if not line.startswith(b"('active_teacher_room"):
                         file.write(line)
