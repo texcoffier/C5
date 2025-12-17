@@ -73,8 +73,7 @@ def display(): # pylint: disable=too-many-statements
     text.append('<hr>')
     text.append('Session ticket time to live in seconds: ')
     add_input('/adm/c5/ticket_ttl', CONFIG.ticket_ttl, name="ticket_ttl")
-    text.append(' ')
-    add_button('/adm/c5/remove_old_tickets', '0', 'Remove old tickets now', name="remove_olds")
+    text.append(' Tickets older than 2 months are deleted on restart')
     text.append('<hr>')
     text.append('For each room indicate the computers IP:')
     content = []

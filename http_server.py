@@ -828,15 +828,6 @@ async def adm_c5(request:Request) -> Response: # pylint: disable=too-many-branch
             more = f"Student detector updated to «{value}» regexp"
         except ValueError:
             more = "Invalid regexp!"
-    elif action == 'remove_old_tickets':
-        # Load in order to remove!
-        nr_deleted = 0
-        for ticket in os.listdir('TICKETS'):
-            session = Session.load_ticket_file(ticket)
-            if session.too_old():
-                nr_deleted += 1
-                await asyncio.sleep(0)
-        more = f"{nr_deleted} tickets deleted."
     elif action == 'eval':
         try:
             result = repr(eval(value)) # pylint: disable=eval-used

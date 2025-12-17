@@ -613,10 +613,6 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.ticket_ttl').send_keys(Keys.ENTER)
             time.sleep(0.1)
             self.check('#more', {'innerText': Contains(f'to {ttl} seconds')})
-            self.click('.remove_olds')
-            self.check('#more', {'innerText': Contains('tickets deleted')})
-            assert not os.path.exists(to_delete)
-            os.unlink(to_keep)
     def test_editor(self):
         """Test editor line insert"""
         # Previous tests must run before this one.

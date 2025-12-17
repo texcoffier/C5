@@ -93,6 +93,7 @@ def start_server(name):
         rm -f LOGS/{name} 2>/dev/null || true
         ln -s {date}-{name} LOGS/{name}
         find LOGS -name '????????-*[!z]' -mtime +1 -exec gzip --verbose -9 {{}} +
+        find TICKETS/ -mtime +60 -exec rm {{}} +
         """
 
 def print_help() -> None:
