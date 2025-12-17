@@ -33,6 +33,8 @@ EDITMODE = ['', ''] # Journals without and with comments
 
 IS_TEACHER = SESSION_LOGIN != STUDENT
 
+NR_COMMON_COMMENTS = 5
+
 MEDIA.sort()
 
 def get_xhr_data(event):
@@ -71,6 +73,15 @@ def do_post_data(dictionary, url):
 def cleanup(txt):
     """Remove character badly handled by browser with getSelection().toString()"""
     return txt.replace(RegExp('[  \n\r\t]', 'g'), '')
+
+flat_map = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿AAAAAAACEEEEIIIIDNOOOOOOOUUUUYÞßaaaaaaaceeeeiiiiðnooooooouuuuyþy'
+
+def char_flat(c):
+    return flat_map.substr(c.charCodeAt(0),1)
+
+def flat(txt):
+    """é → e É → E ..."""
+    return txt.replace(RegExp('[\\x80-\\xFF]', 'g'), char_flat)
 
 WALK_DEBUG = False
 
@@ -1042,36 +1053,71 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     SHARED_WORKER.bubble_comment(bubble_index, comment)
                     if event.target.value != '':
                         comments = JSON.parse(localStorage['comments:' + COURSE] or '{}')
-                        comments[event.target.value] = (comments[comment] or 0) + 1
+                        comments[comment] = (comments[comment] or 0) + 1
                         localStorage['comments:' + COURSE] = JSON.stringify(comments)
+
+        def create_comment_select_list(bubble_element, start=''):
+            comments = JSON.parse(localStorage['comments:' + COURSE] or '{}')
+            if len(comments) == 0:
+                return
+            start = flat(start.lower())
+            nbrs = [1000000+i
+                    for comment, i in comments.Items()
+                    if flat(comment.lower()).startswith(start)
+                    ]
+            nbrs.sort()
+            if len(nbrs) <= NR_COMMON_COMMENTS:
+                trigger = 0
+            else:
+                trigger = nbrs[len(nbrs) - NR_COMMON_COMMENTS] - 1000000
+            items = []
+            for comment, nbr in comments.Items():
+                if not flat(comment.lower()).startswith(start):
+                    continue
+                if nbr >= trigger:
+                    key = 'A' + str(999999 - nbr)
+                    html_class = ' class="first_quartile"'
+                else:
+                    key = 'B' + flat(comment.lower())
+                    html_class = ''
+                value = '<P' + html_class + '><span>' + html(comment) + '</span><span>' + nbr + '</span>'
+                items.append([key, value])
+            if not items:
+                return
+            def cmp(a, b):
+                """a and b can't be equal"""
+                if a[0] > b[0]:
+                    return 1
+                else:
+                    return -1
+            items.sort(cmp)
+
+            bubble = JOURNAL.bubbles[bubble_element.bubble_index]
+            select = document.createElement('COMMENTS')
+            select.style.top = bubble.height * self.line_height + 'px'
+            select.onclick = bind(self.choose_comment, self)
+            select.bubble = event.target
+            select.innerHTML = ''.join([i[1] for i in items])
+            bubble_element.appendChild(select)
 
         def focus_bubble(event):
             for i in document.getElementsByTagName('COMMENTS'):
                 i.remove()
-            bubble_index = get_bubble(event).bubble_index
-            bubble = JOURNAL.bubbles[bubble_index]
-            if get_bubble(event).getElementsByTagName('TEXTAREA')[0].value == '':
-                comments = JSON.parse(localStorage['comments:' + COURSE] or '{}')
-                if len(comments) == 0:
-                    return
-                nbrs = [1000000+i for i in comments.Values()]
-                nbrs.sort()
-                quartile = nbrs[len(nbrs) - len(nbrs) // 4 - 1] - 1000000
-                t = []
-                for comment, nbr in comments.Items():
-                    comment = '<span>' + html(comment) + '</span><span>' + nbr + '</span>'
-                    if nbr >= quartile:
-                        comment = '<P class="first_quartile">' + comment
-                    else:
-                        comment = '<P>' + comment
-                    t.append(comment + '</P>')
-                t.sort()
-                select = document.createElement('COMMENTS')
-                select.style.top = bubble.height * self.line_height + 'px'
-                select.onclick = bind(self.choose_comment, self)
-                select.bubble = event.target
-                select.innerHTML = ''.join(t)
-                get_bubble(event).appendChild(select)
+            bubble_element = get_bubble(event)
+            if bubble_element.getElementsByTagName('TEXTAREA')[0].value == '':
+                create_comment_select_list(bubble_element)
+
+        def comment_list_update(event):
+            if (not event.target.nextSibling
+                    or event.target.nextSibling.tagName != 'COMMENTS') and event.target.value != '':
+                return
+            bubble_element = get_bubble(event)
+            if bubble_element.previous_value == event.target.value:
+                return
+            if event.target.nextSibling:
+                event.target.nextSibling.remove()
+            create_comment_select_list(bubble_element, event.target.value)
+            bubble_element.previous_value = event.target.value
 
         def bubble_move_start(event):
             self.bubble_save_change()
@@ -1155,6 +1201,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             textarea = bubble_elm.lastChild
             textarea.onchange = comment_change
             textarea.onblur = comment_change
+            textarea.onkeyup = comment_list_update
             if bubble.login != SESSION_LOGIN:
                 textarea.setAttribute('readonly', 1)
             if bubble.comment:
