@@ -22,6 +22,7 @@ import glob
 import csv
 import copy
 import signal
+import inspect
 from aiohttp import web, WSMsgType
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response,StreamResponse
@@ -1215,6 +1216,7 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     config.set_parameter('creator', session.login)
     config.set_parameter('stop', '2100-01-01 00:00:01')
     config.set_parameter('state', 'Draft')
+    config.set_parameter('source_update', f'upload {outputs}', who=session.login)
     return f"Course «{dst_dirname}» added"
 
 def good_session_name(txt):
@@ -1236,6 +1238,7 @@ async def upload_course(request:Request) -> Response:
             message = f"Bad session name: {replace}"
         replace += '.py'
     else:
+        course = None
         if not session.is_author():
             message = "Session adding is not allowed!"
     if not message:
@@ -1246,10 +1249,13 @@ async def upload_course(request:Request) -> Response:
     if '!' not in message:
         try:
             # Create session.cf
-            CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace[:-3]}')
+            course = CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace[:-3]}')
             style = ''
         except ValueError:
             message = "ERROR: Le fichier Python ne contient pas un questionnaire."
+    if course:
+        course.set_parameter('source_update', f'replace {message}', who=session.login)
+
     return answer('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
         + '<div style="height:100%;' + style + '">'
         + message + '</div>')
@@ -2323,6 +2329,11 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                 await asyncio.sleep(0)
                 if 'ERROR' in errors or 'FAIL' in errors:
                     os.rename(self.course.file_py + '~', self.course.file_py)
+                frame = inspect.currentframe()
+                while 'session' not in frame.f_locals:
+                    frame = frame.f_back
+                self.course.set_parameter('source_update',
+                    f'«{message[1:]}» {errors}', who=frame.f_locals['session'].login)
                 for socket, port in self.connections:
                     await socket.send_str(f'{port} A{errors}')
         elif self.login in self.course.active_teacher_room:

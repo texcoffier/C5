@@ -214,6 +214,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                        'notation_max': '?',
                        'messages': [],
                        'active_teacher_room': {},
+                       'source_update': '',
                       }
         for line in options.DEFAULT_COURSE_OPTIONS: # Defaults
             if len(line) == 3:
