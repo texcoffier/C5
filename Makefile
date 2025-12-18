@@ -1,7 +1,9 @@
 
-JS/%.js: JS %.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
+COMPILERS = $(shell ls compile_*.py | grep -v compile_server.py)
+
+JS/%.js: JS %.py compatibility.py options.py compile.py question.py $(COMPILERS) xxx_local.py
 	@./py2js $* || true
-%.js: %.py compatibility.py options.py compile.py question.py compile_[!s]*.py xxx_local.py
+%.js: %.py
 	@./py2js $* || true
 
 xxx_local.py:common.py coach.py $(C5_CUSTOMIZE)
@@ -34,11 +36,15 @@ killer:killer.c
 favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
-prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js node_modules/alasql sandbox/libsandbox.so killer \
-	JS/ccccc.js JS/live_link.js JS/adm_root.js JS/adm_course.js JS/adm_session.js \
-	JS/checkpoint.js JS/checkpoint_list.js JS/home.js JS/stats.js \
-	favicon.ico node_modules/@jcubic/lips
-	@$(MAKE) -j $$(nproc) $$(echo COMPILE_*/*/*.py | sed 's/\.py/.js/g')
+prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js \
+        node_modules/alasql sandbox/libsandbox.so killer \
+		favicon.ico node_modules/@jcubic/lips
+	echo $(COMPILERS)
+	@$(MAKE) -j $$(nproc) \
+		$$(echo COMPILE_*/*/*.py | sed 's/\.py/.js/g') \
+		$$(echo $(COMPILERS) | sed -e 's,^,JS/,' -e 's, , JS/,g' -e 's/\.py/\.js/g') \
+		JS/ccccc.js JS/live_link.js JS/adm_root.js JS/adm_course.js JS/adm_session.js \
+		JS/checkpoint.js JS/checkpoint_list.js JS/home.js JS/stats.js
 	@if [ ! -d SSL ] ; then ./c5.py SSL-SS ; fi
 
 all:prepare

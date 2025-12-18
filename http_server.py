@@ -72,7 +72,7 @@ def answer(content:Union[str,bytes], content_type:str="text/html",
             "Cross-Origin-Opener-Policy": "same-origin",
             "Cross-Origin-Embedder-Policy": "require-corp",
         }
-    if cache:
+    if cache and len(content) > 600000:
         headers['Cache-Control'] = 'max-age=86400'
     else:
         headers['Cache-Control'] = 'no-store'

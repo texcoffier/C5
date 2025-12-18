@@ -288,4 +288,7 @@ def init():
     questions.append(End())
     return questions
 
-Session(init()) # pylint: disable=undefined-variable
+try:
+    eval('new Session(init())') # pylint: disable=undefined-variable
+except:
+    pass
