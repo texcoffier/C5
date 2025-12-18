@@ -1545,17 +1545,22 @@ def create_shared_worker(login='', hook=None, readonly=False):
                 hook(journal)
     def shared_worker_post(message):
         """Send a message to the journal"""
-        if GRADING and not (ccccc.add_comments and message[0] in 'GbTtLH') or ccccc.options['feedback']:
+        if GRADING and not (ccccc.add_comments and message[0] in 'GbTt') or ccccc.options['feedback']:
             print('Not recording ' + message)
-            journal.append(message)
+            if message[0] not in 'LH':
+                journal.append(message)
             return # To keep journals in sync
-        else:
-            print('Post ' + message)
-            if not message.startswith('T'):
-                t = int(millisecs() / 1000)
-                if t - journal.timestamp > DELTA_T: # Record a timestamp sometime
-                    shared_worker.timestamp(t)
-            shared_worker.port.postMessage(len(journal.lines) + ' ' + message)
+        if GRADING and message[0] == 'G' and ccccc.options['state'] == 'Ready':
+            ccccc.popup_message("On ne peut pas changer de question pendant l'examen.<br>Bascule en mode bidouillage du source")
+            ccccc.set_editmode(0)
+            ccccc.editmode.selectedIndex = 0
+            return
+        print('Post ' + message)
+        if not message.startswith('T'):
+            t = int(millisecs() / 1000)
+            if t - journal.timestamp > DELTA_T: # Record a timestamp sometime
+                shared_worker.timestamp(t)
+        shared_worker.port.postMessage(len(journal.lines) + ' ' + message)
         journal.append(message)
     shared_worker.post = shared_worker_post
     def shared_worker_timestamp(seconds):

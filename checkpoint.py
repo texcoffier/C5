@@ -1827,7 +1827,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 txt.append('</tr><table>')
                 window.open("").document.write(''.join(txt))
 
-            elif item.startswith("Noter"):
+            elif item.startswith("Noter") or item.startswith('Regarder'):
                 window.open(BASE + '/grade/' + COURSE + '/' + login + '?ticket=' + TICKET)
             elif item.startswith("Temps"):
                 minutes = prompt(
@@ -1852,7 +1852,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         elif self.state == 'done' or OPTIONS['state'] == 'Done':
             grade = "Noter l'étudiant"
         else:
-            grade = 'Notation impossible : examen en cours'
+            grade = 'Regarder et commenter le code'
         grade += ' (sujet ' + student.version.upper() + ')'
         spy = "Espionner l'écran en temps réel"
         if self.state == 'running':
