@@ -1850,7 +1850,18 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             return
 
         if event.key == 'Tab':
-            document.execCommand('insertHTML', False, '    ')
+            if event.shiftKey:
+                self.update_source() # New because the scheduler may have not yet do its job.
+                self.update_cursor_position_now()
+                line, column = self.get_line_column(self.cursor_position)
+                if self.source.split('\n')[line-1].startswith('    '):
+                    # Remove the first 4 character of the line
+                    line_start = self.cursor_position - column
+                    self.set_editor_content(
+                        self.source[:line_start] + self.source[line_start+4:],
+                        self.cursor_position - min(4, column))
+            else:
+                document.execCommand('insertHTML', False, '    ')
             stop_event(event)
         elif event.key == 's' and event.ctrlKey:
             if GRADING or self.options['feedback']:
