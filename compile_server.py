@@ -324,9 +324,14 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.log(("COMPILE", data[:6]))
         if compiler != 'racket':
             self.cleanup(erase_executable=True)
-        with open(self.source_file, "w", encoding="utf-8") as file:
-            file.write(source)
-        if compiler in ('racket', 'coqc'):
+        if compiler == 'prolog':
+            source += '\nccinqquery(Goal) :- forall(Goal, writeln(Goal)).\n'
+        else:
+            with open(self.source_file, "w", encoding="utf-8") as file:
+                file.write(source)
+        if compiler in ('racket', 'coqc', 'prolog'):
+            if compiler == 'prolog':
+                self.source = source
             await self.websocket.send(json.dumps(['compiler', "Bravo, il n'y a aucune erreur"]))
             return
         stderr = ''
@@ -410,6 +415,60 @@ class Process: # pylint: disable=too-many-instance-attributes
             while True:
                 line = await self.process.stdout.readline()
                 if line:
+                    await self.websocket.send(json.dumps(['executor', line.decode("utf-8", "replace")]))
+                else:
+                    break
+            await self.websocket.send(json.dumps(
+                ['return', f"\nCode de fin d'exécution = {await self.process.wait()}"]))
+            self.cleanup()
+            return
+        if self.compiler == 'prolog':
+            # Should use a runner in order to read values
+            try:
+                os.mkdir(self.home)
+            except FileExistsError:
+                pass
+            # Protection appels système
+            args = [
+                "./launcher",
+                'execve:brk:mmap:access:openat:newfstatat:close:read:fstat:arch_prctl:set_tid_address:set_robust_list:rseq:mprotect:prlimit64:munmap:futex:ioctl:readlink:rt_sigaction:rt_sigprocmask:sigaltstack:getpid:lseek:clock_gettime:fcntl:exit_group:getcwd:getdents64:pread64:write',
+                str(self.launcher),
+                self.home,
+                str(self.max_time),
+                '/usr/bin/swipl', '--no-tty', '--no-packs', '--quiet', '-t', 'halt',
+                ]
+            for i in self.source.split('\n%% ')[1:]:
+                query = i.split('\n')[0]
+                safe = query.replace('"', '\\"')
+                args.append('-g')
+                args.append(f'writeln("\\n🟩{safe}🟩")')
+                args.append('-g')
+                args.append(f'consult(user),ccinqquery({query})')
+            args.append('-')
+            self.log(f"SWI-PROLOG {' '.join(args)}")
+            try:
+                self.process = await asyncio.create_subprocess_exec(
+                    *args,
+                    stdin=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT,
+                    close_fds=True,
+                    )
+            except:
+                for i in traceback.format_exc().split('\n'):
+                    self.log(("EXCEPTION", i))
+            assert self.process.stdout
+            assert self.process.stdin
+            self.process.stdin.write(self.source.encode('utf-8'))
+            self.process.stdin.close()
+            sandbox_messages = True
+            while True:
+                line = await self.process.stdout.readline()
+                if line:
+                    if sandbox_messages:
+                        if line.startswith((b'adding ', b'initializing ')):
+                            continue
+                        sandbox_messages = False
                     await self.websocket.send(json.dumps(['executor', line.decode("utf-8", "replace")]))
                 else:
                     break

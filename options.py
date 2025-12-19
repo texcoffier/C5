@@ -154,7 +154,7 @@ DEFAULT_COURSE_OPTIONS = [
 
     "Options defined by the compiler used by the course",
 
-    ['compiler', '',        "Compiler to use (should not be changed):<br>«g++» «gcc» «racket» «coqc»"],
+    ['compiler', '',        "Compiler to use (should not be changed):<br>«g++» «gcc» «racket» «coqc» «prolog»"],
     ['compile_options', [], "C Compile options:<br>«-Wall» «-pedantic» «-pthread» «-std=c++11» «-std=c++20»"],
     ['ld_options', [],      "C Libraries to link with:<br>«-lm»"],
     ['language', '',        "Language to use for syntaxic coloring:<br> «cpp» «python» «coq»..."],

@@ -66,7 +66,7 @@ HIGHLIGHT:
 	(git clone https://github.com/highlightjs/highlight.js.git || true) && \
 	cd highlight.js && \
 	npm install commander && \
-	node tools/build.js -t browser :common lisp coq && \
+	node tools/build.js -t browser :common lisp coq prolog && \
 	cp build/highlight.min.js $$HERE/highlight.js && \
 	cp -r src/styles/* $$HERE
 	rm -rf /tmp/highlight.js

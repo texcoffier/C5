@@ -1916,7 +1916,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.update_source()
             self.update_cursor_position_now()
             stop_event(event)
-            if self.options['compiler'] == 'coqc':
+            if self.options['compiler'] == 'coqc': # Automatic compilation on Enter
                 i = self.cursor_position - 1
                 while self.source[i] in (' ', '\n'):
                     i -= 1
