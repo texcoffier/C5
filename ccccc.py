@@ -2426,6 +2426,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                             span.focus()
                     self.input_index += 1
                 else:
+                    if '\033[2J' in value:
+                        self.executor.innerHTML = self.executor.firstChild.outerHTML
+                        self.executor.content_size = 0
+                        value = value.split('\033[2J')[-1]
                     if self.executor.content_size > 1000000:
                         if self.executor.content_size == 1000001:
                             continue
