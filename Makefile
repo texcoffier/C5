@@ -1,7 +1,7 @@
 
 COMPILERS = $(shell ls compile_*.py | grep -v compile_server.py)
 
-JS/%.js: JS %.py compatibility.py options.py compile.py question.py $(COMPILERS) xxx_local.py
+JS/%.js: JS %.py compatibility.py options.py compile.py question.py xxx_local.py
 	@./py2js $* || true
 %.js: %.py
 	@./py2js $* || true
@@ -43,7 +43,6 @@ favicon.ico:c5.svg
 prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js \
         node_modules/alasql libsandbox killer \
 		favicon.ico node_modules/@jcubic/lips
-	echo $(COMPILERS)
 	@$(MAKE) -j $$(nproc) \
 		$$(echo COMPILE_*/*/*.py | sed 's/\.py/.js/g') \
 		$$(echo $(COMPILERS) | sed -e 's,^,JS/,' -e 's, , JS/,g' -e 's/\.py/\.js/g') \

@@ -84,6 +84,12 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                              int(err.split(', characters')[1].split('-')[0])+1
                             ])
                         self.nr_warnings += 1
+                elif self.options['compiler'] == 'prolog':
+                    for err in data[1].split('ERROR: user://1:')[1:]:
+                        line, col = err.split(':')[:2]
+                        self.post('error', [int(line) - 1 - 2*self.nr_warnings, int(col)])
+                        self.nr_warnings += 1
+
             elif data[0] == 'input':
                 try:
                     line = self.read_input()

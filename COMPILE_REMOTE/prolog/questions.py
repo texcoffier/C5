@@ -18,7 +18,7 @@ COURSE_OPTIONS = {
     'positions' : {
         "question"    :[  1, 28,  0,  30, "#EFE"],
         "tester"      :[  1, 28, 30,  70, "#EFE"],
-        "editor"      :[ 30, 40,  0, 100, "#FFF"],
+        "editor"      :[ 29, 41,  0, 100, "#FFF"],
         "compiler"    :[100, 30,  0,  30, "#EEF"],
         "executor"    :[ 70, 30,  0, 100, "#EEF"],
         "index"       :[  0,  1,  0, 100, "#0000"],
