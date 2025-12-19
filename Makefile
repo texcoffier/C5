@@ -26,6 +26,10 @@ sandbox/libsandbox.so:
     (cd libseccomp && ./configure --enable-shared=no && make) ; \
 	make libsandbox.so)
 
+libsandbox:sandbox/libsandbox.so
+	if [ ! -e /tmp/libsandbox.so ] ; then cp sandbox/libsandbox.so /tmp/libsandbox.so ; fi
+	diff /tmp/libsandbox.so sandbox/libsandbox.so
+
 launcher:launcher.c
 	$(CC) -Wall $@.c -o $@
 	chown root $@
@@ -37,7 +41,7 @@ favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
 prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js \
-        node_modules/alasql sandbox/libsandbox.so killer \
+        node_modules/alasql libsandbox killer \
 		favicon.ico node_modules/@jcubic/lips
 	echo $(COMPILERS)
 	@$(MAKE) -j $$(nproc) \

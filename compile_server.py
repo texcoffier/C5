@@ -158,7 +158,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             task.cancel()
         self.tasks = []
 
-    def cleanup(self, erase_executable:bool=False, kill:bool=False, erase_sandbox:bool=False) -> None:
+    def cleanup(self, erase_executable:bool=False, kill:bool=False) -> None:
         """Close connection"""
         self.log('CLEANUP')
         if erase_executable:
@@ -168,11 +168,6 @@ class Process: # pylint: disable=too-many-instance-attributes
                 pass
             try:
                 os.unlink(self.source_file)
-            except FileNotFoundError:
-                pass
-        if erase_sandbox:
-            try:
-                os.unlink(self.dir + '/libsandbox.so')
             except FileNotFoundError:
                 pass
 
@@ -458,7 +453,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
-        self.log(f'./launcher {self.allowed} {self.launcher} {self.home} {self.max_time} {self.conid}')
+        self.log(f'./launcher {self.allowed} {self.launcher} {self.home} {self.max_time} ../{self.conid}')
         stdin_r, stdin_w = os.pipe()
         stdout_r, stdout_w = os.pipe()
         shutil.rmtree(self.home, ignore_errors=True)
@@ -468,10 +463,6 @@ class Process: # pylint: disable=too-many-instance-attributes
             filename.parent.mkdir(parents=True, exist_ok=True)
             filename.write_text(content, encoding='utf8')
 
-        try:
-            os.link('sandbox/libsandbox.so', self.dir + '/libsandbox.so')
-        except FileExistsError:
-            pass
         self.process = await asyncio.create_subprocess_exec(
             "./launcher",
             self.allowed,
@@ -595,7 +586,7 @@ N'actualisez PAS la page."""]))
             process.log(("EXCEPTION", 'Because killed'))
     finally:
         process.log(("STOP", len(PROCESSES), len(FREE_USERS)))
-        #process.cleanup(erase_executable=True, erase_sandbox=True)
+        #process.cleanup(erase_executable=True)
         PROCESSES.remove(process)
         FREE_USERS.append(process.launcher)
     # search_leak()

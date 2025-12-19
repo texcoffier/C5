@@ -50,7 +50,7 @@ void setup_env(char **argv) {
     setenv("HOME", argv[3], 1);
     setenv("PATH", "/bin:/usr/bin", 1);
     setenv("LANG", "fr_FR.UTF-8", 1);
-    setenv("LD_PRELOAD", "../libsandbox.so", 1);
+    setenv("LD_PRELOAD", "/tmp/libsandbox.so", 1);
     setenv("SECCOMP_SYSCALL_ALLOW", argv[1], 1);
 }
 
@@ -109,9 +109,8 @@ int main(int argc, char **argv)
         return 43;
     }
 
-    // Give the right to read in parent (for the sandbox.so and the executable)
-    if ( argv[5][0] == '.' )
-        chmod("..", 0755);
+    // Give the right to read in HOME parent (to run the executable)
+    chmod("..", 0755);
 
     // Drop root rights
     if (setgroups(0, NULL)) {
