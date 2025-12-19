@@ -1,9 +1,12 @@
 // Arguments:
-//   * The executable name
 //   * The SECCOMP_SYSCALL_ALLOW value
 //   * The UID
 //   * The HOME path
 //   * CPU max
+//   * The executable name
+//   * Argument 1
+//   * Argument 2
+//   * ...
 // Create a process group named C5_UID and make it killable by C5 UID
 // Limit to 100MB of memory and 10 concurrent threads.
 
@@ -44,19 +47,19 @@ void setup_env(char **argv) {
         memset(environ[i], 0, strlen(environ[i]));
         environ[i] = NULL;
     }
-    setenv("HOME", argv[4], 1);
+    setenv("HOME", argv[3], 1);
     setenv("PATH", "/bin:/usr/bin", 1);
     setenv("LANG", "fr_FR.UTF-8", 1);
     setenv("LD_PRELOAD", "../libsandbox.so", 1);
-    setenv("SECCOMP_SYSCALL_ALLOW", argv[2], 1);
+    setenv("SECCOMP_SYSCALL_ALLOW", argv[1], 1);
 }
 
 int main(int argc, char **argv)
 {
-    char filename[999], execname[999];
-    if (argc != 6)
+    char filename[999];
+    if (argc < 6)
         exit(2);
-    int uid = atoi(argv[3]);
+    int uid = atoi(argv[2]);
     if (uid < 3000)
         exit(1);
 
@@ -81,7 +84,7 @@ int main(int argc, char **argv)
     chown(filename, getuid(), getgid());
 
     // Limit resource usage
-    int cpu_max = atoi(argv[5]);
+    int cpu_max = atoi(argv[4]);
     struct rlimit cpu = {cpu_max, cpu_max};
     struct rlimit data = {100*1024*1024, 100*1024*1024};
     struct rlimit nproc = {11, 11};
@@ -92,7 +95,7 @@ int main(int argc, char **argv)
     setrlimit(RLIMIT_FSIZE, &fsize);
 
     // Give its home dir to itself
-    chown_dir(argv[4], uid);
+    chown_dir(argv[3], uid);
 
     // The created files must be writable/destroyable by compile_server
     umask(7);
@@ -101,13 +104,14 @@ int main(int argc, char **argv)
     setup_env(argv);
 
     // Goto home
-    if (chdir(argv[4])) {
-        perror(argv[4]);
+    if (chdir(argv[3])) {
+        perror(argv[3]);
         return 43;
     }
 
     // Give the right to read in parent (for the sandbox.so and the executable)
-    chmod("..", 0755);
+    if ( argv[5][0] == '.' )
+        chmod("..", 0755);
 
     // Drop root rights
     if (setgroups(0, NULL)) {
@@ -121,8 +125,7 @@ int main(int argc, char **argv)
     }
 
     // Execute
-    snprintf(execname, sizeof(execname), "../%s", argv[1]);
-    execl(execname, argv[1], NULL);
-    perror(execname);
+    execv(argv[5], argv + 5);
+    perror(argv[5]);
     return 42;
 }

@@ -458,7 +458,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("RUN nothing")
             await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
-        self.log(f'./launcher {self.conid} {self.allowed} {self.launcher} {self.home} {self.max_time}')
+        self.log(f'./launcher {self.allowed} {self.launcher} {self.home} {self.max_time} {self.conid}')
         stdin_r, stdin_w = os.pipe()
         stdout_r, stdout_w = os.pipe()
         shutil.rmtree(self.home, ignore_errors=True)
@@ -474,11 +474,11 @@ class Process: # pylint: disable=too-many-instance-attributes
             pass
         self.process = await asyncio.create_subprocess_exec(
             "./launcher",
-            self.conid,
             self.allowed,
             str(self.launcher),
             self.home,
             str(self.max_time),
+            '../' + self.conid,
             stdout=stdout_w,
             stdin=stdin_r,
             stderr=asyncio.subprocess.STDOUT,
