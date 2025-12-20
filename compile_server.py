@@ -431,7 +431,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             # Protection appels système
             args = [
                 "./launcher",
-                'execve:brk:mmap:access:openat:newfstatat:close:read:fstat:arch_prctl:set_tid_address:set_robust_list:rseq:mprotect:prlimit64:munmap:futex:ioctl:readlink:rt_sigaction:rt_sigprocmask:sigaltstack:getpid:lseek:clock_gettime:fcntl:exit_group:getcwd:getdents64:pread64:write',
+                'execve:brk:mmap:access:openat:newfstatat:close:read:fstat:arch_prctl:set_tid_address:set_robust_list:rseq:mprotect:prlimit64:munmap:futex:ioctl:readlink:rt_sigaction:rt_sigprocmask:sigaltstack:getpid:lseek:clock_gettime:fcntl:exit_group:getcwd:getdents64:pread64:write:gettid:sysinfo',
                 str(self.launcher),
                 self.home,
                 str(self.max_time),
