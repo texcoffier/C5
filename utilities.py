@@ -171,6 +171,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.course = course.replace('COMPILE_', '').replace('/', '=')
         self.compiler, self.session = self.course.split('=', 1)
         self.file_cf = course + '/session.cf'
+        self.file_config = course + '/session.json'
         self.file_js = course + '/questions.js'
         self.file_json = course + '/questions.json'
         self.file_py = course + '/questions.py'
@@ -226,14 +227,26 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         else:
             print('******* No questions in', self.file_py)
 
-        try:
-            self.parse()
-        except (IOError, FileNotFoundError):
-            if os.path.exists(self.file_py):
-                self.record_config()
-        except SyntaxError:
-            print(f"Invalid configuration file: {self.file_cf}", flush=True)
-            raise
+        if os.path.exists(self.file_config) and os.path.getmtime(self.file_config) >= os.path.getmtime(self.file_py):
+            with open(self.file_config, 'r', encoding='utf-8') as file:
+                content = file.read()
+            self.config = json.loads(content)
+            self.parse_position = len(content)
+            self.file_config_need_update = False
+            self.time = time.time()
+            active_teacher_room = self.config['active_teacher_room']
+            for login, state in active_teacher_room.items():
+                active_teacher_room[login] = State(state)
+        else:
+            self.file_config_need_update = True
+            try:
+                self.parse()
+            except (IOError, FileNotFoundError):
+                if os.path.exists(self.file_py):
+                    self.record_config()
+            except SyntaxError:
+                print(f"Invalid configuration file: {self.file_cf}", flush=True)
+                raise
         # Update old data structure
         if self.config['highlight'] == '0':
             self.config['highlight'] = '#FFF'
@@ -381,8 +394,16 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 nb_active += 1
         return nb_active
 
+    def create_file_config(self):
+        """Create the load accelerator"""
+        with open(self.file_config, 'w', encoding='utf-8') as file:
+            file.write(json.dumps(self.config, default=lambda x: list(x)))
+        self.file_config_need_update = False
+
     def set_parameter(self, parameter:str, value:Any, key:str=None, index:int=None, who:str=''):
         """Set one of the parameters"""
+        if not self.file_config_need_update:
+            self.file_config_need_update = True
         if key:
             if key == '+':
                 self.config[parameter].append(value)

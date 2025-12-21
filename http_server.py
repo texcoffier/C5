@@ -316,9 +316,25 @@ async def record_grade(request:Request) -> Response:
 
 async def load_student_infos() -> None:
     """Load all student info in order to answer quickly"""
-    for config in CourseConfig.load_all_configs():
-        for login in config.active_teacher_room:
-            await utilities.LDAP.infos(login)
+    start = time.time()
+    try:
+        for config in CourseConfig.load_all_configs():
+            pass
+            # No need to update login information
+            # for old sessions.
+            # for login in config.active_teacher_room:
+            #     await utilities.LDAP.infos(login)
+    except:
+        log(traceback.format_exc())
+    log(f'Load all sessions time: {time.time() - start}')
+
+    while True:
+        for config in CourseConfig.load_all_configs():
+            if config.file_config_need_update:
+                log(f'Update {config.file_config} for fast startup')
+                config.create_file_config()
+                await asyncio.sleep(0.1)
+        await asyncio.sleep(86400)
 
 async def simulate_active_student() -> None:
     """Send a student activity to checkpoints page every seconds"""
