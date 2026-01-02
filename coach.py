@@ -33,32 +33,49 @@ COACH_MESSAGES = {
     'mouse_short_move': (
         "🐢 Trop lent avec la souris !<br><br>"
         + "Pour de petits déplacements, vos doigts sont plus rapides que votre main :<br>"
-        + "Utilisez <kbd>←</kbd> <kbd>→</kbd> ou <kbd>↑</kbd> <kbd>↓</kbd> au lieu de la souris.<br>"
+        + "Utilisez <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>←</kbd> "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>→</kbd> ou "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>↑</kbd> "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>↓</kbd> au lieu de la souris.<br>"
         + "<em>Astuce pro : gardez vos mains sur le clavier ! 🎮</em>"
     ),
     'mouse_line_bounds': (
         "🎯 Vous visez le début ou la fin de ligne ?<br><br>"
         + "Arrêtez de cliquer comme un pigeon ! 🐦<br>"
-        + "Utilisez <kbd>Home</kbd> pour le début, <kbd>End</kbd> pour la fin.<br>"
-        + "Sur portable : <kbd>Fn</kbd> + <kbd>←</kbd> ou <kbd>Fn</kbd> + <kbd>→</kbd>"
+        + "Utilisez <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>↖ Home</kbd> pour le début, "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>End</kbd> pour la fin.<br>"
+        + "Sur portable : <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Fn</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>←</kbd> ou "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Fn</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>→</kbd>"
     ),
     'many_horizontal_arrows': (
         "⌨️ Wow, vous aimez vraiment cette touche fléchée !<br><br>"
         + "Pour aller plus vite :<br>"
-        + "• <kbd>ctrl</kbd> + <kbd>←</kbd> / <kbd>ctrl</kbd> + <kbd>→</kbd> = sauter de mot en mot 🦘<br>"
-        + "• <kbd>Home</kbd>/<kbd>End</kbd> = début/fin de ligne ⚡<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>←</kbd> / "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>→</kbd> = sauter de mot en mot 🦘<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Home</kbd>/"
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>End</kbd> = début/fin de ligne ⚡<br>"
         + "<em>Vos doigts vous remercieront !</em>"
     ),
     'many_vertical_arrows': (
         "🏃 Marathon de touches fléchées détecté !<br><br>"
         + "Vous descendez l'Everest ligne par ligne ? 🏔️<br>"
-        + "• <kbd>PgUp</kbd>/<kbd>PgDn</kbd> = sauter de page en page<br>"
-        + "• <kbd>ctrl</kbd> + <kbd>Home</kbd> / <kbd>ctrl</kbd> + <kbd>End</kbd> = début/fin du fichier<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>PgUp</kbd>/"
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>PgDn</kbd> = sauter de page en page<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Home</kbd> / "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>End</kbd> = début/fin du fichier<br>"
         + "<em>C'est comme un ascenseur pour votre code ! 🛗</em>"
     ),
     'arrow_then_backspace': (
         "🤔 Hmm, vous faites compliqué là...<br><br>"
-        + "Au lieu de <kbd>→</kbd> puis <kbd>⌫</kbd>, utilisez simplement <kbd>⌦</kbd> (Suppr) !<br>"
+        + "Au lieu de <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>→</kbd> puis "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>⌫</kbd>, utilisez simplement "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>⌦</kbd> (Suppr) !<br>"
         + "C'est 2 touches → 1 touche. Même votre calculatrice approuverait. 🧮<br>"
         + "<em>Travaillez plus intelligemment, pas plus dur !</em>"
     ),
@@ -66,8 +83,10 @@ COACH_MESSAGES = {
         "😱 STOP ! Vous retapez ce que vous venez d'effacer !<br><br>"
         + "C'est comme creuser un trou pour le reboucher... 🕳️⛏️<br>"
         + "Utilisez plutôt :<br>"
-        + "• <kbd>ctrl</kbd> + <kbd>Z</kbd> pour annuler<br>"
-        + "• <kbd>ctrl</kbd> + <kbd>Y</kbd> pour rétablir<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Z</kbd> pour annuler<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Y</kbd> pour rétablir<br>"
         + "<em>Vos doigts ne sont pas un time machine, mais Ctrl+Z oui ! ⏰✨</em>"
     )
 }
