@@ -567,16 +567,18 @@ class Many_horizontal_arrows(Coach):
     Detects many consecutive horizontal arrows (← →).
 
     Detected pattern:
-        - 15+ (adjusted by level) consecutive ← or → arrows
+        - 15+ consecutive ← or → arrows
         - Without Ctrl (Ctrl+arrow is already efficient)
 
     Suggestion:
         Use Ctrl + ← / Ctrl + → to jump word by word
         Or Home/End to go to line extremities
+
+    Threshold (configurable via options):
+        - threshold: Number of consecutive arrows (option: coach_many_horizontal_arrows_count, default: 15)
     """
     option = 'coach_many_horizontal_arrows'
     message = COACH_MESSAGES['many_horizontal_arrows']
-    threshold_base = 15  # consecutive arrows
 
     def check(self, manager, event, text, cursor_position):
         """
@@ -590,8 +592,11 @@ class Many_horizontal_arrows(Coach):
         if not key:
             return None
 
-        # Calculate threshold adjusted by level
-        threshold = self.threshold_base * manager.get_level_factor()
+        # Get threshold from options (with default)
+        threshold = 15
+        if manager.options and 'coach_many_horizontal_arrows_count' in manager.options:
+            threshold = int(manager.options['coach_many_horizontal_arrows_count'])
+
         state = manager.state
 
         # Process horizontal arrows
