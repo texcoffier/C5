@@ -108,7 +108,8 @@ DEFAULT_COURSE_OPTIONS = [
 
     'Keyboard coach <b style="color:#F00">EXPERIMENTAL DO NOT ACTIVATE</b>',
 
-    ['coach_tip_level',              1, "Coaching tip level (1: Often, 2: Common, 3: Sometime, 4: Rarely, 99: Never)"],
+    ['coach_tip_level',              1, "Conseils du coach (0: Désactivé, 1: Activé)"],
+    ['coach_cooldown',            5000, "Délai minimum entre deux conseils en millisecondes (5000ms = 5 secondes)"],
     ['coach_mouse_short_move',       0, "Détecter les petits déplacements souris (1-3 caractères ou lignes) et suggérer les flèches clavier."],
     ['coach_mouse_line_bounds',      0, "Alerter quand la souris est utilisée pour aller au début/fin de ligne au lieu de Home/End."],
     ['coach_retype_after_delete',    0, "Suggérer Ctrl+Z/Ctrl+Y lorsqu'un texte long supprimé est retapé à l'identique."],
