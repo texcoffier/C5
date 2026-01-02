@@ -333,19 +333,21 @@ class Coach:
             event: DOM event (must be keydown/keyup)
 
         Returns:
-            Tuple (key, ctrl) where:
+            Tuple (key, ctrl, shift) where:
                 key: Key name (e.g., 'ArrowRight', 'Backspace') or None
                 ctrl: True if Ctrl is pressed, False otherwise
+                shift: True if Shift is pressed, False otherwise
 
         Note:
             In JavaScript, event.key and event.ctrlKey return undefined
             if absent, without raising an exception.
         """
         if not event:
-            return None, False
+            return None, False, False
         key = event.key
         ctrl = bool(event.ctrlKey)
-        return key, ctrl
+        shift = bool(event.shiftKey)
+        return key, ctrl, shift
 
     def analyse(self, event, text, cursor_position, previous_position=None):
         """
@@ -570,7 +572,7 @@ class Many_horizontal_arrows(Coach):
             return None
 
         # Extract key and modifiers
-        key, ctrl = manager.get_key_info(event)
+        key, ctrl, shift = manager.get_key_info(event)
         if not key:
             return None
 
@@ -580,12 +582,13 @@ class Many_horizontal_arrows(Coach):
 
         # Process horizontal arrows
         if key in ('ArrowLeft', 'ArrowRight'):
-            if ctrl:
-                # Ctrl+arrow is already efficient, reset counter
+            if ctrl or shift:
+                # Ctrl+arrow is efficient (word jump), Shift+arrow is efficient (selection)
+                # Reset counter for both
                 state.horizontal_streak = 0
                 state.horizontal_direction = None
             else:
-                # Simple arrow without Ctrl
+                # Simple arrow without modifiers
                 direction = key
                 last_dir = state.horizontal_direction
 
@@ -636,7 +639,7 @@ class Many_vertical_arrows(Coach):
             return None
 
         # Extract key and modifiers
-        key, ctrl = manager.get_key_info(event)
+        key, ctrl, shift = manager.get_key_info(event)
         if not key:
             return None
 
@@ -646,12 +649,13 @@ class Many_vertical_arrows(Coach):
 
         # Process vertical arrows
         if key in ('ArrowUp', 'ArrowDown'):
-            if ctrl:
-                # Ctrl+vertical arrow = reset
+            if ctrl or shift:
+                # Ctrl+arrow is efficient, Shift+arrow is efficient (selection)
+                # Reset counter for both
                 state.vertical_streak = 0
                 state.vertical_direction = None
             else:
-                # Simple arrow without Ctrl
+                # Simple arrow without modifiers
                 direction_v = key
                 last_dir_v = state.vertical_direction
 
@@ -715,7 +719,7 @@ class Arrow_then_backspace(Coach):
             return None
 
         # Extract key and modifiers
-        key, ctrl = manager.get_key_info(event)
+        key, ctrl, shift = manager.get_key_info(event)
         if not key:
             return None
 
