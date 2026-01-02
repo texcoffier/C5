@@ -107,6 +107,15 @@ COACH_MESSAGES = {
         + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>←</kbd> / "
         + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>→</kbd> = mot par mot<br>"
         + "<em>Travaillez plus intelligemment ! 🧠</em>"
+    ),
+    'delete_word_char_by_char': (
+        "⌫ Vous effacez un mot entier caractère par caractère ?<br><br>"
+        + "Pour supprimer un mot complet d'un coup :<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Backspace</kbd> = supprimer mot à gauche ⬅️<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Delete</kbd> = supprimer mot à droite ➡️<br>"
+        + "<em>Un mot = une touche ! 💥</em>"
     )
 }
 
@@ -1090,6 +1099,65 @@ class Letter_select_word(Coach):
         return None
 
 
+class Delete_word_char_by_char(Coach):
+    """
+    Detects deletion of a word character by character using Backspace or Delete.
+
+    Detected pattern:
+        - 5+ consecutive Backspace or Delete presses
+        - Without Ctrl (Ctrl+Backspace/Delete is already efficient)
+
+    Suggestion:
+        Use Ctrl + Backspace to delete word to the left
+        Use Ctrl + Delete to delete word to the right
+
+    Threshold (configurable via options):
+        - threshold: Number of consecutive delete keys (option: coach_delete_word_char_by_char_count, default: 5)
+    """
+    option = 'coach_delete_word_char_by_char'
+    message = COACH_MESSAGES['delete_word_char_by_char']
+
+    def check(self, manager, event, _text, _cursor_position):
+        if not manager.should_check(self.option, event, 'keydown'):
+            return None
+
+        # Extract key and modifiers
+        key, ctrl, _ = manager.get_key_info(event)
+        if not key:
+            return None
+
+        # Get threshold from options (with default)
+        threshold = 5
+        if manager.options and 'coach_delete_word_char_by_char_count' in manager.options:
+            threshold = int(manager.options['coach_delete_word_char_by_char_count'])
+
+        state = manager.state
+
+        # Process Backspace and Delete keys
+        if key in ('Backspace', 'Delete'):
+            if ctrl:
+                # Ctrl+Backspace/Delete is efficient (delete word)
+                # Reset counter
+                state.delete_char_streak = 0
+            else:
+                # Regular Backspace/Delete without Ctrl
+                state.delete_char_streak = getattr(state, 'delete_char_streak', 0) + 1
+
+                coach_debug("Delete_word: streak=" + str(state.delete_char_streak))
+
+                if state.delete_char_streak >= threshold:
+                    coach_debug("Delete_word: THRESHOLD REACHED!")
+                    result = manager.show_tip(self.option, self.message)
+                    if result:
+                        state.delete_char_streak = 0
+                        return result
+        else:
+            # Different key pressed, reset counter
+            state.delete_char_streak = 0
+
+        return None
+
+
 def create_coach(options):
     return Coach(
         [
@@ -1100,7 +1168,8 @@ def create_coach(options):
         Arrow_then_backspace(),
         Retype_after_delete(),
         Scroll_full_document(),
-        Letter_select_word()
+        Letter_select_word(),
+        Delete_word_char_by_char()
         ],
         options
     )
