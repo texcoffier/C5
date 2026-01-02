@@ -122,6 +122,8 @@ DEFAULT_COURSE_OPTIONS = [
     ['coach_many_vertical_arrows',   0, "Suggérer PgUp/PgDn ou Ctrl+Home/End après de nombreuses flèches haut/bas."],
     ['coach_many_vertical_arrows_count', 10, "Nombre de flèches consécutives avant conseil (défaut: 10)"],
     ['coach_scroll_full_document',   0, "Rappeler Ctrl+Home/End quand l'étudiant atteint le début/la fin via un long défilement."],
+    ['coach_scroll_full_document_edge_lines', 3, "Nombre de lignes près du bord pour détecter début/fin (défaut: 3)"],
+    ['coach_scroll_full_document_min_lines', 30, "Nombre minimum de lignes dans le fichier pour activer (défaut: 30)"],
     ['coach_letter_select_word',     0, "Inviter au double-clic ou Ctrl+Shift+flèches lorsqu'un mot est sélectionné lettre par lettre."],
     ['coach_letter_select_line',     0, "Inviter au triple-clic ou Home+Shift+End pour sélectionner une longue ligne."],
 

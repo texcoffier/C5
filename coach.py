@@ -88,6 +88,15 @@ COACH_MESSAGES = {
         + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
         + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Y</kbd> pour rétablir<br>"
         + "<em>Vos doigts ne sont pas un time machine, mais Ctrl+Z oui ! ⏰✨</em>"
+    ),
+    'scroll_full_document': (
+        "🚀 Vous avez atteint le bout du monde !<br><br>"
+        + "Pour aller directement au début ou à la fin du fichier :<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Home</kbd> = début du fichier ⬆️<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>End</kbd> = fin du fichier ⬇️<br>"
+        + "<em>Téléportation instantanée ! ✨</em>"
     )
 }
 
@@ -938,6 +947,82 @@ class Retype_after_delete(Coach):
 
         return None
 
+
+class Scroll_full_document(Coach):
+    """
+    Detects when user scrolls from top to bottom (or vice versa) of document.
+
+    Detected pattern:
+        - User was in the first N lines
+        - Then moved to the last N lines (or vice versa)
+        - File has at least M lines
+        - Movement happened via scroll/PgUp/PgDn/click (not Ctrl+Home/End)
+
+    Suggestion:
+        Use Ctrl + Home to go to beginning
+        Use Ctrl + End to go to end of file
+
+    Thresholds (configurable via options):
+        - edge_lines: Lines from edge to consider top/bottom (option: coach_scroll_full_document_edge_lines, default: 3)
+        - min_lines: Minimum file lines to activate (option: coach_scroll_full_document_min_lines, default: 30)
+    """
+    option = 'coach_scroll_full_document'
+    message = COACH_MESSAGES['scroll_full_document']
+
+    def check(self, manager, _, text, cursor_position):
+        if not manager.option_enabled(self.option):
+            return None
+
+        # Get thresholds from options (with defaults)
+        edge_lines = 3
+        min_lines = 30
+        if manager.options:
+            if 'coach_scroll_full_document_edge_lines' in manager.options:
+                edge_lines = int(manager.options['coach_scroll_full_document_edge_lines'])
+            if 'coach_scroll_full_document_min_lines' in manager.options:
+                min_lines = int(manager.options['coach_scroll_full_document_min_lines'])
+
+        # Calculate current line and total lines
+        current_line, _ = get_line_column(text, cursor_position)
+        total_lines = len(text.split('\n'))
+
+        # Only activate for files with enough lines
+        if total_lines < min_lines:
+            return None
+
+        state = manager.state
+
+        # Determine if we're at top or bottom
+        at_top = current_line <= edge_lines
+        at_bottom = current_line > total_lines - edge_lines
+
+        # Get previous zone (from last check)
+        previous_zone = getattr(state, 'scroll_previous_zone', None)
+
+        # Update current zone
+        if at_top:
+            current_zone = 'top'
+        elif at_bottom:
+            current_zone = 'bottom'
+        else:
+            current_zone = 'middle'
+
+        # Detect transition from top to bottom or bottom to top
+        if previous_zone and current_zone != previous_zone:
+            if (previous_zone == 'top' and current_zone == 'bottom') or \
+               (previous_zone == 'bottom' and current_zone == 'top'):
+                # User scrolled across the full document
+                result = manager.show_tip(self.option, self.message)
+                if result:
+                    state.scroll_previous_zone = current_zone
+                    return result
+
+        # Update state
+        state.scroll_previous_zone = current_zone
+
+        return None
+
+
 def create_coach(options):
     return Coach(
         [
@@ -946,7 +1031,8 @@ def create_coach(options):
         Many_horizontal_arrows(),
         Many_vertical_arrows(),
         Arrow_then_backspace(),
-        Retype_after_delete()
+        Retype_after_delete(),
+        Scroll_full_document()
         ],
         options
     )
