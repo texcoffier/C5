@@ -97,6 +97,16 @@ COACH_MESSAGES = {
         + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
         + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>End</kbd> = fin du fichier ⬇️<br>"
         + "<em>Téléportation instantanée ! ✨</em>"
+    ),
+    'letter_select_word': (
+        "🔤 Sélectionner lettre par lettre ? Vraiment ?<br><br>"
+        + "Pour sélectionner un mot entier :<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Double-clic</kbd> sur le mot 🖱️<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Shift</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>←</kbd> / "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>→</kbd> = mot par mot<br>"
+        + "<em>Travaillez plus intelligemment ! 🧠</em>"
     )
 }
 
@@ -1023,6 +1033,63 @@ class Scroll_full_document(Coach):
         return None
 
 
+class Letter_select_word(Coach):
+    """
+    Détecte la sélection lettre par lettre d'un mot entier et suggère des méthodes plus efficaces.
+
+    Detected pattern:
+        - 4+ consecutive Shift + ← or Shift + → (selecting character by character)
+
+    Suggestion:
+        Use double-click or Ctrl+Shift+arrows to select word by word
+
+    Threshold (configurable via options):
+        - threshold: Number of consecutive Shift+arrows (option: coach_letter_select_word_min_chars, default: 8)
+    """
+    option = 'coach_letter_select_word'
+    message = COACH_MESSAGES['letter_select_word']
+
+    def check(self, manager, event, _text, _cursor_position):
+        if not manager.should_check(self.option, event, 'keydown'):
+            return None
+
+        # Extract key and modifiers
+        key, ctrl, shift = manager.get_key_info(event)
+        if not key:
+            return None
+
+        # Get threshold from options (with default)
+        threshold = 8
+        if manager.options and 'coach_letter_select_word_min_chars' in manager.options:
+            threshold = int(manager.options['coach_letter_select_word_min_chars'])
+
+        state = manager.state
+
+        # Process horizontal arrows with Shift (selection)
+        if key in ('ArrowLeft', 'ArrowRight'):
+            if shift and not ctrl:
+                # Shift+arrow WITHOUT Ctrl = selecting character by character
+                state.letter_select_streak = getattr(state, 'letter_select_streak', 0) + 1
+
+                coach_debug("Letter_select: streak=" + str(state.letter_select_streak))
+
+                if state.letter_select_streak >= threshold:
+                    coach_debug("Letter_select: THRESHOLD REACHED!")
+                    result = manager.show_tip(self.option, self.message)
+                    if result:
+                        state.letter_select_streak = 0
+                        return result
+            else:
+                # Ctrl+Shift+arrow is efficient (word by word selection), or no Shift
+                # Reset counter
+                state.letter_select_streak = 0
+        else:
+            # Different key pressed, reset counter
+            state.letter_select_streak = 0
+
+        return None
+
+
 def create_coach(options):
     return Coach(
         [
@@ -1032,7 +1099,8 @@ def create_coach(options):
         Many_vertical_arrows(),
         Arrow_then_backspace(),
         Retype_after_delete(),
-        Scroll_full_document()
+        Scroll_full_document(),
+        Letter_select_word()
         ],
         options
     )

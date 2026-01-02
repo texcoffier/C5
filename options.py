@@ -125,6 +125,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['coach_scroll_full_document_edge_lines', 3, "Nombre de lignes près du bord pour détecter début/fin (défaut: 3)"],
     ['coach_scroll_full_document_min_lines', 30, "Nombre minimum de lignes dans le fichier pour activer (défaut: 30)"],
     ['coach_letter_select_word',     0, "Inviter au double-clic ou Ctrl+Shift+flèches lorsqu'un mot est sélectionné lettre par lettre."],
+    ['coach_letter_select_word_min_chars', 8, "Nombre minimum de caractères sélectionnés consécutivement pour détecter (défaut: 8)"],
     ['coach_letter_select_line',     0, "Inviter au triple-clic ou Home+Shift+End pour sélectionner une longue ligne."],
 
     "Bloc titles",
