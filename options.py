@@ -119,6 +119,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['coach_many_horizontal_arrows_count', 15, "Nombre de flèches consécutives avant conseil (défaut: 15)"],
     ['coach_arrow_then_backspace',   0, "Signaler la séquence → puis Backspace pour proposer la touche Suppr."],
     ['coach_many_vertical_arrows',   0, "Suggérer PgUp/PgDn ou Ctrl+Home/End après de nombreuses flèches haut/bas."],
+    ['coach_many_vertical_arrows_count', 10, "Nombre de flèches consécutives avant conseil (défaut: 10)"],
     ['coach_scroll_full_document',   0, "Rappeler Ctrl+Home/End quand l'étudiant atteint le début/la fin via un long défilement."],
     ['coach_letter_select_word',     0, "Inviter au double-clic ou Ctrl+Shift+flèches lorsqu'un mot est sélectionné lettre par lettre."],
     ['coach_letter_select_line',     0, "Inviter au triple-clic ou Home+Shift+End pour sélectionner une longue ligne."],

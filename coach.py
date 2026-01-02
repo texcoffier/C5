@@ -637,16 +637,18 @@ class Many_vertical_arrows(Coach):
     Detects many consecutive vertical arrows (↑ ↓).
 
     Detected pattern:
-        - 10+ (adjusted by level) consecutive ↑ or ↓ arrows
+        - 10+ consecutive ↑ or ↓ arrows
         - Without Ctrl
 
     Suggestion:
         Use PgUp/PgDn to jump page by page
         Or Ctrl + Home / Ctrl + End to go to beginning/end of file
+
+    Threshold (configurable via options):
+        - threshold: Number of consecutive arrows (option: coach_many_vertical_arrows_count, default: 10)
     """
     option = 'coach_many_vertical_arrows'
     message = COACH_MESSAGES['many_vertical_arrows']
-    threshold_base = 10  # consecutive arrows
 
     def check(self, manager, event, text, cursor_position):
         """
@@ -660,8 +662,11 @@ class Many_vertical_arrows(Coach):
         if not key:
             return None
 
-        # Calculate threshold adjusted by level
-        threshold = self.threshold_base * manager.get_level_factor()
+        # Get threshold from options (with default)
+        threshold = 10
+        if manager.options and 'coach_many_vertical_arrows_count' in manager.options:
+            threshold = int(manager.options['coach_many_vertical_arrows_count'])
+
         state = manager.state
 
         # Process vertical arrows
