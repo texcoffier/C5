@@ -523,6 +523,9 @@ class Mouse_line_bounds(Coach):
     Suggestion:
         Use Home (beginning) or End (end) of line
         On laptop: Fn + ← or Fn + →
+
+    Thresholds (hardcoded):
+        - min_movement: 2 characters (hardcoded)
     """
     option = 'coach_mouse_line_bounds'
     message = COACH_MESSAGES['mouse_line_bounds']
@@ -713,6 +716,9 @@ class Arrow_then_backspace(Coach):
 
     Suggestion:
         Use Delete key to delete the character to the right
+
+    Thresholds (hardcoded):
+        - max_delay: 2000ms (hardcoded)
 
     Note:
         This pattern is inefficient because it requires two keys instead of one.
