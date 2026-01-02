@@ -796,11 +796,14 @@ class Retype_after_delete(Coach):
         - Detects deletions and keeps the exact deleted text
         - Compares retyped text character by character with deleted text
         - Alerts when 8+ identical characters have been retyped
+
+    Thresholds (configurable via options):
+        - min_chars_threshold: Minimum identical chars retyped (option: coach_retype_after_delete_chars, default: 8)
+        - max_delay_ms: Maximum time between deletion and retyping (hardcoded: 10000ms = 10 seconds)
     """
     option = 'coach_retype_after_delete'
     message = COACH_MESSAGES['retype_after_delete']
-    min_chars_threshold = 8  # Minimum retyped characters to trigger tip
-    max_delay_ms = 10000  # 10 seconds maximum
+    max_delay_ms = 10000  # milliseconds - hardcoded
 
     def check(self, manager, event, text, cursor_position):
         """
@@ -810,10 +813,19 @@ class Retype_after_delete(Coach):
         1. Detect deletion: save the EXACT deleted text
         2. Detect typing: compare character by character with deleted text
         3. Count how many IDENTICAL characters have been retyped
-        4. Show tip only if 10+ identical characters are retyped
+        4. Show tip only if threshold+ identical characters are retyped
+
+        Thresholds (configurable via options):
+            - min_chars_threshold: Minimum identical chars retyped (option: coach_retype_after_delete_chars, default: 10)
+            - max_delay_ms: Maximum time between deletion and retyping (hardcoded: 10000ms = 10 seconds)
         """
         if not manager.option_enabled(self.option):
             return None
+
+        # Get threshold from options (with default)
+        min_chars_threshold = 10
+        if manager.options and 'coach_retype_after_delete_chars' in manager.options:
+            min_chars_threshold = int(manager.options['coach_retype_after_delete_chars'])
 
         state = manager.state
         now = millisecs()
@@ -904,7 +916,7 @@ class Retype_after_delete(Coach):
                                + "/" + str(len(last_deleted_text)))
 
                     # If enough IDENTICAL characters have been retyped, show tip
-                    if match_count >= self.min_chars_threshold:
+                    if match_count >= min_chars_threshold:
                         coach_debug("Retype: PATTERN DETECTED!")
                         result = manager.show_tip(self.option, self.message)
                         if result:

@@ -115,6 +115,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['coach_mouse_short_move_drift', 3, "Écart maximum de colonnes pour déplacement vertical (défaut: 3)"],
     ['coach_mouse_line_bounds',      0, "Alerter quand la souris est utilisée pour aller au début/fin de ligne au lieu de Home/End."],
     ['coach_retype_after_delete',    0, "Suggérer Ctrl+Z/Ctrl+Y lorsqu'un texte long supprimé est retapé à l'identique."],
+    ['coach_retype_after_delete_chars', 10, "Nombre minimum de caractères identiques retapés (défaut: 10)"],
     ['coach_many_horizontal_arrows', 0, "Rappeler Ctrl+←/→ ou Home/End après de nombreuses flèches gauche/droite consécutives."],
     ['coach_many_horizontal_arrows_count', 15, "Nombre de flèches consécutives avant conseil (défaut: 15)"],
     ['coach_arrow_then_backspace',   0, "Signaler la séquence → puis Backspace pour proposer la touche Suppr."],
