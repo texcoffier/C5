@@ -107,15 +107,6 @@ COACH_MESSAGES = {
         + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>←</kbd> / "
         + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>→</kbd> = mot par mot<br>"
         + "<em>Travaillez plus intelligemment ! 🧠</em>"
-    ),
-    'letter_select_line': (
-        "📏 Sélectionner une longue ligne caractère par caractère ? Sérieusement ?<br><br>"
-        + "Pour sélectionner toute la ligne rapidement :<br>"
-        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Triple-clic</kbd> sur la ligne 🖱️<br>"
-        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Home</kbd> puis "
-        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Shift</kbd> + "
-        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>End</kbd> = toute la ligne<br>"
-        + "<em>La vie est trop courte pour ça ! ⏱️</em>"
     )
 }
 
@@ -1099,64 +1090,6 @@ class Letter_select_word(Coach):
         return None
 
 
-class Letter_select_line(Coach):
-    """
-    Détecte la sélection d'une longue ligne caractère par caractère et suggère des méthodes plus efficaces.
-
-    Detected pattern:
-        - Many consecutive Shift + ← or Shift + → (selecting a long line character by character)
-        - The selection reaches a significant length (40+ characters by default)
-
-    Suggestion:
-        Use triple-click or Home+Shift+End to select the entire line
-
-    Threshold (configurable via options):
-        - threshold: Minimum characters selected to consider a long line (option: coach_letter_select_line_min_chars, default: 40)
-    """
-    option = 'coach_letter_select_line'
-    message = COACH_MESSAGES['letter_select_line']
-
-    def check(self, manager, event, _text, _cursor_position):
-        if not manager.should_check(self.option, event, 'keydown'):
-            return None
-
-        # Extract key and modifiers
-        key, ctrl, shift = manager.get_key_info(event)
-        if not key:
-            return None
-
-        # Get threshold from options (with default)
-        threshold = 40
-        if manager.options and 'coach_letter_select_line_min_chars' in manager.options:
-            threshold = int(manager.options['coach_letter_select_line_min_chars'])
-
-        state = manager.state
-
-        # Process horizontal arrows with Shift (selection)
-        if key in ('ArrowLeft', 'ArrowRight'):
-            if shift and not ctrl:
-                # Shift+arrow WITHOUT Ctrl = selecting character by character
-                state.line_select_streak = getattr(state, 'line_select_streak', 0) + 1
-
-                coach_debug("Letter_select_line: streak=" + str(state.line_select_streak))
-
-                if state.line_select_streak >= threshold:
-                    coach_debug("Letter_select_line: THRESHOLD REACHED!")
-                    result = manager.show_tip(self.option, self.message)
-                    if result:
-                        state.line_select_streak = 0
-                        return result
-            else:
-                # Ctrl+Shift+arrow is efficient (word by word selection), or no Shift
-                # Reset counter
-                state.line_select_streak = 0
-        else:
-            # Different key pressed, reset counter
-            state.line_select_streak = 0
-
-        return None
-
-
 def create_coach(options):
     return Coach(
         [
@@ -1167,8 +1100,7 @@ def create_coach(options):
         Arrow_then_backspace(),
         Retype_after_delete(),
         Scroll_full_document(),
-        Letter_select_word(),
-        Letter_select_line()
+        Letter_select_word()
         ],
         options
     )
