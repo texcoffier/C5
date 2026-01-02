@@ -124,7 +124,6 @@ DEFAULT_COURSE_OPTIONS = [
     ['coach_scroll_full_document',   0, "Rappeler Ctrl+Home/End quand l'étudiant atteint le début/la fin via un long défilement."],
     ['coach_letter_select_word',     0, "Inviter au double-clic ou Ctrl+Shift+flèches lorsqu'un mot est sélectionné lettre par lettre."],
     ['coach_letter_select_line',     0, "Inviter au triple-clic ou Home+Shift+End pour sélectionner une longue ligne."],
-    ['coach_completion_ignored',     0, "Prévenir lorsqu'une complétion automatique substantielle a été ignorée."],
 
     "Bloc titles",
 
