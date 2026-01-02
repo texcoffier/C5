@@ -395,8 +395,8 @@ class Mouse_short_move(Coach):
     Detects small mouse movements (a few characters or lines).
 
     Detected pattern:
-        - Mouse click to move 1-5 characters horizontally
-        - Mouse click to move 1-3 lines vertically
+        - Mouse click to move 1-5 characters horizontally (same line)
+        - Mouse click to move 1 line vertically while staying in same column
 
     Suggestion:
         Use arrow keys ← → ↑ ↓ for small movements
@@ -404,13 +404,15 @@ class Mouse_short_move(Coach):
     Adjustable parameters:
         - mouse_idle_base: Minimum delay between two clicks (ms) * level_factor
         - small_char_threshold_base: Max distance in characters * level_factor
-        - small_line_threshold_base: Max distance in lines * level_factor
+        - small_line_threshold_base: Max distance in lines (always 1)
+        - max_column_drift_base: Max column difference for vertical movement * level_factor
     """
     option = 'coach_mouse_short_move'
     message = COACH_MESSAGES['mouse_short_move']
     mouse_idle_base = 20  # ms
     small_char_threshold_base = 5  # characters
-    small_line_threshold_base = 3  # lines
+    small_line_threshold_base = 1  # lines (always 1 for vertical movement)
+    max_column_drift_base = 3  # max column difference for vertical movement
 
     def check(self, manager, event, text, cursor_position):
         """
@@ -435,7 +437,7 @@ class Mouse_short_move(Coach):
         factor = manager.get_level_factor()
         mouse_idle = self.mouse_idle_base * factor
         small_char = max(1, int(self.small_char_threshold_base * factor))
-        small_line = max(1, int(self.small_line_threshold_base * factor))
+        max_column_drift = max(1, int(self.max_column_drift_base * factor))
 
         # Calculate time since last mouseup
         now = millisecs()
@@ -444,28 +446,29 @@ class Mouse_short_move(Coach):
 
         # Calculate movements
         previous_position = manager.state.previous_position or 0
-        delta_chars = abs(cursor_position - previous_position)
 
         prev_line, prev_col = get_line_column(text, previous_position)
         new_line, new_col = get_line_column(text, cursor_position)
         dy = abs(new_line - prev_line)
+        dx = abs(new_col - prev_col)
 
         # TODO: extract selection_length from event
         selection_length = 0
 
         coach_debug("short_move sel=" + str(selection_length)
                     + " idle=" + str(idle)
-                    + " delta=" + str(delta_chars)
                     + " dy=" + str(dy)
-                    + " thresholds char=" + str(small_char)
-                    + " line=" + str(small_line))
+                    + " dx=" + str(dx)
+                    + " prev_col=" + str(prev_col)
+                    + " new_col=" + str(new_col)
+                    + " max_drift=" + str(max_column_drift))
 
-        # Short horizontal movement
+        # Short horizontal movement (same line, small horizontal displacement)
         if (selection_length == 0
                 and idle > mouse_idle
-                and delta_chars > 0
-                and delta_chars <= small_char
-                and dy == 0):
+                and dy == 0
+                and dx > 0
+                and dx <= small_char):
             coach_debug("short_move tip horizontal")
             return manager.show_tip(
                 self.option,
@@ -473,12 +476,11 @@ class Mouse_short_move(Coach):
                 {'restore_cursor_position': previous_position}
             )
 
-        # Short vertical movement
+        # Short vertical movement (1 line change, staying in same column)
         if (selection_length == 0
                 and idle > mouse_idle
-                and dy > 0
-                and dy <= small_line
-                and delta_chars > 0):
+                and dy == 1
+                and dx <= max_column_drift):
             coach_debug("short_move tip vertical")
             return manager.show_tip(
                 self.option,
