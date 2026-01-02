@@ -127,6 +127,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['coach_letter_select_word',     0, "Inviter au double-clic ou Ctrl+Shift+flèches lorsqu'un mot est sélectionné lettre par lettre."],
     ['coach_letter_select_word_min_chars', 8, "Nombre minimum de caractères sélectionnés consécutivement pour détecter (défaut: 8)"],
     ['coach_letter_select_line',     0, "Inviter au triple-clic ou Home+Shift+End pour sélectionner une longue ligne."],
+    ['coach_letter_select_line_min_chars', 40, "Nombre minimum de caractères sélectionnés pour considérer une longue ligne (défaut: 40)"],
 
     "Bloc titles",
 
