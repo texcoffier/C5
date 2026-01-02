@@ -325,6 +325,24 @@ class Coach:
         if event:
             return event.type == expected_type
 
+    def should_check(self, option, event, expected_event_type):
+        """
+        Common validation for coaches: checks option enabled and event type.
+
+        Args:
+            option: Coach option name (e.g., 'coach_mouse_short_move')
+            event: DOM event
+            expected_event_type: Expected event type (e.g., 'mouseup', 'keydown')
+
+        Returns:
+            True if coach should proceed with check, False otherwise
+        """
+        if not self.option_enabled(option):
+            return False
+        if not self.check_event_type(event, expected_event_type):
+            return False
+        return True
+
     def get_key_info(self, event):
         """
         Extracts key and modifiers from keyboard event.
@@ -429,10 +447,7 @@ class Mouse_short_move(Coach):
         Returns:
             Dict of tip if detection, None otherwise
         """
-        # Check that option is enabled and it's a mouseup
-        if not manager.option_enabled(self.option):
-            return None
-        if not manager.check_event_type(event, 'mouseup'):
+        if not manager.should_check(self.option, event, 'mouseup'):
             return None
 
         # Calculate thresholds adjusted by level
@@ -513,9 +528,7 @@ class Mouse_line_bounds(Coach):
         """
         Checks if a click on line beginning/end was detected.
         """
-        if not manager.option_enabled(self.option):
-            return None
-        if not manager.check_event_type(event, 'mouseup'):
+        if not manager.should_check(self.option, event, 'mouseup'):
             return None
 
         # TODO: extract selection_length from event
@@ -566,9 +579,7 @@ class Many_horizontal_arrows(Coach):
         """
         Checks if too many consecutive horizontal arrows were pressed.
         """
-        if not manager.option_enabled(self.option):
-            return None
-        if not manager.check_event_type(event, 'keydown'):
+        if not manager.should_check(self.option, event, 'keydown'):
             return None
 
         # Extract key and modifiers
@@ -633,9 +644,7 @@ class Many_vertical_arrows(Coach):
         """
         Checks if too many consecutive vertical arrows were pressed.
         """
-        if not manager.option_enabled(self.option):
-            return None
-        if not manager.check_event_type(event, 'keydown'):
+        if not manager.should_check(self.option, event, 'keydown'):
             return None
 
         # Extract key and modifiers
@@ -713,9 +722,7 @@ class Arrow_then_backspace(Coach):
         Doesn't try to predict cursor positions since keydown receives position
         BEFORE movement, not after.
         """
-        if not manager.option_enabled(self.option):
-            return None
-        if not manager.check_event_type(event, 'keydown'):
+        if not manager.should_check(self.option, event, 'keydown'):
             return None
 
         # Extract key and modifiers
