@@ -227,9 +227,12 @@ class Coach:
         """
         self.coaches = coaches
         self.state = CoachState()
-        self.options = {}
-        self.popup_cooldown = 0  # No cooldown (for easier testing)
         self.options = options
+        # Get cooldown from options (default: 5000ms = 5 seconds)
+        if options and 'coach_cooldown' in options:
+            self.popup_cooldown = int(options['coach_cooldown'])
+        else:
+            self.popup_cooldown = 5000
 
     def option_enabled(self, option):
         """
@@ -242,11 +245,11 @@ class Coach:
             True if option is enabled, False otherwise
 
         Note:
-            - If coach_tip_level >= 99, all tips are disabled
+            - If coach_tip_level is 0, all tips are disabled
             - Otherwise, checks the boolean value of the specific option
         """
         level = self.get_level_factor()
-        if level >= 99:
+        if level == 0:
             return False
         if not self.options:
             return False
@@ -256,24 +259,25 @@ class Coach:
 
     def get_level_factor(self):
         """
-        Gets the coaching level factor (1-4, or 99 for disabled).
+        Gets the coaching level factor (0 or 1).
 
         Returns:
-            Integer 1-4: sensitivity level (1=often, 4=rarely)
-            99: coaching completely disabled
+            0: coaching disabled
+            1: coaching enabled
 
         Note:
-            This factor multiplies the coaches' thresholds:
-            - Level 1: low thresholds → frequent tips
-            - Level 4: high thresholds → rare tips
-            - Level 99: no tips at all
+            This is now a simple binary switch.
+            Individual thresholds are no longer multiplied by this factor.
         """
         if not self.options:
             return 1
         if 'coach_tip_level' in self.options:
             level = int(self.options['coach_tip_level'])
-            if level:
-                return level
+            # Only accept 0 or 1
+            if level == 0:
+                return 0
+            else:
+                return 1
         return 1
 
     def show_tip(self, option, message, actions=None):
