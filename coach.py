@@ -144,7 +144,7 @@ def prefix_length(text1, text2):
         if a != b:
             return i
         i += 1
-    return 0
+    return i
 
 # ════════════════════════════════════════════════════════════════════════════
 # SHARED COACH STATE
@@ -771,11 +771,11 @@ class Retype_after_delete(Coach):
     Strategy:
         - Detects deletions and keeps the exact deleted text
         - Compares retyped text character by character with deleted text
-        - Alerts when 10+ identical characters have been retyped
+        - Alerts when 8+ identical characters have been retyped
     """
     option = 'coach_retype_after_delete'
     message = COACH_MESSAGES['retype_after_delete']
-    min_chars_threshold = 10  # Minimum retyped characters to trigger tip
+    min_chars_threshold = 8  # Minimum retyped characters to trigger tip
     max_delay_ms = 10000  # 10 seconds maximum
 
     def check(self, manager, event, text, cursor_position):
@@ -847,34 +847,49 @@ class Retype_after_delete(Coach):
 
                 # Extract ALL text added since deletion
                 total_added_text = ''
+                added_in_this_event = 0
                 if len(text) > len(text_after_deletion):
                     # Find where it was added
                     added_length = len(text) - len(text_after_deletion)
                     added_position = prefix_length(text_after_deletion, text)
                     total_added_text = text[added_position:added_position + added_length]
 
+                # Calculate how much was added in THIS single event
+                added_in_this_event = len(text) - len(previous_text)
+
                 # See how many characters match from the beginning
                 match_count = prefix_length(total_added_text, last_deleted_text)
 
-                # Update accumulated match counter
-                state.retype_match_count = match_count
+                # DETECT UNDO/REDO: If many characters appear at once (paste/undo)
+                # Consider it undo/redo if 5+ chars appear instantly
+                if added_in_this_event >= 5:
+                    # This is likely Ctrl+Z (undo) or Ctrl+V (paste)
+                    # Clear state and don't show tip (user is doing the right thing)
+                    coach_debug("Retype: Detected undo/paste (instant " + str(added_in_this_event) + " chars), clearing state")
+                    state.last_deleted_time = 0
+                    state.retype_match_count = 0
+                    state.last_deleted_text_exact = ''
+                else:
+                    # Character-by-character typing detected
+                    # Update accumulated match counter
+                    state.retype_match_count = match_count
 
-                # Debug
-                coach_debug("Retype: ADDED " + str(len(total_added_text))
-                           + " chars, MATCH=" + str(match_count)
-                           + "/" + str(len(last_deleted_text)))
+                    # Debug
+                    coach_debug("Retype: ADDED " + str(len(total_added_text))
+                               + " chars, MATCH=" + str(match_count)
+                               + "/" + str(len(last_deleted_text)))
 
-                # If enough IDENTICAL characters have been retyped, show tip
-                if match_count >= self.min_chars_threshold:
-                    coach_debug("Retype: PATTERN DETECTED!")
-                    result = manager.show_tip(self.option, self.message)
-                    if result:
-                        # Clear state
-                        state.last_deleted_time = 0
-                        state.retype_match_count = 0
-                        state.last_deleted_text_exact = ''
-                        state.previous_text_for_retype = text
-                        return result
+                    # If enough IDENTICAL characters have been retyped, show tip
+                    if match_count >= self.min_chars_threshold:
+                        coach_debug("Retype: PATTERN DETECTED!")
+                        result = manager.show_tip(self.option, self.message)
+                        if result:
+                            # Clear state
+                            state.last_deleted_time = 0
+                            state.retype_match_count = 0
+                            state.last_deleted_text_exact = ''
+                            state.previous_text_for_retype = text
+                            return result
 
         # Save current text for next time
         state.previous_text_for_retype = text
