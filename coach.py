@@ -3,6 +3,8 @@
 """
 EFFICIENCY COACH FOR C5
 
+Author: Tomas Delon Gago
+
 This module implements a coaching system to help students
 use keyboard shortcuts and efficient editing techniques.
 
