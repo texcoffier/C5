@@ -425,18 +425,14 @@ class Mouse_short_move(Coach):
     Suggestion:
         Use arrow keys ← → ↑ ↓ for small movements
 
-    Adjustable parameters:
-        - mouse_idle_base: Minimum delay between two clicks (ms) * level_factor
-        - small_char_threshold_base: Max distance in characters * level_factor
-        - small_line_threshold_base: Max distance in lines (always 1)
-        - max_column_drift_base: Max column difference for vertical movement * level_factor
+    Thresholds (configurable via options):
+        - small_char_threshold: Max horizontal distance (option: coach_mouse_short_move_chars, default: 5)
+        - max_column_drift: Max column drift for vertical (option: coach_mouse_short_move_drift, default: 3)
+        - mouse_idle: 20ms = Minimum delay between clicks (hardcoded)
     """
     option = 'coach_mouse_short_move'
     message = COACH_MESSAGES['mouse_short_move']
-    mouse_idle_base = 20  # ms
-    small_char_threshold_base = 5  # characters
-    small_line_threshold_base = 1  # lines (always 1 for vertical movement)
-    max_column_drift_base = 3  # max column difference for vertical movement
+    mouse_idle = 20  # milliseconds (hardcoded)
 
     def check(self, manager, event, text, cursor_position):
         """
@@ -454,11 +450,14 @@ class Mouse_short_move(Coach):
         if not manager.should_check(self.option, event, 'mouseup'):
             return None
 
-        # Calculate thresholds adjusted by level
-        factor = manager.get_level_factor()
-        mouse_idle = self.mouse_idle_base * factor
-        small_char = max(1, int(self.small_char_threshold_base * factor))
-        max_column_drift = max(1, int(self.max_column_drift_base * factor))
+        # Get thresholds from options (with defaults)
+        small_char_threshold = 5
+        max_column_drift = 3
+        if manager.options:
+            if 'coach_mouse_short_move_chars' in manager.options:
+                small_char_threshold = int(manager.options['coach_mouse_short_move_chars'])
+            if 'coach_mouse_short_move_drift' in manager.options:
+                max_column_drift = int(manager.options['coach_mouse_short_move_drift'])
 
         # Calculate time since last mouseup
         now = millisecs()
@@ -486,10 +485,10 @@ class Mouse_short_move(Coach):
 
         # Short horizontal movement (same line, small horizontal displacement)
         if (selection_length == 0
-                and idle > mouse_idle
+                and idle > self.mouse_idle
                 and dy == 0
                 and dx > 0
-                and dx <= small_char):
+                and dx <= small_char_threshold):
             coach_debug("short_move tip horizontal")
             return manager.show_tip(
                 self.option,
@@ -499,7 +498,7 @@ class Mouse_short_move(Coach):
 
         # Short vertical movement (1 line change, staying in same column)
         if (selection_length == 0
-                and idle > mouse_idle
+                and idle > self.mouse_idle
                 and dy == 1
                 and dx <= max_column_drift):
             coach_debug("short_move tip vertical")
