@@ -465,11 +465,11 @@ class Mouse_short_move(Coach):
     Thresholds (configurable via options):
         - small_char_threshold: Max horizontal distance (option: coach_mouse_short_move_chars, default: 5)
         - max_column_drift: Max column drift for vertical (option: coach_mouse_short_move_drift, default: 3)
-        - mouse_idle: 20ms = Minimum delay between clicks (hardcoded)
+        - min_click_delay: 300ms = Minimum delay to avoid double/triple clicks (hardcoded)
     """
     option = 'coach_mouse_short_move'
     message = COACH_MESSAGES['mouse_short_move']
-    mouse_idle = 20  # milliseconds (hardcoded)
+    min_click_delay = 300  # milliseconds - to filter double/triple clicks
 
     def check(self, manager, event, text, cursor_position):
         """
@@ -501,6 +501,10 @@ class Mouse_short_move(Coach):
         idle = now - manager.state.last_mouseup
         manager.state.last_mouseup = now
 
+        # Filter double/triple clicks (too fast)
+        if idle < self.min_click_delay:
+            return None
+
         # Calculate movements
         previous_position = manager.state.previous_position or 0
 
@@ -509,24 +513,18 @@ class Mouse_short_move(Coach):
         dy = abs(new_line - prev_line)
         dx = abs(new_col - prev_col)
 
+        # Filter clicks with no displacement (same position)
+        if dy == 0 and dx == 0:
+            return None
+
         # TODO: extract selection_length from event
         selection_length = 0
 
-        # coach_debug("short_move sel=" + str(selection_length)
-        #             + " idle=" + str(idle)
-        #             + " dy=" + str(dy)
-        #             + " dx=" + str(dx)
-        #             + " prev_col=" + str(prev_col)
-        #             + " new_col=" + str(new_col)
-        #             + " max_drift=" + str(max_column_drift))
-
         # Short horizontal movement (same line, small horizontal displacement)
         if (selection_length == 0
-                and idle > self.mouse_idle
                 and dy == 0
                 and dx > 0
                 and dx <= small_char_threshold):
-            # coach_debug("short_move tip horizontal")
             return manager.show_tip(
                 self.option,
                 self.message,
@@ -535,10 +533,8 @@ class Mouse_short_move(Coach):
 
         # Short vertical movement (1 line change, staying in same column)
         if (selection_length == 0
-                and idle > self.mouse_idle
                 and dy == 1
                 and dx <= max_column_drift):
-            # coach_debug("short_move tip vertical")
             return manager.show_tip(
                 self.option,
                 self.message,
