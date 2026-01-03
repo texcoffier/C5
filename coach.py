@@ -23,6 +23,40 @@ Usage:
         show_popup(result['message'])
         if 'restore_cursor_position' in result['actions']:
             restore_position(result['actions']['restore_cursor_position'])
+
+Available coach options (configure in options.py):
+    - coach_tip_level: Enable/disable coaching system (0=disabled, 1=enabled)
+    - coach_cooldown: Minimum delay between tips in milliseconds (default: 5000ms)
+
+    - coach_mouse_short_move: Detect mouse for short movements instead of arrow keys
+        • coach_mouse_short_move_chars: Max horizontal distance (default: 5)
+        • coach_mouse_short_move_drift: Max column drift for vertical (default: 3)
+
+    - coach_mouse_line_bounds: Detect mouse to go to line beginning/end instead of Home/End
+
+    - coach_many_horizontal_arrows: Detect many horizontal arrows instead of Ctrl+arrows or Home/End
+        • coach_many_horizontal_arrows_count: Threshold (default: 15)
+
+    - coach_many_vertical_arrows: Detect many vertical arrows instead of PgUp/PgDn
+        • coach_many_vertical_arrows_count: Threshold (default: 10)
+
+    - coach_arrow_then_backspace: Detect → then Backspace instead of Delete key
+        • coach_arrow_then_backspace_count: Repetitions before tip (default: 3)
+
+    - coach_retype_after_delete: Detect retyping deleted text instead of Ctrl+Z
+        • coach_retype_after_delete_chars: Min identical chars (default: 10)
+
+    - coach_scroll_full_document: Detect scrolling to document boundaries instead of Ctrl+Home/End
+        • coach_scroll_full_document_edge_lines: Lines near edge (default: 3)
+        • coach_scroll_full_document_min_lines: Min file lines (default: 30)
+
+    - coach_letter_select_word: Detect selecting word letter-by-letter instead of double-click or Ctrl+Shift+arrows
+        • coach_letter_select_word_min_chars: Min chars selected (default: 8)
+
+    - coach_delete_word_char_by_char: Detect deleting word char-by-char instead of Ctrl+Backspace/Delete
+        • coach_delete_word_char_by_char_count: Threshold (default: 5)
+
+    - coach_copy_then_delete: Detect Ctrl+C then Delete instead of Ctrl+X
 """
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -337,7 +371,6 @@ class Coach:
         """
         # Check that option is enabled
         if not self.option_enabled(option):
-            # coach_debug("tip blocked (option disabled) " + str(option))
             return None
 
         # Check cooldown
@@ -348,15 +381,10 @@ class Coach:
             last = 0
 
         if now - last < self.popup_cooldown:
-            # coach_debug("tip blocked (cooldown) " + str(option)
-            #            + " delta=" + str(now - last))
             return None
 
         # Record timestamp and return tip
         self.state.last_popup[option] = now
-
-        # coach_debug("tip queued " + str(option) + " actions=" + str(actions or 'None'))
-
         return {'option': option, 'message': message, 'actions': actions or {}}
 
     def check_event_type(self, event, expected_type):
@@ -475,7 +503,6 @@ class Mouse_short_move(Coach):
         if not manager.should_check(self.option, event, 'mouseup'):
             return None
 
-        # Get thresholds from options
         small_char_threshold = 5
         max_column_drift = 3
         if manager.options:
@@ -484,30 +511,25 @@ class Mouse_short_move(Coach):
             if 'coach_mouse_short_move_drift' in manager.options:
                 max_column_drift = manager.options['coach_mouse_short_move_drift']
 
-        # Filter double/triple clicks (too fast)
         now = millisecs()
         idle = now - manager.state.last_mouseup
         manager.state.last_mouseup = now
         if idle < self.min_click_delay:
             return None
 
-        # Calculate movements
         previous_position = manager.state.previous_position or 0
         prev_line, prev_col = get_line_column(text, previous_position)
         new_line, new_col = get_line_column(text, cursor_position)
         dy = abs(new_line - prev_line)
         dx = abs(new_col - prev_col)
 
-        # Filter clicks with no displacement
         if dy == 0 and dx == 0:
             return None
 
-        # Detect short horizontal movement (same line, 1-5 chars)
         if dy == 0 and 0 < dx <= small_char_threshold:
             return manager.show_tip(self.option, self.message,
                                    {'restore_cursor_position': previous_position})
 
-        # Detect short vertical movement (1 line, staying in same column)
         if dy == 1 and dx <= max_column_drift:
             return manager.show_tip(self.option, self.message,
                                    {'restore_cursor_position': previous_position})
@@ -534,16 +556,12 @@ class Mouse_line_bounds(Coach):
     """
     option = 'coach_mouse_line_bounds'
     message = COACH_MESSAGES['mouse_line_bounds']
-    min_click_delay = 300  # milliseconds - to filter double/triple clicks
+    min_click_delay = 300
 
     def check(self, manager, event, text, cursor_position):
-        """
-        Checks if a click on line beginning/end was detected.
-        """
         if not manager.should_check(self.option, event, 'mouseup'):
             return None
 
-        # Calculate time since last check to filter double/triple clicks
         # Use our own timestamp instead of shared manager.state.last_mouseup
         # because Mouse_short_move updates it before we check
         now = millisecs()
@@ -551,43 +569,23 @@ class Mouse_line_bounds(Coach):
         idle = now - last_check
         manager.state.line_bounds_last_check = now
 
-        coach_debug("Mouse_line_bounds: idle=" + str(idle) + "ms, min_delay=" + str(self.min_click_delay))
-
-        # Filter double/triple clicks (too fast)
         if idle < self.min_click_delay:
-            coach_debug("Mouse_line_bounds: FILTERED (too fast)")
             return None
 
-        # TODO: extract selection_length from event
-        selection_length = 0
-        if selection_length != 0:
-            coach_debug("Mouse_line_bounds: FILTERED (has selection)")
-            return None
-
-        # Calculate line/column positions
         previous_position = manager.state.previous_position or 0
         prev_line, prev_col = get_line_column(text, previous_position)
         new_line, new_col = get_line_column(text, cursor_position)
 
-        coach_debug("Mouse_line_bounds: prev=(" + str(prev_line) + "," + str(prev_col) + ") new=(" + str(new_line) + "," + str(new_col) + ")")
-
-        # Must be on same line
         if prev_line != new_line:
-            coach_debug("Mouse_line_bounds: FILTERED (different lines)")
             return None
 
-        # Movement must be significant (>2 characters)
         if abs(new_col - prev_col) < 2:
-            coach_debug("Mouse_line_bounds: FILTERED (movement too small)")
             return None
 
-        # Check if at beginning or end of line
         lines = text.split('\n')
         if new_line >= 1 and new_line <= len(lines):
             line_length = len(lines[new_line - 1])
-            coach_debug("Mouse_line_bounds: line_length=" + str(line_length) + ", new_col=" + str(new_col))
             if new_col == 0 or new_col == line_length:
-                coach_debug("Mouse_line_bounds: PATTERN DETECTED! Showing tip")
                 return manager.show_tip(self.option, self.message)
 
         return None
@@ -612,51 +610,39 @@ class Many_horizontal_arrows(Coach):
     message = COACH_MESSAGES['many_horizontal_arrows']
 
     def check(self, manager, event, text, cursor_position):
-        """
-        Checks if too many consecutive horizontal arrows were pressed.
-        """
         if not manager.should_check(self.option, event, 'keydown'):
             return None
 
-        # Extract key and modifiers
         key, ctrl, shift = manager.get_key_info(event)
         if not key:
             return None
 
-        # Get threshold from options (with default)
         threshold = 15
         if manager.options and 'coach_many_horizontal_arrows_count' in manager.options:
             threshold = int(manager.options['coach_many_horizontal_arrows_count'])
 
         state = manager.state
 
-        # Process horizontal arrows
         if key in ('ArrowLeft', 'ArrowRight'):
             if ctrl or shift:
-                # Ctrl+arrow is efficient (word jump), Shift+arrow is efficient (selection)
-                # Reset counter for both
                 state.horizontal_streak = 0
                 state.horizontal_direction = None
             else:
-                # Simple arrow without modifiers
                 direction = key
                 last_dir = state.horizontal_direction
 
-                # Reset if direction changed
                 if last_dir and direction != last_dir:
                     state.horizontal_streak = 0
 
                 state.horizontal_direction = direction
                 state.horizontal_streak = (state.horizontal_streak or 0) + 1
 
-                # Check if threshold reached
                 if state.horizontal_streak >= threshold:
                     result = manager.show_tip(self.option, self.message)
                     if result:
                         state.horizontal_streak = 0
                         return result
         elif key not in ('ArrowLeft', 'ArrowRight'):
-            # Other key = reset counter
             state.horizontal_streak = 0
             state.horizontal_direction = None
 
@@ -688,45 +674,36 @@ class Many_vertical_arrows(Coach):
         if not manager.should_check(self.option, event, 'keydown'):
             return None
 
-        # Extract key and modifiers
         key, ctrl, shift = manager.get_key_info(event)
         if not key:
             return None
 
-        # Get threshold from options (with default)
         threshold = 10
         if manager.options and 'coach_many_vertical_arrows_count' in manager.options:
             threshold = int(manager.options['coach_many_vertical_arrows_count'])
 
         state = manager.state
 
-        # Process vertical arrows
         if key in ('ArrowUp', 'ArrowDown'):
             if ctrl or shift:
-                # Ctrl+arrow is efficient, Shift+arrow is efficient (selection)
-                # Reset counter for both
                 state.vertical_streak = 0
                 state.vertical_direction = None
             else:
-                # Simple arrow without modifiers
                 direction_v = key
                 last_dir_v = state.vertical_direction
 
-                # Reset if direction changed
                 if last_dir_v and direction_v != last_dir_v:
                     state.vertical_streak = 0
 
                 state.vertical_direction = direction_v
                 state.vertical_streak = (state.vertical_streak or 0) + 1
 
-                # Check if threshold reached
                 if state.vertical_streak >= threshold:
                     result = manager.show_tip(self.option, self.message)
                     if result:
                         state.vertical_streak = 0
                         return result
         elif key not in ('ArrowUp', 'ArrowDown'):
-            # Other key = reset
             state.vertical_streak = 0
             state.vertical_direction = None
 
@@ -757,7 +734,6 @@ class Arrow_then_backspace(Coach):
         if not manager.should_check(self.option, event, 'keydown'):
             return None
 
-        # Get threshold from options
         min_count = 3
         if manager.options and 'coach_arrow_then_backspace_count' in manager.options:
             min_count = manager.options['coach_arrow_then_backspace_count']
@@ -769,19 +745,16 @@ class Arrow_then_backspace(Coach):
         state = manager.state
         now = millisecs()
 
-        # ArrowRight pressed without Ctrl
         if key == 'ArrowRight' and not ctrl:
             state.last_arrow_right_time = now
             state.last_was_arrow_right = True
 
-        # Backspace pressed without Ctrl
         elif key == 'Backspace' and not ctrl:
             last_was_arrow = getattr(state, 'last_was_arrow_right', False)
             last_arrow_time = getattr(state, 'last_arrow_right_time', 0)
             delta = now - last_arrow_time
 
             if last_was_arrow and delta < 2000:
-                # Detected one Arrow → Backspace sequence
                 streak = getattr(state, 'arrow_backspace_streak', 0) + 1
                 state.arrow_backspace_streak = streak
 
@@ -792,14 +765,11 @@ class Arrow_then_backspace(Coach):
                         state.last_was_arrow_right = False
                         return result
 
-                # Reset for next sequence
                 state.last_was_arrow_right = False
             else:
-                # Pattern broken, reset counter
                 state.arrow_backspace_streak = 0
                 state.last_was_arrow_right = False
 
-        # Any other key clears the state
         else:
             state.arrow_backspace_streak = 0
             state.last_was_arrow_right = False
@@ -829,7 +799,7 @@ class Retype_after_delete(Coach):
     """
     option = 'coach_retype_after_delete'
     message = COACH_MESSAGES['retype_after_delete']
-    max_delay_ms = 10000  # milliseconds - hardcoded
+    max_delay_ms = 10000
 
     def check(self, manager, event, text, cursor_position):
         """
@@ -848,112 +818,72 @@ class Retype_after_delete(Coach):
         if not manager.option_enabled(self.option):
             return None
 
-        # Get threshold from options (with default)
         min_chars_threshold = 10
         if manager.options and 'coach_retype_after_delete_chars' in manager.options:
             min_chars_threshold = int(manager.options['coach_retype_after_delete_chars'])
 
         state = manager.state
         now = millisecs()
-
-        # Get saved previous text
         previous_text = getattr(state, 'previous_text_for_retype', '')
 
-        # Case 1: DELETION - Text became SHORTER
         if len(text) < len(previous_text):
             deleted_length = len(previous_text) - len(text)
 
-            # Extract exact deleted text
             deleted_position = prefix_length(text, previous_text)
             deleted_text = previous_text[deleted_position:deleted_position + deleted_length]
 
-            # ACCUMULATE consecutive deletions
-            # If there was a recent deletion (< 2 seconds), accumulate
             last_deletion_time = getattr(state, 'last_deleted_time', 0)
             accumulated_deleted = getattr(state, 'last_deleted_text_exact', '')
 
             if (now - last_deletion_time) < 2000 and len(accumulated_deleted) > 0:
-                # Consecutive deletion - accumulate
-                # If deleting at end (Backspace), append to END
                 if deleted_position == len(text):
                     accumulated_deleted = accumulated_deleted + deleted_text
                 else:
-                    # If deleting at beginning (Delete), prepend to accumulated
                     accumulated_deleted = deleted_text + accumulated_deleted
             else:
-                # First time or too much time passed - start new accumulation
                 accumulated_deleted = deleted_text
 
-            # ALWAYS save text AFTER deletion (current state)
             state.text_after_deletion = text
 
-            # Save EXACT accumulated deleted text
             state.last_deleted_text_exact = accumulated_deleted
             state.last_deleted_position_exact = deleted_position
             state.last_deleted_time = now
             state.retype_match_count = 0
 
-            # Debug
-            # coach_debug("Retype: DELETED " + str(len(accumulated_deleted)) + " chars")
-
-        # Case 2: TYPING - Text became LONGER
         elif len(text) > len(previous_text):
-            # Check if there was a recent deletion
             last_deleted_time = getattr(state, 'last_deleted_time', 0)
             last_deleted_text = getattr(state, 'last_deleted_text_exact', '')
 
-            # Only check if deletion happened less than 10 seconds ago
             if (now - last_deleted_time) < self.max_delay_ms and len(last_deleted_text) >= 3:
-                # Get text that was there RIGHT AFTER deletion
                 text_after_deletion = getattr(state, 'text_after_deletion', '')
 
-                # Extract ALL text added since deletion
                 total_added_text = ''
                 added_in_this_event = 0
                 if len(text) > len(text_after_deletion):
-                    # Find where it was added
                     added_length = len(text) - len(text_after_deletion)
                     added_position = prefix_length(text_after_deletion, text)
                     total_added_text = text[added_position:added_position + added_length]
 
-                # Calculate how much was added in THIS single event
                 added_in_this_event = len(text) - len(previous_text)
 
-                # See how many characters match from the beginning
                 match_count = prefix_length(total_added_text, last_deleted_text)
 
-                # DETECT UNDO/REDO: If many characters appear at once (paste/undo)
-                # Consider it undo/redo if 5+ chars appear instantly
                 if added_in_this_event >= 5:
-                    # This is likely Ctrl+Z (undo) or Ctrl+V (paste)
-                    # Clear state and don't show tip (user is doing the right thing)
-                    # coach_debug("Retype: Detected undo/paste (instant " + str(added_in_this_event) + " chars), clearing state")
                     state.last_deleted_time = 0
                     state.retype_match_count = 0
                     state.last_deleted_text_exact = ''
                 else:
-                    # Character-by-character typing detected
-                    # Update accumulated match counter
                     state.retype_match_count = match_count
 
-                    # Debug
-                    # coach_debug("Retype: ADDED " + str(len(total_added_text))
-                    #            + " chars, MATCH=" + str(match_count)
-                    #            + "/" + str(len(last_deleted_text)))
-
-                    # If enough IDENTICAL characters have been retyped, show tip
                     if match_count >= min_chars_threshold:
-                        # coach_debug("Retype: PATTERN DETECTED!")
                         result = manager.show_tip(self.option, self.message)
                         if result:
-                            # Clear state
                             state.last_deleted_time = 0
                             state.retype_match_count = 0
                             state.last_deleted_text_exact = ''
                             state.previous_text_for_retype = text
                             return result
 
-        # Save current text for next time
         state.previous_text_for_retype = text
 
         return None
@@ -993,24 +923,19 @@ class Scroll_full_document(Coach):
             if 'coach_scroll_full_document_min_lines' in manager.options:
                 min_lines = int(manager.options['coach_scroll_full_document_min_lines'])
 
-        # Calculate current line and total lines
         current_line, _ = get_line_column(text, cursor_position)
         total_lines = len(text.split('\n'))
 
-        # Only activate for files with enough lines
         if total_lines < min_lines:
             return None
 
         state = manager.state
 
-        # Determine if we're at top or bottom
         at_top = current_line <= edge_lines
         at_bottom = current_line > total_lines - edge_lines
 
-        # Get previous zone (from last check)
         previous_zone = getattr(state, 'scroll_previous_zone', None)
 
-        # Update current zone
         if at_top:
             current_zone = 'top'
         elif at_bottom:
@@ -1018,7 +943,6 @@ class Scroll_full_document(Coach):
         else:
             current_zone = 'middle'
 
-        # Detect transition from top to bottom or bottom to top
         if previous_zone and current_zone != previous_zone:
             if (previous_zone == 'top' and current_zone == 'bottom') or \
                (previous_zone == 'bottom' and current_zone == 'top'):
@@ -1028,7 +952,6 @@ class Scroll_full_document(Coach):
                     state.scroll_previous_zone = current_zone
                     return result
 
-        # Update state
         state.scroll_previous_zone = current_zone
 
         return None
@@ -1054,38 +977,28 @@ class Letter_select_word(Coach):
         if not manager.should_check(self.option, event, 'keydown'):
             return None
 
-        # Extract key and modifiers
         key, ctrl, shift = manager.get_key_info(event)
         if not key:
             return None
 
-        # Get threshold from options (with default)
         threshold = 8
         if manager.options and 'coach_letter_select_word_min_chars' in manager.options:
             threshold = int(manager.options['coach_letter_select_word_min_chars'])
 
         state = manager.state
 
-        # Process horizontal arrows with Shift (selection)
         if key in ('ArrowLeft', 'ArrowRight'):
             if shift and not ctrl:
-                # Shift+arrow WITHOUT Ctrl = selecting character by character
                 state.letter_select_streak = getattr(state, 'letter_select_streak', 0) + 1
 
-                # coach_debug("Letter_select: streak=" + str(state.letter_select_streak))
-
                 if state.letter_select_streak >= threshold:
-                    # coach_debug("Letter_select: THRESHOLD REACHED!")
                     result = manager.show_tip(self.option, self.message)
                     if result:
                         state.letter_select_streak = 0
                         return result
             else:
-                # Ctrl+Shift+arrow is efficient (word by word selection), or no Shift
-                # Reset counter
                 state.letter_select_streak = 0
         else:
-            # Different key pressed, reset counter
             state.letter_select_streak = 0
 
         return None
@@ -1113,38 +1026,28 @@ class Delete_word_char_by_char(Coach):
         if not manager.should_check(self.option, event, 'keydown'):
             return None
 
-        # Extract key and modifiers
         key, ctrl, _ = manager.get_key_info(event)
         if not key:
             return None
 
-        # Get threshold from options (with default)
         threshold = 5
         if manager.options and 'coach_delete_word_char_by_char_count' in manager.options:
             threshold = int(manager.options['coach_delete_word_char_by_char_count'])
 
         state = manager.state
 
-        # Process Backspace and Delete keys
         if key in ('Backspace', 'Delete'):
             if ctrl:
-                # Ctrl+Backspace/Delete is efficient (delete word)
-                # Reset counter
                 state.delete_char_streak = 0
             else:
-                # Regular Backspace/Delete without Ctrl
                 state.delete_char_streak = getattr(state, 'delete_char_streak', 0) + 1
 
-                # coach_debug("Delete_word: streak=" + str(state.delete_char_streak))
-
                 if state.delete_char_streak >= threshold:
-                    # coach_debug("Delete_word: THRESHOLD REACHED!")
                     result = manager.show_tip(self.option, self.message)
                     if result:
                         state.delete_char_streak = 0
                         return result
         else:
-            # Different key pressed, reset counter
             state.delete_char_streak = 0
 
         return None
@@ -1187,19 +1090,16 @@ class Copy_then_delete(Coach):
         state = manager.state
         now = millisecs()
 
-        # Detect Ctrl+C (copy)
         if key == 'c' and ctrl:
             state.copy_timestamp = now
             return None
 
-        # Detect Delete or Backspace (after recent Ctrl+C)
         if key in ('Delete', 'Backspace') and not ctrl:
             copy_time = getattr(state, 'copy_timestamp', 0)
             if copy_time > 0 and (now - copy_time) < self.max_delay:
                 state.copy_timestamp = 0
                 return manager.show_tip(self.option, self.message)
 
-        # Any other key: clear the copy timestamp
         if key not in ('c', 'Delete', 'Backspace'):
             state.copy_timestamp = 0
 
