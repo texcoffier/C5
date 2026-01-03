@@ -465,81 +465,52 @@ class Mouse_short_move(Coach):
     Thresholds (configurable via options):
         - small_char_threshold: Max horizontal distance (option: coach_mouse_short_move_chars, default: 5)
         - max_column_drift: Max column drift for vertical (option: coach_mouse_short_move_drift, default: 3)
-        - min_click_delay: 300ms = Minimum delay to avoid double/triple clicks (hardcoded)
+        - min_click_delay: 300ms = Minimum delay between clicks to filter double/triple clicks (hardcoded)
     """
     option = 'coach_mouse_short_move'
     message = COACH_MESSAGES['mouse_short_move']
-    min_click_delay = 300  # milliseconds - to filter double/triple clicks
+    min_click_delay = 300
 
     def check(self, manager, event, text, cursor_position):
-        """
-        Checks if a small mouse movement was detected.
-
-        Args:
-            manager: Coach instance (to access state and options)
-            event: DOM event (must be 'mouseup')
-            text: Complete editor text
-            cursor_position: Current cursor position
-
-        Returns:
-            Dict of tip if detection, None otherwise
-        """
         if not manager.should_check(self.option, event, 'mouseup'):
             return None
 
-        # Get thresholds from options (with defaults)
+        # Get thresholds from options
         small_char_threshold = 5
         max_column_drift = 3
         if manager.options:
             if 'coach_mouse_short_move_chars' in manager.options:
-                small_char_threshold = int(manager.options['coach_mouse_short_move_chars'])
+                small_char_threshold = manager.options['coach_mouse_short_move_chars']
             if 'coach_mouse_short_move_drift' in manager.options:
-                max_column_drift = int(manager.options['coach_mouse_short_move_drift'])
+                max_column_drift = manager.options['coach_mouse_short_move_drift']
 
-        # Calculate time since last mouseup
+        # Filter double/triple clicks (too fast)
         now = millisecs()
         idle = now - manager.state.last_mouseup
         manager.state.last_mouseup = now
-
-        # Filter double/triple clicks (too fast)
         if idle < self.min_click_delay:
             return None
 
         # Calculate movements
         previous_position = manager.state.previous_position or 0
-
         prev_line, prev_col = get_line_column(text, previous_position)
         new_line, new_col = get_line_column(text, cursor_position)
         dy = abs(new_line - prev_line)
         dx = abs(new_col - prev_col)
 
-        # Filter clicks with no displacement (same position)
+        # Filter clicks with no displacement
         if dy == 0 and dx == 0:
             return None
 
-        # TODO: extract selection_length from event
-        selection_length = 0
+        # Detect short horizontal movement (same line, 1-5 chars)
+        if dy == 0 and 0 < dx <= small_char_threshold:
+            return manager.show_tip(self.option, self.message,
+                                   {'restore_cursor_position': previous_position})
 
-        # Short horizontal movement (same line, small horizontal displacement)
-        if (selection_length == 0
-                and dy == 0
-                and dx > 0
-                and dx <= small_char_threshold):
-            return manager.show_tip(
-                self.option,
-                self.message,
-                {'restore_cursor_position': previous_position}
-            )
-
-        # Short vertical movement (1 line change, staying in same column)
-        if (selection_length == 0
-                and dy == 1
-                and dx <= max_column_drift):
-            return manager.show_tip(
-                self.option,
-                self.message,
-                {'restore_cursor_position': previous_position}
-            )
+        # Detect short vertical movement (1 line, staying in same column)
+        if dy == 1 and dx <= max_column_drift:
+            return manager.show_tip(self.option, self.message,
+                                   {'restore_cursor_position': previous_position})
 
         return None
 
