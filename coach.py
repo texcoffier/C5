@@ -237,8 +237,6 @@ class CoachState:
     horizontal_direction = None       # Direction of last horizontal arrow
     vertical_direction = None         # Direction of last vertical arrow
 
-    last_key = None                   # Last key pressed
-    last_key_timestamp = 0            # Timestamp of last key press
     last_mouseup = 0                  # Timestamp of last mouseup
 
     # Arrow+Backspace detection
@@ -463,11 +461,6 @@ class Coach:
         if previous_position is not None:
             self.state.previous_position = previous_position
 
-        # Debug disabled to reduce noise
-        # if event:
-        #     event_type = event.type or "unknown"
-        #     coach_debug("Coach.analyse() event=" + str(event_type))
-
         for coach in self.coaches:
             result = coach.check(self, event, text, cursor_position)
             if result:
@@ -642,7 +635,7 @@ class Many_horizontal_arrows(Coach):
                     if result:
                         state.horizontal_streak = 0
                         return result
-        elif key not in ('ArrowLeft', 'ArrowRight'):
+        else:
             state.horizontal_streak = 0
             state.horizontal_direction = None
 
@@ -703,7 +696,7 @@ class Many_vertical_arrows(Coach):
                     if result:
                         state.vertical_streak = 0
                         return result
-        elif key not in ('ArrowUp', 'ArrowDown'):
+        else:
             state.vertical_streak = 0
             state.vertical_direction = None
 
@@ -736,7 +729,7 @@ class Arrow_then_backspace(Coach):
 
         min_count = 3
         if manager.options and 'coach_arrow_then_backspace_count' in manager.options:
-            min_count = manager.options['coach_arrow_then_backspace_count']
+            min_count = int(manager.options['coach_arrow_then_backspace_count'])
 
         key, ctrl, _ = manager.get_key_info(event)
         if not key:
