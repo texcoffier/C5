@@ -116,6 +116,15 @@ COACH_MESSAGES = {
         + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
         + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Delete</kbd> = supprimer mot à droite ➡️<br>"
         + "<em>Un mot = une touche ! 💥</em>"
+    ),
+    'copy_then_delete': (
+        "✂️ Copier puis supprimer ? Il y a plus simple !<br><br>"
+        + "Au lieu de <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>C</kbd> puis "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Delete</kbd>, utilisez directement :<br>"
+        + "• <kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>Ctrl</kbd> + "
+        + "<kbd style='background:#2196F3;color:white;padding:2px 6px;border-radius:3px'>X</kbd> = couper (copie + supprime) ✂️<br>"
+        + "<em>Deux touches → une touche ! 🚀</em>"
     )
 }
 
@@ -328,7 +337,7 @@ class Coach:
         """
         # Check that option is enabled
         if not self.option_enabled(option):
-            coach_debug("tip blocked (option disabled) " + str(option))
+            # coach_debug("tip blocked (option disabled) " + str(option))
             return None
 
         # Check cooldown
@@ -339,14 +348,14 @@ class Coach:
             last = 0
 
         if now - last < self.popup_cooldown:
-            coach_debug("tip blocked (cooldown) " + str(option)
-                       + " delta=" + str(now - last))
+            # coach_debug("tip blocked (cooldown) " + str(option)
+            #            + " delta=" + str(now - last))
             return None
 
         # Record timestamp and return tip
         self.state.last_popup[option] = now
 
-        coach_debug("tip queued " + str(option) + " actions=" + str(actions or 'None'))
+        # coach_debug("tip queued " + str(option) + " actions=" + str(actions or 'None'))
 
         return {'option': option, 'message': message, 'actions': actions or {}}
 
@@ -503,13 +512,13 @@ class Mouse_short_move(Coach):
         # TODO: extract selection_length from event
         selection_length = 0
 
-        coach_debug("short_move sel=" + str(selection_length)
-                    + " idle=" + str(idle)
-                    + " dy=" + str(dy)
-                    + " dx=" + str(dx)
-                    + " prev_col=" + str(prev_col)
-                    + " new_col=" + str(new_col)
-                    + " max_drift=" + str(max_column_drift))
+        # coach_debug("short_move sel=" + str(selection_length)
+        #             + " idle=" + str(idle)
+        #             + " dy=" + str(dy)
+        #             + " dx=" + str(dx)
+        #             + " prev_col=" + str(prev_col)
+        #             + " new_col=" + str(new_col)
+        #             + " max_drift=" + str(max_column_drift))
 
         # Short horizontal movement (same line, small horizontal displacement)
         if (selection_length == 0
@@ -517,7 +526,7 @@ class Mouse_short_move(Coach):
                 and dy == 0
                 and dx > 0
                 and dx <= small_char_threshold):
-            coach_debug("short_move tip horizontal")
+            # coach_debug("short_move tip horizontal")
             return manager.show_tip(
                 self.option,
                 self.message,
@@ -529,7 +538,7 @@ class Mouse_short_move(Coach):
                 and idle > self.mouse_idle
                 and dy == 1
                 and dx <= max_column_drift):
-            coach_debug("short_move tip vertical")
+            # coach_debug("short_move tip vertical")
             return manager.show_tip(
                 self.option,
                 self.message,
@@ -784,32 +793,32 @@ class Arrow_then_backspace(Coach):
         if key == 'ArrowRight' and not ctrl:
             state.last_arrow_right_time = now
             state.last_was_arrow_right = True
-            coach_debug("Arrow_then_backspace: ArrowRight detected at " + str(now))
+            # coach_debug("Arrow_then_backspace: ArrowRight detected at " + str(now))
         elif key == 'Backspace' and not ctrl:
             # Check if last key was ArrowRight and was recent
             last_was_arrow = getattr(state, 'last_was_arrow_right', False)
             last_arrow_time = getattr(state, 'last_arrow_right_time', 0)
             delta = now - last_arrow_time
 
-            coach_debug("Arrow_then_backspace: Backspace detected, last_was_arrow=" + str(last_was_arrow) + " delta=" + str(delta))
+            # coach_debug("Arrow_then_backspace: Backspace detected, last_was_arrow=" + str(last_was_arrow) + " delta=" + str(delta))
 
             if last_was_arrow and delta < 2000:
                 # Detected Arrow → Backspace sequence
-                coach_debug("Arrow_then_backspace: PATTERN DETECTED! Showing tip")
+                # coach_debug("Arrow_then_backspace: PATTERN DETECTED! Showing tip")
                 result = manager.show_tip(self.option, self.message)
                 if result:
                     # Clear state
                     state.last_was_arrow_right = False
                     return result
-                else:
-                    coach_debug("Arrow_then_backspace: show_tip returned None (blocked)")
+                # else:
+                    # coach_debug("Arrow_then_backspace: show_tip returned None (blocked)")
 
             # If pattern wasn't detected, clear state
             state.last_was_arrow_right = False
         else:
             # Any other key clears the state
-            if getattr(state, 'last_was_arrow_right', False):
-                coach_debug("Arrow_then_backspace: sequence broken by key=" + str(key))
+            # if getattr(state, 'last_was_arrow_right', False):
+            #     coach_debug("Arrow_then_backspace: sequence broken by key=" + str(key))
             state.last_was_arrow_right = False
 
         return None
@@ -902,7 +911,7 @@ class Retype_after_delete(Coach):
             state.retype_match_count = 0
 
             # Debug
-            coach_debug("Retype: DELETED " + str(len(accumulated_deleted)) + " chars")
+            # coach_debug("Retype: DELETED " + str(len(accumulated_deleted)) + " chars")
 
         # Case 2: TYPING - Text became LONGER
         elif len(text) > len(previous_text):
@@ -935,7 +944,7 @@ class Retype_after_delete(Coach):
                 if added_in_this_event >= 5:
                     # This is likely Ctrl+Z (undo) or Ctrl+V (paste)
                     # Clear state and don't show tip (user is doing the right thing)
-                    coach_debug("Retype: Detected undo/paste (instant " + str(added_in_this_event) + " chars), clearing state")
+                    # coach_debug("Retype: Detected undo/paste (instant " + str(added_in_this_event) + " chars), clearing state")
                     state.last_deleted_time = 0
                     state.retype_match_count = 0
                     state.last_deleted_text_exact = ''
@@ -945,13 +954,13 @@ class Retype_after_delete(Coach):
                     state.retype_match_count = match_count
 
                     # Debug
-                    coach_debug("Retype: ADDED " + str(len(total_added_text))
-                               + " chars, MATCH=" + str(match_count)
-                               + "/" + str(len(last_deleted_text)))
+                    # coach_debug("Retype: ADDED " + str(len(total_added_text))
+                    #            + " chars, MATCH=" + str(match_count)
+                    #            + "/" + str(len(last_deleted_text)))
 
                     # If enough IDENTICAL characters have been retyped, show tip
                     if match_count >= min_chars_threshold:
-                        coach_debug("Retype: PATTERN DETECTED!")
+                        # coach_debug("Retype: PATTERN DETECTED!")
                         result = manager.show_tip(self.option, self.message)
                         if result:
                             # Clear state
@@ -1080,10 +1089,10 @@ class Letter_select_word(Coach):
                 # Shift+arrow WITHOUT Ctrl = selecting character by character
                 state.letter_select_streak = getattr(state, 'letter_select_streak', 0) + 1
 
-                coach_debug("Letter_select: streak=" + str(state.letter_select_streak))
+                # coach_debug("Letter_select: streak=" + str(state.letter_select_streak))
 
                 if state.letter_select_streak >= threshold:
-                    coach_debug("Letter_select: THRESHOLD REACHED!")
+                    # coach_debug("Letter_select: THRESHOLD REACHED!")
                     result = manager.show_tip(self.option, self.message)
                     if result:
                         state.letter_select_streak = 0
@@ -1143,10 +1152,10 @@ class Delete_word_char_by_char(Coach):
                 # Regular Backspace/Delete without Ctrl
                 state.delete_char_streak = getattr(state, 'delete_char_streak', 0) + 1
 
-                coach_debug("Delete_word: streak=" + str(state.delete_char_streak))
+                # coach_debug("Delete_word: streak=" + str(state.delete_char_streak))
 
                 if state.delete_char_streak >= threshold:
-                    coach_debug("Delete_word: THRESHOLD REACHED!")
+                    # coach_debug("Delete_word: THRESHOLD REACHED!")
                     result = manager.show_tip(self.option, self.message)
                     if result:
                         state.delete_char_streak = 0
@@ -1154,6 +1163,62 @@ class Delete_word_char_by_char(Coach):
         else:
             # Different key pressed, reset counter
             state.delete_char_streak = 0
+
+        return None
+
+
+class Copy_then_delete(Coach):
+    """
+    Detects when user copies text and then deletes it (instead of using Ctrl+X to cut).
+
+    Detected pattern:
+        - Ctrl+C followed by Delete/Backspace within 3 seconds
+
+    Suggestion:
+        Use Ctrl+X to cut (copy + delete in one operation)
+
+    Threshold:
+        - max_delay: 3000ms between copy and delete
+    """
+    option = 'coach_copy_then_delete'
+    message = COACH_MESSAGES['copy_then_delete']
+    max_delay = 3000  # milliseconds
+
+    def check(self, manager, event, _text, _cursor_position):
+        """
+        Checks if user copied then deleted (instead of cutting).
+
+        Strategy:
+        1. Detect Ctrl+C: mark timestamp
+        2. Detect Delete/Backspace after Ctrl+C: show tip
+
+        Assumes Ctrl+C is only used when there's a selection.
+        """
+        if not manager.should_check(self.option, event, 'keydown'):
+            return None
+
+        key, ctrl, _ = manager.get_key_info(event)
+        if not key:
+            return None
+
+        state = manager.state
+        now = millisecs()
+
+        # Detect Ctrl+C (copy)
+        if key == 'c' and ctrl:
+            state.copy_timestamp = now
+            return None
+
+        # Detect Delete or Backspace (after recent Ctrl+C)
+        if key in ('Delete', 'Backspace') and not ctrl:
+            copy_time = getattr(state, 'copy_timestamp', 0)
+            if copy_time > 0 and (now - copy_time) < self.max_delay:
+                state.copy_timestamp = 0
+                return manager.show_tip(self.option, self.message)
+
+        # Any other key: clear the copy timestamp
+        if key not in ('c', 'Delete', 'Backspace'):
+            state.copy_timestamp = 0
 
         return None
 
@@ -1169,7 +1234,8 @@ def create_coach(options):
         Retype_after_delete(),
         Scroll_full_document(),
         Letter_select_word(),
-        Delete_word_char_by_char()
+        Delete_word_char_by_char(),
+        Copy_then_delete()
         ],
         options
     )

@@ -128,6 +128,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['coach_letter_select_word_min_chars', 8, "Nombre minimum de caractères sélectionnés consécutivement pour détecter (défaut: 8)"],
     ['coach_delete_word_char_by_char', 0, "Suggérer Ctrl+Backspace/Delete lorsqu'un mot est supprimé caractère par caractère."],
     ['coach_delete_word_char_by_char_count', 5, "Nombre de suppressions consécutives avant conseil (défaut: 5)"],
+    ['coach_copy_then_delete', 0, "Suggérer Ctrl+X (couper) lorsque l'étudiant copie puis supprime au lieu d'utiliser directement Ctrl+X."],
 
     "Bloc titles",
 
