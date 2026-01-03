@@ -735,81 +735,73 @@ class Many_vertical_arrows(Coach):
 
 class Arrow_then_backspace(Coach):
     """
-    Detects the sequence → then Backspace (instead of using Delete).
+    Detects repeated sequences → then Backspace (instead of using Delete).
 
     Detected pattern:
         - Arrow → that moves cursor one character
         - Followed by Backspace within 2 seconds
         - Without Ctrl
+        - Repeated multiple times (threshold configurable)
 
     Suggestion:
         Use Delete key to delete the character to the right
 
-    Thresholds (hardcoded):
-        - max_delay: 2000ms (hardcoded)
-
-    Note:
-        This pattern is inefficient because it requires two keys instead of one.
-        Delete does the same thing in a single key press.
+    Thresholds:
+        - max_delay: 2000ms between arrow and backspace (hardcoded)
+        - min_count: Minimum repetitions before showing tip (option: coach_arrow_then_backspace_count, default: 3)
     """
     option = 'coach_arrow_then_backspace'
     message = COACH_MESSAGES['arrow_then_backspace']
 
     def check(self, manager, event, text, cursor_position):
-        """
-        Checks if the → + Backspace sequence was detected.
-
-        Simplified logic:
-        - When ArrowRight is pressed (without Ctrl), mark the time and that it was the last key
-        - When Backspace is pressed (without Ctrl), verify:
-          1. That the last key was ArrowRight
-          2. That less than 2 seconds have passed
-          3. If both conditions are met, show the tip
-
-        Doesn't try to predict cursor positions since keydown receives position
-        BEFORE movement, not after.
-        """
         if not manager.should_check(self.option, event, 'keydown'):
             return None
 
-        # Extract key and modifiers
-        key, ctrl, shift = manager.get_key_info(event)
+        # Get threshold from options
+        min_count = 3
+        if manager.options and 'coach_arrow_then_backspace_count' in manager.options:
+            min_count = manager.options['coach_arrow_then_backspace_count']
+
+        key, ctrl, _ = manager.get_key_info(event)
         if not key:
             return None
 
         state = manager.state
         now = millisecs()
 
-        # If ArrowRight pressed without Ctrl, mark the event
+        # ArrowRight pressed without Ctrl
         if key == 'ArrowRight' and not ctrl:
             state.last_arrow_right_time = now
             state.last_was_arrow_right = True
-            # coach_debug("Arrow_then_backspace: ArrowRight detected at " + str(now))
+
+        # Backspace pressed without Ctrl
         elif key == 'Backspace' and not ctrl:
-            # Check if last key was ArrowRight and was recent
             last_was_arrow = getattr(state, 'last_was_arrow_right', False)
             last_arrow_time = getattr(state, 'last_arrow_right_time', 0)
             delta = now - last_arrow_time
 
-            # coach_debug("Arrow_then_backspace: Backspace detected, last_was_arrow=" + str(last_was_arrow) + " delta=" + str(delta))
-
             if last_was_arrow and delta < 2000:
-                # Detected Arrow → Backspace sequence
-                # coach_debug("Arrow_then_backspace: PATTERN DETECTED! Showing tip")
-                result = manager.show_tip(self.option, self.message)
-                if result:
-                    # Clear state
-                    state.last_was_arrow_right = False
-                    return result
-                # else:
-                    # coach_debug("Arrow_then_backspace: show_tip returned None (blocked)")
+                # Detected one Arrow → Backspace sequence
+                streak = getattr(state, 'arrow_backspace_streak', 0) + 1
+                state.arrow_backspace_streak = streak
 
-            # If pattern wasn't detected, clear state
-            state.last_was_arrow_right = False
+                if streak >= min_count:
+                    result = manager.show_tip(self.option, self.message)
+                    if result:
+                        state.arrow_backspace_streak = 0
+                        state.last_was_arrow_right = False
+                        return result
+
+                # Reset for next sequence
+                state.last_was_arrow_right = False
+            else:
+                # Pattern broken, reset counter
+                state.arrow_backspace_streak = 0
+                state.last_was_arrow_right = False
+
+        # Any other key clears the state
         else:
-            # Any other key clears the state
-            # if getattr(state, 'last_was_arrow_right', False):
-            #     coach_debug("Arrow_then_backspace: sequence broken by key=" + str(key))
+            state.arrow_backspace_streak = 0
             state.last_was_arrow_right = False
 
         return None
