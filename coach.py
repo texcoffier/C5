@@ -558,10 +558,12 @@ class Mouse_line_bounds(Coach):
         On laptop: Fn + ← or Fn + →
 
     Thresholds (hardcoded):
-        - min_movement: 2 characters (hardcoded)
+        - min_movement: 2 characters
+        - min_click_delay: 300ms to filter double/triple clicks
     """
     option = 'coach_mouse_line_bounds'
     message = COACH_MESSAGES['mouse_line_bounds']
+    min_click_delay = 300  # milliseconds - to filter double/triple clicks
 
     def check(self, manager, event, text, cursor_position):
         """
@@ -570,9 +572,25 @@ class Mouse_line_bounds(Coach):
         if not manager.should_check(self.option, event, 'mouseup'):
             return None
 
+        # Calculate time since last check to filter double/triple clicks
+        # Use our own timestamp instead of shared manager.state.last_mouseup
+        # because Mouse_short_move updates it before we check
+        now = millisecs()
+        last_check = getattr(manager.state, 'line_bounds_last_check', 0)
+        idle = now - last_check
+        manager.state.line_bounds_last_check = now
+
+        coach_debug("Mouse_line_bounds: idle=" + str(idle) + "ms, min_delay=" + str(self.min_click_delay))
+
+        # Filter double/triple clicks (too fast)
+        if idle < self.min_click_delay:
+            coach_debug("Mouse_line_bounds: FILTERED (too fast)")
+            return None
+
         # TODO: extract selection_length from event
         selection_length = 0
         if selection_length != 0:
+            coach_debug("Mouse_line_bounds: FILTERED (has selection)")
             return None
 
         # Calculate line/column positions
@@ -580,19 +598,25 @@ class Mouse_line_bounds(Coach):
         prev_line, prev_col = get_line_column(text, previous_position)
         new_line, new_col = get_line_column(text, cursor_position)
 
+        coach_debug("Mouse_line_bounds: prev=(" + str(prev_line) + "," + str(prev_col) + ") new=(" + str(new_line) + "," + str(new_col) + ")")
+
         # Must be on same line
         if prev_line != new_line:
+            coach_debug("Mouse_line_bounds: FILTERED (different lines)")
             return None
 
         # Movement must be significant (>2 characters)
         if abs(new_col - prev_col) < 2:
+            coach_debug("Mouse_line_bounds: FILTERED (movement too small)")
             return None
 
         # Check if at beginning or end of line
         lines = text.split('\n')
         if new_line >= 1 and new_line <= len(lines):
             line_length = len(lines[new_line - 1])
+            coach_debug("Mouse_line_bounds: line_length=" + str(line_length) + ", new_col=" + str(new_col))
             if new_col == 0 or new_col == line_length:
+                coach_debug("Mouse_line_bounds: PATTERN DETECTED! Showing tip")
                 return manager.show_tip(self.option, self.message)
 
         return None
