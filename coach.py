@@ -141,16 +141,6 @@ COACH_MESSAGES = {
 # AUXILIARY FUNCTIONS
 # ════════════════════════════════════════════════════════════════════════════
 
-def millisecs():
-    """
-    Returns the current time in milliseconds.
-
-    Uses Date.now() in JavaScript (via eval for RapydScript).
-    """
-    # In JavaScript (RapydScript transpiles this to Date.now())
-    return eval('Date.now()')  # pylint: disable=eval-used
-
-
 def get_line_column(text, position):
     """
     Calculates line and column number from an absolute position in the text.
@@ -291,17 +281,16 @@ class Coach:
             3. Cooldown has elapsed (0 by default = no cooldown)
         """
         # Check cooldown
-        now = millisecs()
         if self.option in self.state.last_popup:
             last = self.state.last_popup[self.option]
         else:
             last = 0
 
-        if now - last < self.popup_cooldown:
+        if self.manager.now - last < self.popup_cooldown:
             return None
 
         # Record timestamp and return tip
-        self.state.last_popup[self.option] = now
+        self.state.last_popup[self.option] = self.manager.now
         return {'option': self.option, 'message': self.message, 'actions': actions or {}}
 
 
@@ -371,7 +360,9 @@ class Coach:
         if previous_position is not None:
             self.state.previous_position = previous_position
 
-        self.now = millisec()
+        # In JavaScript (RapydScript transpiles this to Date.now())
+        self.now = eval('Date.now()') # pylint: disable=eval-used
+
         for coach in self.coaches:
             if self.should_check(coach, event):
                 result = coach.check(self, event, text, cursor_position)
@@ -409,9 +400,8 @@ class Mouse_short_move(Coach):
         small_char_threshold = self.manager.get_option('coach_mouse_short_move_chars', 5)
         max_column_drift = self.manager.get_option('coach_mouse_short_move_drift', 3)
 
-        now = millisecs()
-        idle = now - self.manager.state.last_mouseup
-        self.manager.state.last_mouseup = now
+        idle = self.manager.now - self.manager.state.last_mouseup
+        self.manager.state.last_mouseup = self.manager.now
         if idle < self.min_click_delay:
             return None
 
@@ -458,10 +448,9 @@ class Mouse_line_bounds(Coach):
     def check(self, event, text, cursor_position):
         # Use our own timestamp instead of shared manager.state.last_mouseup
         # because Mouse_short_move updates it before we check
-        now = millisecs()
-        last_check = getattr(self.manager.state, 'line_bounds_last_check', 0)
-        idle = now - last_check
-        self.manager.state.line_bounds_last_check = now
+        last_check = self.manager.state.line_bounds_last_check
+        idle = self.manager.now - last_check
+        self.manager.state.line_bounds_last_check = self.manager.now
 
         if idle < self.min_click_delay:
             return None
@@ -624,19 +613,18 @@ class Arrow_then_backspace(Coach):
             return None
 
         state = self.manager.state
-        now = millisecs()
 
         if key == 'ArrowRight' and not ctrl:
-            state.last_arrow_right_time = now
+            state.last_arrow_right_time = self.manager.now
             state.last_was_arrow_right = True
 
         elif key == 'Backspace' and not ctrl:
-            last_was_arrow = getattr(state, 'last_was_arrow_right', False)
-            last_arrow_time = getattr(state, 'last_arrow_right_time', 0)
-            delta = now - last_arrow_time
+            last_was_arrow = state.last_was_arrow_right
+            last_arrow_time = state.last_arrow_right_time
+            delta = self.manager.now - last_arrow_time
 
             if last_was_arrow and delta < 2000:
-                streak = getattr(state, 'arrow_backspace_streak', 0) + 1
+                streak = state.arrow_backspace_streak + 1
                 state.arrow_backspace_streak = streak
 
                 if streak >= min_count:
@@ -700,8 +688,7 @@ class Retype_after_delete(Coach):
         min_chars_threshold = self.manager.get_option('coach_retype_after_delete_chars', 10)
 
         state = self.manager.state
-        now = millisecs()
-        previous_text = getattr(state, 'previous_text_for_retype', '')
+        previous_text = state.previous_text_for_retype
 
         if len(text) < len(previous_text):
             deleted_length = len(previous_text) - len(text)
@@ -709,10 +696,10 @@ class Retype_after_delete(Coach):
             deleted_position = prefix_length(text, previous_text)
             deleted_text = previous_text[deleted_position:deleted_position + deleted_length]
 
-            last_deletion_time = getattr(state, 'last_deleted_time', 0)
-            accumulated_deleted = getattr(state, 'last_deleted_text_exact', '')
+            last_deletion_time = state.last_deleted_time
+            accumulated_deleted = state.last_deleted_text_exact
 
-            if (now - last_deletion_time) < 2000 and len(accumulated_deleted) > 0:
+            if (self.manager.now - last_deletion_time) < 2000 and len(accumulated_deleted) > 0:
                 if deleted_position == len(text):
                     accumulated_deleted = accumulated_deleted + deleted_text
                 else:
@@ -724,15 +711,15 @@ class Retype_after_delete(Coach):
 
             state.last_deleted_text_exact = accumulated_deleted
             state.last_deleted_position_exact = deleted_position
-            state.last_deleted_time = now
+            state.last_deleted_time = self.manager.now
             state.retype_match_count = 0
 
         elif len(text) > len(previous_text):
-            last_deleted_time = getattr(state, 'last_deleted_time', 0)
-            last_deleted_text = getattr(state, 'last_deleted_text_exact', '')
+            last_deleted_time = state.last_deleted_time
+            last_deleted_text = state.last_deleted_text_exact
 
-            if (now - last_deleted_time) < self.max_delay_ms and len(last_deleted_text) >= 3:
-                text_after_deletion = getattr(state, 'text_after_deletion', '')
+            if (self.manager.now - last_deleted_time) < self.max_delay_ms and len(last_deleted_text) >= 3:
+                text_after_deletion = state.text_after_deletion
 
                 total_added_text = ''
                 added_in_this_event = 0
@@ -804,7 +791,7 @@ class Scroll_full_document(Coach):
         at_top = current_line <= edge_lines
         at_bottom = current_line > total_lines - edge_lines
 
-        previous_zone = getattr(state, 'scroll_previous_zone', None)
+        previous_zone = state.scroll_previous_zone
 
         if at_top:
             current_zone = 'top'
@@ -855,7 +842,7 @@ class Letter_select_word(Coach):
 
         if key in ('ArrowLeft', 'ArrowRight'):
             if shift and not ctrl:
-                state.letter_select_streak = getattr(state, 'letter_select_streak', 0) + 1
+                state.letter_select_streak = state.letter_select_streak + 1
 
                 if state.letter_select_streak >= threshold:
                     result = self.show_tip()
@@ -902,7 +889,7 @@ class Delete_word_char_by_char(Coach):
             if ctrl:
                 state.delete_char_streak = 0
             else:
-                state.delete_char_streak = getattr(state, 'delete_char_streak', 0) + 1
+                state.delete_char_streak = state.delete_char_streak + 1
 
                 if state.delete_char_streak >= threshold:
                     result = self.show_tip()
@@ -948,15 +935,14 @@ class Copy_then_delete(Coach):
             return None
 
         state = self.manager.state
-        now = millisecs()
 
         if key == 'c' and ctrl:
-            state.copy_timestamp = now
+            state.copy_timestamp = self.manager.now
             return None
 
         if key in ('Delete', 'Backspace') and not ctrl:
-            copy_time = getattr(state, 'copy_timestamp', 0)
-            if copy_time > 0 and (now - copy_time) < self.max_delay:
+            copy_time = state.copy_timestamp
+            if copy_time > 0 and (self.manager.now - copy_time) < self.max_delay:
                 state.copy_timestamp = 0
                 return self.show_tip()
 
