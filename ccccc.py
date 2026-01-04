@@ -227,7 +227,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def coach_analyse(self, event, previous_position):
         """Analyse event for coaching (called from onmouseup and onkeydown)"""
-        if not self.coach or self.coach.get_level_factor() >= 99:
+        if not self.coach:
             return
 
         prev_pos = previous_position or self.coach_previous_position or 0
