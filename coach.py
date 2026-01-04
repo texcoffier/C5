@@ -273,8 +273,8 @@ class Coach:
         self.state = CoachState()
         self.options = options or {}
         # Get cooldown from options (default: 5000ms = 5 seconds)
-        self.popup_cooldown = int(options['coach_cooldown'] or 5000)
-        self.coach_tip_level = int(self.options['coach_tip_level'] or 0)
+        self.popup_cooldown = self.get_option('coach_cooldown', 5000)
+        self.coach_tip_level = self.get_option('coach_tip_level')
 
     def show_tip(self, option, message, actions=None):
         """
@@ -323,7 +323,7 @@ class Coach:
         """
         if not self.coach_tip_level:
             return False
-        if not bool(self.options[coach.option] or 0):
+        if not self.get_option(coach.option):
             return False
         if not self.check_event_type(event, coach.expected_event_type):
             return False
@@ -352,6 +352,9 @@ class Coach:
         ctrl = bool(event.ctrlKey)
         shift = bool(event.shiftKey)
         return key, ctrl, shift
+
+    def get_option(self, option, by_default=0):
+        return int(self.options[option] or by_default)
 
     def analyse(self, event, text, cursor_position, previous_position=None):
         """
@@ -414,12 +417,8 @@ class Mouse_short_move(Coach):
     expected_event_type = 'mouseup'
 
     def check(self, manager, event, text, cursor_position):
-        small_char_threshold = 5
-        max_column_drift = 3
-        if 'coach_mouse_short_move_chars' in manager.options:
-            small_char_threshold = manager.options['coach_mouse_short_move_chars']
-        if 'coach_mouse_short_move_drift' in manager.options:
-            max_column_drift = manager.options['coach_mouse_short_move_drift']
+        small_char_threshold = manager.get_option('coach_mouse_short_move_chars', 5)
+        max_column_drift = manager.get_option('coach_mouse_short_move_drift', 3)
 
         now = millisecs()
         idle = now - manager.state.last_mouseup
@@ -523,10 +522,7 @@ class Many_horizontal_arrows(Coach):
         if not key:
             return None
 
-        threshold = 15
-        if 'coach_many_horizontal_arrows_count' in manager.options:
-            threshold = int(manager.options['coach_many_horizontal_arrows_count'])
-
+        threshold = manager.get_option('coach_many_horizontal_arrows_count', 15)
         state = manager.state
 
         if key in ('ArrowLeft', 'ArrowRight'):
@@ -582,9 +578,7 @@ class Many_vertical_arrows(Coach):
         if not key:
             return None
 
-        threshold = 10
-        if 'coach_many_vertical_arrows_count' in manager.options:
-            threshold = int(manager.options['coach_many_vertical_arrows_count'])
+        threshold = manager.get_option('coach_many_vertical_arrows_count', 10)
 
         state = manager.state
 
@@ -636,9 +630,7 @@ class Arrow_then_backspace(Coach):
     expected_event_type = 'keydown'
 
     def check(self, manager, event, text, cursor_position):
-        min_count = 3
-        if 'coach_arrow_then_backspace_count' in manager.options:
-            min_count = int(manager.options['coach_arrow_then_backspace_count'])
+        min_count = manager.get_option('coach_arrow_then_backspace_count', 3)
 
         key, ctrl, _ = manager.get_key_info(event)
         if not key:
@@ -718,9 +710,7 @@ class Retype_after_delete(Coach):
             - min_chars_threshold: Minimum identical chars retyped (option: coach_retype_after_delete_chars, default: 10)
             - max_delay_ms: Maximum time between deletion and retyping (hardcoded: 10000ms = 10 seconds)
         """
-        min_chars_threshold = 10
-        if 'coach_retype_after_delete_chars' in manager.options:
-            min_chars_threshold = int(manager.options['coach_retype_after_delete_chars'])
+        min_chars_threshold = manager.get_option('coach_retype_after_delete_chars', 10)
 
         state = manager.state
         now = millisecs()
@@ -813,12 +803,8 @@ class Scroll_full_document(Coach):
 
     def check(self, manager, _event, text, cursor_position):
         # Get thresholds from options (with defaults)
-        edge_lines = 3
-        min_lines = 30
-        if 'coach_scroll_full_document_edge_lines' in manager.options:
-            edge_lines = int(manager.options['coach_scroll_full_document_edge_lines'])
-        if 'coach_scroll_full_document_min_lines' in manager.options:
-            min_lines = int(manager.options['coach_scroll_full_document_min_lines'])
+        edge_lines = manager.get_option('coach_scroll_full_document_edge_lines', 3)
+        min_lines = manager.get_option('coach_scroll_full_document_min_lines', 10)
 
         current_line, _ = get_line_column(text, cursor_position)
         total_lines = len(text.split('\n'))
@@ -876,9 +862,7 @@ class Letter_select_word(Coach):
         if not key:
             return None
 
-        threshold = 8
-        if 'coach_letter_select_word_min_chars' in manager.options:
-            threshold = int(manager.options['coach_letter_select_word_min_chars'])
+        threshold = manager.get_option('coach_letter_select_word_min_chars', 8)
 
         state = manager.state
 
@@ -923,9 +907,7 @@ class Delete_word_char_by_char(Coach):
         if not key:
             return None
 
-        threshold = 5
-        if 'coach_delete_word_char_by_char_count' in manager.options:
-            threshold = int(manager.options['coach_delete_word_char_by_char_count'])
+        threshold = manager.get_option('coach_delete_word_char_by_char_count', 5)
 
         state = manager.state
 
