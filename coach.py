@@ -276,23 +276,6 @@ class Coach:
         self.popup_cooldown = int(options['coach_cooldown'] or 5000)
         self.coach_tip_level = int(self.options['coach_tip_level'] or 0)
 
-    def option_enabled(self, option):
-        """
-        Checks if a specific coaching option is enabled.
-
-        Args:
-            option: Option name (e.g., 'coach_mouse_short_move')
-
-        Returns:
-            True if option is enabled, False otherwise
-
-        Note:
-            - If coach_tip_level is 0, all tips are disabled
-            - Otherwise, checks the boolean value of the specific option
-        """
-        if self.coach_tip_level:
-            return bool(self.options[option] or 0)
-
     def show_tip(self, option, message, actions=None):
         """
         Attempts to display a tip if conditions are met.
@@ -311,10 +294,6 @@ class Coach:
             1. Option is enabled
             3. Cooldown has elapsed (0 by default = no cooldown)
         """
-        # Check that option is enabled
-        if not self.option_enabled(option):
-            return None
-
         # Check cooldown
         now = millisecs()
         if option in self.state.last_popup:
@@ -342,7 +321,9 @@ class Coach:
         """
         Returns True if the coach is enabled and must receive the event.
         """
-        if not self.option_enabled(coach.option):
+        if not self.coach_tip_level:
+            return False
+        if not bool(self.options[coach.option] or 0):
             return False
         if not self.check_event_type(event, coach.expected_event_type):
             return False
