@@ -174,14 +174,6 @@ def get_line_column(text, position):
     column = len(lines[-1])
     return line_number, column
 
-
-def coach_debug(message):
-    """
-    Comment this function content to disable debug trace
-    """
-    print("COACH DEBUG " + str(message or 'None'))
-
-
 def prefix_length(text1, text2):
     if text1 == text2:
         return len(text1)
@@ -269,20 +261,24 @@ class Coach:
                 Retype_after_delete()
                 ], options)
         """
+        if not coaches:
+            return # Not the manager
         self.coaches = coaches
         self.state = CoachState()
         self.options = options or {}
+        for coach in self.coaches:
+            coach.manager = self
+            coach.enabled = self.get_option(coach.option)
+
         # Get cooldown from options (default: 5000ms = 5 seconds)
         self.popup_cooldown = self.get_option('coach_cooldown', 5000)
         self.coach_tip_level = self.get_option('coach_tip_level')
 
-    def show_tip(self, option, message, actions=None):
+    def show_tip(self, actions=None):
         """
         Attempts to display a tip if conditions are met.
 
         Args:
-            option: Coach option name (to check activation and cooldown)
-            message: HTML message of the tip to display
             actions: Optional dict of actions (e.g., {'restore_cursor_position': 42})
 
         Returns:
@@ -296,8 +292,8 @@ class Coach:
         """
         # Check cooldown
         now = millisecs()
-        if option in self.state.last_popup:
-            last = self.state.last_popup[option]
+        if self.option in self.state.last_popup:
+            last = self.state.last_popup[self.option]
         else:
             last = 0
 
@@ -305,17 +301,9 @@ class Coach:
             return None
 
         # Record timestamp and return tip
-        self.state.last_popup[option] = now
-        return {'option': option, 'message': message, 'actions': actions or {}}
+        self.state.last_popup[self.option] = now
+        return {'option': self.option, 'message': self.message, 'actions': actions or {}}
 
-    def check_event_type(self, event, expected_type):
-        """
-        Returns True if the event if of the expected type (e.g., 'mouseup', 'keydown')
-        """
-        if expected_type == '*':
-            return True
-        if event:
-            return event.type == expected_type
 
     def should_check(self, coach, event):
         """
@@ -323,11 +311,11 @@ class Coach:
         """
         if not self.coach_tip_level:
             return False
-        if not self.get_option(coach.option):
+        if not coach.enabled:
             return False
-        if not self.check_event_type(event, coach.expected_event_type):
-            return False
-        return True
+        if coach.expected_event_type == '*':
+            return True
+        return coach.expected_event_type == event.type
 
     def get_key_info(self, event):
         """
@@ -354,7 +342,7 @@ class Coach:
         return key, ctrl, shift
 
     def get_option(self, option, by_default=0):
-        return int(self.options[option] or by_default)
+        return int((self.manager or self).options[option] or by_default)
 
     def analyse(self, event, text, cursor_position, previous_position=None):
         """
@@ -383,6 +371,7 @@ class Coach:
         if previous_position is not None:
             self.state.previous_position = previous_position
 
+        self.now = millisec()
         for coach in self.coaches:
             if self.should_check(coach, event):
                 result = coach.check(self, event, text, cursor_position)
@@ -416,17 +405,17 @@ class Mouse_short_move(Coach):
     min_click_delay = 300
     expected_event_type = 'mouseup'
 
-    def check(self, manager, event, text, cursor_position):
-        small_char_threshold = manager.get_option('coach_mouse_short_move_chars', 5)
-        max_column_drift = manager.get_option('coach_mouse_short_move_drift', 3)
+    def check(self, event, text, cursor_position):
+        small_char_threshold = self.manager.get_option('coach_mouse_short_move_chars', 5)
+        max_column_drift = self.manager.get_option('coach_mouse_short_move_drift', 3)
 
         now = millisecs()
-        idle = now - manager.state.last_mouseup
-        manager.state.last_mouseup = now
+        idle = now - self.manager.state.last_mouseup
+        self.manager.state.last_mouseup = now
         if idle < self.min_click_delay:
             return None
 
-        previous_position = manager.state.previous_position or 0
+        previous_position = self.manager.state.previous_position or 0
         prev_line, prev_col = get_line_column(text, previous_position)
         new_line, new_col = get_line_column(text, cursor_position)
         dy = abs(new_line - prev_line)
@@ -436,12 +425,10 @@ class Mouse_short_move(Coach):
             return None
 
         if dy == 0 and 0 < dx <= small_char_threshold:
-            return manager.show_tip(self.option, self.message,
-                                   {'restore_cursor_position': previous_position})
+            return self.show_tip({'restore_cursor_position': previous_position})
 
         if dy == 1 and dx <= max_column_drift:
-            return manager.show_tip(self.option, self.message,
-                                   {'restore_cursor_position': previous_position})
+            return self.show_tip({'restore_cursor_position': previous_position})
 
         return None
 
@@ -468,18 +455,18 @@ class Mouse_line_bounds(Coach):
     min_click_delay = 300
     expected_event_type = 'mouseup'
 
-    def check(self, manager, event, text, cursor_position):
+    def check(self, event, text, cursor_position):
         # Use our own timestamp instead of shared manager.state.last_mouseup
         # because Mouse_short_move updates it before we check
         now = millisecs()
-        last_check = getattr(manager.state, 'line_bounds_last_check', 0)
+        last_check = getattr(self.manager.state, 'line_bounds_last_check', 0)
         idle = now - last_check
-        manager.state.line_bounds_last_check = now
+        self.manager.state.line_bounds_last_check = now
 
         if idle < self.min_click_delay:
             return None
 
-        previous_position = manager.state.previous_position or 0
+        previous_position = self.manager.state.previous_position or 0
         prev_line, prev_col = get_line_column(text, previous_position)
         new_line, new_col = get_line_column(text, cursor_position)
 
@@ -493,7 +480,7 @@ class Mouse_line_bounds(Coach):
         if new_line >= 1 and new_line <= len(lines):
             line_length = len(lines[new_line - 1])
             if new_col == 0 or new_col == line_length:
-                return manager.show_tip(self.option, self.message)
+                return self.show_tip()
 
         return None
 
@@ -517,13 +504,13 @@ class Many_horizontal_arrows(Coach):
     message = COACH_MESSAGES['many_horizontal_arrows']
     expected_event_type = 'keydown'
 
-    def check(self, manager, event, text, cursor_position):
-        key, ctrl, shift = manager.get_key_info(event)
+    def check(self, event, text, cursor_position):
+        key, ctrl, shift = self.manager.get_key_info(event)
         if not key:
             return None
 
-        threshold = manager.get_option('coach_many_horizontal_arrows_count', 15)
-        state = manager.state
+        threshold = self.manager.get_option('coach_many_horizontal_arrows_count', 15)
+        state = self.manager.state
 
         if key in ('ArrowLeft', 'ArrowRight'):
             if ctrl or shift:
@@ -540,7 +527,7 @@ class Many_horizontal_arrows(Coach):
                 state.horizontal_streak = (state.horizontal_streak or 0) + 1
 
                 if state.horizontal_streak >= threshold:
-                    result = manager.show_tip(self.option, self.message)
+                    result = self.show_tip()
                     if result:
                         state.horizontal_streak = 0
                         return result
@@ -570,17 +557,17 @@ class Many_vertical_arrows(Coach):
     message = COACH_MESSAGES['many_vertical_arrows']
     expected_event_type = 'keydown'
 
-    def check(self, manager, event, text, cursor_position):
+    def check(self, event, text, cursor_position):
         """
         Checks if too many consecutive vertical arrows were pressed.
         """
-        key, ctrl, shift = manager.get_key_info(event)
+        key, ctrl, shift = self.manager.get_key_info(event)
         if not key:
             return None
 
-        threshold = manager.get_option('coach_many_vertical_arrows_count', 10)
+        threshold = self.manager.get_option('coach_many_vertical_arrows_count', 10)
 
-        state = manager.state
+        state = self.manager.state
 
         if key in ('ArrowUp', 'ArrowDown'):
             if ctrl or shift:
@@ -597,7 +584,7 @@ class Many_vertical_arrows(Coach):
                 state.vertical_streak = (state.vertical_streak or 0) + 1
 
                 if state.vertical_streak >= threshold:
-                    result = manager.show_tip(self.option, self.message)
+                    result = self.show_tip()
                     if result:
                         state.vertical_streak = 0
                         return result
@@ -629,14 +616,14 @@ class Arrow_then_backspace(Coach):
     message = COACH_MESSAGES['arrow_then_backspace']
     expected_event_type = 'keydown'
 
-    def check(self, manager, event, text, cursor_position):
-        min_count = manager.get_option('coach_arrow_then_backspace_count', 3)
+    def check(self, event, text, cursor_position):
+        min_count = self.manager.get_option('coach_arrow_then_backspace_count', 3)
 
-        key, ctrl, _ = manager.get_key_info(event)
+        key, ctrl, _ = self.manager.get_key_info(event)
         if not key:
             return None
 
-        state = manager.state
+        state = self.manager.state
         now = millisecs()
 
         if key == 'ArrowRight' and not ctrl:
@@ -653,7 +640,7 @@ class Arrow_then_backspace(Coach):
                 state.arrow_backspace_streak = streak
 
                 if streak >= min_count:
-                    result = manager.show_tip(self.option, self.message)
+                    result = self.show_tip()
                     if result:
                         state.arrow_backspace_streak = 0
                         state.last_was_arrow_right = False
@@ -696,7 +683,7 @@ class Retype_after_delete(Coach):
     max_delay_ms = 10000
     expected_event_type = '*'
 
-    def check(self, manager, event, text, cursor_position):
+    def check(self, event, text, cursor_position):
         """
         Checks if deleted text is being retyped IDENTICALLY.
 
@@ -710,9 +697,9 @@ class Retype_after_delete(Coach):
             - min_chars_threshold: Minimum identical chars retyped (option: coach_retype_after_delete_chars, default: 10)
             - max_delay_ms: Maximum time between deletion and retyping (hardcoded: 10000ms = 10 seconds)
         """
-        min_chars_threshold = manager.get_option('coach_retype_after_delete_chars', 10)
+        min_chars_threshold = self.manager.get_option('coach_retype_after_delete_chars', 10)
 
-        state = manager.state
+        state = self.manager.state
         now = millisecs()
         previous_text = getattr(state, 'previous_text_for_retype', '')
 
@@ -766,7 +753,7 @@ class Retype_after_delete(Coach):
                     state.retype_match_count = match_count
 
                     if match_count >= min_chars_threshold:
-                        result = manager.show_tip(self.option, self.message)
+                        result = self.show_tip()
                         if result:
                             state.last_deleted_time = 0
                             state.retype_match_count = 0
@@ -801,10 +788,10 @@ class Scroll_full_document(Coach):
     message = COACH_MESSAGES['scroll_full_document']
     expected_event_type = '*'
 
-    def check(self, manager, _event, text, cursor_position):
+    def check(self, _event, text, cursor_position):
         # Get thresholds from options (with defaults)
-        edge_lines = manager.get_option('coach_scroll_full_document_edge_lines', 3)
-        min_lines = manager.get_option('coach_scroll_full_document_min_lines', 10)
+        edge_lines = self.manager.get_option('coach_scroll_full_document_edge_lines', 3)
+        min_lines = self.manager.get_option('coach_scroll_full_document_min_lines', 10)
 
         current_line, _ = get_line_column(text, cursor_position)
         total_lines = len(text.split('\n'))
@@ -812,7 +799,7 @@ class Scroll_full_document(Coach):
         if total_lines < min_lines:
             return None
 
-        state = manager.state
+        state = self.manager.state
 
         at_top = current_line <= edge_lines
         at_bottom = current_line > total_lines - edge_lines
@@ -830,7 +817,7 @@ class Scroll_full_document(Coach):
             if (previous_zone == 'top' and current_zone == 'bottom') or \
                (previous_zone == 'bottom' and current_zone == 'top'):
                 # User scrolled across the full document
-                result = manager.show_tip(self.option, self.message)
+                result = self.show_tip()
                 if result:
                     state.scroll_previous_zone = current_zone
                     return result
@@ -857,21 +844,21 @@ class Letter_select_word(Coach):
     message = COACH_MESSAGES['letter_select_word']
     expected_event_type = 'keydown'
 
-    def check(self, manager, event, _text, _cursor_position):
-        key, ctrl, shift = manager.get_key_info(event)
+    def check(self, event, _text, _cursor_position):
+        key, ctrl, shift = self.manager.get_key_info(event)
         if not key:
             return None
 
-        threshold = manager.get_option('coach_letter_select_word_min_chars', 8)
+        threshold = self.manager.get_option('coach_letter_select_word_min_chars', 8)
 
-        state = manager.state
+        state = self.manager.state
 
         if key in ('ArrowLeft', 'ArrowRight'):
             if shift and not ctrl:
                 state.letter_select_streak = getattr(state, 'letter_select_streak', 0) + 1
 
                 if state.letter_select_streak >= threshold:
-                    result = manager.show_tip(self.option, self.message)
+                    result = self.show_tip()
                     if result:
                         state.letter_select_streak = 0
                         return result
@@ -902,14 +889,14 @@ class Delete_word_char_by_char(Coach):
     message = COACH_MESSAGES['delete_word_char_by_char']
     expected_event_type = 'keydown'
 
-    def check(self, manager, event, _text, _cursor_position):
-        key, ctrl, _ = manager.get_key_info(event)
+    def check(self, event, _text, _cursor_position):
+        key, ctrl, _ = self.manager.get_key_info(event)
         if not key:
             return None
 
-        threshold = manager.get_option('coach_delete_word_char_by_char_count', 5)
+        threshold = self.manager.get_option('coach_delete_word_char_by_char_count', 5)
 
-        state = manager.state
+        state = self.manager.state
 
         if key in ('Backspace', 'Delete'):
             if ctrl:
@@ -918,7 +905,7 @@ class Delete_word_char_by_char(Coach):
                 state.delete_char_streak = getattr(state, 'delete_char_streak', 0) + 1
 
                 if state.delete_char_streak >= threshold:
-                    result = manager.show_tip(self.option, self.message)
+                    result = self.show_tip()
                     if result:
                         state.delete_char_streak = 0
                         return result
@@ -946,7 +933,7 @@ class Copy_then_delete(Coach):
     max_delay = 3000  # milliseconds
     expected_event_type = 'keydown'
 
-    def check(self, manager, event, _text, _cursor_position):
+    def check(self, event, _text, _cursor_position):
         """
         Checks if user copied then deleted (instead of cutting).
 
@@ -956,11 +943,11 @@ class Copy_then_delete(Coach):
 
         Assumes Ctrl+C is only used when there's a selection.
         """
-        key, ctrl, _ = manager.get_key_info(event)
+        key, ctrl, _ = self.manager.get_key_info(event)
         if not key:
             return None
 
-        state = manager.state
+        state = self.manager.state
         now = millisecs()
 
         if key == 'c' and ctrl:
@@ -971,7 +958,7 @@ class Copy_then_delete(Coach):
             copy_time = getattr(state, 'copy_timestamp', 0)
             if copy_time > 0 and (now - copy_time) < self.max_delay:
                 state.copy_timestamp = 0
-                return manager.show_tip(self.option, self.message)
+                return self.show_tip()
 
         if key not in ('c', 'Delete', 'Backspace'):
             state.copy_timestamp = 0
