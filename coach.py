@@ -364,24 +364,18 @@ class Coach:
         """
         Returns True if the event if of the expected type (e.g., 'mouseup', 'keydown')
         """
+        if expected_type == '*':
+            return True
         if event:
             return event.type == expected_type
 
-    def should_check(self, option, event, expected_event_type):
+    def should_check(self, coach, event):
         """
-        Common validation for coaches: checks option enabled and event type.
-
-        Args:
-            option: Coach option name (e.g., 'coach_mouse_short_move')
-            event: DOM event
-            expected_event_type: Expected event type (e.g., 'mouseup', 'keydown')
-
-        Returns:
-            True if coach should proceed with check, False otherwise
+        Returns True if the coach is enabled and must receive the event.
         """
-        if not self.option_enabled(option):
+        if not self.option_enabled(coach.option):
             return False
-        if not self.check_event_type(event, expected_event_type):
+        if not self.check_event_type(event, coach.expected_event_type):
             return False
         return True
 
@@ -437,9 +431,10 @@ class Coach:
             self.state.previous_position = previous_position
 
         for coach in self.coaches:
-            result = coach.check(self, event, text, cursor_position)
-            if result:
-                return result
+            if self.should_check(coach, event):
+                result = coach.check(self, event, text, cursor_position)
+                if result:
+                    return result
         return None
 
 
@@ -466,11 +461,9 @@ class Mouse_short_move(Coach):
     option = 'coach_mouse_short_move'
     message = COACH_MESSAGES['mouse_short_move']
     min_click_delay = 300
+    expected_event_type = 'mouseup'
 
     def check(self, manager, event, text, cursor_position):
-        if not manager.should_check(self.option, event, 'mouseup'):
-            return None
-
         small_char_threshold = 5
         max_column_drift = 3
         if manager.options:
@@ -525,11 +518,9 @@ class Mouse_line_bounds(Coach):
     option = 'coach_mouse_line_bounds'
     message = COACH_MESSAGES['mouse_line_bounds']
     min_click_delay = 300
+    expected_event_type = 'mouseup'
 
     def check(self, manager, event, text, cursor_position):
-        if not manager.should_check(self.option, event, 'mouseup'):
-            return None
-
         # Use our own timestamp instead of shared manager.state.last_mouseup
         # because Mouse_short_move updates it before we check
         now = millisecs()
@@ -576,11 +567,9 @@ class Many_horizontal_arrows(Coach):
     """
     option = 'coach_many_horizontal_arrows'
     message = COACH_MESSAGES['many_horizontal_arrows']
+    expected_event_type = 'keydown'
 
     def check(self, manager, event, text, cursor_position):
-        if not manager.should_check(self.option, event, 'keydown'):
-            return None
-
         key, ctrl, shift = manager.get_key_info(event)
         if not key:
             return None
@@ -634,14 +623,12 @@ class Many_vertical_arrows(Coach):
     """
     option = 'coach_many_vertical_arrows'
     message = COACH_MESSAGES['many_vertical_arrows']
+    expected_event_type = 'keydown'
 
     def check(self, manager, event, text, cursor_position):
         """
         Checks if too many consecutive vertical arrows were pressed.
         """
-        if not manager.should_check(self.option, event, 'keydown'):
-            return None
-
         key, ctrl, shift = manager.get_key_info(event)
         if not key:
             return None
@@ -697,11 +684,9 @@ class Arrow_then_backspace(Coach):
     """
     option = 'coach_arrow_then_backspace'
     message = COACH_MESSAGES['arrow_then_backspace']
+    expected_event_type = 'keydown'
 
     def check(self, manager, event, text, cursor_position):
-        if not manager.should_check(self.option, event, 'keydown'):
-            return None
-
         min_count = 3
         if manager.options and 'coach_arrow_then_backspace_count' in manager.options:
             min_count = int(manager.options['coach_arrow_then_backspace_count'])
@@ -768,6 +753,7 @@ class Retype_after_delete(Coach):
     option = 'coach_retype_after_delete'
     message = COACH_MESSAGES['retype_after_delete']
     max_delay_ms = 10000
+    expected_event_type = '*'
 
     def check(self, manager, event, text, cursor_position):
         """
@@ -783,9 +769,6 @@ class Retype_after_delete(Coach):
             - min_chars_threshold: Minimum identical chars retyped (option: coach_retype_after_delete_chars, default: 10)
             - max_delay_ms: Maximum time between deletion and retyping (hardcoded: 10000ms = 10 seconds)
         """
-        if not manager.option_enabled(self.option):
-            return None
-
         min_chars_threshold = 10
         if manager.options and 'coach_retype_after_delete_chars' in manager.options:
             min_chars_threshold = int(manager.options['coach_retype_after_delete_chars'])
@@ -877,11 +860,9 @@ class Scroll_full_document(Coach):
     """
     option = 'coach_scroll_full_document'
     message = COACH_MESSAGES['scroll_full_document']
+    expected_event_type = '*'
 
-    def check(self, manager, _, text, cursor_position):
-        if not manager.option_enabled(self.option):
-            return None
-
+    def check(self, manager, _event, text, cursor_position):
         # Get thresholds from options (with defaults)
         edge_lines = 3
         min_lines = 30
@@ -940,11 +921,9 @@ class Letter_select_word(Coach):
     """
     option = 'coach_letter_select_word'
     message = COACH_MESSAGES['letter_select_word']
+    expected_event_type = 'keydown'
 
     def check(self, manager, event, _text, _cursor_position):
-        if not manager.should_check(self.option, event, 'keydown'):
-            return None
-
         key, ctrl, shift = manager.get_key_info(event)
         if not key:
             return None
@@ -989,11 +968,9 @@ class Delete_word_char_by_char(Coach):
     """
     option = 'coach_delete_word_char_by_char'
     message = COACH_MESSAGES['delete_word_char_by_char']
+    expected_event_type = 'keydown'
 
     def check(self, manager, event, _text, _cursor_position):
-        if not manager.should_check(self.option, event, 'keydown'):
-            return None
-
         key, ctrl, _ = manager.get_key_info(event)
         if not key:
             return None
@@ -1037,6 +1014,7 @@ class Copy_then_delete(Coach):
     option = 'coach_copy_then_delete'
     message = COACH_MESSAGES['copy_then_delete']
     max_delay = 3000  # milliseconds
+    expected_event_type = 'keydown'
 
     def check(self, manager, event, _text, _cursor_position):
         """
@@ -1048,9 +1026,6 @@ class Copy_then_delete(Coach):
 
         Assumes Ctrl+C is only used when there's a selection.
         """
-        if not manager.should_check(self.option, event, 'keydown'):
-            return None
-
         key, ctrl, _ = manager.get_key_info(event)
         if not key:
             return None
