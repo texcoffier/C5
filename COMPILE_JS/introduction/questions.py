@@ -12,6 +12,7 @@ COURSE_OPTIONS = {
     'state': 'Ready',
     'checkpoint': 0,
     'allow_copy_paste': 1,
+    'automatic_compilation': 1,
 }
 
 class Q0(Question): # pylint: disable=undefined-variable

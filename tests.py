@@ -140,6 +140,8 @@ class Tests: # pylint: disable=too-many-public-methods
             course.set_parameter('expected_students', ' \n \n ')
             course.set_parameter('hide_before', 360)
             course.set_parameter('state', "Ready")
+            if os.path.exists(course_name + '/session.json'):
+                os.unlink(course_name + '/session.json')
             if os.path.exists(course_name + '/journal.log'):
                 os.unlink(course_name + '/journal.log')
             for i in glob.glob(course_name + '/LOGS/*/journal.log'):
@@ -1735,6 +1737,11 @@ class Q1(Question):
         self.driver.save_screenshot("xxx-try-student.png")
 
 IN_DOCKER = not os.getenv('DISPLAY')
+
+if os.stat('launcher').st_uid != 0:
+    print("The 'launcher' must be SUID root, it is not:", file=sys.stderr)
+    os.system('ls -ls launcher >&2')
+    sys.exit(1)
 
 PORT = 3
 while os.path.exists(f'/tmp/.X{PORT}.lock'):
