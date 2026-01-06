@@ -281,8 +281,8 @@ class Coach:
             3. Cooldown has elapsed (0 by default = no cooldown)
         """
         # Check cooldown
-        if self.option in self.state.last_popup:
-            last = self.state.last_popup[self.option]
+        if self.option in self.manager.state.last_popup:
+            last = self.manager.state.last_popup[self.option]
         else:
             last = 0
 
@@ -290,7 +290,7 @@ class Coach:
             return None
 
         # Record timestamp and return tip
-        self.state.last_popup[self.option] = self.manager.now
+        self.manager.state.last_popup[self.option] = self.manager.now
         return {'option': self.option, 'message': self.message, 'actions': actions or {}}
 
 
@@ -365,7 +365,7 @@ class Coach:
 
         for coach in self.coaches:
             if self.should_check(coach, event):
-                result = coach.check(self, event, text, cursor_position)
+                result = coach.check(event, text, cursor_position)
                 if result:
                     return result
         return None
