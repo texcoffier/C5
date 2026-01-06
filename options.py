@@ -125,9 +125,9 @@ DEFAULT_COURSE_OPTIONS = [
     ['coach_scroll_full_document_edge_lines',  3, " ±lines to the begin/end (not only the first and last line)"],
     ['coach_scroll_full_document_min_lines' ,200, " lines minimum in the document to activate message"],
     ['coach_letter_select_word'             ,  1, "Detect word selection character per character"],
-    ['coach_letter_select_word_min_chars'   ,  8, " characters in the word"],
+    ['coach_letter_select_word_min_chars'   , 20, " characters in the word"],
     ['coach_delete_word_char_by_char'       ,  1, "Detect word deletion using multiple Backspace"],
-    ['coach_delete_word_char_by_char_count' ,  5, " characters in the word"],
+    ['coach_delete_word_char_by_char_count' , 20, " characters in the word"],
     ['coach_copy_then_delete'               ,  1, "Detect Ctrl+C Backspace"],
 
     "Bloc titles",

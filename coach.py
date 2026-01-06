@@ -399,7 +399,6 @@ class Mouse_short_move(Coach):
     def check(self, event, text, cursor_position):
         small_char_threshold = self.manager.get_option('coach_mouse_short_move_chars', 5)
         max_column_drift = self.manager.get_option('coach_mouse_short_move_drift', 3)
-        print(small_char_threshold, max_column_drift)
 
         idle = self.manager.now - self.manager.state.last_mouseup
         self.manager.state.last_mouseup = self.manager.now
@@ -415,11 +414,11 @@ class Mouse_short_move(Coach):
         if dy == 0 and dx == 0:
             return None
 
-        if dy == 0 and 0 < dx <= small_char_threshold:
-            return self.show_tip({'restore_cursor_position': previous_position})
+        if dy == 0 and dx <= small_char_threshold:
+            return self.show_tip()
 
-        if dy == 1 and dx <= max_column_drift:
-            return self.show_tip({'restore_cursor_position': previous_position})
+        if dx == 0 and dy <= max_column_drift:
+            return self.show_tip()
 
         return None
 

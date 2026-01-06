@@ -140,6 +140,7 @@ class Tests: # pylint: disable=too-many-public-methods
             course.set_parameter('expected_students', ' \n \n ')
             course.set_parameter('hide_before', 360)
             course.set_parameter('state', "Ready")
+            course.set_parameter('coach_tip_level', 0)
             if os.path.exists(course_name + '/session.json'):
                 os.unlink(course_name + '/session.json')
             if os.path.exists(course_name + '/journal.log'):
