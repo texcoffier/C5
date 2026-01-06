@@ -415,9 +415,9 @@ Grade maximum displayed to the students: <input id="notation_max" size="4">.
                 tag = ['<select id="', key, '">']
                 for i, name in choices:
                     tag.append('<option value="' + i + '">' + name + '</option>')
-                tag.append('</select>')
+                tag.append('</select> ' + comment)
                 tag = ''.join(tag)
-                comment = '<div style="float:right">' + comment + '</div>'
+                comment = ''
             elif key == 'highlight':
                 tag = []
                 for color in ['#FFF', '#CCC',
@@ -425,11 +425,19 @@ Grade maximum displayed to the students: <input id="notation_max" size="4">.
                             '#FF8', '#EE0', '#8FF', '#0EE', '#FAF', '#F5F']:
                     tag.append('<span style="background:' + color + '">'
                         + ' <input type="radio" name="highlight" id="' + color + '"> </span>')
+                tag.append(comment)
                 tag = ''.join(tag)
-                comment = '<div style="float:right">' + comment + '</div>'
+                comment = ''
             elif default_value in (0, 1) and key != 'max_time':
                 tag = ('<label><input type="checkbox" id="' + key + '">'
                     + comment + '</label>')
+                comment = ''
+            elif str(default_value).isdigit():
+                if comment.startswith(' '):
+                    indent = '<tt style="padding-left:4em"></tt>'
+                else:
+                    indent = ''
+                tag = indent + '<input style="width: 5em" id="' + key + '"> ' + comment
                 comment = ''
             else:
                 if isinstance(default_value, Object):
