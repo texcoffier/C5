@@ -106,7 +106,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         self.stdout:Optional[asyncio.StreamReader] = None
         self.filetree_in = ()
         self.filetree_out = ()
-        self.use_pool = False # True if compile option 'use_pool'
+        self.use_pool = True # For racket process
 
     def log(self, more:Union[str,Tuple]) -> None:
         """Log"""
@@ -319,7 +319,6 @@ class Process: # pylint: disable=too-many-instance-attributes
     async def compile(self, data:Tuple) -> None:
         """Compile"""
         _course, _question, compiler, compile_options, ld_options, allowed, source = data
-        self.use_pool = 'use_pool' in compile_options
         self.compiler = compiler
         self.log(("COMPILE", data[:6]))
         if compiler != 'racket':
@@ -341,8 +340,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         if compiler not in ('gcc', 'g++'):
             stderr += f'Compilateur non autorisé : «{compiler}»\n'
         for option in compile_options:
-            if option not in ('-Wall', '-pedantic', '-pthread', '-std=c++11', '-std=c++20',
-                              'use_pool'):
+            if option not in ('-Wall', '-pedantic', '-pthread', '-std=c++11', '-std=c++20'):
                 stderr += f'Option de compilation non autorisée : «{option}»\n'
         for option in ld_options:
             if option not in ('-lm',):
@@ -497,6 +495,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                 close_fds=True,
                 # ChatGPT suggest this to use less memory 2% less when I tried.
                 env={'PLT_GC_VARIABLES': 'usemmap=no;generations=1;trim=yes',
+                     'LC_ALL': 'C.utf8'
                      # 'PLT_RACKET_NO_JIT': '1'
                     }
                 )
