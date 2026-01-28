@@ -227,7 +227,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def coach_analyse(self, event, previous_position):
         """Analyse event for coaching (called from onmouseup and onkeydown)"""
-        if not self.coach:
+        if not self.coach or not self.coach.coach_tip_level:
             return
 
         prev_pos = previous_position or self.coach_previous_position or 0
@@ -235,17 +235,21 @@ class CCCCC: # pylint: disable=too-many-public-methods
         result = self.coach.analyse(event, self.source or '', self.cursor_position or 0, prev_pos)
 
         if result:
-            # Handle actions
+            # Handle actions immediately
             if 'actions' in result:
                 actions = result['actions']
                 if 'restore_cursor_position' in actions:
                     self.set_cursor_position(actions['restore_cursor_position'])
                     self.coach_previous_position = actions['restore_cursor_position']
-            # Show message
             if 'message' in result and not self.dialog_on_screen:
                 message = result['message']
                 if message:
-                    self.popup_message(message)
+                    # setTimeout defers popup to prevent keystroke loss during onkeydown
+                    self_ref = self
+                    def show_popup():
+                        if not self_ref.dialog_on_screen:
+                            self_ref.popup_message(message)
+                    setTimeout(show_popup, 0)
 
         self.coach_previous_position = self.cursor_position or 0
 
