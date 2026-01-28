@@ -172,6 +172,7 @@ class Student: # pylint: disable=too-many-instance-attributes
         self.blur_time = data[1][9]
         self.feedback = data[1][10]
         self.fullscreen = data[1][11]
+        self.remarks = data[1][12] or ''
         self.firstname = data[2]['fn'] or '?'
         self.surname = data[2]['sn'] or '?'
         self.mail = data[2]['mail'] or ''
@@ -963,6 +964,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 bonus += ' ' + student.data.nbr_ip_change + 'IP'
             else:
                 ctx.fillStyle = "#000"
+            if student.remarks:
+                bonus += '🚨'
             if bonus:
                 ctx.fillText(bonus, x_pos, y_pos)
             ctx.fillStyle = "#000"
@@ -1841,6 +1844,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             elif item.startswith("Encart"):
                 record('checkpoint/FULLSCREEN/' + COURSE + '/'
                        + login + '/' + (1 - student.fullscreen))
+            elif item.startswith('Ajouter une remarque'):
+                remark = prompt(
+                    "Votre remarque que vous ne pourrez ni effacer ni changer :\n",
+                    '')
+                if remark is not None:
+                    record('checkpoint/REMARK/' + COURSE + '/' + login + '/'
+                        + encodeURIComponent(remark))
             else:
                 alert(item)
         if student.active:
@@ -1887,18 +1897,23 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             for similarity in SIMILARITIES[student.login].Values():
                 similarities += ' ' + similarity
 
-        self.the_menu.open(line, column,
-            [
-                student.firstname + ' ' + student.surname,
-                "", spy,
-                "Naviguer dans le temps",
-                similarities,
-                temps, fullscreen, state, grade,
-                student.mail or 'Adresse mail inconnue',
-                "",
-                blur, grades, feedback
+        menu = [
+            student.firstname + ' ' + student.surname,
+            "", spy,
+            "Naviguer dans le temps",
+            similarities,
+            temps, fullscreen, state, grade,
+            student.mail or 'Adresse mail inconnue',
+            "",
+            blur, grades, feedback,
+            'Ajouter une remarque (indélébile)'
+            ]
 
-            ], [], select)
+        if student.remarks:
+            for remark in student.remarks.split('\n'):
+                menu.append('*' + remark)
+
+        self.the_menu.open(line, column, menu, [], select)
 
     def drag_stop(self, event):
         """Stop moving the map"""

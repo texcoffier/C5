@@ -114,14 +114,16 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     <th style="writing-mode: sideways-lr">#Questions
                     <th>Last hostname
                     <th style="writing-mode: sideways-lr">Time bonus
-                    <th><small>ΣGrade<br>Avg competences
-                    </th>
+                    <th><small>ΣGrade<br>Avg competences</th>
+                    <th style="writing-mode: sideways-lr">Blur time</th>
+                    <th style="writing-mode: sideways-lr">Teacher feedback</th>
+                    <th>Proctor remarks</th>
                     ''']
                 grade_a = Grades(State.config.notation)
                 grade_b = Grades(State.config.notationB)
                 for login in value:
                     active, teacher, room, timestamp, nr_blurs, nr_questions, \
-                        hostname, time_bonus, grade = value[login]
+                        hostname, time_bonus, grade, blur_time, feedback, fullscreen, remarks = value[login]
                     date = Date()
                     date.setTime(1000 * timestamp)
                     more = ''
@@ -168,6 +170,9 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                         + '<td><div>' + hostname + '</div></td>'
                         + '<td>' + time_bonus + '</td>'
                         + '<td>' + txt_grade + '</td>'
+                        + '<td>' + (blur_time or '') + '</td>'
+                        + '<td>' + feedback + '</td>'
+                        + '<td>' + replace_all(html(remarks), '\n', '<br>') + '</td>'
                         + '</tr>')
                 content.append('</table>')
                 element.innerHTML = ''.join(content)

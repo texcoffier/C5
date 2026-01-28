@@ -174,9 +174,9 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
 
     grades = None
     the_grade = None
+    active_teacher_room = course.active_teacher_room.get(login, None)
     if feedback >= 3:
         if feedback >= 4:
-            active_teacher_room = course.active_teacher_room.get(login)
             if active_teacher_room:
                 the_grade = active_teacher_room.grade
                 if feedback >= 5:
@@ -184,6 +184,10 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             else:
                 the_grade = 0
                 grades = []
+    if not active_teacher_room:
+        active_teacher_room = utilities.DEFAULT_STATE
+    if not grading:
+        active_teacher_room = active_teacher_room[:12] # Remove remarks
 
     return answer(
         session.header(login=login) + f'''
@@ -203,8 +207,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             START = {course.start_timestamp};
             TT = {int(session.login in course.tt_list)};
             INFOS = {json.dumps(infos)};
-            WHERE = {json.dumps(course.active_teacher_room.get(
-                login, utilities.State((False, '?', '?,0,0,a', 0, 0, 0, 'ip', 0, '', 0, 0))))};
+            WHERE = {json.dumps(active_teacher_room)}
             SERVER_TIME = {time.time()};
             GRADE = {json.dumps(the_grade)};
             GRADES = {json.dumps(grades)};
@@ -561,7 +564,7 @@ async def adm_force_grading_done(request:Request) -> Response:
             if state.grade[1] != nbr_grades[version]:
                 await stream.write(f'{student}: grading unfinished.\n'.encode('utf-8'))
                 continue # Not finished grading
-            config.set_parameter('active_teacher_room', 5, student, 10)
+            config.set_active_teacher_room(student, 'feedback', 5)
             await stream.write(f'{student}: <b>Force grading done.</b>\n'.encode('utf-8'))
         await stream.write(b'</pre>')
     return stream
@@ -1599,24 +1602,24 @@ async def checkpoint_student(request:Request) -> Response:
     old = course.active_teacher_room[student]
 
     if room == 'STOP':
-        course.set_parameter('active_teacher_room', 0, student, 0)
+        course.set_active_teacher_room(student, 'active', 0)
         to_log = f'#checkpoint_stop {session.login}'
     elif room == 'RESTART':
-        course.set_parameter('active_teacher_room', 1, student, 0)
-        course.set_parameter('active_teacher_room', session.login, student, 1)
+        course.set_active_teacher_room(student, 'active', 1)
+        course.set_active_teacher_room(student, 'teacher', session.login)
         to_log = f'#checkpoint_restart {session.login}'
     elif room == 'EJECT':
-        course.set_parameter('active_teacher_room', 0, student, 0)
-        course.set_parameter('active_teacher_room', '', student, 1)
-        course.set_parameter('active_teacher_room', '', student, 2)
-        course.set_parameter('active_teacher_room', seconds, student, 3)
+        course.set_active_teacher_room(student, 'active', 0)
+        course.set_active_teacher_room(student, 'teacher')
+        course.set_active_teacher_room(student, 'room')
+        course.set_active_teacher_room(student, 'last_time', seconds)
         to_log = f'#checkpoint_eject {session.login}'
     else:
         if old.teacher == '':
             # A moved STOPed student must not be reactivated
-            course.set_parameter('active_teacher_room', 1, student, 0)
-        course.set_parameter('active_teacher_room', session.login, student, 1)
-        course.set_parameter('active_teacher_room', room, student, 2)
+            course.set_active_teacher_room(student, 'active', 1)
+        course.set_active_teacher_room(student, 'teacher', session.login)
+        course.set_active_teacher_room(student, 'room', room)
         to_log = f'#checkpoint_move {session.login} {room}'
     await JournalLink.new(course, student, None, None, False).write(to_log)
     if session.is_student() and not session.is_proctor(course):
@@ -1631,8 +1634,7 @@ async def checkpoint_bonus(request:Request) -> Response:
     if not session.is_proctor(course):
         return utilities.js_message("not_proctor")
     # Information in 2 places
-    course.set_parameter('active_teacher_room', int(bonus), student, 7)
-    # course.set_parameter('active_teacher_room', 'toto' + str(bonus), student, 6) # Fake IP change for debug
+    course.set_active_teacher_room(student, 'bonus_time', int(bonus))
     await JournalLink.new(course, student, None, None, False).write(
         f'#bonus_time {bonus}')
     return await update_browser_data(course)
@@ -1645,9 +1647,24 @@ async def checkpoint_fullscreen(request:Request) -> Response:
     if not session.is_proctor(course):
         return utilities.js_message("not_proctor")
     # Information is stored in 2 places
-    course.set_parameter('active_teacher_room', int(fullscreen), student, 11)
+    course.set_active_teacher_room(student, 'fullscreen', int(fullscreen))
     await JournalLink.new(course, student, None, None, False).write(
         f'#fullscreen {fullscreen}')
+    return await update_browser_data(course)
+
+async def checkpoint_add_remark(request:Request) -> Response:
+    """Add a remarks about a student"""
+    student = request.match_info['student']
+    remark = request.match_info['remark']
+    session, course = await get_teacher_login_and_course(request)
+    if not session.is_proctor(course):
+        return utilities.js_message("not_proctor")
+    infos = course.active_teacher_room[student]
+    remarks = infos.remarks
+    if remarks:
+        remarks += '\n'
+    remarks += time.strftime('%Y-%m-%d %H:%M:%S ') + remark
+    course.set_active_teacher_room(student, 'remarks', remarks)
     return await update_browser_data(course)
 
 async def home(request:Request) -> Response:
@@ -1927,7 +1944,7 @@ async def record_feedback(request:Request) -> Response:
         return answer("Vous n'êtes pas autorisé à noter.")
     student = request.match_info['student']
     feedback = int(request.match_info['feedback'])
-    course.set_parameter('active_teacher_room', feedback, student, 10)
+    course.set_active_teacher_room(student, 'feedback', feedback)
     return answer(f"window.update_feedback({feedback})")
 
 async def error(request:Request) -> Response:
@@ -2348,8 +2365,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
             infos.last_time = int(time.time())
             if message.startswith('B'):
                 self.last_blur = infos.last_time
-                self.course.set_parameter(
-                    'active_teacher_room', infos.nr_blurs + 1, self.login, 4)
+                self.course.set_active_teacher_room(self.login, 'nr_blurs', infos.nr_blurs + 1)
             elif message.startswith('F'):
                 if self.last_blur is None:
                     # Here to not compute last_blur if not an exam session.
@@ -2366,14 +2382,12 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                 if self.last_blur:
                     # Duration must change to indicate Focus to checkpoint window
                     duration = max(infos.last_time - self.last_blur, 1)
-                    self.course.set_parameter(
-                        'active_teacher_room', infos.blur_time + duration, self.login, 9)
+                    self.course.set_active_teacher_room(self.login, 'blur_time', infos.blur_time + duration)
                     self.last_blur = 0 # Needed if 2 Focus without Blur (should not happen)
             elif message.startswith('g'):
-                self.course.set_parameter(
-                    'active_teacher_room', infos.nr_answers + 1, self.login, 5)
+                self.course.set_active_teacher_room(self.login, 'nr_answers', infos.nr_answers + 1)
             elif infos.last_time - self.last_set_parameter > 60:
-                self.course.set_parameter('active_teacher_room', infos.last_time, self.login, 3)
+                self.course.set_active_teacher_room(self.login, 'last_time', infos.last_time)
                 self.last_set_parameter = infos.last_time
 
         for socket, port in self.connections:
@@ -2605,6 +2619,7 @@ def main():
                     web.get('/checkpoint/MESSAGE/{course}/{message:.*}', checkpoint_message),
                     web.get('/checkpoint/TIME_BONUS/{course}/{student}/{bonus}', checkpoint_bonus),
                     web.get('/checkpoint/FULLSCREEN/{course}/{student}/{fullscreen}', checkpoint_fullscreen),
+                    web.get('/checkpoint/REMARK/{course}/{student}/{remark}', checkpoint_add_remark),
                     web.get('/checkpoint/HOSTS/*', checkpoint_hosts),
                     web.get('/checkpoint/MAPS/*', checkpoint_maps),
                     web.get('/checkpoint/{course}/{student}/{room}', checkpoint_student),

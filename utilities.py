@@ -147,12 +147,35 @@ get_buildings.time = 0
 # Inactive & Room=='' : wait access to examination
 # Inactive & Room!='' : examination done
 # Feedback for the student after the examination (same values than for CourseConfig)
+
+DEFAULT_STATE = (
+    0,         # Active
+    '',        # Teacher login
+    '',        # Building,Column,Line,Version
+    0,         # Last interaction
+    0,         # Number of blurs
+    0,         # Number of good questions
+    '',        # Last hostname used
+    0,         # Bonus time in seconds
+    '',        # Grade
+    0,         # Blur time in seconds
+    1,         # Feedback level (source, comments, grades...)
+    0,         # Not fullscreen allowed
+    '',        # Remarks
+    )
+
+
 class State(list): # pylint: disable=too-many-instance-attributes
     """State of the student"""
     slots = [ # The order is fundamental: do not change it
         'active', 'teacher', 'room', 'last_time', 'nr_blurs', 'nr_answers',
-        'hostname', 'bonus_time', 'grade', 'blur_time', 'feedback', 'fullscreen']
+        'hostname', 'bonus_time', 'grade', 'blur_time', 'feedback', 'fullscreen',
+        'remarks']
     slot_index = {key: i for i, key in enumerate(slots)}
+
+    def complete(self):
+        self.extend(DEFAULT_STATE[len(self):])
+        return self
 
     def __setattr__(self, attr, value):
         """Store in the list"""
@@ -237,7 +260,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             self.time = time.time()
             active_teacher_room = self.config['active_teacher_room']
             for login, state in active_teacher_room.items():
-                active_teacher_room[login] = State(state)
+                active_teacher_room[login] = State(state).complete()
         else:
             self.file_config_need_update = True
             try:
@@ -245,7 +268,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             except (IOError, FileNotFoundError):
                 if os.path.exists(self.file_py):
                     self.record_config()
-            except SyntaxError:
+            except (SyntaxError, KeyError):
                 print(f"Invalid configuration file: {self.file_cf}", flush=True)
                 raise
         # Update old data structure
@@ -280,18 +303,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                             config[data[0]] = data[1]
                     elif len(data) == 3:
                         if data[0] == 'active_teacher_room':
-                            state = data[2]
-                            if len(state) <= 11:
-                                if len(state) <= 10:
-                                    if len(state) <= 9:
-                                        if len(state) <= 8:
-                                            if len(state) <= 7:
-                                                state.append(0) # Bonus time
-                                            state.append('') # Grade
-                                        state.append(0) # Blur time
-                                    state.append(1) # Feedback default: Student work
-                                state.append(0) # Disable red popup
-                            config[data[0]][data[1]] = State(state)
+                            config[data[0]][data[1]] = State(data[2]).complete()
                         else:
                             if data[1] == '+':
                                 config[data[0]].append(data[2])
@@ -438,6 +450,8 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if not self.send_journal_running:
             self.send_journal_running = True
             asyncio.ensure_future(self.send_journal())
+    def set_active_teacher_room(self, student:str, key:str, value:Any):
+        self.set_parameter('active_teacher_room', value, student, State.slot_index[key])
     async def send_journal(self):
         """Send the changes to all listening browsers"""
         while self.to_send:
@@ -474,18 +488,18 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             else:
                 place = CONFIG.host_to_place.get(hostname, '')
             # Add to the checkpoint room
-            active_teacher_room = State((0, '', place, now, 0, 0, hostname, 0, '', 0, 1, 0))
+            active_teacher_room = State((0, '', place, now, 0, 0, hostname)).complete()
             self.set_parameter('active_teacher_room', active_teacher_room, login)
         elif hostname and hostname != active_teacher_room.hostname:
             # Student IP changed
-            self.set_parameter('active_teacher_room', hostname, login, 6)
+            self.set_active_teacher_room(login, 'hostname', hostname)
             if self.checkpoint and not self.allow_ip_change:
                 # Undo checkpointing
-                self.set_parameter('active_teacher_room', 0, login, 0)
+                self.set_active_teacher_room(login, 'active', 0)
             else:
                 if not self.checkpoint:
                     # Automaticaly place if no checkpoint
-                    self.set_parameter('active_teacher_room', CONFIG.host_to_place.get(hostname, ''), login, 2)
+                    self.set_active_teacher_room(login, 'room', CONFIG.host_to_place.get(hostname, ''))
         return active_teacher_room
 
     def status(self, login:str, hostname:str=None) -> str: # pylint: disable=too-many-return-statements,too-many-statements,too-many-branches
@@ -609,7 +623,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 competences.append(float(value))
         new_value = [sum(values), len(values),
                      sum(competences)/len(competences) if competences else 0, len(competences)]
-        self.set_parameter('active_teacher_room', new_value, login, 8)
+        self.set_active_teacher_room(login, 'grade', new_value)
         return grades
 
     def running(self, login:str, hostname:str=None) -> bool:
