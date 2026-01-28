@@ -774,10 +774,10 @@ async def adm_rename(request:Request) -> Response: # pylint: disable=too-many-br
     session, config = await get_course_config(request)
     if not session.is_admin(config):
         raise session.exception('not_admin')
-    value = request.match_info['new']
+    value = request.match_info['new'].strip()
     new_dirname = f'COMPILE_{config.compiler}/{value}'
-    if '.' in value or '/' in value:
-        return answer(f"«{value}» invalid name because it contains «/», «.»")
+    if not good_session_name(value):
+        return answer(f"«{value}» invalid name because it contains special characters")
     if os.path.exists(new_dirname):
         return answer(f"«{value}» exists!")
     os.rename(config.dir_session, new_dirname)
