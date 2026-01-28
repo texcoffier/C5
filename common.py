@@ -1974,11 +1974,6 @@ def session_tree(sessions, remove=0):
             keys[key] = []
         keys[key].append(session)
 
-    for key in keys:
-        if key != '' and len(keys[key]) == 1:
-            keys[''].append(keys[key][0])
-            del keys[key]
-
     sorted_keys = list(keys)
     sorted_keys.sort()
     keys[''].sort()
