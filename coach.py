@@ -196,12 +196,10 @@ class CoachManager:
 
     def get_option(self, option, by_default=0):
         """Gets an option value, returning by_default if not set."""
-        if option in self.options:
-            value = self.options[option]
-            if value is None or value == '':
-                return int(by_default)
-            return int(value)
-        return int(by_default)
+        value = self.options[option]
+        if eval('isNaN(value)') or value == '':  # pylint: disable=eval-used
+            value = by_default
+        return int(value)
 
     def analyse(self, event, text, cursor_position, previous_position=None):
         """Checks all coaches and returns first tip detected, or None."""
