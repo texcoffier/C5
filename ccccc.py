@@ -2451,6 +2451,27 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     + self.options['icon_home'] + '</a>')
                 tips.append(' ')
                 links.append(' ')
+                if self.options['GRADING']:
+                    if WHERE[12] or WHERE[9] > 10:
+                        links.append('🚨')
+                    else:
+                        links.append('👍')
+                    tip = 'Placé par «' + WHERE[1] + '» dans «' + WHERE[2].split(',')[0] + '» (' + WHERE[6] + ')'
+                    if WHERE[4]:
+                        tip += '. ' + WHERE[4] + ' pertes de focus (' + WHERE[9] + 's)'
+                    if WHERE[5]:
+                        tip += '. ' + WHERE[5] + 'questions ok'
+                    if WHERE[7]:
+                        tip += '. ' + int(WHERE[7]/60) + 'm bonus'
+                    if WHERE[11]:
+                        tip += '. Encart rouge désactivé'
+                    if WHERE[12]:
+                        tip += (
+                            '<div style="display: inline-block; font-size: 70%;'
+                            + 'position:absolute; width:50em; border: 1px solid #000; background: #FDD">'
+                            + replace_all(html(WHERE[12]), '\n', '<br>') + '</div>')
+                    tips.append(tip)
+                    # 'Dernière interaction : ' + nice_date(WHERE[3], True) + '<br>'
             if not self.options['GRADING'] and self.options['checkpoint'] and not self.options['feedback']:
                 tips.append("Terminer l'examen")
                 links.append('<a id="stop_button" class="stop_button" onclick="ccccc.stop()">'
