@@ -736,41 +736,34 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.worker.postMessage(self.source) # Start compile/execute/test
         if self.seconds != seconds:
             self.seconds = seconds
-            timer = document.getElementById('timer')
-            if timer:
+            if self.timer_day:
                 delta = JOURNAL.stop_timestamp - seconds + self.server_time_delta # pylint: disable=undefined-variable
                 delta += JOURNAL.bonus_time or 0
                 if JOURNAL.tt:
                     delta += int((JOURNAL.stop_timestamp - START) / 3)
                 if delta < 0:
-                    if timer.className != 'done':
-                        timer.className = "done"
+                    if self.timer_day.className != 'done':
+                        self.timer_day.className = "done"
                         stop_button = document.getElementById('stop_button')
                         if stop_button:
                             stop_button.style.display = 'none'
-                    message = self.options['time_done']
-                    delta = -delta
                     if (SESSION_LOGIN != self.options['creator']
                         and SESSION_LOGIN not in CONFIG['masters']
                         and SESSION_LOGIN not in self.options['admins']
                         and SESSION_LOGIN not in self.options['graders']
                         and SESSION_LOGIN not in self.options['proctors']):
                         self.do_stop()
-                else:
-                    message = self.options['time_running']
+                    name = 'done'
+                    self.timer_day.className = name
+                    self.timer_hour.className = name
+                    self.timer_min.className = name
+                    self.timer_sec.className = name
+                    return
                 secs = two_digit(delta % 60)
                 mins = two_digit((delta/60) % 60)
                 hours = two_digit((delta/3600) % 24)
                 days = int(delta/86400)
                 opts = self.options
-                msg = ''
-                if delta >= 86400:
-                    msg += days + ' ' + opts['time_d']
-                if delta >= 3600:
-                    msg += hours + ' ' + opts['time_h']
-                if delta >= 60:
-                    msg += mins + ' ' + opts['time_m']
-                msg += secs + ' ' + opts['time_seconds']
 
                 if delta < 60:
                     name = "minus60" # Background big red
@@ -781,17 +774,16 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 else:
                     name = 'longtime'
 
-                if msg != self.old_delta:
-                    self.old_delta = msg
-                    timer.innerHTML = message + ' ' + msg
-                    if days == 0:
-                        document.getElementById('timer_hour').innerHTML = hours
-                        document.getElementById('timer_min').innerHTML = mins
-                        document.getElementById('timer_sec').innerHTML = secs
-                        if timer.className != 'done':
-                            document.getElementById('timer_hour').className = name
-                            document.getElementById('timer_min').className = name
-                            document.getElementById('timer_sec').className = name
+                if int(delta) != self.old_delta and days < 100:
+                    self.old_delta = int(delta)
+                    self.timer_day.innerHTML = days or '⏱'
+                    self.timer_hour.innerHTML = hours
+                    self.timer_min.innerHTML = mins
+                    self.timer_sec.innerHTML = secs
+                    self.timer_day.className = name
+                    self.timer_hour.className = name
+                    self.timer_min.className = name
+                    self.timer_sec.className = name
 
     def compilation_toggle(self, element):
         """Toggle the automatic compilation flag"""
@@ -2463,14 +2455,16 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 tips.append("Terminer l'examen")
                 links.append('<a id="stop_button" class="stop_button" onclick="ccccc.stop()">'
                     + self.options['icon_stop'] + '</a>')
-            if not self.options['GRADING'] and self.options['display_timer'] and not self.options['feedback']:
-                tips.append(' ')
+            if (not self.options['GRADING'] and self.options['display_timer']
+                    and not self.options['feedback']
+                    and JOURNAL.stop_timestamp - self.seconds < 86400 * 100):
+                tips.append('Fin dans :')
                 links.append(' ')
-                tips.append('<span id="timer"></span>')
-                links.append('<span class="timer">⏱</span>')
-                tips.append('heure')
+                tips.append('jours')
+                links.append('<span id="timer_day"> </span>')
+                tips.append('heures')
                 links.append('<span id="timer_hour"> </span>')
-                tips.append('minute')
+                tips.append('minutes')
                 links.append('<span id="timer_min"> </span>')
                 tips.append(self.options['time_seconds'])
                 links.append('<span id="timer_sec"> </span>')
@@ -2501,6 +2495,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             content.append(value)
             if what in self: # pylint: disable=unsupported-membership-test
                 self[what].innerHTML = ''.join(content) # pylint: disable=unsubscriptable-object
+            self.timer_day = document.getElementById('timer_day')
+            self.timer_hour = document.getElementById('timer_hour')
+            self.timer_min = document.getElementById('timer_min')
+            self.timer_sec = document.getElementById('timer_sec')
         elif what == 'editor':
             self.set_editor_content(value)
             if self.wait_indent:

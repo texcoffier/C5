@@ -582,12 +582,8 @@ LABEL * {
     vertical-align: middle
 }
 
-.timer {
-    font-family: emoji;
-    font-size: 100%;
-}
 
-.timer .done {
+.done {
     background: #F00;
     color: #FFF;
 }
@@ -608,8 +604,8 @@ LABEL * {
     color: #888;
 }
 
-.timer, .longtime, .minus120, .minus300 {
-    background: #FF4;
+.timer, .minus120, .minus300 {
+    background: #4FF;
 }
 
 .fullscreen {
