@@ -228,7 +228,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             print('******* No questions in', self.file_py)
 
         if (os.path.exists(self.file_config) and os.path.exists(self.file_py)
-                and os.path.getmtime(self.file_config) >= os.path.getmtime(self.file_py)):
+                and os.path.getmtime(self.file_config) >= os.path.getmtime(self.file_cf)):
             with open(self.file_config, 'r', encoding='utf-8') as file:
                 content = file.read()
             self.config = json.loads(content)
@@ -323,6 +323,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                     file.write(repr((key, value)) + '\n')
         self.parse_position = os.path.getsize(self.file_cf)
         self.time = time.time()
+        self.file_config_need_update = True
 
     def create_config(self, what):
         """Return the config filtered by what

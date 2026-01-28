@@ -334,7 +334,7 @@ async def load_student_infos() -> None:
                 log(f'Update {config.file_config} for fast startup')
                 config.create_file_config()
                 await asyncio.sleep(0.1)
-        await asyncio.sleep(86400)
+        await asyncio.sleep(3600)
 
 async def simulate_active_student() -> None:
     """Send a student activity to checkpoints page every seconds"""
