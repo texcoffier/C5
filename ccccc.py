@@ -1359,6 +1359,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             return
         self.save_current_selection()
 
+        position_before_click = self.cursor_position
         self.update_cursor_position_now()
         if REAL_GRADING and self.add_comments:
             pos_end = self.cursor_position
@@ -1368,7 +1369,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 SHARED_WORKER.bubble(SESSION_LOGIN, pos_start, pos_end, 0, 0, 30, 2.3, '')
 
         # Coach analysis for mouse events
-        self.coach_analyse(event, self.coach_previous_position or 0)
+        self.coach_analyse(event, position_before_click)
 
     def onmousemove(self, event):
         """Mouse move"""
