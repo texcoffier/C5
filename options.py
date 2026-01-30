@@ -117,7 +117,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['coach_many_vertical_arrows_threshold' , 50, "Detect many ↑ ↓ successive strokes (0=disabled)"],
     ['coach_scroll_full_document_edge_lines',  3, "Detect long scroll until X lines to the top/bottom "],
     ['coach_scroll_full_document_min_lines' ,200, " min lines in document (0=disabled)"],
-    ['coach_letter_select_word_threshold'   , 20, "Detect word selection char by char (0=disabled)"],
+    ['coach_large_selection_threshold'      , 20, "Detect large manual selection with Shift+arrows (0=disabled)"],
     ['coach_delete_word_char_by_char_threshold' , 20, "Detect word deletion char by char (0=disabled)"],
     ['coach_copy_then_delete_max_delay'     ,3000, "Detect Ctrl+C then Backspace: max delay ms (0=disabled)"],
 

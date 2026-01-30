@@ -44,7 +44,7 @@ Available coach options (configure in options.py, set to 0 to disable):
     - coach_scroll_full_document_edge_lines: Lines from edge for scroll tip (default: 3)
     - coach_scroll_full_document_min_lines: Min file lines for scroll tip (default: 200)
 
-    - coach_letter_select_word_threshold: Shift+arrows before select tip (default: 20)
+    - coach_large_selection_threshold: Shift+arrows before select tip (default: 20)
 
     - coach_delete_word_char_by_char_threshold: Backspace/Delete before tip (default: 20)
 
@@ -105,10 +105,13 @@ COACH_MESSAGES = {
         + "• <kbd>Ctrl</kbd> + <kbd>Fin</kbd> = fin du fichier ⬇️<br>"
         + "<em>Téléportation instantanée ! ✨</em>"
     ),
-    'letter_select_word': (
-        "🔤 Sélectionner lettre par lettre ? Vraiment ?<br><br>"
-        + "Pour sélectionner un mot entier :<br>"
-        + "• Double-clic sur le mot 🖱️<br>"
+    'large_selection': (
+        "🔤 Sélectionner caractère par caractère ? Vraiment ?<br><br>"
+        + "Pour sélectionner plus vite :<br>"
+        + "• Double-clic 🖱️ = sélectionner un mot<br>"
+        + "• Triple-clic 🖱️ = sélectionner la ligne entière<br>"
+        + "• <kbd>Shift</kbd> + <kbd>↖</kbd> / <kbd>Fin</kbd> = début/fin de ligne<br>"
+        + "• <kbd>Shift</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd> = sélectionner des lignes<br>"
         + "• <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd> = mot par mot<br>"
         + "<em>Travaillez plus intelligemment ! 🧠</em>"
     ),
@@ -582,15 +585,15 @@ class Scroll_full_document(Coach):
         return None
 
 
-class Letter_select_word(KeyStreakCoach):
-    """Detects selecting word char by char (suggests double-click or Ctrl+Shift+arrows)."""
-    option = 'coach_letter_select_word'
+class Large_selection(KeyStreakCoach):
+    """Detects large manual selections with Shift+arrows."""
+    option = 'coach_large_selection'
     valid_keys = ['ArrowLeft', 'ArrowRight']
     require_shift = True
     allow_ctrl = False
     enable_param = 'threshold'
     parameters = {
-        'coach_letter_select_word_threshold': 20
+        'coach_large_selection_threshold': 20
     }
 
 
@@ -634,7 +637,7 @@ def create_coach(options):
         Arrow_then_backspace(),
         Retype_after_delete(),
         Scroll_full_document(),
-        Letter_select_word(),
+        Large_selection(),
         Delete_word_char_by_char(),
         Copy_then_delete()
         ],
