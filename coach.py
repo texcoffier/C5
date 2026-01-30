@@ -213,7 +213,7 @@ class CoachManager:
 
         for coach in self.coaches:
             if self.should_check(coach, event):
-                result = coach.check(event, text, cursor_position)
+                result = coach.get_tip(event, text, cursor_position)
                 if result:
                     self.last_event_type = current_event_type
                     return result
@@ -250,8 +250,9 @@ class Coach:
         message_key = self.option.replace('coach_', '')
         return {'option': self.option, 'message': COACH_MESSAGES[message_key], 'actions': actions or {}}
 
-    def check(self, event, text, cursor_position):
-        """Override in subclasses to implement detection logic."""
+    def get_tip(self, event, text, cursor_position):
+        """Override in subclasses to detect inefficient patterns.
+        Returns tip dict {'option', 'message', 'actions'} or None."""
         pass
 
 
@@ -286,7 +287,7 @@ class KeyStreakCoach(Coach):
             return True
         return False
 
-    def check(self, event, text, cursor_position):
+    def get_tip(self, event, text, cursor_position):
         key, ctrl, shift = self.manager.get_key_info(event)
         if not key:
             return None
@@ -330,7 +331,7 @@ class MouseCoach(Coach):
     def __init__(self):
         self.last_event_time = 0
 
-    def check(self, event, text, cursor_position):
+    def get_tip(self, event, text, cursor_position):
         if self.manager.last_event_type == 'mouseup':
             return None
 
@@ -428,7 +429,7 @@ class KeySequenceCoach(Coach):
         self.first_timestamp = 0
         self.streak = 0
 
-    def check(self, event, text, cursor_position):
+    def get_tip(self, event, text, cursor_position):
         key, ctrl, _ = self.manager.get_key_info(event)
         if not key:
             return None
@@ -469,9 +470,9 @@ class Arrow_then_backspace(KeySequenceCoach):
     def __init__(self):
         KeySequenceCoach.__init__(self)
 
-    def check(self, event, text, cursor_position):
+    def get_tip(self, event, text, cursor_position):
         self.repeat_count = self.count
-        return KeySequenceCoach.check(self, event, text, cursor_position)
+        return KeySequenceCoach.get_tip(self, event, text, cursor_position)
 
 
 class Retype_after_delete(Coach):
@@ -495,7 +496,7 @@ class Retype_after_delete(Coach):
         self.deletion_time = 0
         self.deleted_buffer = ''
 
-    def check(self, event, text, cursor_position):
+    def get_tip(self, event, text, cursor_position):
         if len(text) < len(self.previous_text):
             deleted_length = len(self.previous_text) - len(text)
             deleted_position = prefix_length(text, self.previous_text)
@@ -551,7 +552,7 @@ class Scroll_full_document(Coach):
     def __init__(self):
         self.previous_zone = None
 
-    def check(self, _event, text, cursor_position):
+    def get_tip(self, _event, text, cursor_position):
         current_line, _ = get_line_column(text, cursor_position)
         total_lines = len(text.split('\n'))
 
@@ -618,9 +619,9 @@ class Copy_then_delete(KeySequenceCoach):
     def __init__(self):
         KeySequenceCoach.__init__(self)
 
-    def check(self, event, text, cursor_position):
+    def get_tip(self, event, text, cursor_position):
         self.max_delay = getattr(self, 'max_delay', 3000)
-        return KeySequenceCoach.check(self, event, text, cursor_position)
+        return KeySequenceCoach.get_tip(self, event, text, cursor_position)
 
 
 def create_coach(options):
