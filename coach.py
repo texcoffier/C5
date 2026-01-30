@@ -236,7 +236,7 @@ class Coach:
     def __init__(self):
         pass
 
-    def show_tip(self, actions=None):
+    def tip_activable(self, actions=None):
         """Returns tip dict if cooldown elapsed, None otherwise."""
         if self.option in self.manager.last_popup:
             last = self.manager.last_popup[self.option]
@@ -310,7 +310,7 @@ class KeyStreakCoach(Coach):
         self.streak += 1
 
         if self.streak >= self.threshold:
-            result = self.show_tip()
+            result = self.tip_activable()
             if result:
                 self.streak = 0
             return result
@@ -365,7 +365,7 @@ class Mouse_short_move(MouseCoach):
             return None
 
         if dx + dy <= self.distance:
-            return self.show_tip()
+            return self.tip_activable()
 
         return None
 
@@ -389,7 +389,7 @@ class Mouse_line_bounds(MouseCoach):
         if new_line >= 1 and new_line <= len(lines):
             line_length = len(lines[new_line - 1])
             if new_col == 0 or new_col == line_length:
-                return self.show_tip()
+                return self.tip_activable()
 
         return None
 
@@ -441,7 +441,7 @@ class KeySequenceCoach(Coach):
             if self.first_timestamp > 0 and (self.manager.now - self.first_timestamp) < self.max_delay:
                 self.streak += 1
                 if self.repeat_count == 0 or self.streak >= self.repeat_count:
-                    result = self.show_tip()
+                    result = self.tip_activable()
                     if result:
                         self.first_timestamp = 0
                         self.streak = 0
@@ -528,7 +528,7 @@ class Retype_after_delete(Coach):
                 if chars_added >= 5:
                     self.reset_detection()
                 elif match_length >= self.chars - 1 and match_length > 0:
-                    result = self.show_tip()
+                    result = self.tip_activable()
                     if result:
                         self.reset_detection()
                         self.previous_text = text
@@ -571,7 +571,7 @@ class Scroll_full_document(Coach):
         if self.previous_zone and current_zone != self.previous_zone:
             if (self.previous_zone == 'top' and current_zone == 'bottom') or \
                (self.previous_zone == 'bottom' and current_zone == 'top'):
-                result = self.show_tip()
+                result = self.tip_activable()
                 if result:
                     self.previous_zone = current_zone
                     return result
