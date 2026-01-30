@@ -2904,7 +2904,9 @@ CANCEL pour les mettre au dessus des lignes de code.'''):
         self.options['version_for_teachers'] = not self.options['version_for_teachers']
         self.options['version_for_students'] = not self.options['version_for_students']
         document.body.classList.toggle('versions')
+        save_background = self.compiler.style.background
         self.update_gui()
+        self.compiler.style.background = save_background
         self.tree_canvas()
 class Plot:
     """Grapic state and utilities"""
