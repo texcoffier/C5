@@ -29,8 +29,7 @@ Available coach options (configure in options.py, set to 0 to disable):
     - coach_tip_level: Enable/disable coaching system (0=disabled, 1=enabled)
     - coach_cooldown: Minimum delay between tips in milliseconds (default: 60000)
 
-    - coach_mouse_short_move_chars: Max horizontal distance for mouse tip (default: 3)
-    - coach_mouse_short_move_drift: Max vertical drift for mouse tip (default: 3)
+    - coach_mouse_short_move_distance: Max dx+dy distance in keystrokes for mouse tip (default: 3)
 
     - coach_mouse_line_bounds_min_move: Min chars moved for Home/End tip (default: 2)
 
@@ -353,23 +352,19 @@ class MouseCoach(Coach):
 class Mouse_short_move(MouseCoach):
     """Detects small mouse movements that could be done with arrow keys."""
     option = 'coach_mouse_short_move'
-    enable_param = 'chars'
+    enable_param = 'distance'
     parameters = {
-        'coach_mouse_short_move_chars': 3,
-        'coach_mouse_short_move_drift': 3
+        'coach_mouse_short_move_distance': 3
     }
 
     def check_movement(self, prev_line, prev_col, new_line, new_col, text):
         dy = abs(new_line - prev_line)
         dx = abs(new_col - prev_col)
 
-        if dy == 0 and dx == 0:
+        if dx + dy == 0:
             return None
 
-        if dy == 0 and dx <= self.chars:
-            return self.show_tip()
-
-        if dx == 0 and dy <= self.drift:
+        if dx + dy <= self.distance:
             return self.show_tip()
 
         return None
