@@ -2597,6 +2597,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def goto_question(self, index):
         """Indicate the new question to the worker"""
         if self.allow_edit:
+            if index not in JOURNAL.questions and REAL_GRADING:
+                self.popup_message("L'étudiant n'a pas regardé cette question.\nChoisissez en une autre.")
+                return
             self.unlock_worker()
             #if self.in_past_history:
             #    JOURNAL.pop()
