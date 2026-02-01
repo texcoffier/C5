@@ -1922,6 +1922,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             source = self.source[:self.cursor_position-to_delete] + to_insert + self.source[self.cursor_position:]
             self.set_editor_content(source, self.cursor_position + len(to_insert) - to_delete)
             self.update_source()
+            line, _column = self.get_line_column(self.cursor_position)
+            if self.layered.offsetHeight + self.layered.scrollTop - line * self.line_height < 50:
+                self.layered.scrollBy(0, 50)
             self.update_cursor_position_now()
             stop_event(event)
             if self.options['compiler'] == 'coqc': # Automatic compilation on Enter
