@@ -9,7 +9,7 @@ COURSE_OPTIONS = {
             'title': 'Testez vos programmes Racket',
             'automatic_compilation': 0,
             'compiler': 'racket',
-            'compile_options': ['use_pool'],
+            'compile_options': [],
             'language': 'lisp',
             'allow_copy_paste': 1,
             'checkpoint': 0,

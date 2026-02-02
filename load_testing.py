@@ -12,16 +12,18 @@ import time
 import asyncio
 import random
 import ssl
+import traceback
 import websockets
 import utilities
 
-NR_STUDENTS = 10
-DT = 1
+NR_STUDENTS = 20
+DT = 1 # Each student make a compile each DT...4DT seconds
+STATS_DT = 1
 
 if 'racket' in sys.argv:
     COURSE = 'REMOTE=racket'
     def compiler(i):
-        return ['compile', [COURSE, '0', 'racket', ['use_pool'], [], [], 
+        return ['compile', [COURSE, '0', 'racket', ['use_pool'], [], [],
                 f'(require racket/math)\n(display "Bonjour{i}")\n'
         ]]
     def check_exec(answer, i):
@@ -55,6 +57,8 @@ async def wait(socket, fct, i):
             return
         if '["return' in answer:
             break
+    if 'out of time' in answer:
+        raise ValueError('out of time')
     raise ValueError(f"wait {fct} i={i} failed with {answer}")
 
 TICKET = 'FAKETICKET'
@@ -71,20 +75,41 @@ with open(f'TICKETS/{TICKET}', 'w', encoding="ascii") as _:
     _.write(repr(('localhost', BROWSER, 'X', time.time(), {'fn': 'FN', 'sn': 'SN'})))
 
 STATS = []
+STUDENTS = []
 
 async def one_student():
     """Emulate one student work"""
+    me = len(STUDENTS)
+    STUDENTS.append([])
+
     async with websockets.connect(URL, additional_headers=HEADERS, ssl=CERT) as websocket: # pylint: disable=no-member
         while True:
-            await asyncio.sleep(DT + 3*DT*random.random())
-            start = time.time()
-            i = random.random()
-            await websocket.send(json.dumps(compiler(i)))
-            await wait(websocket, check_compile, i)
-            await websocket.send(json.dumps(['run', [[], [], 1000, 100000]]))
-            await wait(websocket, check_exec, i)
-            # print(f'{name}:{time.time()-start:.1f} ', end='', flush=True)
-            STATS.append(time.time() - start)
+            try:
+                STUDENTS[me] = 's'
+                await asyncio.sleep(DT + 3*DT*random.random())
+                start = time.time()
+                i = random.random()
+                STUDENTS[me] = 'S'
+                await websocket.send(json.dumps(compiler(i)))
+                STUDENTS[me] = 'c'
+                await wait(websocket, check_compile, i)
+                STUDENTS[me] = 'C'
+                await websocket.send(json.dumps(['run', [[], [], 1000, 100000]]))
+                STUDENTS[me] = 'r'
+                await wait(websocket, check_exec, i)
+                STUDENTS[me] = 'R'
+                # print(f'{name}:{time.time()-start:.1f} ', end='', flush=True)
+                STATS.append(time.time() - start)
+            except ValueError as e:
+                print(e)
+            except websockets.exceptions.ConnectionClosed:
+                print('S', end='')
+                break # Server killed
+            except asyncio.exceptions.CancelledError:
+                print('K', end='')
+                break # Load tester killed
+            except: # pylint: disable=bare-except
+                traceback.print_exc()
 
 async def stats(time_span):
     """Display compile time stats every 'time_span' seconds"""
@@ -96,15 +121,19 @@ async def stats(time_span):
             average = sum(STATS) / nbr
             average2 = sum(i*i for i in STATS) / nbr
             stddev = (average2 - average ** 2)**0.5
-            print(f'{len(STATS)} tests, avg: {average}s, stddev: {stddev}')
+            print(f'{"".join(STUDENTS)} {len(STATS)} tests, avg: {average}s, stddev: {stddev}')
         else:
-            print("No compile done!")
+            print(f"{"".join(STUDENTS)} No compile done!")
         STATS.clear()
 
 async def main():
     """Create task list"""
     tasks = [one_student() for _ in range(NR_STUDENTS)]
-    tasks.append(stats(10))
-    await asyncio.gather(*tasks)
+    asyncio.ensure_future(stats(STATS_DT))
+    try:
+        await asyncio.gather(*tasks)
+    except asyncio.exceptions.CancelledError:
+        print('\nLoad tester killed')
+    print('\nDone')
 
 asyncio.run(main())

@@ -14,7 +14,7 @@
                 '(define (repl source)
                     (let ( [ast (read-syntax "" source)] )
                         (if (eof-object? ast)
-                            '()
+                            (close-input-port source)
                             (let ([result (with-handlers ([exn:fail? error-handler])
                                             (eval ast)
                                         )

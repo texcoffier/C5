@@ -10,7 +10,7 @@ To detect that a process is reading its standard input :
 
 """
 
-from typing import Union, List, Tuple, Optional
+from typing import Union, Tuple
 import json
 import asyncio
 # original_sleep = asyncio.sleep
@@ -29,67 +29,36 @@ import resource
 import traceback
 import subprocess
 import urllib.request
-import array
-import fcntl
-import termios
-import pathlib
-import shutil
 import gc
 import collections
 import websockets
-import re
 import utilities
+import compiler_gcc    # pylint: disable=unused-import
+import compiler_racket # pylint: disable=unused-import
+import compiler_prolog # pylint: disable=unused-import
+import compiler_coqc   # pylint: disable=unused-import
+from compilers import COMPILERS
 
 MIN_TIME_BETWEEN_CONNECT = 0.2 # Racket start time
 PROCESSES = []
 UID_MIN = int(utilities.C5_COMPILE_UID)
 FREE_USERS = list(range(UID_MIN, UID_MIN+1000))
 
-ALWAYS_ALLOWED = {"fstat", "newfstatat", "write", "read",
-                  "lseek", "futex", "exit_group", "exit",
-                  "clock_gettime", "openat", "mmap","munmap", "close"}
-ALLOWABLE = {'brk', 'access', 'arch_prctl',
-             'clone',
-             'clone3', 'execve', 'getrandom', 'madvise',
-             'mprotect', 'pread64', 'prlimit64',
-             'rseq', 'rt_sigaction', 'rt_sigprocmask', 'sched_yield',
-             'set_robust_list', 'set_tid_address', 'getpid', 'gettid', 'tgkill',
-             'getppid',
-             'wait4', # uwed by waipid
-             'clock_nanosleep', 'pipe',
-             'open'}
-
 resource.setrlimit(resource.RLIMIT_NOFILE, (10000, 10000))
 
-RACKETS = [] # Pool of racket processes
-
-def set_compiler_limits() -> None:
-    """Do not allow big processes"""
-    resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
-    resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
-
-def set_racket_limits() -> None:
-    """These limits should never be reached because enforced by racket sandbox itself"""
-    # resource.setrlimit(resource.RLIMIT_CPU, (3600, 3600))
-    resource.setrlimit(resource.RLIMIT_DATA, (200*1024*1024, 200*1024*1024))
-
-def set_coq_limits() -> None:
-    """Do not allow big processes"""
-    resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
-    resource.setrlimit(resource.RLIMIT_DATA, (600*1024*1024, 600*1024*1024))
 class Process: # pylint: disable=too-many-instance-attributes
     """A websocket session"""
+    cmp = runner = compiler = None
+    filetree_in = filetree_out = None
+    max_time = max_data = None
+    compile_options = ld_options = allowed = source = None
     def __init__(self, websocket, login:str, course:str,
-                 launcher:int) -> None:
+                 uid:int) -> None:
         self.websocket = websocket
         self.conid = str(id(websocket))
-        self.process:Optional[asyncio.subprocess.Process] = None
         self.allowed = ''
-        self.waiting:Union[bool,str] = False
-        self.tasks:List[asyncio.Task] = []
-        self.input_done = asyncio.Event()
         self.login = login
-        self.launcher = launcher
+        self.uid = uid
         self.course = utilities.CourseConfig.get(utilities.get_course(course))
         self.feedback = self.course.get_feedback(login)
         self.dir = f"{self.course.dir_log}/{login}"
@@ -100,277 +69,28 @@ class Process: # pylint: disable=too-many-instance-attributes
             os.mkdir(self.dir)
         self.exec_file = f"{self.dir}/{self.conid}"
         self.source_file = f"{self.dir}/{self.conid}.cpp"
-        self.compiler = None
-        self.canary = b''
-        self.stdin_w:int = 0
-        self.stdout:Optional[asyncio.StreamReader] = None
-        self.filetree_in = ()
-        self.filetree_out = ()
-        self.use_pool = True # For racket process
 
     def log(self, more:Union[str,Tuple]) -> None:
         """Log"""
         if self.feedback:
             return
-        print(f"{time.strftime('%Y%m%d%H%M%S')} {self.conid} {more}")
+        print(f"{time.strftime('%Y%m%d%H%M%S')} {self.conid} {more}", flush=True)
 
     def course_running(self) -> bool:
         """Check if the course is running for the user"""
         return self.course.running(self.login) or self.feedback
 
-    def kill(self):
-        """Kill all the processes of the process group"""
-        self.log(("BeforeProcessKill", self.launcher))
-        if self.compiler == 'racket':
-            try:
-                self.process.kill()
-                self.log("RacketKilled")
-            except ProcessLookupError:
-                self.log("RacketDoesNotExists")
-            self.process = None
-            return
-        try:
-            with open(f"/sys/fs/cgroup/C5_{self.launcher}/cgroup.kill", "w",
-                        encoding="ascii") as file:
-                file.write('1')
-            self.log("Killed")
-        except FileNotFoundError:
-            self.log("YetDead")
-        except PermissionError:
-            self.log("NotAllowed")
-        self.close_fildes()
-        self.process = None
-
-    def close_fildes(self) -> None:
-        """Close remaining pipe"""
-        if self.stdin_w:
-            self.log("CLOSE stdin_w")
-            try:
-                os.close(self.stdin_w)
-            except (BrokenPipeError, OSError):
-                pass
-            self.stdin_w = 0
-
-    def cancel_tasks(self):
-        """Stop reading data"""
-        for task in self.tasks:
-            self.log("CANCEL")
-            task.cancel()
-        self.tasks = []
-
-    def cleanup(self, erase_executable:bool=False, kill:bool=False) -> None:
-        """Close connection"""
-        self.log('CLEANUP')
-        if erase_executable:
-            try:
-                os.unlink(self.exec_file)
-            except FileNotFoundError:
-                pass
-            try:
-                os.unlink(self.source_file)
-            except FileNotFoundError:
-                pass
-
-        if self.compiler != 'racket' or erase_executable or kill:
-            self.cancel_tasks()
-        self.close_fildes()
-        self.waiting = False
-        if self.process:
-            if self.compiler != 'racket' or erase_executable or kill:
-                # Racket process must not be killed each time
-                self.kill()
-    def send_input(self, data:str) -> None:
-        """Send the data to the running process standard input"""
-        # self.log(("INPUT", data))
-        if self.process and self.stdin_w:
-            os.write(self.stdin_w, data.encode('utf-8') + b'\n')
-        self.input_done.set()
-
-    async def timeout(self) -> None:
-        """May ask for input"""
-        # pylint: disable=cell-var-from-loop
-        to_check = self.process
-        self.input_done.clear()
-        if not self.process:
-            self.log("NO_PROCESS_TIMOUT")
-            return
-        period = 0.05
-        buffer = array.array('l', [0])
-        while True:
-            await asyncio.sleep(period)
-            if self.waiting:
-                if self.waiting == "done":
-                    self.waiting = False
-                continue
-            if self.process is not to_check:
-                return # The process changed and this task was not canceled!
-            error = fcntl.ioctl(self.stdin_w, termios.FIONREAD, buffer, True) # pylint: disable=protected-access
-            if not error and buffer[0] == 0:
-                await asyncio.sleep(period) # Let the runner display the message
-                self.log("ASK")
-                if self.keep:
-                    flush = self.keep.decode("utf-8", "replace")
-                    self.keep = b''
-                    await self.websocket.send(json.dumps(['executor', flush]))
-                await self.websocket.send(json.dumps(['input', '']))
-                await self.input_done.wait()
-                self.input_done.clear()
-                os.write(self.stdin_w, b'\r')
-
-    async def runner(self) -> None: # pylint: disable=too-many-branches,too-many-statements
-        """Pass the process output to the socket"""
-        to_check = self.process
-        if not self.process:
-            self.log("NO_PROCESS_RUNNER")
-            await self.websocket.send(json.dumps(
-                ['return', "\nIl y a un problème..."]))
-            self.cleanup()
-            return
-        size = 0
-        self.keep = b''
-        do_not_read = False
-        self.log("RUNNER_START")
-        assert self.stdout
-        if self.compiler != 'racket':
-            # Wait sandbox start message
-            while True:
-                line = await self.stdout.read(1000000)
-                if not line:
-                    break
-                if self.canary in line:
-                    self.keep = line.split(self.canary, 1)[1]
-                    if self.keep:
-                        do_not_read = True
-                    break
-            # If the process is not displaying: we assume it is reading
-            # And so display an INPUT to the user.
-            self.tasks.append(asyncio.ensure_future(self.timeout()))
-        self.log("RUNNER_START_REAL")
-        while True:
-            if do_not_read:
-                line = self.keep
-                do_not_read = False
-            else:
-                to_add = await self.stdout.read(10000000)
-                if to_add:
-                    line = self.keep + to_add
-                else:
-                    if self.keep:
-                        line = self.keep + b'\n\001\002RACKETFini !\001'
-                    else:
-                        break # Never here
-            self.keep = b''
-            if self.compiler == 'racket' and (line == b'\001' or b'\001' not in line):
-                # cout << '\001' : freeze the server
-                self.keep = line
-                continue
-            if b"\002WAIT" in line:
-                self.waiting = True
-            if b'\001' in line and not line.endswith(b'\001'):
-                line, self.keep = line.rsplit(b'\001', 1)
-                line += b'\001'
-            if not self.keep and not line.endswith((b'\n', b'\001')) and b'\n' in line:
-                # To not truncate a line in 2 DIV browser side.
-                line, self.keep = line.rsplit(b'\n', 1)
-                line += b'\n'
-            if to_check is not self.process:
-                return
-            await self.websocket.send(json.dumps(['executor', line.decode("utf-8", "replace")]))
-            if b"\002WAIT" in line:
-                await self.input_done.wait()
-                self.input_done.clear()
-                self.waiting = "done"
-            size += len(line)
-            if size > self.max_data: # Maximum allowed output
-                await self.websocket.send(json.dumps(['executor', "\nTrop de données envoyées au navigateur web"]))
-                self.kill()
-                break
-            # self.log(("RUN", line[:100]))
-            if b'\001\002RACKETFini !\001' in line:
-                self.log(("EXIT", 0))
-                await self.websocket.send(json.dumps(['return', "\n"]))
-                if self.use_pool:
-                    self.process.racket_free = True
-                    self.process = None
-                    self.cancel_tasks()
-                    self.close_fildes()
-                    break
-                else:
-                    continue # For Racket (no cleanup)
-        if self.process:
-            return_value = await self.process.wait()
-            self.log(("EXIT", return_value))
-            if return_value < 0:
-                more = f'\n⚠️{signal.strsignal(-return_value)}'
-                if return_value in (-6, -9):
-                    more += f"\nVotre programme utilise plus de {self.max_time} sec. CPU,\n" \
-                            "avez-vous fait une boucle/récursion infinie ?"
-                self.process = None
-            else:
-                more = ''
-            files = []
-            for filename in self.filetree_out:
-                file = pathlib.Path(f'{self.home}/{filename}')
-                if file.exists():
-                    files.append((filename, file.read_text('utf8')))
-            await self.websocket.send(json.dumps(
-                ['return', f"\nCode de fin d'exécution = {return_value}{more}", files]))
-            self.cleanup()
     async def compile(self, data:Tuple) -> None:
         """Compile"""
-        _course, _question, compiler, compile_options, ld_options, allowed, source = data
-        self.compiler = compiler
+        (_course, _question, self.compiler, self.compile_options,
+         self.ld_options, self.allowed, source) = data
+        if not self.cmp:
+            self.cmp = COMPILERS[self.compiler]
         self.log(("COMPILE", data[:6]))
-        if compiler != 'racket':
-            self.cleanup(erase_executable=True)
-        if compiler == 'prolog':
-            source += '\nccinqquery(Goal) :- forall(Goal, writeln(Goal)).\n'
-        else:
-            with open(self.source_file, "w", encoding="utf-8") as file:
-                file.write(source)
-        if compiler in ('racket', 'coqc', 'prolog'):
-            if compiler == 'prolog':
-                self.source = source
-            await self.websocket.send(json.dumps(['compiler', "Bravo, il n'y a aucune erreur"]))
-            return
-        stderr = ''
-        forbiden = re.findall(r'(^\s*#.*(((/\.|\./|</|"/).*)|\\)$)', source, re.MULTILINE)
-        if forbiden:
-            stderr += f'Ligne interdite : «{forbiden[0][0]}»\n'
-        if compiler not in ('gcc', 'g++'):
-            stderr += f'Compilateur non autorisé : «{compiler}»\n'
-        for option in compile_options:
-            if option not in ('-Wall', '-pedantic', '-pthread', '-std=c++11', '-std=c++20'):
-                stderr += f'Option de compilation non autorisée : «{option}»\n'
-        for option in ld_options:
-            if option not in ('-lm',):
-                stderr += f"Option d'édition des liens non autorisée : «{option}»\n"
-        for option in allowed:
-            if option not in ALLOWABLE and option not in ALWAYS_ALLOWED:
-                stderr += f"Appel système non autorisé : «{option}»\n"
-        if not stderr:
-            self.allowed = ':'.join(list(ALWAYS_ALLOWED) + allowed)
-            last_allowed = self.allowed.rsplit(':',1)[-1]
-            self.canary = (
-                f'adding {last_allowed} to the process seccomp filter (allow)\n'
-                .encode('ascii'))
-            self.process = await asyncio.create_subprocess_exec(
-                compiler, *compile_options, '-I', '../../../..', '-I', '../../MEDIA',
-                self.conid + '.cpp', *ld_options, '-o', self.conid,
-                stderr=asyncio.subprocess.PIPE,
-                preexec_fn=set_compiler_limits,
-                close_fds=True,
-                cwd=self.dir
-                )
-            assert self.process.stderr
-            stderr_bytes = await self.process.stderr.read()
-            if stderr_bytes:
-                stderr = stderr_bytes.decode('utf-8').replace(self.conid, 'c5')
-            else:
-                stderr = "Bravo, il n'y a aucune erreur"
-        await self.websocket.send(json.dumps(['compiler', stderr]))
-        self.log(("ERRORS", stderr.count(': error:'), stderr.count(': warning:')))
-        os.unlink(self.source_file)
+        self.source = self.cmp.patch_source(source)
+        with open(self.source_file, "w", encoding="utf-8") as file:
+            file.write(self.source)
+        await self.cmp.compile(self)
     async def indent(self, data:str) -> None:
         """Indent"""
         process = await asyncio.create_subprocess_exec(
@@ -393,161 +113,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("UNCOMPILED")
             await self.websocket.send(json.dumps(['return', "Non compilé"]))
             return
-        self.cleanup()
-        if self.compiler == 'coqc':
-            # Should use a runner in order to read values
-            try:
-                os.unlink(self.dir + '/test.v')
-            except FileNotFoundError:
-                pass
-            os.symlink(self.conid + '.cpp', self.dir + '/test.v')
-            self.process = await asyncio.create_subprocess_exec(
-                'coqc', 'test.v',
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                preexec_fn=set_coq_limits,
-                close_fds=True,
-                cwd=self.dir
-                )
-            assert self.process.stdout
-            while True:
-                line = await self.process.stdout.readline()
-                if line:
-                    await self.websocket.send(json.dumps(['executor', line.decode("utf-8", "replace")]))
-                else:
-                    break
-            await self.websocket.send(json.dumps(
-                ['return', f"\nCode de fin d'exécution = {await self.process.wait()}"]))
-            self.cleanup()
-            return
-        if self.compiler == 'prolog':
-            # Should use a runner in order to read values
-            try:
-                os.mkdir(self.home)
-            except FileExistsError:
-                pass
-            # Protection appels système
-            args = [
-                "./launcher",
-                'execve:brk:mmap:access:openat:newfstatat:close:read:fstat:arch_prctl:set_tid_address:set_robust_list:rseq:mprotect:prlimit64:munmap:futex:ioctl:readlink:rt_sigaction:rt_sigprocmask:sigaltstack:getpid:lseek:clock_gettime:fcntl:exit_group:getcwd:getdents64:pread64:write:gettid:sysinfo',
-                str(self.launcher),
-                self.home,
-                str(self.max_time),
-                '/usr/bin/swipl', '--no-tty', '--no-packs', '--quiet', '-t', 'halt',
-                ]
-            for i in self.source.split('\n%% ')[1:]:
-                query = i.split('\n')[0]
-                safe = query.replace('"', '\\"')
-                args.append('-g')
-                args.append(f'writeln("\\n🟩{safe}🟩")')
-                args.append('-g')
-                args.append(f'consult(user),ccinqquery({query})')
-            args.append('-')
-            self.log(f"SWI-PROLOG {' '.join(args)}")
-            try:
-                self.process = await asyncio.create_subprocess_exec(
-                    *args,
-                    stdin=asyncio.subprocess.PIPE,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT,
-                    close_fds=True,
-                    )
-            except:
-                for i in traceback.format_exc().split('\n'):
-                    self.log(("EXCEPTION", i))
-            assert self.process.stdout
-            assert self.process.stdin
-            self.process.stdin.write(self.source.encode('utf-8'))
-            self.process.stdin.close()
-            sandbox_messages = True
-            while True:
-                line = await self.process.stdout.readline()
-                if line:
-                    if sandbox_messages:
-                        if line.startswith((b'adding ', b'initializing ')):
-                            continue
-                        sandbox_messages = False
-                    await self.websocket.send(json.dumps(['executor', line.decode("utf-8", "replace")]))
-                else:
-                    break
-            await self.websocket.send(json.dumps(
-                ['return', f"\nCode de fin d'exécution = {await self.process.wait()}"]))
-            self.cleanup()
-            return
-        if self.compiler == 'racket':
-            self.log("RUN RACKET")
-            if self.use_pool:
-                for process in RACKETS:
-                    if process.racket_free:
-                        self.process = process
-                        process.racket_free = False
-                        self.stdout = self.process.stdout
-                        self.tasks = [asyncio.ensure_future(self.runner())]
-                        break
-            if not self.process:
-                self.log("LAUNCH-RACKET")
-                self.process = await asyncio.create_subprocess_exec(
-                    '/usr/bin/racket', "compile_racket.rkt",
-                stdout=asyncio.subprocess.PIPE,
-                stdin=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                preexec_fn=set_racket_limits,
-                close_fds=True,
-                # ChatGPT suggest this to use less memory 2% less when I tried.
-                env={'PLT_GC_VARIABLES': 'usemmap=no;generations=1;trim=yes',
-                     'LC_ALL': 'C.utf8'
-                     # 'PLT_RACKET_NO_JIT': '1'
-                    }
-                )
-                self.stdout = self.process.stdout
-                self.tasks = [asyncio.ensure_future(self.runner())]
-                if self.use_pool:
-                    self.process.racket_free = False
-                    RACKETS.append(self.process)
-            assert self.process.stdin
-            self.process.stdin.write(self.source_file.encode('utf-8') + b'\n')
-            return
-        if not os.path.exists(self.exec_file):
-            self.log("RUN nothing")
-            await self.websocket.send(json.dumps(['return', "Rien à exécuter"]))
-            return
-        self.log(f'./launcher {self.allowed} {self.launcher} {self.home} {self.max_time} ../{self.conid}')
-        stdin_r, stdin_w = os.pipe()
-        stdout_r, stdout_w = os.pipe()
-        shutil.rmtree(self.home, ignore_errors=True)
-        pathlib.Path(self.home).mkdir(exist_ok=True)
-        for filename, content in self.filetree_in:
-            filename = pathlib.Path(f"{self.home}/{filename}")
-            filename.parent.mkdir(parents=True, exist_ok=True)
-            filename.write_text(content, encoding='utf8')
-
-        self.process = await asyncio.create_subprocess_exec(
-            "./launcher",
-            self.allowed,
-            str(self.launcher),
-            self.home,
-            str(self.max_time),
-            '../' + self.conid,
-            stdout=stdout_w,
-            stdin=stdin_r,
-            stderr=asyncio.subprocess.STDOUT,
-            close_fds=True,
-            )
-        os.close(stdout_w)
-        os.close(stdin_r)
-
-        self.stdout = asyncio.StreamReader()
-        read_protocol = asyncio.StreamReaderProtocol(self.stdout)
-        await asyncio.get_running_loop().connect_read_pipe(
-            lambda: read_protocol, os.fdopen(stdout_r, "rb"))
-
-        self.stdin_w = stdin_w
-        try:
-            os.write(self.stdin_w, b'\r')
-        except BrokenPipeError:
-            os.close(self.stdin_w)
-            self.stdin_w = 0
-        self.tasks = [asyncio.ensure_future(self.runner())]
+        await self.cmp.run(self)
 
 async def bad_session(websocket) -> None:
     """Tail the browser that the session is bad"""
@@ -557,6 +123,7 @@ async def bad_session(websocket) -> None:
 OBJECTS = {}
 
 def search_leak():
+    """Uncomment the call to this function to search leak on session close"""
     print('New objects from the first call')
     gc.collect()
     numbers = collections.defaultdict(int)
@@ -572,7 +139,7 @@ def search_leak():
         OBJECTS.update(numbers)
     print(flush=True)
 
-async def echo(websocket) -> None: # pylint: disable=too-many-branches
+async def echo(websocket) -> None: # pylint: disable=too-many-branches,too-many-statements
     """Analyse the requests from one websocket connection"""
     try:
         path = websocket.request.path
@@ -597,7 +164,8 @@ N'actualisez PAS la page."""]))
         await bad_session(websocket)
         return
 
-    session = await utilities.Session.get(websocket, ticket, allow_ip_change='load_testing' in sys.argv)
+    session = await utilities.Session.get(websocket, ticket,
+        allow_ip_change='load_testing' in sys.argv)
     if not session:
         await bad_session(websocket)
         return
@@ -608,12 +176,14 @@ N'actualisez PAS la page."""]))
     process = Process(websocket, login, course, FREE_USERS.pop())
     PROCESSES.append(process)
     try:
-        process.log(("START", ticket, login, course, process.launcher))
+        process.log(("START", ticket, login, course, process.uid))
         async for message in websocket:
             action, data = json.loads(message)
             if action != 'input': # To many logs (Grapic)
                 process.log(('ACTION', action))
-            if not session.is_admin() and not process.course_running() and not session.is_grader(process.course):
+            if (not session.is_admin()
+                    and not process.course_running()
+                    and not session.is_grader(process.course)):
                 if action == 'compile':
                     await process.websocket.send(json.dumps(
                         ['compiler', f"La session est terminée pour {login}"]))
@@ -626,27 +196,31 @@ N'actualisez PAS la page."""]))
             elif action == 'indent':
                 await process.indent(data)
             elif action == 'kill':
-                process.cleanup(kill=True)
+                if process.runner:
+                    process.runner.stop()
+                    process.runner = None
             elif action == 'input':
                 if data == '\000KILL':
-                    process.cleanup(kill=True)
+                    process.runner.stop()
+                    process.runner = None
                 else:
-                    process.send_input(data)
+                    process.runner.send_input(data)
             elif action == 'run':
                 await process.run(data)
             else:
                 process.log(("BUG", action, data))
                 await websocket.send(json.dumps(['compiler', 'bug']))
+    except (asyncio.exceptions.CancelledError, websockets.exceptions.ConnectionClosed):
+        pass
     except: # pylint: disable=bare-except
-        if process.process:
-            process.log(("EXCEPTION", traceback.format_exc()))
-        else:
-            process.log(("EXCEPTION", 'Because killed'))
+        process.log(("EXCEPTION", traceback.format_exc()))
     finally:
         process.log(("STOP", len(PROCESSES), len(FREE_USERS)))
-        #process.cleanup(erase_executable=True)
+        if process.cmp:
+            process.cmp.cancel_tasks(process)
+            process.cmp.erase_files(process)
         PROCESSES.remove(process)
-        FREE_USERS.append(process.launcher)
+        FREE_USERS.append(process.uid)
     # search_leak()
 echo.next_allowed_start_time = 0
 
@@ -664,9 +238,16 @@ signal.signal(signal.SIGQUIT, lambda signal, stack: sys.exit(0))
 signal.signal(signal.SIGTERM, lambda signal, stack: sys.exit(0))
 def clean():
     """Erase executables"""
+    print("STOP SERVER: kill killer")
     KILLER.kill()
+    print("STOP SERVER: Erase files")
     for process in PROCESSES:
-        process.cleanup(erase_executable=True)
+        if process.cmp:
+            process.cmp.erase_files(process)
+    print("STOP SERVER: cleanup compilers")
+    for cmp in COMPILERS.values():
+        cmp.server_exit()
+    print("STOP SERVER: bye bye")
 
 KILLER = subprocess.Popen("./killer") # pylint: disable=consider-using-with
 atexit.register(clean)

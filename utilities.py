@@ -26,6 +26,8 @@ import common
 from c5 import init_globals
 import xxx_local
 
+C5_IP = C5_SOCK = C5_COMPILE_UID = None
+
 def get_certificate(server=True):
     """Returns None if no certificate needed"""
     if C5_CERT == 'SS': # Encryption is done by NGINX

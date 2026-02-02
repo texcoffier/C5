@@ -18,5 +18,4 @@ additional-builtins=MORE,COURSE,TICKET,LOGIN,STUDENTS,STUDENT_DICT,CONFIG,MESSAG
 disable=C0302
 
 [TYPECHECK]
-zope=yes
 generated-members=Items,Values,indexOf
