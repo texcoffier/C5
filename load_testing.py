@@ -15,38 +15,47 @@ import ssl
 import websockets
 import utilities
 
-NR_STUDENTS = 100
+NR_STUDENTS = 10
+DT = 1
 
 if 'racket' in sys.argv:
     COURSE = 'REMOTE=racket'
-    SOURCE = """
-(require racket/math)
-(display "Bonjour")
-"""
-    COMPILER = ['compile', [COURSE, '0', 'racket', ['use_pool'], [], [], SOURCE]]
-    def check_exec(answer):
-        return 'Bonjour' in answer and 'RACKETFini' in answer
+    def compiler(i):
+        return ['compile', [COURSE, '0', 'racket', ['use_pool'], [], [], 
+                f'(require racket/math)\n(display "Bonjour{i}")\n'
+        ]]
+    def check_exec(answer, i):
+        return f'Bonjour{i}' in answer and 'return' in answer
+    def check_compile(answer, _):
+        return 'Bravo' in answer
 else:
     COURSE = 'REMOTE=test'
-    SOURCE = """
-    using namespace std;
-    #include <iostream>
-    int main()
-    {
-        cout << "Bonjour\\n";
-    }
-    """
-    COMPILER = ['compile', [COURSE, '0', 'g++', [], [], [], SOURCE]]
-    def check_exec(answer):
-        return 'Bonjour' in answer and 'cution = 0' in answer and 'return' in answer
+    def compiler(i):
+        return ['compile', [COURSE, '0', 'g++', [], [], [],
+                'using namespace std;\n'
+                + '#include <iostream>\n'
+                + 'int main()\n'
+                + '{\n'
+                + f'    cout << "Bonjour{i}\\n";\n'
+                + '}\n'
+               ]]
+    def check_exec(answer, i):
+        return f'Bonjour{i}' in answer and 'return' in answer
+    def check_compile(answer, _):
+        return 'Bravo' in answer
 
-async def wait(socket, fct):
-    answer = await socket.recv()
-    for _ in range(10):
-        if fct(answer):
+async def wait(socket, fct, i):
+    answer = ''
+    while True:
+        v = await socket.recv()
+        if not v:
+            break
+        answer += v
+        if fct(answer, i):
             return
-        answer += await socket.recv()
-    raise ValueError(f"wait {fct} failed with {answer}")
+        if '["return' in answer:
+            break
+    raise ValueError(f"wait {fct} i={i} failed with {answer}")
 
 TICKET = 'FAKETICKET'
 BROWSER = 'Mozilla/5.0 (X11) Gecko/20100101 Firefox/100.0'
@@ -63,19 +72,17 @@ with open(f'TICKETS/{TICKET}', 'w', encoding="ascii") as _:
 
 STATS = []
 
-def check_compile(answer):
-    return 'Bravo' in answer
-
 async def one_student():
     """Emulate one student work"""
     async with websockets.connect(URL, additional_headers=HEADERS, ssl=CERT) as websocket: # pylint: disable=no-member
         while True:
-            await asyncio.sleep(10 + 30*random.random())
+            await asyncio.sleep(DT + 3*DT*random.random())
             start = time.time()
-            await websocket.send(json.dumps(COMPILER))
-            await wait(websocket, check_compile)
+            i = random.random()
+            await websocket.send(json.dumps(compiler(i)))
+            await wait(websocket, check_compile, i)
             await websocket.send(json.dumps(['run', [[], [], 1000, 100000]]))
-            await wait(websocket, check_exec)
+            await wait(websocket, check_exec, i)
             # print(f'{name}:{time.time()-start:.1f} ', end='', flush=True)
             STATS.append(time.time() - start)
 
