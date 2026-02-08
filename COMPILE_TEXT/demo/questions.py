@@ -8,7 +8,6 @@ COURSE_OPTIONS = {'positions' : {
     'executor': [100, 30, 30, 70, '#EEF'],
     'time': [80, 20, 98, 2, '#0000'],
     'index': [0, 1, 0, 100, '#0000'],
-    'line_numbers': [49, 1, 0, 100, '#EEE'], # Outside the screen by defaut
     },
     'state': 'Ready',
     'checkpoint': 0,
