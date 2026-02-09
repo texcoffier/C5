@@ -1730,13 +1730,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Close completion menu"""
         if self.completion_running:
             self.search_input.style.display = 'none'
-            self.search_input.last_value = None
             self.completion.style.display = 'none'
             self.completion_running = False
 
     def start_search(self):
         """Ctrl+F"""
-        self.search_input.last_value = None
         def update_search():
             value = self.search_input.value
             if value == self.search_input.last_value:
@@ -1766,7 +1764,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         else:
             self.search_input.style.display = 'block'
             self.search_input.onkeyup = update_search
-            self.search_input.value = self.highlight_word() or ''
+            self.search_input.value = self.highlight_word() or self.search_input.last_value or ''
             editor_left = self.options['positions']['editor'][0]
             editor_right = editor_left + self.options['positions']['editor'][1]
             if editor_left >= 100 - editor_right:
@@ -1780,8 +1778,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
             self.search_input.line, self.search_input.column = self.get_line_column(self.cursor_position)
             self.search_input.scroll = self.layered.scrollTop
-            update_search()
+        self.search_input.last_value = None
         self.search_input.focus()
+        self.search_input.select()
+        update_search()
 
     def onkeydown(self, event): # pylint: disable=too-many-branches
         """Key down"""
