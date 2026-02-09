@@ -1869,6 +1869,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         elif event.key == 'f' and event.ctrlKey:
             self.start_search()
             stop_event(event)
+            return # Do not hide overlay
         elif event.key in 'yz' and event.ctrlKey:
             stop_event(event)
             if event.key == 'z':
@@ -1972,7 +1973,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         if event.target.tagName == 'TEXTAREA':
             # The teacher enter a comment
             return
-        self.do_coloring = "onkeyup"
+        if not self.completion_running:
+            self.do_coloring = 'onkeyup'
         if JOURNAL.pending_goto:
             JOURNAL.version_tree_show(self.canvas, int(JOURNAL.lines[-1][1:]))
         else:
