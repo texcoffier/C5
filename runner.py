@@ -200,6 +200,8 @@ class Runner: # pylint: disable=too-many-instance-attributes
             if exit_value in (-6, -9):
                 more += f"\nVotre programme utilise plus de {self.process.max_time} sec. CPU,\n" \
                         "avez-vous fait une boucle/récursion infinie ?"
+            elif exit_value == -11:
+                more += "\nVotre programme utilise trop de mémoire."
         else:
             more = ''
         files = []
