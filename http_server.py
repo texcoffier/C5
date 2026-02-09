@@ -575,6 +575,8 @@ def move_to_trash(path, timestamp=None):
     if os.path.exists(path):
         if timestamp is None:
             timestamp = time.strftime('%Y%m%d%H%M%S')
+        if not os.path.exists('Trash'):
+            os.mkdir('Trash', 0o700)
         os.rename(path, f'Trash/{timestamp}-{path.replace("/", "_")}')
 
 async def adm_media(request:Request) -> Response:
