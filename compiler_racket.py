@@ -21,7 +21,7 @@ class Racket(Compiler):
     #     return # Why not destroy files?
     async def run(self, session):
         """Evaluate a racket program"""
-        session.log(('RACKET', len(RACKETS), session.runner))
+        session.log('RACKET START')
         while session.runner:
             await asyncio.sleep(0.1)
         session.runner = get_free_runner()

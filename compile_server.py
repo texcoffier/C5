@@ -200,11 +200,12 @@ N'actualisez PAS la page."""]))
                     process.runner.stop()
                     process.runner = None
             elif action == 'input':
-                if data == '\000KILL':
-                    process.runner.stop()
-                    process.runner = None
-                else:
-                    process.runner.send_input(data)
+                if process.runner:
+                    if data == '\000KILL':
+                        process.runner.stop()
+                        process.runner = None
+                    else:
+                        process.runner.send_input(data)
             elif action == 'run':
                 await process.run(data)
             else:

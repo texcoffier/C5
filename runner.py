@@ -12,6 +12,7 @@ import os
 import pathlib
 import signal
 import traceback
+import websockets
 
 RUNNERS = set()
 class Runner: # pylint: disable=too-many-instance-attributes
@@ -79,7 +80,10 @@ class Runner: # pylint: disable=too-many-instance-attributes
         """Send the data to the running process standard input"""
         # self.log(("INPUT", data))
         if self.stdin:
-            os.write(self.stdin, data.encode('utf-8') + b'\n')
+            try:
+                os.write(self.stdin, data.encode('utf-8') + b'\n')
+            except OSError:
+                pass # Dead process
         self.input_done.set()
 
     async def test_if_process_is_reading(self) -> None:
@@ -175,8 +179,11 @@ class Runner: # pylint: disable=too-many-instance-attributes
                 line, self.keep = line.rsplit(b'\n', 1)
                 line += b'\n'
             if self.session:
-                await self.session.websocket.send(json.dumps(
-                    ['executor', line.decode("utf-8", "replace")]))
+                try:
+                    await self.session.websocket.send(json.dumps(
+                        ['executor', line.decode("utf-8", "replace")]))
+                except websockets.exceptions.ConnectionClosed:
+                    pass # The run must continue for Racket
             if b"\002WAIT" in line: # Wait browser answer
                 await self.input_done.wait()
                 self.input_done.clear()
@@ -184,13 +191,15 @@ class Runner: # pylint: disable=too-many-instance-attributes
             size += len(line)
             if size > self.max_data: # Maximum allowed output
                 if self.session:
-                    await self.session.websocket.send(json.dumps(
-                        ['executor', "\nTrop de données envoyées au navigateur web"]))
+                    try:
+                        await self.session.websocket.send(json.dumps(
+                            ['executor', "\nTrop de données envoyées au navigateur web"]))
+                    except websockets.exceptions.ConnectionClosed:
+                        pass # The run must continue for Racket
                 if not self.session or self.session.cmp.kill_if_too_much_data_is_sent:
                     break
             if not to_add:
                 break # Process ended (closed stdout)
-
         exit_value = await self.process.wait()
         if not self.session:
             return
@@ -198,7 +207,7 @@ class Runner: # pylint: disable=too-many-instance-attributes
         if exit_value < 0:
             more = f'\n⚠️{signal.strsignal(-exit_value)}'
             if exit_value in (-6, -9):
-                more += f"\nVotre programme utilise plus de {self.process.max_time} sec. CPU,\n" \
+                more += f"\nVotre programme utilise trop de temps CPU,\n" \
                         "avez-vous fait une boucle/récursion infinie ?"
             elif exit_value == -11:
                 more += "\nVotre programme utilise trop de mémoire."
