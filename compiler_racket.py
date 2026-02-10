@@ -6,7 +6,12 @@ import websockets
 from compilers import Compiler
 import runner
 
+NR_MAX_RACKET = 16 # The best is one per CPU core/thread
 RACKETS = []
+def get_free_runner():
+    for racket_runner in RACKETS:
+        if racket_runner.racket_free:
+            return racket_runner
 class Racket(Compiler):
     """Racket compiler"""
     name = 'racket'
@@ -19,23 +24,25 @@ class Racket(Compiler):
         session.log(('RACKET', len(RACKETS), session.runner))
         while session.runner:
             await asyncio.sleep(0.1)
-        for racket_runner in RACKETS:
-            if racket_runner.racket_free:
-                session.runner = racket_runner
-                break
+        session.runner = get_free_runner()
         if not session.runner:
-            session.log(('RACKET LAUNCH', len(RACKETS)))
-            process = await asyncio.create_subprocess_exec(
-                '/usr/bin/racket', "compile_racket.rkt",
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                close_fds=True,
-                env={'LC_ALL': 'C.utf8'},
-                )
-            # This runner never stops
-            session.runner = runner.Runner(session, process)
-            RACKETS.append(session.runner)
+            if len(RACKETS) < NR_MAX_RACKET:
+                session.log(('RACKET LAUNCH', len(RACKETS)))
+                process = await asyncio.create_subprocess_exec(
+                    '/usr/bin/racket', "compile_racket.rkt",
+                    stdin=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT,
+                    close_fds=True,
+                    env={'LC_ALL': 'C.utf8'},
+                    )
+                # This runner never stops
+                session.runner = runner.Runner(session, process)
+                RACKETS.append(session.runner)
+            while not session.runner:
+                await asyncio.sleep(0.2)
+                session.runner = get_free_runner()
+
         session.runner.session = session
         session.runner.racket_free = False
         session.runner.process.stdin.write(session.source_file.encode('utf-8') + b'\n')
