@@ -1,4 +1,5 @@
 #lang racket
+; A change in this file implies a server restart.
 
 (require racket/sandbox)
 
@@ -45,7 +46,7 @@
         (compile-and-run (read-line)))
     (display "\001\002RACKETFini !\001")
     (flush-output)
-    (collect-garbage 'major)
+    ;(collect-garbage 'major)
     (daemon)
 )
 
