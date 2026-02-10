@@ -16,9 +16,9 @@ import traceback
 import websockets
 import utilities
 
-NR_STUDENTS = 20
-DT = 1 # Each student make a compile each DT...4DT seconds
-STATS_DT = 1
+NR_STUDENTS = 200
+DT = 10 # Each student make a compile each DT...4DT seconds
+STATS_DT = 100
 
 if 'racket' in sys.argv:
     COURSE = 'REMOTE=racket'
@@ -80,7 +80,7 @@ STUDENTS = []
 async def one_student():
     """Emulate one student work"""
     me = len(STUDENTS)
-    STUDENTS.append([])
+    STUDENTS.append('?')
 
     async with websockets.connect(URL, additional_headers=HEADERS, ssl=CERT) as websocket: # pylint: disable=no-member
         while True:

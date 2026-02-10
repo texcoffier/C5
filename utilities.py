@@ -1082,9 +1082,12 @@ class Session:
             # websocket
             try:
                 headers = request.request.headers
-            except:
+            except AttributeError:
                 headers = request.request_headers # Deprecated
-            client_ip, _port = request.remote_address
+            if request.remote_address:
+                client_ip, _port = request.remote_address
+            else:
+                client_ip = '0.0.0.0'
         forward = headers.get('x-forwarded-for', '')
         if forward:
             client_ip = forward.split(",")[0]
