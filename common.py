@@ -1923,7 +1923,48 @@ def compute_diffs_regtest(algorithm):
         change(initial, initial, 4)
     print('ok')
 
-compute_diffs = myers_diff
+    if algorithm is not enhanced_myers:
+        return
+
+    for a, b, expected in [
+        ['# pylint: disable=undefined-variable', '# pylint: able', [[False, 10, 22]]],
+        ['aaaabbbb', 'aaaabbb', [[False, 7, 1]]],
+        ['aaaabbbb', 'aaabbbb', [[False, 3, 1]]],
+        ['aaabbbb', 'aaaabbbb', [[True, 3, 'a']]],
+        ['abc.abcabcdef', 'abcabcdef', [[False, 3, 4]]],
+        ['abc.abc.def', 'abcabc.def', [[False, 3, 1]]],
+        ['abc.abc.def', 'abc.def', [[False, 4, 4]]],
+        ['abcabc', 'abc.abcabc', [[True, 3, '.abc']]],
+    ]:
+        if algorithm(a, b) != expected:
+            print('a        ', a)
+            print('b        ', b)
+            print('Expected', expected)
+            print('Computed', algorithm(a, b))
+            raise ValueError('bug')
+
+def enhanced_myers(a, b, merge=True):
+    begin = 0
+    if a == b:
+        return []
+    if b.startswith(a):
+        return [[True, len(a), b[len(a):]]]
+    if a.startswith(b):
+        return [[False, len(b), len(a)-len(b)]]
+    while a[begin] == b[begin]:
+        begin += 1
+    end_a = len(a) - 1
+    end_b = len(b) - 1
+    while end_a >= begin and end_b >= begin and a[end_a] == b[end_b]:
+        end_a -= 1
+        end_b -= 1
+    if end_b < begin:
+        return [[False, begin, len(a) - len(b)]]
+    if end_a < begin:
+        return [[True, begin, b[begin:begin+len(b)-len(a)]]]
+    return myers_diff(a, b, merge)
+
+compute_diffs = enhanced_myers
 
 
 def language_delimiters(language):
@@ -1943,13 +1984,14 @@ def language_delimiters(language):
         return '--', "'", '\001', ''
     return '\001', '"', '\001', ''
 
-# print(myers_diff('aaaa', 'aaaa'))
-# print(myers_diff('aaaa', ''))
-# print(myers_diff('', 'aaaa'))
-# print(myers_diff('bbbb', 'aaaa'))
+# # Uncomment following line and run:  python3 common.py
+# print(enhanced_myers('aaaa', 'aaaa'))
+# print(enhanced_myers('aaaa', ''))
+# print(enhanced_myers('', 'aaaa'))
+# print(enhanced_myers('bbbb', 'aaaa'))
 # import time
 # start = time.time()
-# compute_diffs_regtest(myers_diff)
+# compute_diffs_regtest(enhanced_myers)
 # print(time.time() - start)
 # start = time.time()
 # compute_diffs_regtest(compute_diffs_fast)
