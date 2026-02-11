@@ -9,7 +9,6 @@ import os
 import json
 class Compiler:
     """Base class for compiler definition"""
-    kill_if_too_much_data_is_sent = True
     name = None
     def __init_subclass__(cls):
         """Update the compiler dictionnary"""
@@ -67,5 +66,8 @@ class Compiler:
     def status(self, _the_runner):
         """Information to append to the runner dump"""
         return ''
+
+    def kill_if_too_much_data_is_sent(self, _the_runner):
+        return True
 
 COMPILERS = {}

@@ -159,10 +159,11 @@ class Runner: # pylint: disable=too-many-instance-attributes
 
     async def runner_(self) -> None: # pylint: disable=too-many-branches,too-many-statements
         """Pass the process output to the socket"""
-        size = 0
+        self.size = 0
         self.keep = await self.read_preambule()
         self.log(('RUNNER_START_REAL', self.process, self.keep))
         need_to_read_more = self.session.cmp.need_to_read_more
+        kill_if_too_much_data_is_sent = self.session.cmp.kill_if_too_much_data_is_sent
         while True:
             to_add = await self.process.stdout.read(10000000)
             self.line = line = self.keep + to_add
@@ -188,15 +189,15 @@ class Runner: # pylint: disable=too-many-instance-attributes
                 await self.input_done.wait()
                 self.input_done.clear()
                 self.waiting = 'done'
-            size += len(line)
-            if size > self.max_data: # Maximum allowed output
+            self.size += len(line)
+            if self.size > self.max_data: # Maximum allowed output
                 if self.session:
                     try:
                         await self.session.websocket.send(json.dumps(
                             ['executor', "\nTrop de données envoyées au navigateur web"]))
                     except websockets.exceptions.ConnectionClosed:
                         pass # The run must continue for Racket
-                if not self.session or self.session.cmp.kill_if_too_much_data_is_sent:
+                if kill_if_too_much_data_is_sent(self):
                     break
             if not to_add:
                 break # Process ended (closed stdout)
@@ -207,7 +208,7 @@ class Runner: # pylint: disable=too-many-instance-attributes
         if exit_value < 0:
             more = f'\n⚠️{signal.strsignal(-exit_value)}'
             if exit_value in (-6, -9):
-                more += f"\nVotre programme utilise trop de temps CPU,\n" \
+                more += "\nVotre programme utilise trop de temps CPU,\n" \
                         "avez-vous fait une boucle/récursion infinie ?"
             elif exit_value == -11:
                 more += "\nVotre programme utilise trop de mémoire."

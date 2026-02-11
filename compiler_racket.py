@@ -15,10 +15,6 @@ def get_free_runner():
 class Racket(Compiler):
     """Racket compiler"""
     name = 'racket'
-    kill_if_too_much_data_is_sent = False
-    # def before_compile(self, _session):
-    #     """XXX Normaly cleanup old file before compile. Why not here ???"""
-    #     return # Why not destroy files?
     async def run(self, session):
         """Evaluate a racket program"""
         session.log('RACKET START')
@@ -55,8 +51,6 @@ class Racket(Compiler):
             the_runner.keep = the_runner.line
             return True
         if b'\001\002RACKETFini !\001' in the_runner.line:
-            if the_runner.session:
-                the_runner.session.runner = None
             try:
                 if the_runner.session:
                     await the_runner.session.websocket.send(json.dumps(
@@ -67,8 +61,16 @@ class Racket(Compiler):
                 pass
             the_runner.racket_free = True
             the_runner.log('RACKET DONE')
-            the_runner.session = None
+            the_runner.size = 0 # Reset send data size
+            self.kill_if_too_much_data_is_sent(the_runner)
             return True
+        return False
+    def kill_if_too_much_data_is_sent(self, the_runner):
+        """The runner continue to read racket output,
+        but do not sent it to the browser."""
+        if the_runner.session:
+            the_runner.session.runner = None
+        the_runner.session = None
         return False
     def server_exit(self):
         """Cleanup pool on server exit""" 
