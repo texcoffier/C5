@@ -3032,9 +3032,9 @@ class Grapic: # pylint: disable=too-many-public-methods
         """Set background color for erasing window"""
         self.bcolor = rgba2color(r, v, b, a)
 
-    def color(self, r, v, b):
+    def color(self, r, v, b, a):
         """Set foreground color"""
-        self.ctx.fillStyle = self.ctx.strokeStyle = rgba2color(r, v, b)
+        self.ctx.fillStyle = self.ctx.strokeStyle = rgba2color(r, v, b, a)
 
     def clear(self):
         """Clear canvas"""

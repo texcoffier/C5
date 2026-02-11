@@ -90,8 +90,8 @@ void polygonFill(int points[][2], int n) {
 void grid(int x1, int y1, int x2, int y2, int nx, int ny) {
     CW("G.grid(%d,%d,%d,%d,%d,%d)", x1, y1, x2, y2, nx, ny);
 }
-void color(int r, int v, int b) {
-    CW("G.color(%d,%d,%d)", r, v, b);
+void color(int r, int v, int b, int a=255) {
+    CW("G.color(%d,%d,%d,%d)", r, v, b, a);
 }
 void winClear() {
     CW("G.clear()");
