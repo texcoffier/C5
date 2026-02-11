@@ -96,6 +96,9 @@ void color(int r, int v, int b) {
 void winClear() {
     CW("G.clear()");
 }
+void put_pixel(int x, int y, int r, int g, int b, int a = 255) {
+    CW("G.putPixel(%d,%d,%d,%d,%d,%d)", x, y, r, g, b, a);
+}
 
 void print(int x, int y, const char *text) {
     const char *read ;

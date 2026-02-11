@@ -2987,6 +2987,12 @@ class Plot:
         self.ctx.fillText(ymin, x1 - 30, self.height - y1)
         self.ctx.fillText(ymax, x1 - 30, self.height - y2)
 
+def rgba2color(r, g, b, a):
+    n = 256*(256*(256+r) + g) + b # Starts with 1
+    if a:
+        n = 256*n + a
+    return '#' + n.toString(16)[1:] # Remove the 1 from (256+r)
+
 class Grapic: # pylint: disable=too-many-public-methods
     """For the Grapic library emulator"""
     canvas = bcolor = ctx = ctxs = height = width = None
@@ -3024,15 +3030,11 @@ class Grapic: # pylint: disable=too-many-public-methods
 
     def backgroundColor(self, r, v, b, a):
         """Set background color for erasing window"""
-        n = 256*(256*(256+r) + v) + b # Starts with 1
-        if a:
-            n = 256*n + a
-        self.bcolor = '#' + n.toString(16)[1:] # Remove the 1
+        self.bcolor = rgba2color(r, v, b, a)
 
     def color(self, r, v, b):
-        """Set foreground coloe"""
-        n = 256*(256*(256+r) + v) + b # Starts with 1
-        self.ctx.fillStyle = self.ctx.strokeStyle = '#' + n.toString(16)[1:] # Remove the 1
+        """Set foreground color"""
+        self.ctx.fillStyle = self.ctx.strokeStyle = rgba2color(r, v, b)
 
     def clear(self):
         """Clear canvas"""
@@ -3196,6 +3198,13 @@ class Grapic: # pylint: disable=too-many-public-methods
             return
         self.ctxs[image_id].fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")"
         self.ctxs[image_id].fillRect(x, y, 1, 1)
+
+    def putPixel(self, x, y, r, g, b, a):
+        """A pixel"""
+        save = self.ctx.fillStyle
+        self.ctx.fillStyle = rgba2color(r, g, b, a)
+        self.ctx.fillRect(x, self.height - y, 1, 1)
+        self.ctx.fillStyle = save
 
 def feedback_change(element):
     """The grader changed the feedback level"""
