@@ -1944,6 +1944,8 @@ def compute_diffs_regtest(algorithm):
             raise ValueError('bug')
 
 def enhanced_myers(a, b, merge=True):
+    if not isinstance(a, str):
+        return myers_diff(a, b, merge)
     begin = 0
     if a == b:
         return []

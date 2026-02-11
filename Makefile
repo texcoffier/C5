@@ -95,7 +95,7 @@ kill:
 pre-commit:
 	@echo "Running regression tests before commiting (it takes 2 minutes)"
 	unset MAKEFLAGS MAKELEVEL ; \
-	./tests.py CHROME hidden nosleep 1 2>&1 | tee xxx.regtests | grep -e FIREFOX -e CHROME
+	./tests.py CHROME hidden nosleep 1 2>&1 | tee xxx.regtests | grep -a -e FIREFOX -e CHROME
 	@if grep 'TESTS FAILED' xxx.regtests ; then cat xxx.regtests ; exit 1 ; fi
 	@echo "It is fine!"
 	@rm xxx.regtests
