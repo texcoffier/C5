@@ -48,8 +48,10 @@ class GCC(Compiler):
         for option in session.allowed:
             if option not in ALLOWABLE and option not in ALWAYS_ALLOWED:
                 stderr += f"Appel système non autorisé : «{option}»\n"
-        if not stderr:
-            session.allowed = ':'.join(list(ALWAYS_ALLOWED) + session.allowed)
+        if stderr:
+            session.allowed_str = ''
+        else:
+            session.allowed_str = ':'.join(list(ALWAYS_ALLOWED) + session.allowed)
             process = await asyncio.create_subprocess_exec(
                 session.compiler, *session.compile_options,
                 '-I', '../../../..', '-I', '../../MEDIA',
@@ -77,6 +79,9 @@ class GCC(Compiler):
             session.log("RUN nothing")
             await session.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
+        if not session.allowed_str:
+            session.log("RUNNING not allowed")
+            return
         session.log(f'./launcher {session.allowed} {session.uid} {session.home} '
                     f'{session.max_time} ../{session.conid}')
         shutil.rmtree(session.home, ignore_errors=True)
@@ -85,10 +90,10 @@ class GCC(Compiler):
             filename = pathlib.Path(f"{session.home}/{filename}")
             filename.parent.mkdir(parents=True, exist_ok=True)
             filename.write_text(content, encoding='utf8')
-        last_allowed = session.allowed.rsplit(':',1)[-1]
+        last_allowed = session.allowed[-1]
         process = await asyncio.create_subprocess_exec(
             "./launcher",
-            session.allowed,
+            session.allowed_str,
             str(session.uid),
             session.home,
             str(session.max_time),

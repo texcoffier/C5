@@ -56,7 +56,7 @@ class Process: # pylint: disable=too-many-instance-attributes
                  uid:int) -> None:
         self.websocket = websocket
         self.conid = str(id(websocket))
-        self.allowed = ''
+        self.allowed = ()
         self.login = login
         self.uid = uid
         self.course = utilities.CourseConfig.get(utilities.get_course(course))
