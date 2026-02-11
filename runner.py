@@ -182,7 +182,7 @@ class Runner: # pylint: disable=too-many-instance-attributes
             if self.session:
                 try:
                     await self.session.websocket.send(json.dumps(
-                        ['executor', line.decode("utf-8", "replace")]))
+                        ['executor', line.decode("utf-8", "replace")[:self.max_data]]))
                 except websockets.exceptions.ConnectionClosed:
                     pass # The run must continue for Racket
             if b"\002WAIT" in line: # Wait browser answer

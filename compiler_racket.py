@@ -54,13 +54,13 @@ class Racket(Compiler):
             try:
                 if the_runner.session:
                     await the_runner.session.websocket.send(json.dumps(
-                        ['executor', the_runner.line.decode("utf-8", "replace")]))
+                        ['executor', the_runner.line.decode("utf-8", "replace")[:the_runner.max_data]]))
                 if the_runner.session:
                     await the_runner.session.websocket.send(json.dumps(['return', "\n"]))
             except websockets.exceptions.ConnectionClosed:
                 pass
             the_runner.racket_free = True
-            the_runner.log('RACKET DONE')
+            the_runner.log(('RACKET DONE', the_runner.size + len(the_runner.line)))
             the_runner.size = 0 # Reset send data size
             self.kill_if_too_much_data_is_sent(the_runner)
             return True
