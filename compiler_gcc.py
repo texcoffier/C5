@@ -82,7 +82,7 @@ class GCC(Compiler):
         if not session.allowed_str:
             session.log("RUNNING not allowed")
             return
-        session.log(f'./launcher {session.allowed} {session.uid} {session.home} '
+        session.log(f'./launcher {session.allowed_str} {session.uid} {session.home} '
                     f'{session.max_time} ../{session.conid}')
         shutil.rmtree(session.home, ignore_errors=True)
         pathlib.Path(session.home).mkdir(exist_ok=True)
