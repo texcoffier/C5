@@ -288,8 +288,14 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                         changed[3] = version
                     course.active_teacher_room[login][2] = ','.join(changed)
                     feedback = 0 # No feedback on try
-                return await editor(session, is_admin, course, login_as or login, feedback=feedback)
+                if course.running(login, session.hostname) or course.get_feedback(login):
+                    return await editor(session, is_admin, course, login_as or login, feedback=feedback)
+                log(f'INVALID session {login} {filename}')
+                return answer('Session inconnue')
             if '=' in filename:
+                if not course.running(login, session.hostname) and not course.get_feedback(login):
+                    log(f'Invalid SESSION {login} {filename}')
+                    return answer('Session inconnue')
                 filename = course.file_js
         return File.get(filename).answer()
     return real_handle
