@@ -1682,10 +1682,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if i[:-1] not in uniqs:
                 uniqs.append(i[:-1])
         uniqs.sort()
-        self.record_error('to_complete=«' + self.to_complete
-            + '» cursor_position=' + self.cursor_position
-            + ' journal_line=' + len(JOURNAL.lines)
-            + ' uniq=' + str(uniqs))
+        # self.record_error('to_complete=«' + self.to_complete
+        #     + '» cursor_position=' + self.cursor_position
+        #     + ' journal_line=' + len(JOURNAL.lines)
+        #     + ' uniq=' + str(uniqs))
         if len(uniqs) == 0:
             return
         if len(uniqs) == 1:
