@@ -247,6 +247,9 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
         else:
             if '=' in filename:
                 course = CourseConfig.get(utilities.get_course(filename.lstrip('=')))
+                if not course:
+                    log(f'Invalid session {login} {filename}')
+                    return answer('Session inconnue')
                 if not course.dir_log:
                     return session.message('unknown')
                 is_admin = session.is_grader(course)
@@ -2028,7 +2031,7 @@ async def adm_export(request:Request) -> Response:
             if what:
                 log(f'BUG WHAT={what}')
 
-    log(f'ZIP big send')
+    log('ZIP big send')
     stream = web.StreamResponse()
     stream.content_type = 'application/zip'
     await stream.prepare(request)
@@ -2038,7 +2041,7 @@ async def adm_export(request:Request) -> Response:
         await stream.write(chunk)
         if not chunk:
             break
-    log(f'ZIP end send')
+    log('ZIP end send')
     return stream
 
 async def adm_reset(request:Request) -> Response:

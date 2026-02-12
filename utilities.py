@@ -651,7 +651,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if not getattr(config, 'time', 0):
             # No file with this name
             cls.configs.pop(course, None)
-            raise ValueError("Session inconnue : " + course)
+            return None
         if not re.match('.*{[^:}{]+:([?],)?[-.,0-9]*}', config.notation, flags=re.S):
             return config
         try:
