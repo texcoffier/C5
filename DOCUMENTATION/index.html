@@ -398,6 +398,13 @@
     <p>
         Si plusieurs lignes correspondent il amène sur la première.
     </p>
+    <p>
+        Le paramètre de <tt>goto_source_line</tt> doit être le
+        texte complet de la ligne aux espaces près.
+    </p>
+    <p>
+        À la place d'un bouton vous pouvez mettre un hyperlien.
+    </p>
 
     <h2>Outils pour définir une question.</h2>
 
@@ -555,6 +562,20 @@ def default_answer(self):
   &#x27;Génial !&#x27;,
   &#x27;Vous êtes trop fort !&#x27;,
 ]</pre><td>Alert on success</tr>
+<tr><th style="background: #FFF" colspan="3">Keyboard coach &lt;b style=&quot;color:#F00&quot;&gt;EXPERIMENTAL DO NOT ACTIVATE&lt;/b&gt;</tr>
+<tr><td>coach_tip_level<td>0<td>Keyboard coach</tr>
+<tr><td>coach_cooldown<td>60000<td>Minimum time in millisecs between two message display</tr>
+<tr><td>coach_mouse_short_move_distance<td>3<td>Detect mouse short move: dx+dy distance in keystrokes (0=disabled)</tr>
+<tr><td>coach_mouse_line_bounds_min_move<td>2<td>Detect mouse to line begin/end: min chars moved (0=disabled)</tr>
+<tr><td>coach_retype_after_delete_chars<td>10<td>Detect text retyped after deletion: characters (0=disabled)</tr>
+<tr><td>coach_many_horizontal_arrows_threshold<td>20<td>Detect many ← → successive strokes (0=disabled)</tr>
+<tr><td>coach_arrow_then_backspace_count<td>3<td>Detect → then Backspace: repetitions (0=disabled)</tr>
+<tr><td>coach_many_vertical_arrows_threshold<td>50<td>Detect many ↑ ↓ successive strokes (0=disabled)</tr>
+<tr><td>coach_scroll_full_document_edge_lines<td>3<td>Detect long scroll until X lines to the top/bottom </tr>
+<tr><td>coach_scroll_full_document_min_lines<td>200<td> min lines in document (0=disabled)</tr>
+<tr><td>coach_large_selection_threshold<td>20<td>Detect large manual selection with Shift+arrows (0=disabled)</tr>
+<tr><td>coach_delete_word_char_by_char_threshold<td>20<td>Detect word deletion char by char (0=disabled)</tr>
+<tr><td>coach_copy_then_delete_max_delay<td>3000<td>Detect Ctrl+C then Backspace: max delay ms (0=disabled)</tr>
 <tr><th style="background: #FFF" colspan="3">Bloc titles</tr>
 <tr><td>question_title<td><tt>&#x27;Question&#x27;</tt><td>Bloc title</tr>
 <tr><td>tester_title<td><tt>&#x27;Les buts que vous devez atteindre&#x27;</tt><td>Bloc title</tr>
@@ -582,13 +603,13 @@ def default_answer(self):
 <tr><td>time_m<td><tt>&#x27; m &#x27;</tt><td>Time message</tr>
 <tr><td>time_h<td><tt>&#x27; h &#x27;</tt><td>Time message</tr>
 <tr><th style="background: #FFF" colspan="3">Options defined by the compiler used by the course</tr>
-<tr><td>compiler<td><tt>&#x27;&#x27;</tt><td>Compiler to use (should not be changed):<br>«g++» «gcc» «racket»</tr>
+<tr><td>compiler<td><tt>&#x27;&#x27;</tt><td>Compiler to use (should not be changed):<br>«g++» «gcc» «racket» «coqc» «prolog»</tr>
 <tr><td>compile_options<td><pre>[
-]</pre><td>Compile options:<br>«-Wall» «-pedantic» «-pthread» «-std=c++11» «-std=c++20»</tr>
+]</pre><td>C Compile options:<br>«-Wall» «-pedantic» «-pthread» «-std=c++11» «-std=c++20»</tr>
 <tr><td>ld_options<td><pre>[
-]</pre><td>Libraries to link with:<br>«-lm»</tr>
-<tr><td>language<td><tt>&#x27;&#x27;</tt><td>Language to use for syntaxic coloring:<br> «cpp» «python» ...</tr>
-<tr><td>extension<td><tt>&#x27;&#x27;</tt><td>Source code filename extension for ZIP and GIT: «cpp», «py»...</tr>
+]</pre><td>C Libraries to link with:<br>«-lm»</tr>
+<tr><td>language<td><tt>&#x27;&#x27;</tt><td>Language to use for syntaxic coloring:<br> «cpp» «python» «coq»...</tr>
+<tr><td>extension<td><tt>&#x27;&#x27;</tt><td>Source code filename extension for ZIP and GIT: «cpp», «py», «v»...</tr>
 <tr><th style="background: #FFF" colspan="3">Running parameters</tr>
 <tr><td>max_time<td>1<td>Maximum CPU time allowed between 1 and 10 seconds</tr>
 <tr><td>max_data<td>200000<td>Maximum number of kilo-bytes transfered (no more than 200_000KB)</tr>
@@ -686,7 +707,8 @@ System calls allowable for g++/gcc:
         </tr>
         <tr>
             <td> C++
-            <td> compile_remote.py
+            <td> <b>compile_remote.py</b><br>
+                compiler_gcc.py
             <td> Il ne compile pas lui-même<br>
                 mais délègue la compilation avec<br>
                 <tt>gcc</tt> ou <tt>g++</tt> ainsi que<br>
@@ -706,18 +728,27 @@ System calls allowable for g++/gcc:
         </tr>
         <tr>
             <td> Racket
-            <td> compile_remote.py
-            <td> Le serveur distant peut aussi<br>
-                exécuter du LISP dans une<br>
-                <em>sandbox</em> d'un processus Racket.
+            <td> <b>compile_remote.py</b><br>
+                compiler_racket.py
+            <td> Interprétation LISP dans une <em>sandbox</em><br>
+                d'un processus Racket coté serveur.
             <td> <a target="_blank" href="COMPILE_REMOTE/racket/questions.py">COMPILE_REMOTE/<br>racket</a>
         </tr>
         <tr>
             <td> Coq
-            <td> compile_remote.py
-            <td> Le serveur distant peut aussi<br>
-                exécuter du Coq.
+            <td> <b>compile_remote.py</b><br>
+                compiler_coq.py
+            <td> Interprétation Coq coté serveur avec <tt>coqc</tt>
             <td> <a target="_blank" href="COMPILE_REMOTE/coq/questions.py">COMPILE_REMOTE/<br>coq</a>
+        </tr>
+        <tr>
+            <td> Prolog
+            <td> <b>compile_remote.py</b><br>
+                compiler_prolog.py
+            <td> Interprétation Prolog coté serveur.
+                <p>
+                Mettre %% en début de ligne pour faire une requête
+            <td> <a target="_blank" href="COMPILE_REMOTE/prolog/questions.py">COMPILE_REMOTE/<br>prolog</a>
         </tr>
         <tr>
             <td> Lisp
@@ -1721,6 +1752,24 @@ server {
             <td>Compilateur ne faisant rien pour réponses en texte libre
         </tr>
         <tr class="serveur">
+            <td>compiler.py
+            <td>Classe de base définissant un compilateur coté serveur pour COMPILE_REMOTE
+        </tr>
+        <tr class="serveur">
+            <td>compiler_coqc.py<br>
+                compiler_gcc.py<br>
+                compiler_prolog.py<br>
+                compiler_racket.py
+            <td>Les différents compilateurs.
+                Les instances de compilateur sont des singletons.
+                <p>
+                    compiler_racket utilise un pool de process,
+                    il doit dont s'arranger avec le runner pour
+                    qu'un processus puisse gérer plusieurs sessions
+                    successivement.
+                </p>
+        </tr>
+        <tr class="serveur">
             <td>dns_server.py
             <td>Un filtre (stdin/stdout) calculant le nom de la machine à
                 partir de son adresse IP.
@@ -1773,6 +1822,11 @@ server {
             <td> Utilitaire permettant de générer le fichier <tt>.json</tt>
                 contenant les titres des questions des différentes sessions.
                 C'est nécessaire pour faire les export ZIP et GIT.
+        </tr>
+        <tr class="serveur">
+            <td>runner.py
+            <td>Classe s'occupant des communications Process/Navigateur
+                Elle permet de gérer les INPUT si nécessaire.
         </tr>
         <tr class="executable">
             <td>tests.py
