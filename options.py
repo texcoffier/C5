@@ -140,7 +140,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['icon_local', '💾', "Button label"],
     ['icon_git', '<b style="font-size:50%">GIT</b>', "Button label"],
     ['icon_tag', 'TAG', "Button label"],
-    ['icon_stop', 'Terminer<br>Examen', "Button label displayed if checkpoint"],
+    ['icon_stop', '🚪', "Button label displayed if checkpoint"],
     ['icon_version_toggle', '<span style="font-family:emoji">🌳</span>', "Button label"],
 
     "Time countdown",
