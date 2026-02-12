@@ -113,7 +113,11 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.log("UNCOMPILED")
             await self.websocket.send(json.dumps(['return', "Non compilé"]))
             return
-        await self.cmp.run(self)
+        if self.cmp:
+            await self.cmp.run(self)
+        else:
+            self.log("UNCOMPILED2")
+            await self.websocket.send(json.dumps(['return', "Non compilé"]))
 
 async def bad_session(websocket) -> None:
     """Tail the browser that the session is bad"""
