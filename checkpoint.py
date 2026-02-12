@@ -2649,7 +2649,10 @@ def scheduler():
         scheduler.secs = secs # To not recompute multiple time per seconds
         now = nice_date(secs) + ':00'
         if now >= OPTIONS['stop']:
-            message = "Examen terminé"
+            if secs - ROOM.stop_timestamp < 600:
+                message = 'Fini depuis ' + split_time(secs - ROOM.stop_timestamp)
+            else:
+                message = 'Examen terminé'
             ROOM.state = 'done'
         elif now < OPTIONS['start']:
             message = 'Début dans ' + split_time(ROOM.start_timestamp - secs)
