@@ -2233,9 +2233,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     line_clean = line.replace('▶', '').strip()
                     if (len(line) <= 5 # Too short line
                             or use_triangle and '▶' not in line # ▶ is required
-                            or line_clean not in self.source # Not in source
                             or len(self.source.split(RegExp(
-                                '\n *' + protect_regexp(line_clean) + ' *\n'))) != 2 # Duplicate line
+                                protect_regexp(line_clean)))) != 2 # Duplicate line
                             ):
                         line = '<span>' + html(line) + '</span>'
                     else:
@@ -2622,12 +2621,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def goto_source_line(self, target_line):
         """Scroll the indicated source line to the window top"""
-        element = self.editor_lines[target_line]
-        if not element:
-            for element in self.editor_lines:
-                if (element.nodeValue or element.textContent).strip() == target_line:
-                    break
-        self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
+        for element in self.editor_lines:
+            if (element.nodeValue or element.textContent).includes(target_line):
+                self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
+                return
 
     def goto_regexp(self, regexp):
         """Scroll the first source line matching the regexp"""
