@@ -299,7 +299,7 @@ class Menu:
             if message.startswith('*'):
                 ctx.font = "bold " + font
                 message = message[1:]
-            elif message.startswith('→'):
+            elif message.startswith('→') or message.startswith('  '):
                 ctx.font = font.replace('sans-serif', 'monospace')
             else:
                 ctx.font = font
@@ -1703,10 +1703,12 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             "Copier toutes les adresses mails",
             ""
             ]
-        items.append(' Login BonusTime Grade[#Grades] BlurTime[#Blur] FeedBack')
+        items.append('        Bonus    Grade  BlurTime Teacher')
+        items.append('  Login  Time  [#Grade]  [#Blur] Feedback')
         for student in room.students:
             items.append('→' + student.login + ' '
-                + str(student.bonus_time).rjust(2) + ' '
+                + (student.login in OPTIONS['tt'] and '⅓' or ' ')
+                + str(student.bonus_time//60).rjust(2) + ' '
                 + str(student.grade[1] and student.grade[0].toFixed(2) or '?').rjust(5) + '['
                 + str(student.grade[1] or '?').rjust(2) + '] '
                 + str(student.blur_time).rjust(4) + '['
@@ -1867,9 +1869,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         spy = "Espionner l'écran en temps réel"
         if self.state == 'running':
             spy = '*' + spy
-        temps = "Temps bonus"
+        temps = "Temps bonus : "
+        if student.login in OPTIONS['tt']:
+            temps += '⅓ '
         if student.bonus_time:
-            temps += ' (' + int(student.bonus_time / 60) + ' min.)'
+            temps += '+ ' + int(student.bonus_time / 60) + ' min.'
+        else:
+            temps += '0 → cliquer pour changer'
         fullscreen = "Encart rouge plein écran bloquant : "
         if student.fullscreen:
             fullscreen += "le réactiver"
