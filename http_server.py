@@ -1618,8 +1618,8 @@ async def checkpoint_student(request:Request) -> Response:
         to_log = f'#checkpoint_restart {session.login}'
     elif room == 'EJECT':
         course.set_active_teacher_room(student, 'active', 0)
-        course.set_active_teacher_room(student, 'teacher')
-        course.set_active_teacher_room(student, 'room')
+        course.set_active_teacher_room(student, 'teacher', '')
+        course.set_active_teacher_room(student, 'room', '')
         course.set_active_teacher_room(student, 'last_time', seconds)
         to_log = f'#checkpoint_eject {session.login}'
     else:
