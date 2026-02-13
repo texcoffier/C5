@@ -1805,10 +1805,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                         (line.innerHTML or line.nodeValue).indexOf(self.search_input.value)
                         )
                 else:
-                    self.record_error('to_complete=«' + self.to_complete
-                        + '» cursor_position=' + self.cursor_position
-                        + ' journal_line=' + len(JOURNAL.lines)
-                        + ' option=«' + str(option.innerHTML))
+                    # self.record_error('to_complete=«' + self.to_complete
+                    #     + '» cursor_position=' + self.cursor_position
+                    #     + ' journal_line=' + len(JOURNAL.lines)
+                    #     + ' option=«' + str(option.innerHTML))
                     document.execCommand('insertText', False,
                         option.innerHTML[len(self.to_complete):])
                 self.stop_completion()
