@@ -1289,14 +1289,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if not line.nextSibling or (
                     line.nextSibling.tagName and line.nextSibling.tagName != 'SPAN'):
                 if char_nr > len(line.nodeValue or line.innerText) + 1:
-                    self.record_error('BUG overflow ' + char_nr + ' ' + line.nodeValue
-                        + ' ' + line.innerText + ' ' + line.nextSibling)
-                    try:
-                        self.record_error('line(from 1)=' + line_nr)
-                        self.record_error('EDITOR: ' + JSON.stringify(self.editor.innerHTML))
-                    except:
-                        pass
-                    char_nr = len(line.nodeValue or line.innerText)
+                    # Probable error message from a previous compilation
+                    self.clear_highlight_errors()
+                    return
                 break
             char_nr -= len(line.nodeValue or line.innerText)
             line = line.nextSibling
