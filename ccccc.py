@@ -2067,13 +2067,13 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         original = self.question_original[self.current_question].strip() 
         if original != '' and original != self.journal_question.first_source.strip():
             content.append('<option>Version mise à jour</option>')
-            if JOURNAL.content.strip() == '':
-                # In some rare case, the default source code is not
-                # displayed on screen.
-                # But 'question_original' contains it.
-                self.update_save_history_running = True
-                self.set_editor_content(self.question_original[self.current_question])
-                self.update_save_history_running = False
+        if len(JOURNAL.lines) < 5 and JOURNAL.content.strip() == '' and original != '':
+            # In some rare case, the default source code is not
+            # displayed on screen.
+            # But 'question_original' contains it.
+            self.update_save_history_running = True
+            self.set_editor_content(self.question_original[self.current_question])
+            self.update_save_history_running = False
         self.save_history.innerHTML = ''.join(content)
 
     def save(self):
