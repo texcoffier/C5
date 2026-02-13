@@ -790,7 +790,7 @@ async def adm_rename(request:Request) -> Response: # pylint: disable=too-many-br
         raise session.exception('not_admin')
     value = request.match_info['new'].strip()
     new_dirname = f'COMPILE_{config.compiler}/{value}'
-    if not good_session_name(value):
+    if not utilities.good_session_name(value):
         return answer(f"«{value}» invalid name because it contains special characters")
     if os.path.exists(new_dirname):
         return answer(f"«{value}» exists!")
@@ -1240,9 +1240,6 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     config.set_parameter('source_update', f'upload {outputs}', who=session.login)
     return f"Course «{dst_dirname}» added"
 
-def good_session_name(txt):
-    return re.match('^[-_A-Za-z0-9]+$', txt)
-
 async def upload_course(request:Request) -> Response:
     """Add a new course"""
     session = await Session.get_or_fail(request)
@@ -1255,7 +1252,7 @@ async def upload_course(request:Request) -> Response:
         course = CourseConfig.get(f'COMPILE_{compiler.upper()}/{replace}')
         if not session.is_admin(course):
             message = "Session change is not allowed!"
-        if not good_session_name(replace):
+        if not utilities.good_session_name(replace):
             message = f"Bad session name: {replace}"
         replace += '.py'
     else:
@@ -2157,7 +2154,7 @@ async def adm_import(request:Request) -> Response:
         if compiler not in COMPILERS:
             await write(f'Bad compiler: «{compiler}». Allowed are {COMPILERS}.\n')
             return stream
-        if not good_session_name(session_name):
+        if not utilities.good_session_name(session_name):
             await write(f'Bad session name: {session_name}.\n')
             return stream
         dirname = f'COMPILE_{compiler}/{session_name}'
@@ -2187,7 +2184,7 @@ async def adm_import(request:Request) -> Response:
                 if compiler.split('COMPILE_')[1] not in COMPILERS:
                     await badfilename(f'Bad compiler: «{compiler}». Allowed are {COMPILERS}.\n')
                     continue
-                if not good_session_name(session_name):
+                if not utilities.good_session_name(session_name):
                     await badfilename(f'Bad session name: «{session_name}».\n')
                     continue
                 do_not_overwrite = False

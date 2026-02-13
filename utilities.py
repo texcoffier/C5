@@ -833,13 +833,18 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                     waiting.append(student) # Not yet placed
         return waiting, with_me, done
 
+def good_session_name(txt):
+    return re.match('^[-_A-Za-z0-9]+$', txt)
+
 def get_course(txt:str) -> str:
     """Transform «PYTHON:introduction» as «COMPILE_PYTHON/introduction»"""
     try:
         compilator, course = txt.split('=')
+        if good_session_name(course):
+            return f'COMPILE_{compilator}/{course}'
     except ValueError:
-        raise ValueError(f'Invalid course name: «{txt}»') # pylint: disable=raise-missing-from
-    return f'COMPILE_{compilator}/{course}'
+        pass
+    raise ValueError(f'Invalid course name: «{txt}»') # pylint: disable=raise-missing-from
 
 class Config: # pylint: disable=too-many-instance-attributes
     """C5 configuration"""
