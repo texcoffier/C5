@@ -90,7 +90,7 @@ class GCC(Compiler):
             filename = pathlib.Path(f"{session.home}/{filename}")
             filename.parent.mkdir(parents=True, exist_ok=True)
             filename.write_text(content, encoding='utf8')
-        last_allowed = session.allowed[-1]
+        last_allowed = session.allowed_str.rsplit(':')[-1]
         process = await asyncio.create_subprocess_exec(
             "./launcher",
             session.allowed_str,
