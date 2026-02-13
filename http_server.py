@@ -2552,10 +2552,11 @@ async def live_link(request:Request) -> StreamResponse:
                 journa.close(socket, port)
         else:
             assert port not in journals
-            session_name, asked_login, rorw = message.split(' ', 2)
+            session_name, remaining = message.split(' ', 1)
             if session_name.isdigit():
                 warn('Message from closed session')
                 continue
+            asked_login, rorw = remaining.split(' ', 1)
             course = CourseConfig.get(utilities.get_course(session_name))
             allow_edit = (asked_login == session.login or session.is_grader(course)) and rorw == 'rw'
             for_editor = asked_login.startswith('_FOR_EDITOR_')
