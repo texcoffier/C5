@@ -267,6 +267,7 @@ class Journal:
         self.children = []
         self.bubbles = []
         self.timestamps = []
+        self.blur_times = {}
         self.clear_pending_goto()
         self.evaluate(self.lines, 0)
         self.offset_x = None
@@ -651,8 +652,8 @@ class Journal:
     def explain(self, used_lines):
         """Explain the journal content for version feedback"""
         lines = []
-        for line in used_lines:
-            line = self.lines[line]
+        for index in used_lines:
+            line = self.lines[index]
             if not line:
                 continue
             if line.startswith('I'):
@@ -684,7 +685,7 @@ class Journal:
             elif line.startswith('B'):
                 text = 'Perte de focus ou plein écran'
             elif line.startswith('F'):
-                text = 'Récupération du focus ou plein écran'
+                text = 'Focus ou plein écran perdu : ' + self.blur_times[index] + ' secondes'
             else:
                 continue
             lines.append(text)
@@ -872,6 +873,7 @@ class Journal:
             ctx.moveTo(x+center, y - zoom + 0.5)
             ctx.lineTo(x+center, y - size - 0.5)
             ctx.stroke()
+            draw_B.start = index - 2
             return zoom
         def draw_t(action, x, y):
             "Tag"
@@ -893,27 +895,31 @@ class Journal:
             return int(ctx.measureText(char).width)
         def draw_b(_action, x, y):
             return draw_char('#', x, y, font="px sans")
-        def draw_B(_action, x, y):
-            draw_B.start = (x, y)
+        def draw_B(_action, _x, _y):
+            draw_B.start = index
             return 1
         def draw_F(_action, x, y):
             if draw_B.start:
-                ctx.strokeStyle = '#000'
-                ctx.lineCap = "round"
-                ctx.beginPath()
-                ctx.moveTo(draw_B.start[0], draw_B.start[1] - size/2 - zoom/2)
-                ctx.lineTo(x + 1, y - size/2 - zoom/2)
-                ctx.stroke()
-                ctx.lineCap = "butt"
+                r = 1 * (self.timestamps[index] - self.timestamps[draw_B.start])
                 draw_B.start = None
-            return 1
+                if r:
+                    if r > size/2:
+                        ctx.fillStyle = '#00000040'
+                    else:
+                        ctx.fillStyle = '#000'
+                    ctx.beginPath()
+                    ctx.arc(x + r, y - size/2 - zoom/2, r, 0, 2*Math.PI)
+                    ctx.fill()
+                    self.blur_times[index] = r
+                    return 2*r
+            return 0
         def draw_S(_action, x, y):
             return draw_char('📩', x, y)
         def draw_g(_action, x, y):
             return draw_char('👍', x, y)
         def draw_hand(_action, x, y):
             return draw_char('✍', x, y)
-        def draw_nothing(_action, x, y):
+        def draw_nothing(_action, _x, _y):
             return 0
         draw = {
             'D': draw_ID, 'I': draw_ID, 'c': draw_c, 't': draw_t,
