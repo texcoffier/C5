@@ -2840,7 +2840,11 @@ def create_timetravel(login):
     # line_height
     # time
     def nothing(_journal):
-        time_jump()
+        """Recompute temporal bar without changing position"""
+        if time_jump.seconds is None:
+            time_jump()
+        else:
+            time_jump(secs=time_jump.seconds)
     div = document.createElement('DIV')
     div.className = 'tt_student'
     student = STUDENT_DICT[login]
