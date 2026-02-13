@@ -2629,6 +2629,14 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     break
         self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
 
+    def goto_regexp(self, regexp):
+        """Scroll the first source line matching the regexp"""
+        regexp = RegExp(regexp)
+        for element in self.editor_lines:
+            if (element.nodeValue or element.textContent).match(regexp):
+                self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
+                break
+
     def display_selection(self):
         """For debug purpose"""
         if WALK_DEBUG:
