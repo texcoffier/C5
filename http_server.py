@@ -1806,9 +1806,8 @@ async def adm_history(request:Request) -> Response:
 
 async def adm_stats(request:Request) -> Response:
     """Session statistics"""
-    try:
-        course = CourseConfig.get(utilities.get_course(request.match_info['course']))
-    except ValueError:
+    course = CourseConfig.get(utilities.get_course(request.match_info['course']))
+    if not course:
         return answer('Cours inconnu', content_type="text/plain")
     if request.match_info['key_stats'] != course.config['key_stats']:
         return answer('Bad key', content_type="text/plain")
