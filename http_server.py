@@ -2574,8 +2574,22 @@ async def live_link(request:Request) -> StreamResponse:
                 await journa.write(f'T{int(time.time())}')
                 await journa.write(f'O{session.login} {session.client_ip} {port}')
             # log(f'New journalLink {asked_login}/{login} {for_editor} msg_id:{journa.msg_id}')
+
+    for journa in tuple(JournalLink.journals.values()):
+        if (not journa.course.checkpoint                     # Not an exam
+                or journa.last_blur                          # Blur yet recorded
+                or session.login != journa.login             # Not as a student
+                or journa.course.state != 'Ready'            # Not running
+                or not journa.course.running(journa.login)): # Terminated for me
+            continue
+        # Record a blur because not sent before
+        for connection in journa.connections:
+            if connection[0] is socket:
+                await journa.write('B')
+                break # Done for this journal even if multiple tab on it
+
     JournalLink.closed_socket(socket)
-    warn(f'Close socket')
+    warn('Close socket')
     return socket
 
 def log(message):
