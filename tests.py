@@ -1117,7 +1117,7 @@ return sum ;
             self.check('#start').send_keys('2000-01-01 00:00:00')
             self.click('#stop')
             self.control('a')
-            duration = 10
+            duration = 5
             stop = time.localtime(time.time() + duration)
             self.check('#stop').send_keys(time.strftime('%Y-%m-%d %H:%M:%S', stop))
             self.click('#start')
@@ -1132,8 +1132,8 @@ return sum ;
             self.move_cursor('.editor')
             self.check('.editor').send_keys(' /*2*/')
             time.sleep(duration)
-            self.check('BODY', {'innerHTML': Contains('fini')})
-
+            self.check_alert("C'est fini", accept=True, required=True, nbr=10)
+            self.check_alert("C'est fini", accept=True, required=False, nbr=5)
             self.ticket = admin
             self.goto('adm/session/REMOTE=test')
             time.sleep(0.1)

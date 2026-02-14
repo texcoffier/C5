@@ -1245,7 +1245,7 @@ def js_message(key:str) -> aiohttp.web_response.Response:
     """Send a pure javascript error message to display on the page"""
     message = json.dumps(CONFIG.config['messages'].get(key, key))
     return web.HTTPOk(
-        body=f"document.body.innerHTML = {message}",
+        body=f"alert({message});location.reload()",
         content_type='application/javascript',
         headers={'Cache-Control': 'no-cache'})
 
