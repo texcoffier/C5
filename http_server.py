@@ -5,7 +5,6 @@ Simple web server with session management
 
 from typing import Dict, List, Tuple, Any, Optional, Union, Callable, Coroutine, Set
 import os
-import sys
 import time
 import json
 import collections
@@ -22,7 +21,6 @@ import glob
 import csv
 import copy
 import signal
-import inspect
 from aiohttp import web, WSMsgType
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response,StreamResponse
@@ -32,7 +30,7 @@ import options
 import common
 import xxx_local
 import utilities
-from utilities import Session, CourseConfig
+from utilities import Session, CourseConfig, JournalLink
 
 # To make casauth work we should not use a proxy
 for varname in ('http_proxy', 'https_proxy'):
@@ -336,7 +334,7 @@ async def load_student_infos() -> None:
             # for old sessions.
             # for login in config.active_teacher_room:
             #     await utilities.LDAP.infos(login)
-    except:
+    except: # pylint: disable=bare-except
         log(traceback.format_exc())
     log(f'Load all sessions time: {time.time() - start}')
 
@@ -639,8 +637,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str, who:str)
             feedback = f"«{course}» Stop date updated to «{fixed}»"
             stop = int(time.mktime(time.strptime(value, '%Y-%m-%d %H:%M:%S')))
             for student in config.active_teacher_room:
-                await JournalLink.new(config, student, None, None, False).write(
-                    f'#update_stop {stop}')
+                await JournalLink.new(config, student).write(f'#update_stop {stop}')
         else:
             feedback = f"«{course}» Stop date invalid: «{value}»!"
     elif action == 'start':
@@ -658,8 +655,8 @@ async def adm_config_course(config:CourseConfig, action:str, value:str, who:str)
         new_list = set(config.tt_list)
         for student in old_list ^ new_list:
             if student in config.active_teacher_room:
-                await JournalLink.new(config, student, None, None, False).write(
-                    f'#tt {int(student in new_list)}')
+                is_tt = student in new_list
+                await JournalLink.new(config, student).write(f'#tt {int(is_tt)}')
     elif action == 'expected_students':
         value = xxx_local.normalize_logins(value)
         config.set_parameter('expected_students', value, who=who)
@@ -1629,7 +1626,7 @@ async def checkpoint_student(request:Request) -> Response:
         course.set_active_teacher_room(student, 'teacher', session.login)
         course.set_active_teacher_room(student, 'room', room)
         to_log = f'#checkpoint_move {session.login} {room}'
-    await JournalLink.new(course, student, None, None, False).write(to_log)
+    await JournalLink.new(course, student).write(to_log)
     if session.is_student() and not session.is_proctor(course):
         return utilities.js_message("C'est fini.")
     return await update_browser_data(course)
@@ -1643,8 +1640,7 @@ async def checkpoint_bonus(request:Request) -> Response:
         return utilities.js_message("not_proctor")
     # Information in 2 places
     course.set_active_teacher_room(student, 'bonus_time', int(bonus))
-    await JournalLink.new(course, student, None, None, False).write(
-        f'#bonus_time {bonus}')
+    await JournalLink.new(course, student).write(f'#bonus_time {bonus}')
     return await update_browser_data(course)
 
 async def checkpoint_fullscreen(request:Request) -> Response:
@@ -1656,8 +1652,7 @@ async def checkpoint_fullscreen(request:Request) -> Response:
         return utilities.js_message("not_proctor")
     # Information is stored in 2 places
     course.set_active_teacher_room(student, 'fullscreen', int(fullscreen))
-    await JournalLink.new(course, student, None, None, False).write(
-        f'#fullscreen {fullscreen}')
+    await JournalLink.new(course, student).write(f'#fullscreen {fullscreen}')
     return await update_browser_data(course)
 
 async def checkpoint_add_remark(request:Request) -> Response:
@@ -1816,10 +1811,10 @@ async def adm_stats(request:Request) -> Response:
     stream.charset = 'utf-8'
     await stream.prepare(request)
     for login, state in course.active_teacher_room.items():
-        journal = course.get_journal(login)
+        journa = course.get_journal(login)
         nr_lines = 0
-        if hasattr(journal, 'questions'):
-            for i, question in journal.questions.items():
+        if hasattr(journa, 'questions'):
+            for question in journa.questions.values():
                 nr_lines += len(re.split('[\n\t\r ]*\n[\n\t\r ]*', question.source))
         await stream.write(f'{login}\t{state.nr_answers}\t{nr_lines}\n'.encode('utf-8'))
     return stream
@@ -2285,192 +2280,6 @@ class SomeQuestion(Question):
         config = CourseConfig.get(course)
         await asyncio.sleep(0)
     return stream
-
-class JournalLink: # pylint: disable=too-many-instance-attributes
-    """To synchronize multiple connections to the same student session"""
-    journals:Dict[Tuple[str,str],"JournalLink"] = {} # Key is (session, login)
-
-    def __init__(self, course, login, is_editor):
-        self.login = login
-        self.course = course
-        self.editor = is_editor
-        if is_editor:
-            dirname = f'{self.course.dir_session}'
-        else:
-            dirname = f'{self.course.dir_log}/{login}'
-        if not os.path.exists(dirname):
-            if not os.path.exists(self.course.dir_log):
-                os.mkdir(self.course.dir_log)
-            os.mkdir(dirname)
-        self.path = pathlib.Path(dirname + '/journal.log')
-        if is_editor and not self.path.exists():
-            content = pathlib.Path(course.file_py).read_text(encoding='utf-8')
-            content = content.replace('\n', '\0')
-            self.path.write_text(f'Q0\nI{content}\ntI\n', encoding='utf-8')
-        if self.path.exists():
-            content = self.path.read_text(encoding='utf-8')
-            if content:
-                self.content = content.split('\n')
-                self.content.pop() # Empty string
-            else:
-                self.content = []
-        else:
-            self.content = []
-        self.journal = self.path.open('a', encoding='utf-8')
-        self.msg_id = str(len(self.content))
-        self.connections = [] # List of Socket, port of connected browsers
-        self.locked = False
-        self.last_set_parameter = 0
-        self.last_blur = None
-
-    async def __aenter__(self):
-        """Lock the JournalLink instance"""
-        while self.locked:
-            await asyncio.sleep(0)
-        self.locked = True
-
-    async def __aexit__(self, *_args):
-        """Unock the JournalLink instance"""
-        self.locked = False
-
-    async def write_unsafe(self, message):
-        """Append an action to the journal.
-              * update the session state (blurring, activity).
-              * update the journal.log of the student.
-              * update the JournalLink content.
-              * Synchronize all the connected users
-        """
-        # pylint: disable=too-many-branches,too-many-nested-blocks
-        # XXX Must check message validity and add timestamp
-        self.content.append(message)
-        original_message = self.msg_id + ' ' + message
-        self.msg_id = str(len(self.content))
-        # 'protect_crlf' does not work in some browser.
-        # So redo it server side.
-        self.journal.write(common.protect_crlf(message) + '\n')
-        self.journal.flush()
-
-        if self.editor:
-            if message.startswith('t'):
-                os.rename(self.course.file_py, self.course.file_py + '~')
-                with open(self.course.file_py, 'w', encoding="utf-8") as file:
-                    file.write(common.Journal('\n'.join(self.content)).content)
-                await asyncio.sleep(0)
-                with os.popen(f'make {self.course.file_js} 2>&1', 'r') as file:
-                    errors = file.read()
-                await asyncio.sleep(0)
-                if 'ERROR' in errors or 'FAIL' in errors:
-                    os.rename(self.course.file_py + '~', self.course.file_py)
-                frame = inspect.currentframe()
-                while 'session' not in frame.f_locals:
-                    frame = frame.f_back
-                self.course.set_parameter('source_update',
-                    f'«{message[1:]}» {errors}', who=frame.f_locals['session'].login)
-                for socket, port in self.connections:
-                    await socket.send_str(f'{port} A{errors}')
-        elif self.login in self.course.active_teacher_room:
-            infos = self.course.active_teacher_room[self.login]
-            infos.last_time = int(time.time())
-            if message.startswith('B'):
-                self.last_blur = infos.last_time
-                self.course.set_active_teacher_room(self.login, 'nr_blurs', infos.nr_blurs + 1)
-            elif message.startswith('F'):
-                if self.last_blur is None:
-                    # Here to not compute last_blur if not an exam session.
-                    # Needed only when student close and reopen tab,
-                    # because JournalLink is recreated and last_blur lost.
-                    last_blur_found = False
-                    for line in self.content[::-1]:
-                        if last_blur_found:
-                            if line.startswith('T'):
-                                self.last_blur = int(line[1:])
-                                break
-                        elif line.startswith('B'):
-                            last_blur_found = True
-                if self.last_blur:
-                    # Duration must change to indicate Focus to checkpoint window
-                    duration = max(infos.last_time - self.last_blur, 1)
-                    self.course.set_active_teacher_room(self.login, 'blur_time', infos.blur_time + duration)
-                    self.last_blur = 0 # Needed if 2 Focus without Blur (should not happen)
-            elif message.startswith('g'):
-                self.course.set_active_teacher_room(self.login, 'nr_answers', infos.nr_answers + 1)
-            elif infos.last_time - self.last_set_parameter > 60:
-                self.course.set_active_teacher_room(self.login, 'last_time', infos.last_time)
-                self.last_set_parameter = infos.last_time
-
-        for socket, port in self.connections:
-            try:
-                await socket.send_str(f'{port} {original_message}')
-            except: # pylint: disable=bare-except
-                JournalLink.closed_socket(socket)
-
-    async def write(self, message):
-        """Ensure that session update are serialized"""
-        async with self:
-            await self.write_unsafe(message)
-
-    def close(self, socket, port=None):
-        """Close all the connection or the connection of the indicated port."""
-        # Remove socket/port from the list
-        self.connections = [connection
-                            for connection in self.connections
-                            if connection[0] is not socket
-                               or port is not None and connection[1] != port
-                            ]
-        if not self.connections:
-            JournalLink.journals.pop((self.course.course, self.login), None)
-
-    @classmethod
-    def new(cls, course, login, socket, port, is_editor): # pylint: disable=too-many-arguments
-        """JournalLink is common to all the user connected to the session
-        in order to synchronize their screens."""
-        if is_editor:
-            login = ''
-        journa = JournalLink.journals.get((course.course, login), None)
-        if not journa:
-            journa = JournalLink(course, login, is_editor)
-            JournalLink.journals[course.course, login] = journa
-        if socket is not None:
-            journa.connections.append((socket, port))
-        return journa
-
-    @classmethod
-    def closed_socket(cls, socket):
-        """Close socket (shared worker stop), so all the ports using this socket)"""
-        # tuple() because journals may be removed while looping.
-        for journa in tuple(JournalLink.journals.values()):
-            journa.close(socket)
-
-    @classmethod
-    def close_all_sockets(cls):
-        """Only called on server stop"""
-        log("JournalLink.close_all_sockets()")
-        for journa in JournalLink.journals.values():
-            for socket, _port in journa.connections:
-                try:
-                    socket._writer.transport.close() # pylint: disable=protected-access
-                except IOError:
-                    pass
-        log("JournalLink.close_all_socket() done")
-
-    def erase_comment_history(self, bubble_id):
-        """Replace old comment text by ?????? without changing its size
-        in order to not rewrite the file.
-        So the students can't see old comments"""
-        j = common.Journal('\n'.join(self.content) + '\n')
-        last_comment_change = j.bubbles[bubble_id].last_comment_change
-        if last_comment_change is None:
-            return # First comment
-        old_comment = common.protect_crlf(j.bubbles[bubble_id].comment)
-        assert j.lines[last_comment_change] == f'bC{bubble_id} {old_comment}'
-        file_position = len('\n'.join(j.lines[:last_comment_change]).encode("utf-8")) + 1
-        new_line = f'bC{bubble_id} {"?"*len(old_comment.encode("utf-8"))}'
-        self.content[last_comment_change] = new_line
-        with open(self.path, 'r+', encoding='utf-8') as file:
-            file.seek(file_position, 0)
-            file.write(new_line)
-        log(f'Erase bubble_id={bubble_id} position={file_position} '
-            f'old_content={j.lines[j.bubbles[bubble_id].last_comment_change]}')
 
 async def live_link(request:Request) -> StreamResponse:
     """Live link beetween the browser and the server.

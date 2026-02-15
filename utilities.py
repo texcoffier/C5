@@ -16,6 +16,7 @@ import atexit
 import copy
 import traceback
 import random
+import pathlib
 import urllib.request
 import urllib.parse
 import asyncio
@@ -846,6 +847,192 @@ def get_course(txt:str) -> str:
         pass
     raise ValueError(f'Invalid course name: «{txt}»') # pylint: disable=raise-missing-from
 
+class JournalLink: # pylint: disable=too-many-instance-attributes
+    """To synchronize multiple connections to the same student session.
+    THIS MUST BE THE ONLY WAY TO WRITE IN THE SESSION JOURNAL
+    INSTANCES MUST BE CREATED WITH JournalLink.new()
+    """
+    journals:Dict[Tuple[str,str],"JournalLink"] = {} # Key is (session, login)
+
+    def __init__(self, course, login, is_editor):
+        self.login = login
+        self.course = course
+        self.editor = is_editor
+        if is_editor:
+            dirname = f'{self.course.dir_session}'
+        else:
+            dirname = f'{self.course.dir_log}/{login}'
+        if not os.path.exists(dirname):
+            if not os.path.exists(self.course.dir_log):
+                os.mkdir(self.course.dir_log)
+            os.mkdir(dirname)
+        self.path = pathlib.Path(dirname + '/journal.log')
+        if is_editor and not self.path.exists():
+            content = pathlib.Path(course.file_py).read_text(encoding='utf-8')
+            content = content.replace('\n', '\0')
+            self.path.write_text(f'Q0\nI{content}\ntI\n', encoding='utf-8')
+        if self.path.exists():
+            content = self.path.read_text(encoding='utf-8')
+            if content:
+                self.content = content.split('\n')
+                self.content.pop() # Empty string
+            else:
+                self.content = []
+        else:
+            self.content = []
+        self.journal = self.path.open('a', encoding='utf-8')
+        self.msg_id = str(len(self.content))
+        self.connections = [] # List of Socket, port of connected browsers
+        self.locked = False
+        self.last_set_parameter = 0
+        self.last_blur = None
+
+    async def __aenter__(self):
+        """Lock the JournalLink instance"""
+        while self.locked:
+            await asyncio.sleep(0)
+        self.locked = True
+
+    async def __aexit__(self, *_args):
+        """Unock the JournalLink instance"""
+        self.locked = False
+
+    async def write_unsafe(self, message):
+        """Append an action to the journal.
+              * update the session state (blurring, activity).
+              * update the journal.log of the student.
+              * update the JournalLink content.
+              * Synchronize all the connected users
+        """
+        # pylint: disable=too-many-branches,too-many-nested-blocks
+        # XXX Must check message validity and add timestamp
+        self.content.append(message)
+        original_message = self.msg_id + ' ' + message
+        self.msg_id = str(len(self.content))
+        # 'protect_crlf' does not work in some browser.
+        # So redo it server side.
+        self.journal.write(common.protect_crlf(message) + '\n')
+        self.journal.flush()
+
+        if self.editor:
+            if message.startswith('t'):
+                os.rename(self.course.file_py, self.course.file_py + '~')
+                with open(self.course.file_py, 'w', encoding="utf-8") as file:
+                    file.write(common.Journal('\n'.join(self.content)).content)
+                await asyncio.sleep(0)
+                with os.popen(f'make {self.course.file_js} 2>&1', 'r') as file:
+                    errors = file.read()
+                await asyncio.sleep(0)
+                if 'ERROR' in errors or 'FAIL' in errors:
+                    os.rename(self.course.file_py + '~', self.course.file_py)
+                frame = inspect.currentframe()
+                while 'session' not in frame.f_locals:
+                    frame = frame.f_back
+                self.course.set_parameter('source_update',
+                    f'«{message[1:]}» {errors}', who=frame.f_locals['session'].login)
+                for socket, port in self.connections:
+                    await socket.send_str(f'{port} A{errors}')
+        elif self.login in self.course.active_teacher_room:
+            infos = self.course.active_teacher_room[self.login]
+            infos.last_time = int(time.time())
+            if message.startswith('B'):
+                self.last_blur = infos.last_time
+                self.course.set_active_teacher_room(self.login, 'nr_blurs', infos.nr_blurs + 1)
+            elif message.startswith('F'):
+                if self.last_blur is None:
+                    # Here to not compute last_blur if not an exam session.
+                    # Needed only when student close and reopen tab,
+                    # because JournalLink is recreated and last_blur lost.
+                    last_blur_found = False
+                    for line in self.content[::-1]:
+                        if last_blur_found:
+                            if line.startswith('T'):
+                                self.last_blur = int(line[1:])
+                                break
+                        elif line.startswith('B'):
+                            last_blur_found = True
+                if self.last_blur:
+                    # Duration must change to indicate Focus to checkpoint window
+                    duration = max(infos.last_time - self.last_blur, 1)
+                    self.course.set_active_teacher_room(self.login, 'blur_time', infos.blur_time + duration)
+                    self.last_blur = 0 # Needed if 2 Focus without Blur (should not happen)
+            elif message.startswith('g'):
+                self.course.set_active_teacher_room(self.login, 'nr_answers', infos.nr_answers + 1)
+            elif infos.last_time - self.last_set_parameter > 60:
+                self.course.set_active_teacher_room(self.login, 'last_time', infos.last_time)
+                self.last_set_parameter = infos.last_time
+
+        for socket, port in self.connections:
+            try:
+                await socket.send_str(f'{port} {original_message}')
+            except: # pylint: disable=bare-except
+                JournalLink.closed_socket(socket)
+
+    async def write(self, message):
+        """Ensure that session update are serialized"""
+        async with self:
+            await self.write_unsafe(message)
+
+    def close(self, socket, port=None):
+        """Close all the connection or the connection of the indicated port."""
+        # Remove socket/port from the list
+        self.connections = [connection
+                            for connection in self.connections
+                            if connection[0] is not socket
+                               or port is not None and connection[1] != port
+                            ]
+        if not self.connections:
+            JournalLink.journals.pop((self.course.course, self.login), None)
+
+    @classmethod
+    def new(cls, course, login, socket=None, port=None, is_editor=False): # pylint: disable=too-many-arguments
+        """JournalLink is common to all the user connected to the session
+        in order to synchronize their screens."""
+        if is_editor:
+            login = ''
+        journa = JournalLink.journals.get((course.course, login), None)
+        if not journa:
+            journa = JournalLink(course, login, is_editor)
+            JournalLink.journals[course.course, login] = journa
+        if socket is not None:
+            journa.connections.append((socket, port))
+        return journa
+
+    @classmethod
+    def closed_socket(cls, socket):
+        """Close socket (shared worker stop), so all the ports using this socket)"""
+        # tuple() because journals may be removed while looping.
+        for journa in tuple(JournalLink.journals.values()):
+            journa.close(socket)
+
+    @classmethod
+    def close_all_sockets(cls):
+        """Only called on server stop"""
+        log("JournalLink.close_all_sockets()")
+        for journa in JournalLink.journals.values():
+            for socket, _port in journa.connections:
+                try:
+                    socket._writer.transport.close() # pylint: disable=protected-access
+                except IOError:
+                    pass
+        log("JournalLink.close_all_socket() done")
+
+    def erase_comment_history(self, bubble_id):
+        """Replace old comment text by ?????? without changing its size
+        in order to not rewrite the file.
+        So the students can't see old comments"""
+        j = common.Journal('\n'.join(self.content) + '\n')
+        last_comment_change = j.bubbles[bubble_id].last_comment_change
+        if last_comment_change is None:
+            return # First comment
+        old_comment = common.protect_crlf(j.bubbles[bubble_id].comment)
+        assert j.lines[last_comment_change] == f'bC{bubble_id} {old_comment}'
+        file_position = len('\n'.join(j.lines[:last_comment_change]).encode("utf-8")) + 1
+        new_line = f'bC{bubble_id} {"?"*len(old_comment.encode("utf-8"))}'
+        self.content[last_comment_change] = new_line
+        with open(self.path, 'r+', encoding='utf-8') as file:
+            file.seek(file_position, 0)
+            file.write(new_line)
 class Config: # pylint: disable=too-many-instance-attributes
     """C5 configuration"""
     authors:List[str] = []
