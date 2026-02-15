@@ -2395,6 +2395,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                             event.stopPropagation()
                         G.canvas.onkeydown = onkeydown
                 elif value == '\002INPUT':
+                    if not self.executor.lastChild:
+                        return # Old INPUT from previous execution
                     if (self.executor.lastChild.tagName not in ('BR', 'DIV')
                             or self.executor.lastChild.style.float == 'left'):
                         self.executor.appendChild(document.createElement('BR'))
