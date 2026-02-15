@@ -270,6 +270,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                 feedback = course.get_feedback(login_as or login)
                 if not is_admin:
                     if status == 'done' and not feedback:
+                        await course.auto_close()
                         return session.message('done')
                     if status == 'pending':
                         return session.message('pending', course.start_timestamp)
@@ -636,6 +637,7 @@ async def adm_config_course(config:CourseConfig, action:str, value:str, who:str)
             config.set_parameter('stop', fixed, who=who)
             feedback = f"«{course}» Stop date updated to «{fixed}»"
             stop = int(time.mktime(time.strptime(value, '%Y-%m-%d %H:%M:%S')))
+            config.autoclose_done = False
             for student in config.active_teacher_room:
                 await JournalLink.new(config, student).write(f'#update_stop {stop}')
         else:
@@ -1607,8 +1609,12 @@ async def checkpoint_student(request:Request) -> Response:
     old = course.active_teacher_room[student]
 
     if room == 'STOP':
-        course.set_active_teacher_room(student, 'active', 0)
-        to_log = f'#checkpoint_stop {session.login}'
+        if course.active_teacher_room[student].active:
+            course.set_active_teacher_room(student, 'active', 0)
+            to_log = f'#checkpoint_stop {session.login}'
+            await course.auto_close()
+        else:
+            to_log = None
     elif room == 'RESTART':
         course.set_active_teacher_room(student, 'active', 1)
         course.set_active_teacher_room(student, 'teacher', session.login)
@@ -1626,7 +1632,8 @@ async def checkpoint_student(request:Request) -> Response:
         course.set_active_teacher_room(student, 'teacher', session.login)
         course.set_active_teacher_room(student, 'room', room)
         to_log = f'#checkpoint_move {session.login} {room}'
-    await JournalLink.new(course, student).write(to_log)
+    if to_log:
+        await JournalLink.new(course, student).write(to_log)
     if session.is_student() and not session.is_proctor(course):
         return utilities.js_message("C'est fini.")
     return await update_browser_data(course)

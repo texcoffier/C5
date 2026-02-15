@@ -191,6 +191,7 @@ class State(list): # pylint: disable=too-many-instance-attributes
 class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """A course session"""
     configs:Dict[str,"CourseConfig"] = {}
+    autoclose_done = False
     def __init__(self, course):
         if not os.path.exists(course):
             return
@@ -833,6 +834,20 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                 else:
                     waiting.append(student) # Not yet placed
         return waiting, with_me, done
+    async def auto_close(self):
+        """Automatically terminated exam for all student"""
+        now = int(time.time())
+        if (not self.checkpoint
+                or self.state != 'Ready'
+                or now < self.stop_timestamp
+                or self.autoclose_done
+                ):
+            return
+        self.autoclose_done = True
+        for login, state in tuple(self.active_teacher_room.items()):
+            if state.active and now > self.get_stop(login):
+                self.set_active_teacher_room(login, 'active', 0)
+                await JournalLink.new(self, login).write('#checkpoint_stop automatic')
 
 def good_session_name(txt):
     return re.match('^[-_A-Za-z0-9]+$', txt)
