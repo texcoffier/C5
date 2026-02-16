@@ -1868,6 +1868,8 @@ async def get_media(request:Request) -> Response:
     """Get a media file"""
     session = await Session.get_or_fail(request)
     course = CourseConfig.get(utilities.get_course(request.match_info['course']))
+    if not course:
+        return answer('Session inconnue', content_type='text/plain')
     if not session.is_grader(course) and not course.status(session.login).startswith('running'):
         return answer('Not allowed', content_type='text/plain')
     return File.get(f'{course.dir_media}/{request.match_info["value"]}').answer()
