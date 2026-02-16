@@ -1750,7 +1750,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.completion.style.display = 'block'
             if len(lines):
                 self.completion.firstChild.className = 'active_completion'
-                self.goto_source_line(self.completion.firstChild.value)
+                self.goto_source_line_number(self.completion.firstChild.value)
             self.completion.style.left = self.search_input.offsetLeft + 'px'
             self.completion.style.top = self.search_input.offsetTop + self.search_input.offsetHeight + 'px'
             self.active_completion = 0
@@ -1821,7 +1821,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     self.completion.childNodes[self.active_completion].className = 'active_completion'
                 stop_event(event)
                 if self.completion_running == 'search':
-                    self.goto_source_line(self.completion.childNodes[self.active_completion].value)
+                    self.goto_source_line_number(self.completion.childNodes[self.active_completion].value)
                 return
             if self.completion_running == 'search' and event.key == 'Escape':
                 document.getSelection().collapse(
@@ -2626,6 +2626,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if (element.nodeValue or element.textContent).includes(target_line):
                 self.layered.scrollTo({'top':self.get_element_box(element)['top'], 'behavior': 'smooth'})
                 return
+
+    def goto_source_line_number(self, line_number):
+        """Scroll the indicated source line to the window top"""
+        line = self.editor_lines[line_number]
+        box = self.get_element_box(line)
+        self.layered.scrollTo({'top': box['top'], 'behavior': 'smooth'})
 
     def goto_regexp(self, regexp):
         """Scroll the first source line matching the regexp"""
