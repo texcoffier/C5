@@ -79,6 +79,7 @@ DEFAULT_COURSE_OPTIONS = [
     }, "For each bloc :<br>[Bloc X%, Width%, Y%, Heigth%, background color]"],
 
     ['forget_input',         0, "Forget old input values on execution"],
+    ['keep_search_box',      0, "Last search stay on screen until Escape"],
     ['coloring',             1, "source highlighting is done"],
     ['theme',                'a11y-light', "Syntaxic coloring theme for source code"],
     ['display_local_save',   0, "display 'icon_local' to download the current source code"],

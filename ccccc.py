@@ -1724,7 +1724,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def stop_completion(self):
         """Close completion menu"""
         if self.completion_running:
-            self.search_input.style.display = 'none'
+            if self.completion_running != 'search' or not self.options['keep_search_box']:
+                self.search_input.style.display = 'none'
             self.completion.style.display = 'none'
             self.completion_running = False
 
@@ -1757,9 +1758,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         if self.completion_running == 'search':
             self.search_input.select()
         else:
+            if self.search_input.style.display == 'none':
+                self.search_input.value = self.highlight_word() or self.search_input.last_value or ''
             self.search_input.style.display = 'block'
             self.search_input.onkeyup = update_search
-            self.search_input.value = self.highlight_word() or self.search_input.last_value or ''
             editor_left = self.options['positions']['editor'][0]
             editor_right = editor_left + self.options['positions']['editor'][1]
             if editor_left >= 100 - editor_right:
@@ -1828,6 +1830,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.editor.focus()
             if self.completion_running != 'search' or event.key == 'Escape':
                 self.stop_completion()
+            if not self.completion_running and self.search_input.style.display == 'block':
+                self.search_input.style.display = 'none'
         if event.target is self.editor and event.key not in (
                 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'Home', 'End'):
             self.clear_highlight_errors()

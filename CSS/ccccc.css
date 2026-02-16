@@ -856,7 +856,7 @@ BODY.dograding .grading PRE BUTTON:hover,
 
 .completion,
 #search_input {
-    box-shadow: 4px 2px 4px black;
+    box-shadow: 8px 8px 10px black;
 }
 
 .media {
