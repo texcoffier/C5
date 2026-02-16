@@ -75,11 +75,10 @@ DEFAULT_COURSE_OPTIONS = [
         'executor':    [70, 30,30, 70,'#EEFF'], # RightBottom: Execution messages
         'time':        [80, 20,98,  2,'#0000'], # BottomRight: Debugger for admin
         'index':       [ 0,  1, 0,100,'#0000'], # Left       : Thin table of content
-        'editor_title':[0 ,  0, 0,  0,'#FFFF'], # Only the color is used.
     }, "For each bloc :<br>[Bloc X%, Width%, Y%, Heigth%, background color]"],
 
     ['forget_input',         0, "Forget old input values on execution"],
-    ['keep_search_box',      0, "Last search stay on screen until Escape"],
+    ['keep_search_box',      0, "Last search stays on screen until Escape"],
     ['coloring',             1, "source highlighting is done"],
     ['theme',                'a11y-light', "Syntaxic coloring theme for source code"],
     ['display_local_save',   0, "display 'icon_local' to download the current source code"],

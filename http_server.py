@@ -742,6 +742,19 @@ async def adm_config_course(config:CourseConfig, action:str, value:str, who:str)
             feedback = f"«{course}» default building is «{value}»."
         else:
             feedback = f"«{course}» «{value}» not in {buildings}!"
+    elif action == 'positions':
+        try:
+            value = json.loads(value)
+        except json.decoder.JSONDecodeError:
+            value = None
+            feedback = "Invalid JSON for position"
+        if value:
+            cleaned = {
+                key: value.get(key, default_value)
+                for key, default_value in DEFAULT_COURSE_OPTIONS_DICT[action][0].items()
+            }
+            config.set_parameter(action, cleaned, who=who)
+            feedback = "Block positions updated"
     elif action in DEFAULT_COURSE_OPTIONS_DICT:
         default_value, _comment = DEFAULT_COURSE_OPTIONS_DICT[action]
         if isinstance(default_value, int):
