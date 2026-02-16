@@ -2455,6 +2455,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 tips.append("Aller à l'accueil C5 listant toutes les sessions.")
                 links.append('<a onclick="ccccc.goto_home()">'
                     + self.options['icon_home'] + '</a>')
+                tips.append('Nous prévenir que vous avez trouvé un bug dans C5')
+                links.append('<a onclick="ccccc.bug_report()">🐞</a>')
                 tips.append(' ')
                 links.append(' ')
                 if self.options['GRADING']:
@@ -2599,6 +2601,23 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.allow_edit = int(value)
         elif what == 'recompile':
             self.compilation_run()
+
+    def bug_report(self):
+        self.popup_message(
+        '<p>Vous avez trouvé un bug dans C5 (<b>pas dans le sujet</b>) :<br>\n'
+        + 'Envoyez un message <b>décrivant précisémment le problème</b> à ' + CONFIG['roots'][0] + '<br>\n'
+        + 'En ajoutant les informations qui suivent :<ul>\n'
+        + '<li> Navigateur : '
+        + navigator.appCodeName + ' // '
+        + navigator.appName + ' // '
+        + navigator.appVersion + '<br>\n'
+        + '<li> OS : ' + navigator.platform + '<br>\n'
+        + '<li> Session : ' + REAL_COURSE + '<br>\n'
+        + '<li> Où : ' + JSON.stringify(WHERE) + '<br>\n'
+        + '<li> Quand : ' + nice_date(millisecs()/1000) + ' décalage temporel : ' + self.server_time_delta
+        + '</ul>'
+        + 'Cliquer sur OK ne va <b>pas</b> envoyer de message.'
+        )
 
     def goto_question(self, index):
         """Indicate the new question to the worker"""
