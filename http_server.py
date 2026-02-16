@@ -152,7 +152,7 @@ def filter_last_answer(answers:List[Answer]) -> AnswerPerType:
     return last
 
 async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: disable=too-many-arguments,too-many-locals
-                 login:str, grading:bool=False, feedback:int=0) -> Response:
+                 login:str, grading:bool=False, feedback:int=0, version:str='') -> Response:
     """Return the editor page.
     """
     stop = 8000000000
@@ -213,6 +213,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
             COURSE_CONFIG['feedback'] = {feedback};
             COMMENT_STRING = {json.dumps(course.get_language()[1])};
             MEDIA = {json.dumps(course.media)};
+            VERSION = {json.dumps(version)};
         </script>
         <script src="JS/ccccc.js?ticket={session.ticket}"></script>''')
 
@@ -277,7 +278,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                     if status == 'checkpoint':
                         return session.message('checkpoint')
             if filename.startswith("="):
-                version = request.match_info.get('version', None)
+                version = request.match_info.get('version', '')
                 if version:
                     place = course.active_teacher_room[login][2]
                     changed = place.split(',')
@@ -288,7 +289,7 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                     course.active_teacher_room[login][2] = ','.join(changed)
                     feedback = 0 # No feedback on try
                 if course.running(login, session.hostname) or course.get_feedback(login):
-                    return await editor(session, is_admin, course, login_as or login, feedback=feedback)
+                    return await editor(session, is_admin, course, login_as or login, feedback=feedback, version=version)
                 log(f'INVALID session {login} {filename}')
                 return answer('Session inconnue')
             if '=' in filename:
