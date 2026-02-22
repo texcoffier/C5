@@ -159,6 +159,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     coach = None
     coach_previous_position = 0
     current_selection = ''
+    session_information = ''
 
     def init(self):
         self.options = options = COURSE_CONFIG
@@ -2219,6 +2220,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 + (self.grading_sum or GRADE[0]) + '/' + self.options.notation_max + '</x>')
         content.append('</h2></div>')
         if GRADING or NOTATION:
+            if GRADING:
+                content.append(self.session_information)
+                content.append('<hr>')
             if GRADING and self.options.display_global_grading:
                 content.append("Cocher les ")
                 content.append('<button onclick="ccccc.set_all_grades(0)">premières cases</button> ')
@@ -2464,21 +2468,22 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                         links.append('🚨')
                     else:
                         links.append('👍')
-                    tip = 'Placé par «' + WHERE[1] + '» dans «' + WHERE[2].split(',')[0] + '» (' + WHERE[6] + ')'
+                    tip = ['Placé par «' + WHERE[1] + '» dans «' + WHERE[2].split(',')[0] + '» (' + WHERE[6] + ')']
                     if WHERE[4]:
-                        tip += '. ' + WHERE[4] + ' pertes de focus (' + WHERE[9] + 's)'
+                        tip.append(WHERE[4] + ' pertes de focus (' + WHERE[9] + 's)')
                     if WHERE[5]:
-                        tip += '. ' + WHERE[5] + 'questions ok'
+                        tip.append(WHERE[5] + 'questions ok')
                     if WHERE[7]:
-                        tip += '. ' + int(WHERE[7]/60) + 'm bonus'
+                        tip.append(int(WHERE[7]/60) + 'm bonus')
                     if WHERE[11]:
-                        tip += '. Encart rouge désactivé'
+                        tip.append('Encart rouge désactivé')
                     if WHERE[12]:
-                        tip += (
-                            '<div style="display: inline-block; font-size: 70%;'
-                            + 'position:absolute; width:50em; border: 1px solid #000; background: #FDD">'
+                        tip.append('<div style="background:#FBB">'
                             + replace_all(html(WHERE[12]), '\n', '<br>') + '</div>')
-                    tips.append(tip)
+                    tips.append(replace_all('. '.join(tip), "background:#FBB",
+                        '''background:#F88; display: inline-block; font-size: 70%;
+                        position:absolute; width:50em; border: 1px solid #000;'''))
+                    self.session_information = '<br>'.join(tip)
                     # 'Dernière interaction : ' + nice_date(WHERE[3], True) + '<br>'
             if not self.options['GRADING'] and self.options['checkpoint'] and not self.options['feedback']:
                 tips.append("Terminer l'examen")
