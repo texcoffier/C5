@@ -19,10 +19,15 @@ try:
         return txt.replace(RegExp('([.*+?[()\\\\$^])', 'g'), '\\$1')
     def replace_all(txt, regexp, value):
         return txt.replace(RegExp(protect_regexp(regexp), "g"), value)
+    def is_string(x):
+        # isinstance not working because 'str' redefined.
+        return x.toLowerCase
     PYTHON = False
 except NameError:
     def replace_all(txt, regexp, value):
         return txt.replace(regexp, value)
+    def is_string(x):
+        return isinstance(x, str)
     PYTHON = True
 
 def normalize_login(login):
@@ -614,7 +619,7 @@ class Journal:
                     i += 1
                 i += 1
                 append(old_content[last_displayed:i])
-        for add, pos, value in myers_diff(old_content, new_content, merge=True):
+        for add, pos, value in compute_diffs(old_content, new_content, merge=True):
             finish()
             if last_displayed == -1 or pos - last_displayed > 80:
                 if last_displayed != -1:
@@ -1951,7 +1956,7 @@ def compute_diffs_regtest(algorithm):
             raise ValueError('bug')
 
 def enhanced_myers(a, b, merge=True):
-    if not isinstance(a, str):
+    if not is_string(a):
         return myers_diff(a, b, merge)
     begin = 0
     if a == b:
