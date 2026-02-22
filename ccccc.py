@@ -2620,6 +2620,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         + '<li> Session : ' + REAL_COURSE + '<br>\n'
         + '<li> Où : ' + JSON.stringify(WHERE) + '<br>\n'
         + '<li> Quand : ' + nice_date(millisecs()/1000) + ' décalage temporel : ' + self.server_time_delta
+        + '<li> [' + (len(JOURNAL.lines)-3) + '] : ' + html(JOURNAL.lines[-3][:80])
+        + '<li> [' + (len(JOURNAL.lines)-2) + '] : ' + html(JOURNAL.lines[-2][:80])
+        + '<li> [' + (len(JOURNAL.lines)-1) + '] : ' + html(JOURNAL.lines[-1][:80])
         + '</ul>'
         + 'Cliquer sur OK ne va <b>pas</b> envoyer de message.'
         )
