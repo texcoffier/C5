@@ -2389,18 +2389,22 @@ async def live_link(request:Request) -> StreamResponse:
                 continue
             asked_login, rorw = remaining.split(' ', 1)
             course = CourseConfig.get(utilities.get_course(session_name))
+            is_proctor = session.is_proctor(course)
             allow_edit = (asked_login == session.login or session.is_grader(course)) and rorw == 'rw'
             for_editor = asked_login.startswith('_FOR_EDITOR_')
             if for_editor:
                 asked_login = asked_login.replace('_FOR_EDITOR_', '')
                 if session.is_admin(course):
                     allow_edit = True
-            journa = JournalLink.new(course, asked_login, socket, port, for_editor)
+            journa = JournalLink.new(course, asked_login, socket, port, for_editor, is_proctor)
             journals[port] = [journa, allow_edit]
             warn('Open socket')
-            if allow_edit or session.is_proctor(course):
-                await socket.send_str(
-                    port + ' J' + '\n'.join(journa.content) + '\n')
+            if allow_edit or is_proctor:
+                content = '\n'.join(journa.content)
+                if not is_proctor:
+                    # Remove IP
+                    content = re.sub('\nO([^ ]*)[^\n]*', '\nO\\1 ?', content)
+                await socket.send_str(port + ' J' + content + '\n')
             if allow_edit:
                 await journa.write(f'T{int(time.time())}')
                 await journa.write(f'O{session.login} {session.client_ip} {port}')

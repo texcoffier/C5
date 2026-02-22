@@ -946,7 +946,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                     frame = frame.f_back
                 self.course.set_parameter('source_update',
                     f'«{message[1:]}» {errors}', who=frame.f_locals['session'].login)
-                for socket, port in self.connections:
+                for socket, port, _is_proctor in self.connections:
                     await socket.send_str(f'{port} A{errors}')
         elif self.login in self.course.active_teacher_room:
             infos = self.course.active_teacher_room[self.login]
@@ -978,8 +978,11 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                 self.course.set_active_teacher_room(self.login, 'last_time', infos.last_time)
                 self.last_set_parameter = infos.last_time
 
-        for socket, port in self.connections:
+        for socket, port, is_proctor in self.connections:
             try:
+                if not is_proctor and message.startswith('O'):
+
+                    original_message = ' '.join(original_message.split(' ', 2)[:2]) + ' ?'
                 await socket.send_str(f'{port} {original_message}')
             except: # pylint: disable=bare-except
                 JournalLink.closed_socket(socket)
@@ -1001,7 +1004,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
             JournalLink.journals.pop((self.course.course, self.login), None)
 
     @classmethod
-    def new(cls, course, login, socket=None, port=None, is_editor=False): # pylint: disable=too-many-arguments
+    def new(cls, course, login, socket=None, port=None, is_editor=False, is_proctor=False): # pylint: disable=too-many-arguments
         """JournalLink is common to all the user connected to the session
         in order to synchronize their screens."""
         if is_editor:
@@ -1011,7 +1014,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
             journa = JournalLink(course, login, is_editor)
             JournalLink.journals[course.course, login] = journa
         if socket is not None:
-            journa.connections.append((socket, port))
+            journa.connections.append((socket, port, is_proctor))
         return journa
 
     @classmethod
@@ -1026,7 +1029,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         """Only called on server stop"""
         log("JournalLink.close_all_sockets()")
         for journa in JournalLink.journals.values():
-            for socket, _port in journa.connections:
+            for socket, _port, _is_proctor in journa.connections:
                 try:
                     socket._writer.transport.close() # pylint: disable=protected-access
                 except IOError:
