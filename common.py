@@ -900,7 +900,8 @@ class Journal:
             return 1
         def draw_F(_action, x, y):
             if draw_B.start:
-                r = 1 * (self.timestamps[index] - self.timestamps[draw_B.start])
+                r2 = self.timestamps[index] - self.timestamps[draw_B.start]
+                r = r2 ** 0.5
                 draw_B.start = None
                 if r:
                     if r > size/2:
@@ -910,7 +911,7 @@ class Journal:
                     ctx.beginPath()
                     ctx.arc(x + r, y - size/2 - zoom/2, r, 0, 2*Math.PI)
                     ctx.fill()
-                    self.blur_times[index] = r
+                    self.blur_times[index] = r2
                     return 2*r
             return 0
         def draw_S(_action, x, y):
