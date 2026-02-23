@@ -800,6 +800,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Run one compilation"""
         if memorize_input:
             self.memorize_inputs()
+        self.record_pending_goto()
         self.compile_now = True
         self.scheduler()
 
