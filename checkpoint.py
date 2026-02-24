@@ -1914,6 +1914,10 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             fullscreen = '@' + fullscreen
             spy = '@' + spy
             temps = '@' + temps
+        elif not OPTIONS['checkpoint']:
+            temps = '@' + temps
+            state = '@' + state
+            fullscreen = '@' + fullscreen
 
         menu = [
             student.firstname + ' ' + student.surname,
