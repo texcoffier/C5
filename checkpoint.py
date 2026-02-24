@@ -356,6 +356,7 @@ class Menu:
             if (i > 1 # pylint: disable=too-many-boolean-expressions
                     and message != ''
                     and not message.startswith(' ')
+                    and not message.startswith('@')
                     and event_x > x_pos
                     and event_x < x_pos + menu_width
                     and event_y > y_item
@@ -365,6 +366,11 @@ class Menu:
                 ctx.fillRect(x_pos, y_item, menu_width - 2 * padding, menu_line)
                 ctx.fillStyle = "#000"
                 self.selected = message
+            if message.startswith('@'):
+                ctx.fillStyle = "#00000050"
+                message = message[1:]
+            else:
+                ctx.fillStyle = "#000"
             ctx.fillText(message, x_pos, y_item + menu_line - 6)
         ctx.restore()
 
@@ -1867,8 +1873,6 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             grade = 'Regarder et commenter le code'
         grade += ' (sujet ' + student.version.upper() + ')'
         spy = "Espionner l'écran en temps réel"
-        if self.state == 'running':
-            spy = '*' + spy
         temps = "Temps bonus : "
         if student.login in OPTIONS['tt']:
             temps += '⅓ '
@@ -1902,6 +1906,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             similarities = 'Lignes identiques avec voisins :'
             for similarity in SIMILARITIES[student.login].Values():
                 similarities += ' ' + similarity
+
+        if self.state == 'running':
+            spy = '*' + spy
+        else:
+            state = '@' + state
+            fullscreen = '@' + fullscreen
+            spy = '@' + spy
 
         menu = [
             student.firstname + ' ' + student.surname,
