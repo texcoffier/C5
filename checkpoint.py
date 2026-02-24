@@ -1913,6 +1913,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             state = '@' + state
             fullscreen = '@' + fullscreen
             spy = '@' + spy
+            temps = '@' + temps
 
         menu = [
             student.firstname + ' ' + student.surname,
