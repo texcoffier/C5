@@ -1909,7 +1909,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
 
         if self.state == 'running':
             spy = '*' + spy
-        else:
+        elif OPTIONS['state'] != 'Ready':
             state = '@' + state
             fullscreen = '@' + fullscreen
             spy = '@' + spy
