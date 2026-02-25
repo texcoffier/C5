@@ -2376,7 +2376,7 @@ async def live_link(request:Request) -> StreamResponse:
                     # warn(f'Record')
                     if message.startswith('bC') or message.startswith('b-') and journa.course.is_grader(session.login):
                         journa.erase_comment_history(int(message[2:].split(' ')[0]))
-                    await journa.write(message)
+                    await journa.write(message, session.login)
             else:
                 warn(f'Bad message ID: {msg_id}')
                 await socket.send_str(f'{port} R')
@@ -2389,7 +2389,7 @@ async def live_link(request:Request) -> StreamResponse:
                 continue
             asked_login, rorw = remaining.split(' ', 1)
             course = CourseConfig.get(utilities.get_course(session_name))
-            is_proctor = session.is_proctor(course)
+            is_proctor = session.is_proctor(course) and session.login
             allow_edit = (asked_login == session.login or session.is_grader(course)) and rorw == 'rw'
             for_editor = asked_login.startswith('_FOR_EDITOR_')
             if for_editor:
@@ -2406,7 +2406,7 @@ async def live_link(request:Request) -> StreamResponse:
                     content = re.sub('\nO([^ ]*)[^\n]*', '\nO\\1 ?', content)
                 await socket.send_str(port + ' J' + content + '\n')
             if allow_edit:
-                await journa.write(f'T{int(time.time())}')
+                await journa.write(f'T{int(time.time())}', session.login)
                 await journa.write(f'O{session.login} {session.client_ip} {port}')
             # log(f'New journalLink {asked_login}/{login} {for_editor} msg_id:{journa.msg_id}')
 

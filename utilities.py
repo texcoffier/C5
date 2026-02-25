@@ -874,6 +874,8 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         self.login = login
         self.course = course
         self.editor = is_editor
+        # The following dict may contains disconnected users
+        self.last_user_modification = {} # login → timestamp
         if is_editor:
             dirname = f'{self.course.dir_session}'
         else:
@@ -913,7 +915,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         """Unock the JournalLink instance"""
         self.locked = False
 
-    async def write_unsafe(self, message):
+    async def write_unsafe(self, message, login):
         """Append an action to the journal.
               * update the session state (blurring, activity).
               * update the journal.log of the student.
@@ -929,6 +931,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         # So redo it server side.
         self.journal.write(common.protect_crlf(message) + '\n')
         self.journal.flush()
+        self.last_user_modification[login] = time.time()
 
         if self.editor:
             if message.startswith('t'):
@@ -948,6 +951,15 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                     f'«{message[1:]}» {errors}', who=frame.f_locals['session'].login)
                 for socket, port, _is_proctor in self.connections:
                     await socket.send_str(f'{port} A{errors}')
+            elif message.startswith('O'):
+                on_page = set(c[2] for c in self.connections)
+                if len(on_page) > 1:
+                    editing_users = 'Liste des personnes modifiant ce source :\n'
+                    for user in on_page:
+                        dt = int(time.time() - self.last_user_modification.get(user,0))
+                        editing_users += f'    * {user} : dernière action il y a {dt} secondes\n'
+                    for socket, port, _is_proctor in self.connections:
+                        await socket.send_str(f'{port} A{editing_users}')
         elif self.login in self.course.active_teacher_room:
             infos = self.course.active_teacher_room[self.login]
             infos.last_time = int(time.time())
@@ -981,16 +993,15 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         for socket, port, is_proctor in self.connections:
             try:
                 if not is_proctor and message.startswith('O'):
-
                     original_message = ' '.join(original_message.split(' ', 2)[:2]) + ' ?'
                 await socket.send_str(f'{port} {original_message}')
             except: # pylint: disable=bare-except
                 JournalLink.closed_socket(socket)
 
-    async def write(self, message):
+    async def write(self, message, login=None):
         """Ensure that session update are serialized"""
         async with self:
-            await self.write_unsafe(message)
+            await self.write_unsafe(message, login)
 
     def close(self, socket, port=None):
         """Close all the connection or the connection of the indicated port."""
@@ -1001,6 +1012,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                                or port is not None and connection[1] != port
                             ]
         if not self.connections:
+            # Free memory
             JournalLink.journals.pop((self.course.course, self.login), None)
 
     @classmethod
