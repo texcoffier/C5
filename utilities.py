@@ -949,8 +949,9 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
                     frame = frame.f_back
                 self.course.set_parameter('source_update',
                     f'«{message[1:]}» {errors}', who=frame.f_locals['session'].login)
-                for socket, port, _is_proctor in self.connections:
-                    await socket.send_str(f'{port} A{errors}')
+                for socket, port, is_proctor in self.connections:
+                    if is_proctor == login:
+                        await socket.send_str(f'{port} A{errors}')
             elif message.startswith('O'):
                 on_page = set(c[2] for c in self.connections)
                 if len(on_page) > 1:
