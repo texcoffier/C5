@@ -234,12 +234,18 @@ def clean_title(txt):
 
 def column_toggle(event):
     """Show Hide column"""
-    span = event.target
-    if span.parentNode.tagName != 'TH' and span.tagName != 'TH':
+    cell = event.target
+    if cell.tagName == 'A':
         return
-    column = clean_title(span.textContent)
-    if column == 'Session':
+    while cell and not cell.cellIndex:
+        cell = cell.parentNode
+    if not cell:
         return
+    if cell.cellIndex <= 1: # Session and toggle
+        return
+    table = cell.parentNode.parentNode
+    titles = table.childNodes[1]
+    column = clean_title(titles.childNodes[cell.cellIndex].textContent)
     checked = column not in INTERFACE.visible_columns
     if checked:
         INTERFACE.visible_columns.append(column)

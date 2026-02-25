@@ -1450,7 +1450,7 @@ def checkpoint_table(session:Session, courses:List[CourseConfig],
 async def checkpoint_list(request:Request) -> Response:
     """Page with all checkpoints"""
     session = await Session.get_or_fail(request)
-    titles = '''<tr class="sticky2" onclick="column_toggle(event)"></div><th><div>Session</div><th><div>☑</div><th><div>Compiler
+    titles = '''<tr class="sticky2"></div><th><div>Session</div><th><div>☑</div><th><div>Compiler
         </div><th><div>Title
         </div><th><div>Students</div><th><div>Waiting</div><th><div>Actives</div><th><div>With me
         </div><th><div>Start date</div><th><div>Stop date</div><th><div>Duration</div><th><div>Options</div><th><div>Edit</div><th><div>👁</div><th><div>Wait room
@@ -1461,7 +1461,7 @@ async def checkpoint_list(request:Request) -> Response:
         <script src="JS/checkpoint_list.js?ticket={session.ticket}"></script>
         <link rel="stylesheet" href="CSS/checkpoint_list.css?ticket={session.ticket}">
         <div id="header"></div>
-        <table>''']
+        <table onclick="column_toggle(event)">''']
     def hide_header():
         if '<th>' in content[-1]:
             content.pop()
