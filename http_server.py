@@ -1820,6 +1820,36 @@ async def adm_history(request:Request) -> Response:
         content.append(f'{date} {hour} {login:20.20} {line}')
     return answer('\n'.join(content[::-1]), content_type="text/plain")
 
+async def adm_unsaved(request:Request) -> Response:
+    session, config = await get_course_config(request)
+    if not session.is_admin(config):
+        raise web.HTTPUnauthorized(body='not_admin')
+    d = pathlib.Path(config.dir_session)
+    try:
+        journa = common.Journal((d / 'journal.log').read_text(encoding='utf-8'))
+        (d / 'unsaved').write_text(journa.content, encoding='utf-8')
+        process = await asyncio.create_subprocess_exec(
+            'diff', '-u', d / 'questions.py', d / 'unsaved',
+            stdout=asyncio.subprocess.PIPE,
+            )
+        diff = await process.stdout.read()
+        await process.wait()
+    except FileNotFoundError:
+        diff = ''
+    if diff:
+        return answer('''<style>
+        HTML {scrollbar-width: none}
+        BODY {margin: 0px}
+        DIV {background: #F88; position: fixed; top: 0px; z-index: 2;}
+        </style>
+        <div>Source</div><pre>'''
+                      + html.escape(diff.decode('utf-8')) + '</pre></div>',
+                      content_type="text/html")
+    else:
+        return answer('''<style>HTML{scrollbar-width:none}BODY{margin:0}</style>Source
+        <p>Le source dans l'éditeur est identique au source en production.
+        ''', content_type="text/html")
+
 async def adm_stats(request:Request) -> Response:
     """Session statistics"""
     course = CourseConfig.get(utilities.get_course(request.match_info['course']))
@@ -2461,6 +2491,7 @@ def main():
                     web.get('/adm/course/{course}', adm_course),
                     web.get('/adm/history/{course}', adm_history),
                     web.get('/adm/git_pull/{course}', adm_git_pull),
+                    web.get('/adm/unsaved/{course}', adm_unsaved),
                     web.get('/adm/force_grading_done/{course}', adm_force_grading_done),
                     web.get('/adm/media/{course}/{action}/{media}', adm_media),
                     web.get('/adm/editor/{course}', adm_editor),

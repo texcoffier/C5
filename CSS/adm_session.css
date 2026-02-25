@@ -46,6 +46,23 @@ BODY.multiple DIV.single {
     width: 100%;
 }
 
+#Edit {
+    width: 4.1em;
+}
+#Edit IFRAME {
+    border: 0px;
+    background: #FFF;
+    margin-left: -3.5em;
+    width: 3.6em;
+    height: 15px;
+}
+#Edit:hover IFRAME {
+    position: absolute;
+    width: 25vw;
+    height: 25vh;
+    margin-top: 1em;
+}
+
 #tabs > DIV {
     display: inline-block;
     border-left: 1px solid #000;

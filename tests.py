@@ -1263,7 +1263,7 @@ class Q1(Question):
         with self.admin_rights():
             self.goto('adm/session/REMOTE=grapic')
             self.click('#Media')
-            self.driver.switch_to.frame(0)
+            self.driver.switch_to.frame(1)
             retry(lambda: len(self.driver.find_elements(BY_SELECTOR, 'BUTTON')) != 2)
             for i in self.driver.find_elements(BY_SELECTOR, 'BUTTON'):
                 if 'grapic/delete/xxx-test.png' in i.get_attribute('outerHTML'):

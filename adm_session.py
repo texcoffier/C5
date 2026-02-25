@@ -292,9 +292,13 @@ def select_action(element):
 def select_tab(label):
     """Select the tab to display"""
     new_tab = document.getElementById(label)
-    if not new_tab:
+    if not new_tab or new_tab.id == 'tabs':
         return # Action menu
     if State['selected_tab']:
+        if State['selected_tab'].id == 'Edit':
+            x = State['selected_tab'].lastChild.src
+            State['selected_tab'].lastChild.src = ''
+            State['selected_tab'].lastChild.src = x
         State['selected_tab'].className = ''
     State['selected_tab'] = new_tab
     State['selected_tab'].className = "selected"
@@ -659,7 +663,8 @@ def init():
     <div id="tabs" onclick="select_tab(event.target.id)">
     <div id="Config">Config</div>
     <div id="Access">Access</div>
-    <div id="Edit" class="single">Source</div>
+    <div id="Edit" class="single">Source<iframe class="tip" src="adm/unsaved/''' + COURSE
+        + '?ticket=' + TICKET + '''"></iframe></div>
     <div id="Media" class="single">Media</div>
     <div id="Try A" class="single">Try A</div>
     <div id="Try B" class="single">Try B</div>
