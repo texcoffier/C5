@@ -1467,7 +1467,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         return None
     def drag_start(self, event):
         """Start moving the map"""
-        if event.button != 0 or self.animation_running:
+        if event.button or self.animation_running:
             return
         self.get_event(event)
         window.onmousemove = window.ontouchmove = bind(self.drag_move, self)
@@ -2046,7 +2046,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             messages.scrollTop = 1000000 # messages.offsetHeight does not works
     def start_move_student(self, event):
         """Move student bloc"""
-        if event.button != 0 or self.animation_running:
+        if event.button or self.animation_running:
             return
         self.get_event(event)
         login = event.currentTarget.getAttribute('login')
