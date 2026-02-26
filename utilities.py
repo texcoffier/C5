@@ -1040,14 +1040,12 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
     @classmethod
     def close_all_sockets(cls):
         """Only called on server stop"""
-        log("JournalLink.close_all_sockets()")
         for journa in JournalLink.journals.values():
             for socket, _port, _is_proctor in journa.connections:
                 try:
                     socket._writer.transport.close() # pylint: disable=protected-access
                 except IOError:
                     pass
-        log("JournalLink.close_all_socket() done")
 
     def erase_comment_history(self, bubble_id):
         """Replace old comment text by ?????? without changing its size
