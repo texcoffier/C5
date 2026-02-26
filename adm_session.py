@@ -678,7 +678,6 @@ def init():
      <select onchange="select_action(this)" style="vertical-align: top;">
     <option>Actions</option>
     <option action="upload">Upload a new source</option>
-    <option action="upload_media">Upload a new media</option>
     <option action="rename_session">Rename session</option>
     <option action="git_pull">GIT pull</option>
     <option action="force_grading_done">Force «Grading done» on finished gradings</option>

@@ -1264,11 +1264,11 @@ class Q1(Question):
             self.goto('adm/session/REMOTE=grapic')
             self.click('#Media')
             self.driver.switch_to.frame(1)
-            retry(lambda: len(self.driver.find_elements(BY_SELECTOR, 'BUTTON')) != 2)
+            retry(lambda: len(self.driver.find_elements(BY_SELECTOR, 'BUTTON')) != 3)
             for i in self.driver.find_elements(BY_SELECTOR, 'BUTTON'):
                 if 'grapic/delete/xxx-test.png' in i.get_attribute('outerHTML'):
                     i.click()
-            retry(lambda: len(self.driver.find_elements(BY_SELECTOR, 'BUTTON')) != 1)
+            retry(lambda: len(self.driver.find_elements(BY_SELECTOR, 'BUTTON')) != 2)
             self.driver.switch_to.default_content()
 
     def test_git(self):

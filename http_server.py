@@ -595,7 +595,9 @@ async def adm_media(request:Request) -> Response:
         raise session.exception('not_proctor')
     action = request.match_info['action']
     media = request.match_info['media']
-    medias = []
+    medias = ['''<button
+        onclick="window.parent.upload_media()"
+        >Upload a new media</button><br>''']
     for media_name in tuple(course.media):
         if media == media_name:
             if action == 'delete':
@@ -1329,7 +1331,7 @@ async def upload_media(request:Request) -> Response:
         style = ''
     return answer('<style>BODY {margin:0px;font-family:sans-serif;}</style>'
         + '<div style="height:100%;' + style + '">'
-        + message + '</div>')
+        + message + '<script>window.parent.select_tab("Media")</script></div>')
 
 async def config_reload(request:Request) -> Response:
     """For regression tests"""
