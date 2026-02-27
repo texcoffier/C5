@@ -268,6 +268,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             + '<tt class="truncate_sn">' + self.options['INFOS']['sn'].upper() + '</tt>'
             + ' '
             + '<tt class="truncate_fn">' + self.options['INFOS']['fn'].title() + '</tt>'
+            + '<br>' + self.options['LOGIN']
             + "</span></h2>")
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
