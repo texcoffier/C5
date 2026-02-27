@@ -575,6 +575,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.canvas.onmousemove = canvas_event
         self.canvas.onmousedown = canvas_event
         self.canvas.onmouseup = canvas_event
+        self.canvas.onwheel = canvas_event
         def leave_version_tree():
             self.version_feedback.style.display = 'none'
         self.canvas.onmouseout = leave_version_tree

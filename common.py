@@ -62,6 +62,7 @@ POSSIBLE_GRADES = ":([?],)?[-0-9,.]+$"
 DELTA_T = 10
 DT_MERGE = 60 # Insert/Delete in the same DT_MERGE seconds are merged on version tree
 TIME_DY = 20 # Horizontal scrollbar width
+TIME_DX = 20 # Vertical scrollbar width
 
 if PYTHON:
     import re
@@ -276,6 +277,7 @@ class Journal:
         self.clear_pending_goto()
         self.evaluate(self.lines, 0)
         self.offset_x = None
+        self.offset_y = None
     def clear_pending_goto(self):
         """No currently pending goto in the past"""
         self.pending_goto = False
@@ -938,10 +940,11 @@ class Journal:
         feedback = None
         self.positions = positions = {}
         max_width = 0
+        max_height = 0
         disable_ok = False
         for index, nb_i, nb_d, index_start, line in changes:
             action = self.lines[index] or '✍'
-            y = line.y
+            y = line.y - (self.offset_y or 0)
             width = draw[action[0]](action, x, y)
             if width > 0:
                 new_disable_ok = False
@@ -982,7 +985,7 @@ class Journal:
                         ctx.lineWidth = 1
                     ctx.strokeStyle = '#000'
                     ctx.beginPath()
-                    ctx.moveTo(start_x, line.parent_line.y - zoom)
+                    ctx.moveTo(start_x, line.parent_line.y - zoom - (self.offset_y or 0))
                     if start_x == x:
                         ctx.lineTo(x, y - size)
                         ctx.lineTo(x - arrow, y - size - arrow)
@@ -1003,24 +1006,27 @@ class Journal:
                 positions[index] = x
                 if x > max_width:
                     max_width = x
-        return feedback, max_width
+                if y > max_height:
+                    max_height = y
+        return feedback, max_width, max_height + self.offset_y
 
     def draw_horizontal_scrollbar(self, canvas, ctx, max_width, mouse_y, changes):
         """Display horizontal scrollbar background and time label"""
+        canvas_width = canvas.width - TIME_DY
         if self.offset_x is None:
-            self.offset_x = Math.min(0, -max_width + canvas.width)
+            self.offset_x = Math.min(0, -max_width + canvas_width)
         if mouse_y > canvas.height - TIME_DY:
-            ctx.fillStyle = "#FF08"
+            ctx.fillStyle = "#FF0"
         else:
-            ctx.fillStyle = "#FF01"
-        ctx.fillRect(0, canvas.height - TIME_DY, canvas.width, TIME_DY)
+            ctx.fillStyle = "#FF08"
+        ctx.fillRect(0, canvas.height - TIME_DY, canvas_width, TIME_DY)
         max_width = max_width - self.offset_x
-        width = canvas.width * canvas.width / max_width
-        x = -self.offset_x / max_width * canvas.width
+        width = canvas_width * canvas_width / max_width
+        x = -self.offset_x / max_width * canvas_width
         if x < 0:
             x = 0
-        elif x + width > canvas.width:
-            x = canvas.width - width
+        elif x + width > canvas_width:
+            x = canvas_width - width
         ctx.fillStyle = "#0002"
         ctx.fillRect(x, canvas.height - TIME_DY + 2, width, TIME_DY - 4)
 
@@ -1030,7 +1036,7 @@ class Journal:
         last_date = ''
         for item in changes:
             # Displays date on the horizontal scrollbar
-            pos = (self.positions[item[0]] - self.offset_x) / max_width * canvas.width
+            pos = (self.positions[item[0]] - self.offset_x) / max_width * canvas_width
             if pos > x:
                 date = nice_date(self.timestamps[item[0]])
                 if date[:11] == last_date[:11]:
@@ -1054,6 +1060,17 @@ class Journal:
             self.offset_x - self.positions[index] + canvas.offsetWidth * window.devicePixelRatio - 150)
         if self.offset_x > 0:
             self.offset_x = 0
+
+    def draw_vertical_scrollbar(self, canvas, ctx, mouse_x, max_height):
+        if mouse_x > canvas.width - TIME_DX:
+            ctx.fillStyle = "#FF0"
+        else:
+            ctx.fillStyle = "#FF08"
+        ctx.fillRect(canvas.width - TIME_DX, 0, TIME_DX, canvas.height - TIME_DY)
+        ctx.fillStyle = "#0002"
+        y =             self.offset_y  / max_height * (canvas.height - TIME_DY)
+        dy = (canvas.height - TIME_DY) / max_height * (canvas.height - TIME_DY)
+        ctx.fillRect(canvas.width - TIME_DX, y, TIME_DX, dy)
 
     def tree_canvas(self, canvas, event=None):
         """Draw tree in canvas.
@@ -1085,8 +1102,12 @@ class Journal:
             mouse_y = (event.clientY - rect.y) * window.devicePixelRatio
             if mouse_x < 0:
                 mouse_x = 0
-            elif mouse_x > rect.width:
-                mouse_x = rect.width - 1
+            elif mouse_x > canvas.width:
+                mouse_x = canvas.width - 1
+            if mouse_y < 0:
+                mouse_y = 0
+            elif mouse_y > canvas.height:
+                mouse_y = canvas.height - 1
         else:
             mouse_x = mouse_y = 0
         if buttons and not self.previous_buttons:
@@ -1095,13 +1116,19 @@ class Journal:
                 event.stopPropagation()
                 event.preventDefault()
             window.onmousemove = update
-            self.previous_mouse_y = mouse_y
+            if mouse_x > canvas.width - TIME_DX:
+                self.previous_mouse_x = mouse_x
+            if mouse_y > canvas.height - TIME_DY:
+                self.previous_mouse_y = mouse_y
         elif not buttons and self.previous_buttons:
             window.onmousemove = ''
+            self.previous_mouse_x = None
             self.previous_mouse_y = None
         else:
             if self.previous_mouse_y:
                 mouse_y = self.previous_mouse_y
+            if self.previous_mouse_x:
+                mouse_x = self.previous_mouse_x
 
         self.previous_buttons = buttons
         self.last_event = None
@@ -1109,17 +1136,16 @@ class Journal:
 
         line_list = self.create_line_list(tree)
         changes = self.get_elements_to_draw(line_list, size + zoom)
-        feedback, max_width = self.draw_changes(ctx, changes, size, zoom, mouse_x, mouse_y)
+        feedback, max_width, max_height = self.draw_changes(ctx, changes, size, zoom, mouse_x, mouse_y)
         x, width, max_width = self.draw_horizontal_scrollbar(canvas, ctx, max_width, mouse_y, changes)
+        self.draw_vertical_scrollbar(canvas, ctx, mouse_x, max_height)
 
         if mouse_y > canvas.height - TIME_DY:
-            if buttons:
-                # Move the scrollbar
-                self.offset_x = Math.min(
-                    0,
-                    Math.max(
-                    int((-mouse_x + width/2) / canvas.width * max_width),
-                    -max_width + canvas.width))
+            if buttons and not self.previous_mouse_x:
+                self.offset_x = int((-mouse_x + width/2) / canvas.width * max_width)
+        elif mouse_x > canvas.width - TIME_DX:
+            if buttons and not self.previous_mouse_y:
+                self.offset_y = max_height * mouse_y / (canvas.height - TIME_DY) - (canvas.height - TIME_DY)/2
         elif feedback:
             # Top right black box with change details
             pos_x, pos_y, width, line, lines = feedback
@@ -1136,6 +1162,11 @@ class Journal:
                 ccccc.goto_line(line)
         else:
             ccccc.version_feedback.style.display = 'none'
+        if event and event.type == 'wheel':
+            self.offset_x += event.deltaX
+            self.offset_y += event.deltaY / 2
+        self.offset_x = min(0, max(self.offset_x, -max_width + canvas.width - TIME_DX))
+        self.offset_y = min(max(0, self.offset_y or 0), max_height - (canvas.height - TIME_DY))
         return x
 
     def see_past(self, index):
@@ -1616,6 +1647,7 @@ def create_shared_worker(login='', hook=None, readonly=False):
         Returns True if it is NOT the first time"""
         question = journal.get_question(index)
         journal.offset_x = None
+        journal.offset_y = None
         ccccc.set_editor_visibility(True)
         if question:
             if question.head != len(journal.lines):
