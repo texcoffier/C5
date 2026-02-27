@@ -1791,41 +1791,43 @@ def compute_diffs_fast_line(old, rep):
     old_length = len(old)
     rep_length = len(rep)
     old_i = 0
-    rep_i = 0
+    rep_j = 0
 
-    while old_i != old_length and rep_i != rep_length:
-        if old[old_i] == rep[rep_i]:
+    while old_i != old_length and rep_j != rep_length:
+        if old[old_i] == rep[rep_j]:
             old_i += 1
-            rep_i += 1
+            rep_j += 1
             continue
         synced = False
-        i = 0
-        while True:
-            if old_i+i == old_length or rep_i+1 == rep_length:
+        #print("CHECK", old_i, rep_j, repr(old[old_i]), repr(rep[rep_j]))
+        for distance in range(1, 1000):
+            #print("\tDistance:", distance)
+            for i in range(old_i, min(old_i + distance + 1, old_length)):
+                j = rep_j + distance - (i - old_i)
+                if j >= rep_length:
+                    continue
+                #print("\t\ti:", i, 'j:', j, repr(distance), repr(old[i]), repr(rep[j]))
+                if old[i] == rep[j]:
+                    if i != old_i:
+                        #print('\t\t\tDEL', rep_j, old[old_i:i])
+                        diffs.append([False, rep_j, i-old_i])
+                    for k in range(rep_j, j):
+                        #print('\t\t\tADD', rep_j+k, rep[k])
+                        diffs.append([True, k, rep[k]])
+                    old_i = i+1
+                    rep_j = j+1
+                    synced = True
+                    break
+            if synced:
                 break
-            if old[old_i+i] == rep[rep_i]:
-                diffs.append([False, rep_i, i])
-                old_i += i + 1
-                rep_i += 1
-                synced = True
-                break
-            if old[old_i] == rep[rep_i+i]:
-                for j in range(i):
-                    diffs.append([True, rep_i+j, rep[rep_i+j]])
-                rep_i += i + 1
-                old_i += 1
-                synced = True
-                break
-            i += 1
         if not synced:
             break
-    #print(old_length, old_i, rep_length, rep_i)
     nbr_del = old_length - old_i
     if nbr_del:
-        diffs.append([False, rep_i, nbr_del])
-    for i in rep[rep_i:]:
-        diffs.append([True, rep_i, i])
-        rep_i += 1
+        diffs.append([False, rep_j, nbr_del])
+    for i in rep[rep_j:]:
+        diffs.append([True, rep_j, i])
+        rep_j += 1
     return diffs
 
 def myers_diff(a_lines, b_lines, merge=True):
