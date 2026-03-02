@@ -2389,7 +2389,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                             self.send_input('WAITDONE')
                         setTimeout(answer, int(value[6:]))
                     if value[5] == 'D':
-                        key = (self.current_key or 'None')
+                        key = '\001' + (self.current_key or 'None')
                         key += '\n' + self.mouse_pressed
                         key += '\n' + self.mouse_position[0]
                         key += '\n' + self.mouse_position[1]

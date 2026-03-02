@@ -160,6 +160,8 @@ int winDisplay() {
     int len;
     printf("\001\002WAITD\001");
     fflush(stdout);
+    while ( getc(stdin) != '\001' )
+        {}
     fgets(current_key, sizeof(current_key), stdin);
     len = strlen(current_key);
     if (current_key[len-1] == '\n')
