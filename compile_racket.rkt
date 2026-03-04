@@ -3,7 +3,7 @@
 
 (require racket/sandbox)
 
-(define (compile-and-run filename)
+(define (compile-and-run source)
     (
         (parameterize (
                         [sandbox-eval-limits '(1 4)] ; seconds and megabytes
@@ -35,15 +35,19 @@
                 '(define (run source) (repl source))
             )
         )
-        (list 'run (open-input-file filename))
+        (list 'run source)
     )
 )
 
 (define (error-handler exn) (display "\001\002RACKET") (display exn) (display "\001"))
 
 (define (daemon)
-    (with-handlers ([exn:fail? error-handler])
-        (compile-and-run (read-line)))
+    (with-handlers ([exn:fail? error-handler]) ; File does not exists
+        (let ( (source (open-input-file (read-line))) )
+            (with-handlers ([exn:fail? (lambda (exn) (close-input-port source) (error-handler exn))])
+                (compile-and-run source))
+        )
+    )
     (display "\001\002RACKETFini !\001")
     (flush-output)
     ;(collect-garbage 'major)
