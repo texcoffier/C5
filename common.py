@@ -232,8 +232,7 @@ class Bubble:
         self.comment = unprotect_crlf(' '.join(items[7:]))
     def str(self):
         if PYTHON:
-            return ''
-            # return self.login+' '+str(self.pos_start)+' '+str(self.pos_end)+' '+str(self.line)+' '+str(self.column)+' '+str(self.width)+' '+str(self.height)+' '+self.comment
+            return self.login+' '+str(self.pos_start)+' '+str(self.pos_end)+' '+str(self.line)+' '+str(self.column)+' '+str(self.width)+' '+str(self.height)+' '+self.comment
         return self.login+' '+self.pos_start+' '+self.pos_end+' '+self.line+' '+self.column+' '+self.width+' '+self.height+' '+self.comment
 class Journal:
     def __init__(self, journal=''):
