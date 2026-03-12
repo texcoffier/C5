@@ -3,41 +3,47 @@
 
 (require racket/sandbox)
 
+(define sandbox (lambda ()
+    (parameterize (
+                    [sandbox-eval-limits '(2 16)] ; seconds and megabytes
+                    [sandbox-output (current-output-port)]
+                    [sandbox-path-permissions
+                        (list
+                            (list 'read (build-path (current-directory) "Grapic.rkt"))
+                            (list 'read (build-path (current-directory) "compiled"))
+                            (list 'exists (current-directory))
+                            )]
+                    )
+        (make-evaluator 'racket)
+    )))
+
 (define (compile-and-run source)
-    (
-        (parameterize (
-                        [sandbox-eval-limits '(1 4)] ; seconds and megabytes
-                        [sandbox-output (current-output-port)]
-                      )
-            (make-evaluator
-                'racket
-                '(define (error-handler exn) exn)
-                '(define (repl source)
-                    (let ( [ast (read-syntax "" source)] )
-                        (if (eof-object? ast)
-                            (close-input-port source)
-                            (let ([result (with-handlers ([exn:fail? error-handler])
-                                            (eval ast)
-                                        )
-                                ])
-                                (display "\001\002RACKET")
-                                (display ast)
-                                (display "\n")
-                                (flush-output)
-                                (if (exn:fail? result)
-                                    (list (display result) (display "\001"))
-                                    (list (display result) (display "\001") (cons result (repl source)))
-                                )
+    (let ( (SB (sandbox)) )
+        (SB '(namespace-require "Grapic.rkt"))
+        (SB '(define (error-handler exn) exn))
+        (SB '(define (repl source)
+                (let ( [ast (read-syntax "" source)] )
+                    (if (eof-object? ast)
+                        (close-input-port source)
+                        (let ([result (with-handlers ([exn:fail? error-handler])
+                                        (eval ast)
+                                    )
+                            ])
+                            (display "\001\002RACKET")
+                            (display ast)
+                            (display "\n")
+                            (flush-output)
+                            (if (exn:fail? result)
+                                (list (display result) (display "\001"))
+                                (list (display result) (display "\001") (cons result (repl source)))
                             )
                         )
                     )
                 )
-                '(define (run source) (repl source))
             )
         )
-        (list 'run source)
-    )
-)
+        (SB (list 'repl source))
+    ))
 
 (define (error-handler exn) (display "\001\002RACKET") (display exn) (display "\001"))
 
@@ -50,7 +56,6 @@
     )
     (display "\001\002RACKETFini !\001")
     (flush-output)
-    ;(collect-garbage 'major)
     (daemon)
 )
 
