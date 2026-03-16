@@ -2350,6 +2350,8 @@ async def live_link(request:Request) -> StreamResponse:
     # pylint: disable=too-many-branches,too-many-statements
     session = await Session.get_or_fail(request)
     socket = web.WebSocketResponse()
+    port = None
+    message = None
     try:
         await socket.prepare(request)
     except:
