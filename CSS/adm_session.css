@@ -52,8 +52,8 @@ BODY.multiple DIV.single {
 #Edit IFRAME {
     border: 0px;
     background: #FFF;
-    margin-left: -3.5em;
-    width: 3.6em;
+    margin-left: -3.3em;
+    width: 3.5em;
     height: 15px;
 }
 #Edit:hover IFRAME {

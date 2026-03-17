@@ -1848,7 +1848,10 @@ async def adm_unsaved(request:Request) -> Response:
                       + html.escape(diff.decode('utf-8')) + '</pre></div>',
                       content_type="text/html")
     else:
-        return answer('''<style>HTML{scrollbar-width:none}BODY{margin:0}</style>Source
+        return answer('''<style>
+        HTML{scrollbar-width:none}
+        BODY{margin:0; background:#DDD; font-family:sans-serif}
+        </style>Source
         <p>Le source dans l'éditeur est identique au source en production.
         ''', content_type="text/html")
 
