@@ -1587,6 +1587,10 @@ def create_shared_worker(login='', hook=None, readonly=False):
                 hook(journal)
     def shared_worker_post(message):
         """Send a message to the journal"""
+        if SESSION_LOGIN != LOGIN and not GRADING:
+            print('Not recording ' + message)
+            journal.append(message)
+            return
         if GRADING and not (ccccc.add_comments and message[0] in 'GbTt') or ccccc.options['feedback'] or VERSION != '':
             print('Not recording ' + message)
             if message[0] not in 'LH':
