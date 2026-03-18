@@ -1654,6 +1654,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Formate the source code"""
         if self.add_comments:
             return
+        self.update_cursor_position_now()
+        if self.cursor_position != JOURNAL.position:
+            SHARED_WORKER.post('P' + self.cursor_position)
         self.wait_indent = True # Indent will trigger compile
         self.unlock_worker()
         self.worker.postMessage(['indent', self.source])
