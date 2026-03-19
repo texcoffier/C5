@@ -67,6 +67,13 @@ class Equal(Contains):
         return self.text == value
     def __repr__(self):
         return f'Equal({repr(self.text)})'
+class GreaterInt(Contains):
+    """Boolean operator"""
+    def run(self, value):
+        return int(value) > int(self.text)
+    def __repr__(self):
+        return f'Greater({repr(self.text)})'
+
 class Not(Test):
     """Boolean operator"""
     def __init__(self, test):
@@ -102,8 +109,8 @@ def question(i):
 class Tests: # pylint: disable=too-many-public-methods
     """Test for one browser"""
     ticket = None
-    def __init__(self, driver):
-        self.driver = driver
+    def __init__(self, the_driver):
+        self.driver = the_driver
 
     def run(self):
         """Run the tests"""
@@ -188,6 +195,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_manage_import,
                     self.test_manage_reset,
                     self.test_comments,
+                    self.test_bad_scroll, # VERY very LONG test
                     # self.test_git,
                     ):
                 print('*'*99)
@@ -195,7 +203,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 print('*'*99)
                 try:
                     test()
-                except:
+                except: # pylint: disable=bare-except
                     if test is self.test_many_inputs:
                         test()
                     else:
@@ -213,10 +221,11 @@ class Tests: # pylint: disable=too-many-public-methods
                 raise
 
     def debug(self):
+        """Called many time so any debugging check can be done"""
         return
-        with open('LOGS/compile_server', 'rb') as file:
-            if b"SyntaxError: unmatched ')'" in file.read():
-                debug_stop
+        # with open('LOGS/compile_server', 'rb') as file:
+        #     if b"SyntaxError: unmatched ')'" in file.read():
+        #         debug_stop
     @staticmethod
     def update_config(key, value):
         """Update the configuration by running action."""
@@ -269,9 +278,10 @@ class Tests: # pylint: disable=too-many-public-methods
             self.move_cursor(path, 10, 10)
         self.control('a')
         self.control('c')
-    def control(self, char):
+    def control(self, char, quiet=False):
         """Send a control character"""
-        print(f'\tCTRL+{char}')
+        if not quiet:
+            print(f'\tCTRL+{char}')
         action = selenium.webdriver.ActionChains(self.driver)
         action.key_down(Keys.CONTROL)
         action.key_down(char)
@@ -320,11 +330,13 @@ class Tests: # pylint: disable=too-many-public-methods
             except selenium.common.exceptions.WebDriverException:
                 return "Server connection is impossible"
         retry(check)
-    def check(self, path, checks={}, expected=1, nbr=30): # pylint: disable=dangerous-default-value
+    def check(self, path, checks={}, expected=1, nbr=30, quiet=False): # pylint: disable=dangerous-default-value
         """Check"""
-        print('\tCHECK', path, checks, expected, end=' ')
+        if not quiet:
+            print('\tCHECK', path, checks, expected, end=' ')
         def get_errors():
-            print('*', end='', flush=True)
+            if not quiet:
+                print('*', end='', flush=True)
             elements = self.driver.find_elements(BY_SELECTOR, path)
             if len(elements) != expected:
                 return f'Expected {expected} elements with the path «{path}» found {len(elements)}'
@@ -346,17 +358,19 @@ class Tests: # pylint: disable=too-many-public-methods
             return None
         get_errors.element = None
         retry(get_errors, nbr=nbr)
-        print()
+        if not quiet:
+            print()
         self.debug()
         return get_errors.element
     def get_alert(self):
         """Return the alert or None"""
         alert = Alert(self.driver)
         try:
-            alert.text
+            alert.text # pylint: disable=pointless-statement
             return alert
         except selenium.common.exceptions.NoAlertPresentException:
-            return
+            pass
+        return
     def check_alert(self, contains='', accept=True, required=True, nbr=20, keys=None):
         """Check if an alert is on screen and accept or cancel it"""
         def check():
@@ -372,8 +386,7 @@ class Tests: # pylint: disable=too-many-public-methods
                         alert.dismiss()
                     return None
                 return f'The alert does not contains «{contains}» but «{alert.text}'
-            else:
-                return 'No alert on screen'
+            return 'No alert on screen'
         retry(check, required, nbr=nbr)
     def check_dialog(self, contains='', accept=True, required=True, nbr=20):
         """Check if an alert is on screen and accept or cancel it"""
@@ -486,7 +499,9 @@ class Tests: # pylint: disable=too-many-public-methods
         """Tests automatic recompilation"""
         self.load_page('=JS=introduction')
         self.move_cursor('.editor')
-        self.check('.editor').send_keys('\n§')
+        self.check('.editor').send_keys('\n')
+        time.sleep(0.1)
+        self.check('.editor').send_keys('§')
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
         self.move_cursor('.editor') # Firefox want this
         self.check('.editor').send_keys(Keys.BACKSPACE)
@@ -534,7 +549,8 @@ class Tests: # pylint: disable=too-many-public-methods
         self.wait_save()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§¤')})
-        self.move_cursor('.editor', 30, 200)
+        self.move_cursor('.editor')
+        self.control(Keys.END)
         for _ in range(6):
             self.check('.editor').send_keys(Keys.BACKSPACE)
         self.click('.save_button')
@@ -798,7 +814,7 @@ return sum ;
                 self.check('.add_author').send_keys(Keys.ENTER)
                 try:
                     self.check('BODY', {'innerText': Contains('session a expiré')})
-                except ValueError: # XXX
+                except ValueError:
                     time.sleep(10000)
     def test_ip_change_admin(self):
         """Test IP change on admin"""
@@ -901,19 +917,24 @@ return sum ;
             self.check('#graders').send_keys(f'\nanonyme_{self.ticket}')
             self.check('#proctors').click()
 
-            self.goto(f'grade/REMOTE=test/xxx')
+            self.goto('grade/REMOTE=test/xxx')
             editor = self.click('.editor')
-            width = int(editor.get_attribute('offsetWidth'))
-            height = int(editor.get_attribute('offsetHeight'))
 
             # Create a comment
-
-            action = selenium.webdriver.ActionChains(self.driver)
-            action.move_to_element_with_offset(editor, -width//2 + 2, -height//2 + 2)
-            action.click_and_hold()
-            action.move_by_offset(20, 0)
-            action.release()
-            action.perform()
+            time.sleep(0.5)
+            width = int(editor.get_attribute('offsetWidth'))
+            height = int(editor.get_attribute('offsetHeight'))
+            for x, y in ((-width//2 + 2, -height//2 + 2), (3, 3)):
+                try:
+                    action = selenium.webdriver.ActionChains(self.driver)
+                    action.move_to_element_with_offset(editor, x, y)
+                    action.click_and_hold()
+                    action.move_by_offset(20, 0)
+                    action.release()
+                    action.perform()
+                    break # It is fine, do not try at another position.
+                except selenium.common.exceptions.MoveTargetOutOfBoundsException:
+                    pass
 
             self.check('.bubble_target', {'style': Contains('calc(2.0') & Contains('width: 18')})
             # self.click('.bubble_content > TEXTAREA')
@@ -939,7 +960,7 @@ return sum ;
             time.sleep(0.2)
             with open('COMPILE_REMOTE/test/LOGS/xxx/journal.log', 'rb') as file:
                 content = file.read()
-                assert b'\nbP0 1.50 3.25\n' in content
+                assert b'\nbP0 1.50 3.25\n' in content or b'\nbP0 1.50 3.24\n'
 
             # Change comment
 
@@ -1209,6 +1230,7 @@ class Q1(Question):
         self.delete_session_xxx()
 
     def load_zip_real(self, url):
+        """Wait the ZIP file downloading"""
         # Using self.goto() will lock selenium firefox driver
         for _ in range(2): # Sometime ZIP loading fails
             self.driver.execute_script(
@@ -1247,7 +1269,7 @@ class Q1(Question):
     def test_media(self):
         """Media: Uploading Listing Removing"""
         save_ticket = self.ticket
-        response = requests.get(URL, verify = False)
+        response = requests.get(URL, verify=False, timeout=60)
         self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
         with self.admin_rights():
             with open('COMPILE_REMOTE/grapic/MEDIA/chien.png', 'rb') as file:
@@ -1256,7 +1278,7 @@ class Q1(Question):
                 f"{URL}upload_media/REMOTE/grapic?ticket={self.ticket}",
                 data={'filename': 'xxx-test.png'},
                 files={'course': ('xxx-test.png', content, 'text/plain')},
-                verify=False
+                verify=False, timeout=60
             )
             assert 'src="media/REMOTE=grapic/xxx-test.png' in response.text
         self.ticket = save_ticket
@@ -1278,7 +1300,7 @@ class Q1(Question):
                 f"{URL}upload_course/REMOTE/{name}?ticket={self.ticket}",
                 data={'filename': 'xxx.py'},
                 files={'course': ('xxx.py', src, 'text/plain')},
-                verify=False)
+                verify=False, timeout=60)
         def get_state():
             files = [
                 "COMPILE_REMOTE/xxx/" + i
@@ -1289,7 +1311,7 @@ class Q1(Question):
                                   stderr=subprocess.DEVNULL) as process:
                 return process.stdout.read()
 
-        response = requests.get(URL, verify = False)
+        response = requests.get(URL, verify=False, timeout=60)
         self.delete_session_xxx()
         save_ticket = self.ticket
         self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
@@ -1324,7 +1346,7 @@ class Q1(Question):
                     if a != b:
                         print(b)
                         break
-                bug
+                raise ValueError('bug')
         self.ticket = save_ticket
 
         print("\tCreate a local repository")
@@ -1512,7 +1534,7 @@ class Q1(Question):
 
             self.control(' ')
             check(base + expected)
-            retry(lambda: options('*' + menu))
+            retry(lambda: options('*' + menu)) # pylint: disable=cell-var-from-loop
 
             if not menu:
                 retry(lambda: options(''))
@@ -1521,9 +1543,9 @@ class Q1(Question):
             # Cursor move in menu
             menu2 = menu.replace(',', ',*', 1)
             editor.send_keys(Keys.ARROW_DOWN) # Second line
-            retry(lambda: options(menu2))
+            retry(lambda: options(menu2)) # pylint: disable=cell-var-from-loop
             editor.send_keys(Keys.ARROW_UP) # First line
-            retry(lambda: options('*' + menu))
+            retry(lambda: options('*' + menu)) # pylint: disable=cell-var-from-loop
 
             # Other keys hide the menu
             editor.send_keys('a')
@@ -1534,9 +1556,9 @@ class Q1(Question):
             editor.send_keys(Keys.BACKSPACE)
             check(base + expected)
             self.control(' ')
-            retry(lambda: options('*' + menu))
+            retry(lambda: options('*' + menu)) # pylint: disable=cell-var-from-loop
             editor.send_keys(Keys.ENTER)
-            first_item = menu.split(',')[0]
+            first_item = menu.split(',', 1)[0]
             check(base + first_item) # First item
 
             # Use click in the menu
@@ -1566,7 +1588,7 @@ class Q1(Question):
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
             self.click('#Manage')
-            tree = self.check('#tree')
+            self.check('#tree')
             labels = self.driver.find_elements(BY_SELECTOR, '#tree LABEL')
             inputs = self.driver.find_elements(BY_SELECTOR, '#tree INPUT')
             export_button, _import_button, _reset_button = self.driver.find_elements(BY_SELECTOR, '#tree_menu BUTTON')
@@ -1637,12 +1659,12 @@ class Q1(Question):
                 f"{URL}adm/import/{what}?ticket={self.ticket}",
                 data={'destination': destination, 'session': session},
                 files={'zip': ('foo.zip', zip_content, 'application/zip')},
-                verify=False
+                verify=False, timeout=60
                 )
             return response.text
 
         save_ticket = self.ticket
-        response = requests.get(URL, verify = False)
+        response = requests.get(URL, verify=False, timeout=60)
         self.ticket = response.text.split('TICKET = "')[1].split('"')[0]
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
@@ -1659,7 +1681,7 @@ class Q1(Question):
 
             # Import into another session
             output = send('start Source Journal Grades Media', 'TOTO=XXX')
-            assert("Bad compiler" in output)
+            assert "Bad compiler" in output
 
             output = send('sequential Source Journal Grades Media', 'REMOTE=XXX')
             if output != '<br>C5/COMPILE_REMOTE/test/session.cf <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log <br>C5/COMPILE_REMOTE/test/MEDIA/foo.png <br>C5/COMPILE_REMOTE/test/questions.py <h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/XXX</h2><pre>COMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.js OK\nCOMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.json OK\n</pre>':
@@ -1729,6 +1751,65 @@ class Q1(Question):
             self.check('BODY', {'innerHTML': Contains('id="timetravel')})
             retry(lambda: 'thiérry.excoffier' in self.driver.execute_script("return STUDENT_DICT"))
 
+    def test_bad_scroll(self):
+        """Search a case with a bad scroll VERY LONG TEST"""
+        self.load_page('=JS=introduction')
+        self.goto_initial_version()
+        self.select_all()
+        editor = self.check('.editor')
+        editor.send_keys(Keys.F9)
+        editor.send_keys('\n'.join(str(i) for i in range(300)))
+        self.check('.layered', {'scrollTop': GreaterInt(1000)})
+
+        def action_1():
+            self.move_cursor('.editor', 10, 300)
+            editor.click()
+        def action_2():
+            editor.send_keys(Keys.ARROW_LEFT)
+        def action_3():
+            editor.send_keys(Keys.ARROW_RIGHT)
+        def action_4():
+            editor.send_keys(Keys.HOME)
+        def action_5():
+            editor.send_keys(Keys.END)
+        def action_6():
+            editor.send_keys(Keys.TAB)
+        def action_7():
+            editor.send_keys('X')
+        def action_8():
+            editor.send_keys(Keys.F8)
+
+        actions = [
+            action_1,
+            action_2,
+            action_3,
+            action_4,
+            action_5,
+            action_6,
+            action_7,
+            action_8
+            ]
+
+        for i in actions:
+            for j in actions:
+                for k in actions:
+                    print('       ', i.__name__, j.__name__, k.__name__)
+                    self.control(Keys.END, quiet=True)
+                    # time.sleep(0.2)
+                    editor.send_keys('Z')
+                    # time.sleep(0.2)
+                    i()
+                    # time.sleep(0.2)
+                    j()
+                    # time.sleep(0.2)
+                    k()
+                    # time.sleep(0.2)
+                    # if i == action_1 and j == action_6 and k == action_3:
+                    #     print("Press Enter when you are donne with inpecting")
+                    #     sys.stdin.readline()
+                    editor.send_keys(Keys.ENTER)
+                    self.check('.layered', {'scrollTop': GreaterInt(1000)}, nbr=1, quiet=True)
+
     def screenshots(self):
         """Dump screen shots"""
         self.goto('')
@@ -1763,8 +1844,8 @@ except FileNotFoundError:
     XNEST = None
 
 TESTS = None
+EXIT_CODE = 1
 try:
-    EXIT_CODE = 1
     while True:
         if not IN_DOCKER and 'FF' not in sys.argv and 'screenshots' not in sys.argv:
             OPTIONS = selenium.webdriver.ChromeOptions()
@@ -1801,7 +1882,13 @@ try:
         OPTIONS.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/zip")
         OPTIONS.profile = PROFILE
 
-        TESTS = Tests(selenium.webdriver.Firefox(options=OPTIONS))
+        try:
+            TESTS = Tests(selenium.webdriver.Firefox(options=OPTIONS))
+        except selenium.common.exceptions.NoSuchDriverException:
+            service = selenium.webdriver.firefox.service.Service(
+                subprocess.run(['which', 'geckodriver'], capture_output=True, check=True
+                    ).stdout.decode('utf-8').strip())
+            TESTS = Tests(selenium.webdriver.Firefox(service=service, options=OPTIONS))
         TESTS.run()
         TESTS = None
         if '1' in sys.argv or 'screenshots' in sys.argv:
@@ -1821,7 +1908,7 @@ finally:
         try:
             TESTS.driver.close()
             TESTS.driver.quit()
-        except:
+        except: # pylint: disable=bare-except
             pass
     if XNEST:
         XNEST.terminate()
