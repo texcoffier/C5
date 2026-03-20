@@ -5,6 +5,7 @@ Simple web server with session management
 
 from typing import Dict, List, Tuple, Any, Optional, Union, Callable, Coroutine, Set
 import os
+import sys
 import time
 import json
 import collections
@@ -896,6 +897,11 @@ async def adm_root(request:Request, more:str='') -> Response:
         session.header((), more)
         + f'<script src="JS/adm_root.js?ticket={session.ticket}"></script>')
 
+async def adm_restart(request:Request) -> Response:
+    """Restart the server"""
+    await get_admin_login(request)
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
 async def adm_get(request:Request) -> StreamResponse:
     """Get a file or a ZIP"""
     session = await get_admin_login(request)
@@ -1540,6 +1546,17 @@ async def checkpoint_list(request:Request) -> Response:
 
     content.append(f'</div><script>init_interface({nr_doing_grading});</script>')
     content.append('<p><a href="/checkpoint/MAPS/*">Display building maps with hostnames</a>.')
+    if session.is_admin():
+        content.append('''
+        <p><button style="background:#A00;color:#FFF;border: 3px solid #F00"
+        onclick="
+            var s = document.createElement('SCRIPT');
+            s.src = location.href.replace(/checkpoint.*[?]/, 'adm/restart?');
+            document.body.appendChild(s);
+            alert('Server restart done, press Enter to reload page');
+            location.reload();
+            ">Restart C5 server (without confirmation).<br>All the editors reload their pages.</button>
+        ''')
 
     return answer(''.join(content))
 
@@ -2531,6 +2548,7 @@ def main():
                     web.get('/debug/change_session_ip', change_session_ip),
                     web.get('/stats/{param}', full_stats),
                     web.get('/live_link/session', live_link),
+                    web.get('/adm/restart', adm_restart),
                     web.post('/error/{course}', error),
                     web.post('/upload_course/{compiler}/{course}', upload_course),
                     web.post('/upload_media/{compiler}/{course}', upload_media),
