@@ -42,7 +42,7 @@ class Racket(Compiler):
         session.runner.session = session
         session.runner.racket_free = False
         session.runner.process.stdin.write(session.source_file.encode('utf-8') + b'\n')
-    def cancel_tasks(self, _session):
+    async def cancel_tasks(self, _session):
         """Do not cancel runner, it must stay because it is a pool"""
         return
     async def need_to_read_more(self, the_runner):

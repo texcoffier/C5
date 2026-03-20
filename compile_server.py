@@ -201,12 +201,12 @@ N'actualisez PAS la page."""]))
                 await process.indent(data)
             elif action == 'kill':
                 if process.runner:
-                    process.runner.stop()
+                    await process.runner.stop()
                     process.runner = None
             elif action == 'input':
                 if process.runner:
                     if data == '\000KILL':
-                        process.runner.stop()
+                        await process.runner.stop()
                         process.runner = None
                     else:
                         process.runner.send_input(data)
@@ -222,7 +222,7 @@ N'actualisez PAS la page."""]))
     finally:
         process.log(("STOP", len(PROCESSES), len(FREE_USERS)))
         if process.cmp:
-            process.cmp.cancel_tasks(process)
+            await process.cmp.cancel_tasks(process)
             process.cmp.erase_files(process)
         PROCESSES.remove(process)
         FREE_USERS.append(process.uid)

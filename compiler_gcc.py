@@ -74,7 +74,7 @@ class GCC(Compiler):
     async def run(self, session):
         """Execute the compiled file using the launcher sandbox."""
         session.log(('RUN', session, session.runner))
-        self.cancel_tasks(session)
+        await self.cancel_tasks(session)
         if not os.path.exists(session.exec_file):
             session.log("RUN nothing")
             await session.websocket.send(json.dumps(['return', "Rien à exécuter"]))

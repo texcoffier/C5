@@ -19,11 +19,11 @@ class Compiler:
     async def compile(self, session):
         """Compile the modifier source"""
         await session.websocket.send(json.dumps(['compiler', "Bravo, il n'y a aucune erreur"]))
-    def cancel_tasks(self, session):
+    async def cancel_tasks(self, session):
         """Stop reading data"""
         if session.runner:
             session.log('CANCEL RUNNER')
-            session.runner.stop(session.uid)
+            await session.runner.stop(session.uid)
             session.runner = None
     def erase_files(self, session):
         """Erase files before the compilation or on session close"""

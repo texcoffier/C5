@@ -47,9 +47,13 @@ class Runner: # pylint: disable=too-many-instance-attributes
             self.tasks.append(asyncio.ensure_future(self.test_if_process_is_reading()))
         RUNNERS.add(self)
 
-    def stop(self, uid=None):
+    async def stop(self, uid=None):
         """Stop the process.
         After calling this function no more 'await' is possible.
+
+        This function may be called twice:
+           * The first time to kill the process
+           * The second time to get the exit value
         """
         if self not in RUNNERS:
             return
@@ -68,8 +72,13 @@ class Runner: # pylint: disable=too-many-instance-attributes
             self.process.kill()
         except (ProcessLookupError, PermissionError):
             pass
+        try:
+            await self.process.wait()
+        except: # pylint: disable=bare-except
+            pass
         self.waiting = False
-        RUNNERS.remove(self)
+        if self in RUNNERS: # The 'await ...wait()' may recall this function
+            RUNNERS.remove(self)
 
     def log(self, data):
         """Only log if somebody is reading process output"""
@@ -153,7 +162,7 @@ class Runner: # pylint: disable=too-many-instance-attributes
             await self.runner_()
         except asyncio.exceptions.CancelledError:
             if self.session:
-                self.stop(self.session.uid)
+                await self.stop(self.session.uid)
         except: # pylint: disable=bare-except
             traceback.print_exc()
 
@@ -221,4 +230,4 @@ class Runner: # pylint: disable=too-many-instance-attributes
                 files.append((filename, file.read_text('utf8')))
         await self.session.websocket.send(json.dumps(
             ['return', f"\nCode de fin d'exécution = {exit_value}{more}", files]))
-        self.stop(self.session.uid)
+        await self.stop(self.session.uid)

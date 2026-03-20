@@ -1752,7 +1752,7 @@ class Q1(Question):
             retry(lambda: 'thiérry.excoffier' in self.driver.execute_script("return STUDENT_DICT"))
 
     def test_bad_scroll(self):
-        """Search a case with a bad scroll VERY LONG TEST"""
+        """Search a case with a bad scroll VERY LONG TEST : 10 minutes"""
         self.load_page('=JS=introduction')
         self.goto_initial_version()
         self.select_all()
