@@ -190,6 +190,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         options['INFOS'] = INFOS                           # Student identity
         options['GRADING'] = GRADING                       # True if in grading mode
         options['ADMIN'] = ADMIN                           # True if administrator
+        options['REAL_COURSE'] = REAL_COURSE
 
         print("GUI: start")
         window.onerror = bind(self.onJSerror, self)
