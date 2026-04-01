@@ -68,6 +68,10 @@ echo "$SESSION" >> $PY.xxx
 if nodejs RapydScript/bin/rapydscript --prettify --bare $PY.xxx >$JS
 then
     echo "$PY → $JS OK"
+    if [ "$COMPILER" != "" ]
+        then
+        ./rewrite.py $JS
+        fi
 else
     echo "$PY → $JS FAIL"
     restore

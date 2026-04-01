@@ -288,6 +288,7 @@
     """Question 1"""
     def question(self):
         return "&lt;p&gt;Vous devez faire afficher «Bonjour»&lt;/p&gt;"
+        # Possible d'utiliser des LOAD_QUESTION("nom_de_fichier")
     def tester(self):
         self.display('&lt;p&gt;Dans votre code source on devrait trouver :&lt;/p&gt;')
         self.check(self.worker.source, [
@@ -298,6 +299,14 @@
             self.next_question()
     def default_answer(self):
         return "# Tapez votre programme ici :\n"</pre>
+        # Possible d'utiliser des LOAD_DEFAULT("nom_de_fichier")
+    def expected_answer(self):
+        """Fonction optionnelle.
+
+        Enregistrement du corrigé dans un fichier externe
+        afin que les étudiants n'y aient pas accès avant que
+        l'enseignant ne le décide."""
+        return LOAD_ANSWER("solution_question_1.txt")
     <p>
         Un sujet complet est une liste de questions gérées
         par un unique compilateur.

@@ -93,6 +93,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         for i, quest in enumerate(self.questions):
             quest.worker = self
             self.post('default', [i, quest.default_answer()])
+            self.post('expected_answer', [i, quest.expected_answer()])
         self.current_question = self.current_question_max
         if self.current_question != 0 or self.questions[self.current_question].last_answer:
             self.source = (self.questions[self.current_question].last_answer
@@ -231,12 +232,22 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     ###########################################################################
 
+    def add_answer(self, title):
+        answer = self.quest.expected_answer()
+        if answer:
+            title = '''<select class="select-correction"
+                onchange="ccccc.update_expected_answer(this)">
+                <option>''' + title + '''</option>
+                <option>Correction</option>
+            </select>'''
+        return title
+
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return '<h2>' + self.options['question_title'] +'</h2>'
+        return '<h2>' + self.add_answer(self.options['question_title']) +'</h2>'
     def tester_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "<h2>" + self.options['tester_title'] + "</h2>"
+        return "<h2>" + self.add_answer(self.options['tester_title']) + "</h2>"
     def executor_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         if self.options['positions'] and (
@@ -263,7 +274,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
         # Keep <!-- --> explanation is in ccccc.py
         # about : The first space is replaced by an unsecable space
-        return ("<h2><!-- -->" + self.options['executor_title']
+        return ("<h2><!-- -->" + self.add_answer(self.options['executor_title'])
             + more
             + '<tt class="truncate_sn">' + self.options['INFOS']['sn'].upper() + '</tt>'
             + ' '
@@ -283,7 +294,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                         + self.options['compiler_title_button'] + '</label>')
             else:
                 more = ''
-        return ('<h2>' + self.options['compiler_title'] + ' '
+        return ('<h2>' + self.add_answer(self.options['compiler_title']) + ' '
                 + more + '</h2>')
     def time_initial_content(self):
         """The message terminate the job. It indicates the worker time"""

@@ -105,12 +105,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
     question = editor = overlay = tester = compiler = executor = time = None
     index = save_button = local_button = line_numbers = None
     stop_button = fullscreen = comments = save_history = editor_title = None
-    indent_button = layered = canvas = None
+    indent_button = layered = canvas = answer = None
     top = None # Top page HTML element
     source = None # The source code to compile
     old_source = None
     highlight_errors = {}
     question_original = {}
+    expected_answer = {}
     copied = None # Copy with ^C ou ^X
     state = "uninitalised"
     input_index = -1 # The input number needed
@@ -508,7 +509,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 + self.options['icon_version_toggle'] + '</span>')
         else:
             tree = ''
-        self.editor_title.innerHTML = '<h2>' + tree + self.options['editor_title'] + '</h2>'
+        self.editor_title.innerHTML = '<h2>' + tree + '<span id="editor_name"></span></h2>'
         self.indent_button = document.createElement('LABEL')
         self.indent_button.innerHTML = self.options['editor_indent']
         self.indent_button.onclick = bind(self.do_indent, self)
@@ -528,6 +529,18 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if self.options['display_history']:
             self.save_history.className = 'save_history'
             self.editor_title.firstChild.appendChild(self.save_history)
+
+        self.answer = document.createElement('DIV')
+        self.answer.style = """
+        display: none;
+        background: #EEE;
+        border:1px solid #000;
+        overflow: auto;
+        top: 3em;
+        white-space: break-spaces;
+        z-index: 10;
+        position:absolute"""
+        self.top.appendChild(self.answer)
 
         if GRADING:
             self.editmode = document.createElement('SELECT')
@@ -2341,6 +2354,18 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.need_grading_update = False
                 if self.options['feedback'] >= 5 and GRADES:
                     self.update_grading(GRADES)
+            self.hide_expected_answer()
+
+            # The title may change if there is an expected answer or not
+            title = self.options['editor_title']
+            if (self.expected_answer[self.current_question] or '') != '':
+                title = '''<select class="select-correction"
+                    onchange="ccccc.update_expected_answer(this, 1)">
+                    <option>''' + title + '''</option>
+                    <option>Correction</option>
+                </select>'''
+            document.getElementById('editor_name').innerHTML = title
+
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
             self.add_highlight_errors(value[0], value[1], what)
@@ -2548,6 +2573,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         elif what == 'default':
             print("DEFAULT", value)
             self.question_original[value[0]] = value[1]
+        elif what == 'expected_answer':
+            self.expected_answer[value[0]] = value[1]
         elif what in ('tester', 'compiler', 'question', 'time'):
             if not value:
                 return
@@ -2612,6 +2639,37 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.allow_edit = int(value)
         elif what == 'recompile':
             self.compilation_run()
+
+    def update_expected_answer(self, element, source):
+        if element.selectedIndex:
+            if source:
+                title_height = 0
+                bloc = self.layered
+            else:
+                title_height = 60
+                bloc = element
+                while bloc.parentNode is not self.top:
+                    bloc = bloc.parentNode
+            self.answer.className = 'hljs language-' + self.options['language']
+            self.answer.textContent = self.expected_answer[self.current_question]
+            hljs.highlightElement(self.answer)
+            self.answer.style.left = bloc.offsetLeft + 'px'
+            self.answer.style.width = (bloc.offsetWidth - 30) + 'px'
+            self.answer.style.top = (bloc.offsetTop + title_height) + 'px'
+            self.answer.style.height = (bloc.offsetHeight - title_height - 20) + 'px'
+            self.answer.style.display = 'block'
+
+            for e in document.getElementsByClassName('select-correction'):
+                if e is not element:
+                    e.selectedIndex = 0
+        else:
+            self.answer.style.display = 'none'
+
+    def hide_expected_answer(self):
+        for e in document.getElementsByClassName('select-correction'):
+            e.selectedIndex = 0
+        self.answer.style.display = 'none'
+
 
     def bug_report(self):
         self.popup_message(

@@ -37,6 +37,14 @@ class Question:
         if default.strip() != '':
             content += '<pre style="background:#FFF">' + html(default) + '</pre>'
         __worker__.post('question', content + '<hr>')
+def LOAD_QUESTION(filename):
+    return "LOAD_QUESTION(" + filename + ") # Missing file"
+def LOAD_DEFAULT(filename):
+    return "LOAD_DEFAULT(" + filename + ") # Missing file"
+def LOAD_GRADING(filename):
+    return "LOAD_GRADING(" + filename + ") # Missing file"
+def LOAD_ANSWER(filename):
+    return "LOAD_ANSWER(" + filename + ") # Missing file"
 for _key_ in __Question__.prototype:
     if not hasattr(Question, _key_):
         setattr(Question, _key_, __Question__.prototype[_key_])

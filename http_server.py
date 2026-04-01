@@ -294,10 +294,15 @@ def handle(base:str='') -> Callable[[Request],Coroutine[Any, Any, Response]]:
                 log(f'INVALID session {login} {filename}')
                 return answer('Session inconnue')
             if '=' in filename:
-                if not course.running(login, session.hostname) and not course.get_feedback(login):
+                feedback = course.get_feedback(login)
+                if not course.running(login, session.hostname) and not feedback:
                     log(f'Invalid SESSION {login} {filename}')
                     return answer('Session inconnue')
-                filename = course.file_js
+
+                filename = course.file_js[:-3] + '+'
+                if feedback >= 5 or is_admin:
+                    filename += 'ANSWER+GRADING'
+                filename += '.js'
         return File.get(filename).answer()
     return real_handle
 

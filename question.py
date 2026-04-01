@@ -43,6 +43,9 @@ class Question:
     def tester(self):
         """Test worker.source and worker.execution_result"""
         self.display("No test defined")
+    def expected_answer(self):
+        """For grader and may be student"""
+        return ''
     def append_to_source_code(self): # pylint: disable=no-self-use
         """Add this to the user source code"""
         return ""
@@ -56,3 +59,12 @@ class Question:
     def teacher(self):
         """Room managing Teacher"""
         return self.worker.options.WHERE[1]
+
+def LOAD_QUESTION(filename):
+    return "LOAD_QUESTION(" + filename + ") # Missing file"
+def LOAD_DEFAULT(filename):
+    return "LOAD_DEFAULT(" + filename + ") # Missing file"
+def LOAD_GRADING(filename):
+    return "LOAD_GRADING(" + filename + ") # Missing file"
+def LOAD_ANSWER(filename):
+    return "LOAD_ANSWER(" + filename + ") # Missing file"
