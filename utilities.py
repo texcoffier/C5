@@ -202,6 +202,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.file_config = course + '/session.json'
         self.file_js = course + '/questions.js'
         self.file_json = course + '/questions.json'
+        self.file_loads = course + '/questions.loads'
         self.file_py = course + '/questions.py'
         self.dir_log = course + '/LOGS'
         self.dir_media = course + '/MEDIA'

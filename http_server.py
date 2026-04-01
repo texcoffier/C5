@@ -601,9 +601,32 @@ async def adm_media(request:Request) -> Response:
         raise session.exception('not_proctor')
     action = request.match_info['action']
     media = request.match_info['media']
-    medias = ['''<button
-        onclick="window.parent.upload_media()"
-        >Upload a new media</button><br>''']
+    medias = []
+
+    # Create the table of editable media
+    with open(course.file_loads, 'r', encoding='utf-8') as file:
+        files = json.loads(file.read())
+    nbr = 0
+    medias.append('<table style="border-spacing: 0px">')
+    medias.append('<tr><th>Clic to edit<th>Question<th>Default<th>Answer<th>Grading</tr>')
+    for question, loads in sorted(files.items()):
+        medias.append(f'<tr><th>{question}')
+        for i in ('QUESTION', 'DEFAULT', 'ANSWER', 'GRADING'):
+            medias.append('<td style="border: 1px solid #888">')
+            if i in loads:
+                for name in loads[i]:
+                    medias.append(f'{name}<br>')
+                    nbr += 1
+        medias.append('</tr>')
+    medias.append('</table>')
+    medias.append('<hr>')
+
+    if nbr == 0:
+        medias = []
+
+    medias.append('<button onclick="window.parent.upload_media()">Upload a new media</button>')
+    medias.append('<br>')
+
     for media_name in tuple(course.media):
         if media == media_name:
             if action == 'delete':
