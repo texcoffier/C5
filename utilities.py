@@ -255,7 +255,9 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         else:
             print('******* No questions in', self.file_py)
 
-        if (os.path.exists(self.file_config) and os.path.exists(self.file_py)
+        if (os.path.exists(self.file_config)
+                and os.path.exists(self.file_py)
+                and os.path.exists(self.file_cf)
                 and os.path.getmtime(self.file_config) >= os.path.getmtime(self.file_cf)):
             with open(self.file_config, 'r', encoding='utf-8') as file:
                 content = file.read()
