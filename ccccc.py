@@ -269,6 +269,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.seconds = int(millisecs() / 1000)
         EDITMODE[0] = EDITMODE[1] = '\n'.join(JOURNAL.lines)
         print("GUI: init done")
+        self.update_gui()
 
     def popup_message(self, txt, cancel='', ok='OK', callback=None, add_input=False, init=None, title=None): # pylint: disable=no-self-use
         """For Alert and Prompt"""
@@ -2312,9 +2313,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                         self.options[key][subkey] = value[key][subkey]
                 else:
                     self.options[key] = value[key]
-            self.terminate_init()
-            self.update_gui()
         elif what == 'current_question':
+            self.terminate_init()
             if JOURNAL.pending_goto:
                 JOURNAL.pop()
                 JOURNAL.pending_goto_history = []
