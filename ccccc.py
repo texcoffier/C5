@@ -1727,7 +1727,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.bubble_save_change()
         self.unlock_worker()
         JOURNAL.see_past(line)
-        self.set_editor_content(JOURNAL.content)
+        self.set_editor_content(JOURNAL.content, position=None, move_on_screen=True)
 
     def stop_completion(self):
         """Close completion menu"""
@@ -1928,7 +1928,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     to_insert += self.source[i:j]
             to_delete = len(self.get_current_selection())
             source = self.source[:self.cursor_position-to_delete] + to_insert + self.source[self.cursor_position:]
-            self.set_editor_content(source, self.cursor_position + len(to_insert) - to_delete)
+            self.set_editor_content(source, self.cursor_position + len(to_insert) - to_delete, move_on_screen=False)
             self.update_source()
             line, _column = self.get_line_column(self.cursor_position)
             if self.layered.offsetHeight + self.layered.scrollTop - line * self.line_height < 50:
@@ -2712,7 +2712,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
         return position
 
-    def set_cursor_position(self, position):
+    def set_cursor_position(self, position, move_on_screen=False):
         """Change the onscreen position"""
         self.display_selection()
         if not self.editor_lines[0]:
@@ -2727,24 +2727,27 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     document.getSelection().collapse(self.editor, i)
         else:
             document.getSelection().collapse(self.editor_lines[line-1], column)
+        if move_on_screen:
+            cursor = self.editor_lines[line-1]
+            last_good = None
+            for _ in range(10):
+                if cursor.previousElementSibling:
+                    cursor = cursor.previousElementSibling
+                    if cursor.scrollIntoView:
+                        last_good = cursor
+            if last_good:
+                cursor.scrollIntoView()
 
         if self.get_cursor_position() != position:
             print('********************************** want', position,
                 'get', self.get_cursor_position(), 'line', line, 'column', column)
 
-    def set_editor_content(self, message, position=None): # pylint: disable=too-many-branches,too-many-statements
+    def set_editor_content(self, message, position=None, move_on_screen=False): # pylint: disable=too-many-branches,too-many-statements
         """Set the editor content (question change or reset)"""
         self.overlay_hide()
         self.editor.innerText = message
         self.update_source()
-        current_line = self.editor_lines[JOURNAL.scroll_line]
-        if current_line:
-            top = self.get_element_box(current_line)['top']
-        else:
-            top = 0
-        if abs(self.layered.scrollTop - top) > self.line_height:
-            self.old_scroll_top = self.layered.scrollTop = top
-        self.set_cursor_position(position or JOURNAL.position)
+        self.set_cursor_position(position or JOURNAL.position, move_on_screen)
         self.highlight_errors = {}
         self.do_coloring = "set_editor_content"
         self.source = message
