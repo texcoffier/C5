@@ -879,18 +879,29 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         self.editor = is_editor
         # The following dict may contains disconnected users
         self.last_user_modification = {} # login → timestamp
+        logname = 'journal.log'
         if is_editor:
+            self.login = ''
             dirname = f'{self.course.dir_session}'
+            if is_editor == 'questions.py':
+                self.file_to_edit = f'{dirname}/{is_editor}'
+            else:
+                assert '/' not in is_editor
+                self.file_to_edit = f'{dirname}/SRC/{is_editor}'
+                logname = 'SRC/' + is_editor + '.log'
         else:
             dirname = f'{self.course.dir_log}/{login}'
         if not os.path.exists(dirname):
             if not os.path.exists(self.course.dir_log):
                 os.mkdir(self.course.dir_log)
             os.mkdir(dirname)
-        self.path = pathlib.Path(dirname + '/journal.log')
+        self.path = pathlib.Path(dirname + '/' + logname)
         if is_editor and not self.path.exists():
-            content = pathlib.Path(course.file_py).read_text(encoding='utf-8')
-            content = content.replace('\n', '\0')
+            if os.path.exists(self.file_to_edit):
+                content = pathlib.Path(self.file_to_edit).read_text(encoding='utf-8')
+                content = content.replace('\n', '\0')
+            else:
+                content = ''
             self.path.write_text(f'Q0\nI{content}\ntI\n', encoding='utf-8')
         if self.path.exists():
             content = self.path.read_text(encoding='utf-8')
@@ -938,15 +949,17 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
 
         if self.editor:
             if message.startswith('t'):
-                os.rename(self.course.file_py, self.course.file_py + '~')
-                with open(self.course.file_py, 'w', encoding="utf-8") as file:
+                if os.path.exists(self.file_to_edit):
+                    os.rename(self.file_to_edit, self.file_to_edit + '~')
+                with open(self.file_to_edit, 'w', encoding="utf-8") as file:
                     file.write(common.Journal('\n'.join(self.content)).content)
+                os.utime(self.course.file_py, (time.time(),)*2) # Force make
                 await asyncio.sleep(0)
                 with os.popen(f'make {self.course.file_js} 2>&1', 'r') as file:
                     errors = file.read()
                 await asyncio.sleep(0)
                 if 'ERROR' in errors or 'FAIL' in errors:
-                    os.rename(self.course.file_py + '~', self.course.file_py)
+                    os.rename(self.file_to_edit + '~', self.file_to_edit)
                 frame = inspect.currentframe()
                 while 'session' not in frame.f_locals:
                     frame = frame.f_back
@@ -1024,7 +1037,7 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         """JournalLink is common to all the user connected to the session
         in order to synchronize their screens."""
         if is_editor:
-            login = ''
+            login = is_editor
         journa = JournalLink.journals.get((course.course, login), None)
         if not journa:
             journa = JournalLink(course, login, is_editor)

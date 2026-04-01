@@ -155,11 +155,17 @@ def filter_last_answer(answers:List[Answer]) -> AnswerPerType:
 async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: disable=too-many-arguments,too-many-locals
                  login:str, grading:bool=False, feedback:int=0, version:str='') -> Response:
     """Return the editor page.
+
+    If the login contains ':' then it is to edit a session configuration file
+    aas: PYTHON=editor:questions.py
+    in the case REAL_COURSE=REMOTE=session1:questions.py
     """
     stop = 8000000000
     real_course = course.course
-    if login == 'PYTHON=editor' and is_admin:
-        course = CourseConfig.get('COMPILE_PYTHON/editor')
+    if ':' in login and is_admin:
+        # PYTHON=editor:questions.py → COMPILE_PYTHON/editor
+        course = CourseConfig.get(f'COMPILE_{login.split(":")[0].replace("=", "/")}')
+        real_course += ':' + login.split(":")[1]
         login = session.login
     else:
         stop = course.stop_timestamp
@@ -170,6 +176,8 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
     else:
         notation = 'NOTATION = "";'
         title = course.course.split('=', 1)[1]
+    if ':' in real_course:
+        title = real_course.split(':')[1]
 
     grades = None
     the_grade = None
@@ -615,7 +623,7 @@ async def adm_media(request:Request) -> Response:
             medias.append('<td style="border: 1px solid #888">')
             if i in loads:
                 for name in loads[i]:
-                    medias.append(f'{name}<br>')
+                    medias.append(f'<a target="_blank" href="https://{utilities.C5_URL}/adm/editor/{course.course}/{name}?ticket={session.ticket}">{name}</a><br>')
                     nbr += 1
         medias.append('</tr>')
     medias.append('</table>')
@@ -1942,7 +1950,10 @@ async def adm_editor(request:Request) -> Response:
     is_admin = session.is_admin(course)
     if not is_admin:
         return answer("Vous n'êtes pas autorisé à modifier les questions.")
-    return await editor(session, is_admin, course, 'PYTHON=editor')
+    file = request.match_info['file'] or 'questions.py'
+    if file.endswith('questions.py'):
+        return await editor(session, is_admin, course, f'PYTHON=editor:{file}')
+    return await editor(session, is_admin, course, f'TEXT=editor:{file}')
 
 async def get_media(request:Request) -> Response:
     """Get a media file"""
@@ -2473,9 +2484,9 @@ async def live_link(request:Request) -> StreamResponse:
             course = CourseConfig.get(utilities.get_course(session_name))
             is_proctor = session.is_proctor(course) and session.login
             allow_edit = (asked_login == session.login or session.is_grader(course)) and rorw == 'rw'
-            for_editor = asked_login.startswith('_FOR_EDITOR_')
+            for_editor = asked_login.startswith('FOR_EDITOR:')
             if for_editor:
-                asked_login = asked_login.replace('_FOR_EDITOR_', '')
+                _editor_name, asked_login, for_editor = asked_login.split(':', 2)
                 if session.is_admin(course):
                     allow_edit = True
             journa = JournalLink.new(course, asked_login, socket, port, for_editor, is_proctor)
@@ -2547,6 +2558,7 @@ def main():
                     web.get('/adm/force_grading_done/{course}', adm_force_grading_done),
                     web.get('/adm/media/{course}/{action}/{media}', adm_media),
                     web.get('/adm/editor/{course}', adm_editor),
+                    web.get('/adm/editor/{course}/{file}', adm_editor),
                     web.get('/adm/js_errors', js_errors),
                     web.get('/adm/building/{building}', adm_building),
                     web.get('/adm/export/{course}/{what}/{filename}', adm_export),

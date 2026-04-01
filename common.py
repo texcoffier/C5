@@ -1728,8 +1728,8 @@ def create_shared_worker(login='', hook=None, readonly=False):
     shared_worker.port.onmessage = shared_worker_message
     shared_worker.port.start()
     if REAL_COURSE != COURSE:
-        course = REAL_COURSE
-        login = '_FOR_EDITOR_' + login
+        course = REAL_COURSE.split(':')[0]
+        login = 'FOR_EDITOR:' + login + ':' + REAL_COURSE.split(':')[1]
     else:
         course = COURSE
     shared_worker.port.postMessage(['TICKET', window.location.search, course, login, BASE, readonly])

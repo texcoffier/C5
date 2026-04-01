@@ -685,7 +685,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.click('.editor')
         self.check('.editor').send_keys(' ')
         self.control('a')
-        time.sleep(1)
+        time.sleep(2)
         self.check('.editor').send_keys('''
 using namespace std;
 #include <iostream>
@@ -1684,7 +1684,7 @@ class Q1(Question):
             assert "Bad compiler" in output
 
             output = send('sequential Source Journal Grades Media', 'REMOTE=XXX')
-            if output != '<br>C5/COMPILE_REMOTE/test/session.cf <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log <br>C5/COMPILE_REMOTE/test/MEDIA/foo.png <br>C5/COMPILE_REMOTE/test/questions.py <h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/XXX</h2><pre>COMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.js OK\nCOMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.json OK\n</pre>':
+            if output != '<br>C5/COMPILE_REMOTE/test/session.cf <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log <br>C5/COMPILE_REMOTE/test/MEDIA/foo.png <br>C5/COMPILE_REMOTE/test/questions.py <h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/XXX</h2><pre>COMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.js OK\nQEnd: \nCOMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.json OK\n</pre>':
                 raise ValueError(repr(output))
 
             assert os.path.exists('COMPILE_REMOTE/XXX/questions.py')
