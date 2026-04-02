@@ -1950,7 +1950,7 @@ async def adm_editor(request:Request) -> Response:
     is_admin = session.is_admin(course)
     if not is_admin:
         return answer("Vous n'êtes pas autorisé à modifier les questions.")
-    file = request.match_info['file'] or 'questions.py'
+    file = request.match_info.get('file', 'questions.py')
     if file.endswith('questions.py'):
         return await editor(session, is_admin, course, f'PYTHON=editor:{file}')
     return await editor(session, is_admin, course, f'TEXT=editor:{file}')
@@ -2135,6 +2135,19 @@ async def adm_export(request:Request) -> Response:
             if 'Source' in what:
                 zipper.writestr(f'{dirname}/questions.py',
                     pathlib.Path(course.file_py).read_text(encoding='utf-8'))
+                if os.path.exists(course.dir_src):
+                    with open(course.file_loads, 'r', encoding='utf-8') as file:
+                        all_files = json.loads(file.read())
+                    files = set()
+                    for q_files in all_files.values():
+                        for a_files in q_files.values():
+                            files.update(a_files)
+                    for name in os.listdir(course.dir_src):
+                        if name in files:
+                            discname = f'{course.dir_src}/{name}'
+                            if os.path.exists(discname):
+                                zipper.writestr(f'{dirname}/SRC/{name}',
+                                    pathlib.Path(discname).read_text(encoding='utf-8'))
                 await asyncio.sleep(0)
             for i in ('Journal', 'Grades', 'Media', 'Source'):
                 if i in what:
@@ -2282,7 +2295,10 @@ async def adm_import(request:Request) -> Response:
         try:
             _c5, compiler, session_name, *data = filename.split('/')
         except ValueError:
-            await write('<br>' + html.escape(filename) + ' Invalid filename.')
+            await skip()
+            continue
+        if not session_name:
+            await skip()
             continue
         if not destination:
             dirname = f'{compiler}/{session_name}'
@@ -2307,7 +2323,6 @@ async def adm_import(request:Request) -> Response:
         if do_not_overwrite:
             await skip()
             continue
-        path = pathlib.Path(f'{dirname}/{"/".join(data[:-1])}')
         if filename.endswith("journal.log"):
             if 'Journal' not in what:
                 await skip()
@@ -2320,14 +2335,22 @@ async def adm_import(request:Request) -> Response:
             if 'Media' not in what:
                 await skip()
                 continue
-        elif filename.endswith("questions.py"):
+        elif filename.endswith("questions.py") or '/SRC/' in filename:
             if 'Source' not in what:
                 await skip()
                 continue
+        if not data:
+            await skip()
+            continue
+        infos = session_zip.getinfo(filename)
+        if infos.is_dir():
+            await skip()
+            continue
+        zip_time = time.mktime(infos.date_time + (0, 0, 0))
+        path = pathlib.Path(f'{dirname}/{"/".join(data[:-1])}')
         path.mkdir(parents=True, exist_ok=True)
         path = path / data[-1]
         more = ''
-        zip_time = time.mktime(session_zip.getinfo(filename).date_time + (0, 0, 0))
         with session_zip.open(filename, "r") as file:
             content = file.read()
         if path.exists():

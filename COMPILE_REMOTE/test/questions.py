@@ -74,3 +74,5 @@ int main() {
     return 0;
 }
 """
+    def expected_answer(self):
+        return LOAD_ANSWER('answer.c')

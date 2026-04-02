@@ -206,6 +206,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.file_py = course + '/questions.py'
         self.dir_log = course + '/LOGS'
         self.dir_media = course + '/MEDIA'
+        self.dir_src = course + '/SRC'
         self.dir_compiler = course.split('/')[0]
         self.dir_session = course
         self.time = 0

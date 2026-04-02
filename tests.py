@@ -192,7 +192,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_media,
                     self.test_completion,
                     self.test_manage_tree,
-                    self.test_manage_import,
+                    self.test_manage_import, # need manage_tree test done before
                     self.test_manage_reset,
                     self.test_comments,
                     self.test_bad_scroll, # VERY very LONG test
@@ -1619,7 +1619,7 @@ class Q1(Question):
             files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
             for name in (b'session.cf', b'questions.py'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
-            assert files.count(b' C5/') - files.count(b'/anonyme_') == 2
+            assert files.count(b' C5/') - files.count(b'/anonyme_') == 3
 
             if not os.path.exists('COMPILE_REMOTE/test/MEDIA'):
                 os.mkdir('COMPILE_REMOTE/test/MEDIA')
@@ -1634,7 +1634,7 @@ class Q1(Question):
             for name in (b'session.cf', b'questions.py', b'MEDIA/foo.png',
                          b'LOGS/john.doe/journal.log', b'LOGS/john.doe/grades.log'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
-            assert files.count(b' C5/') - files.count(b'/anonyme_') == 5
+            assert files.count(b' C5/') - files.count(b'/anonyme_') == 6
 
             # Filtered export (do not check individual session attributes)
             state.discard('Grades')
@@ -1643,7 +1643,7 @@ class Q1(Question):
             files = self.load_zip('adm/export/REMOTE=test/' + ' '.join(state))
             for name in (b'session.cf', b'questions.py'):
                 assert b'C5/COMPILE_REMOTE/test/' + name in files
-            assert files.count(b' C5/') - files.count(b'/anonyme_') == 2
+            assert files.count(b' C5/') - files.count(b'/anonyme_') == 3
 
     def test_manage_import(self):
         """Test filtered import"""
@@ -1669,14 +1669,13 @@ class Q1(Question):
         with self.admin_rights():
             self.goto('adm/session/REMOTE=test')
             output = send('sequential', '')
-            if output != '<h1>COMPILE_REMOTE/test</h1>\n<br>C5/COMPILE_REMOTE/test/session.cf Merge 2 lines into the current file. 89 not appended. <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/foo.png</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/questions.py</span><h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>make: &#x27;COMPILE_REMOTE/test/questions.js&#x27; is up to date.\n</pre>':
+            if output != '<br><span style="color:#BBB">C5/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/</span><h1>COMPILE_REMOTE/test</h1>\n<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/</span><br>C5/COMPILE_REMOTE/test/session.cf Merge 2 lines into the current file. 108 not appended. <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/foo.png</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/questions.py</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/SRC/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/SRC/answer.c</span><h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>make: &#x27;COMPILE_REMOTE/test/questions.js&#x27; is up to date.\n</pre>':
                 raise ValueError(repr(output))
             output = send('Source', '')
-            if output != '<h1>COMPILE_REMOTE/test</h1>\n<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/session.cf</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/foo.png</span><br>C5/COMPILE_REMOTE/test/questions.py Unchanged content. <h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>make: &#x27;COMPILE_REMOTE/test/questions.js&#x27; is up to date.\n</pre>':
+            if output != '<br><span style="color:#BBB">C5/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/</span><h1>COMPILE_REMOTE/test</h1>\n<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/session.cf</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/foo.png</span><br>C5/COMPILE_REMOTE/test/questions.py Unchanged content. <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/SRC/</span><br>C5/COMPILE_REMOTE/test/SRC/answer.c Unchanged content. <h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>make: &#x27;COMPILE_REMOTE/test/questions.js&#x27; is up to date.\n</pre>':
                 raise ValueError(repr(output))
             output = send('Journal Grades Media', '')
-            if (output != '<h1>COMPILE_REMOTE/test</h1>\n<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/session.cf</span><br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log <br>C5/COMPILE_REMOTE/test/MEDIA/foo.png <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/questions.py</span><h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>make: &#x27;COMPILE_REMOTE/test/questions.js&#x27; is up to date.\n</pre>'
-                and output !='<h1>COMPILE_REMOTE/test</h1>\n<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/session.cf</span><br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log Unchanged content. <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log Unchanged content. <br>C5/COMPILE_REMOTE/test/MEDIA/foo.png Unchanged content. <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/questions.py</span><h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>make: &#x27;COMPILE_REMOTE/test/questions.js&#x27; is up to date.\n</pre>'):
+            if output != '<br><span style="color:#BBB">C5/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/</span><h1>COMPILE_REMOTE/test</h1>\n<br><span style="color:#BBB">C5/COMPILE_REMOTE/test/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/session.cf</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/</span><br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log Unchanged content. <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log Unchanged content. <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/</span><br>C5/COMPILE_REMOTE/test/MEDIA/foo.png Unchanged content. <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/questions.py</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/SRC/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/SRC/answer.c</span><h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/test</h2><pre>make: &#x27;COMPILE_REMOTE/test/questions.js&#x27; is up to date.\n</pre>':
                 raise ValueError(repr(output))
 
             # Import into another session
@@ -1684,7 +1683,7 @@ class Q1(Question):
             assert "Bad compiler" in output
 
             output = send('sequential Source Journal Grades Media', 'REMOTE=XXX')
-            if output != '<br>C5/COMPILE_REMOTE/test/session.cf <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log <br>C5/COMPILE_REMOTE/test/MEDIA/foo.png <br>C5/COMPILE_REMOTE/test/questions.py <h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/XXX</h2><pre>COMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.js OK\nQEnd: \nCOMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.json OK\n</pre>':
+            if output != '<br><span style="color:#BBB">C5/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/</span><br>C5/COMPILE_REMOTE/test/session.cf <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/</span><br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/</span><br>C5/COMPILE_REMOTE/test/MEDIA/foo.png <br>C5/COMPILE_REMOTE/test/questions.py <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/SRC/</span><br>C5/COMPILE_REMOTE/test/SRC/answer.c <h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/XXX</h2><pre>COMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.js OK\nQEnd: answer.c\nCOMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.json OK\n</pre>':
                 raise ValueError(repr(output))
 
             assert os.path.exists('COMPILE_REMOTE/XXX/questions.py')
@@ -1692,6 +1691,7 @@ class Q1(Question):
             assert os.path.exists('COMPILE_REMOTE/XXX/MEDIA/foo.png')
             assert os.path.exists('COMPILE_REMOTE/XXX/LOGS/john.doe/grades.log')
             assert os.path.exists('COMPILE_REMOTE/XXX/LOGS/john.doe/journal.log')
+            assert os.path.exists('COMPILE_REMOTE/XXX/SRC/answer.c')
             with open('COMPILE_REMOTE/XXX/session.cf', 'rb') as file:
                 content = file.read()
             assert content.count(b'\n') == 3
@@ -1728,16 +1728,16 @@ class Q1(Question):
             with open('COMPILE_REMOTE/xxx/session.cf', 'rb') as file:
                 content = file.read()
             assert b"('start', '2000-01-01 00:00:00'" in content
-            assert b"('active_teacher_room', 'thi\xc3\xa9rry.excoffier'," in content
+            assert b"('active_teacher_room', 'anonyme_17751431971'," in content
 
             self.goto('checkpoint/REMOTE=xxx')
             self.check('BODY', {'innerHTML': Contains('id="timetravel')})
             retry(lambda:
-                list(self.driver.execute_script("return STUDENT_DICT")) != ['thiérry.excoffier'])
+                sorted(self.driver.execute_script("return STUDENT_DICT")) != ['anonyme_17751431971', 'anonyme_17751432384', 'anonyme_17751432396', 'anonyme_17751432437', 'anonyme_177514324510', 'anonyme_17751432459'])
 
             self.goto('adm/reset/REMOTE=xxx/active_teacher_room state start')
             self.check('BODY', {
-                'innerHTML': Contains("Reset config attributes ['active_teacher_room']") & ~Contains('BUG')})
+                'innerHTML': Contains("Reset config attributes ['active_teacher_room', 'state']") & ~Contains('BUG')})
             with open('COMPILE_REMOTE/xxx/session.cf', 'rb') as file:
                 content = file.read()
             assert b"'active_teacher_room'" not in content
@@ -1749,7 +1749,7 @@ class Q1(Question):
 
             self.goto('checkpoint/REMOTE=xxx')
             self.check('BODY', {'innerHTML': Contains('id="timetravel')})
-            retry(lambda: 'thiérry.excoffier' in self.driver.execute_script("return STUDENT_DICT"))
+            retry(lambda: 'anonyme_17751431971' in self.driver.execute_script("return STUDENT_DICT"))
 
     def test_bad_scroll(self):
         """Search a case with a bad scroll VERY LONG TEST : 10 minutes"""
