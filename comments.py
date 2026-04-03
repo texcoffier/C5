@@ -7,6 +7,7 @@ import os
 def main():
     histo = [0] * 1000
     sessions = collections.defaultdict(list)
+    authors = collections.defaultdict(int)
     for session in glob.glob('COMPILE_*/*'):
         exam = False
         if not os.path.exists(f'{session}/session.cf'):
@@ -30,6 +31,7 @@ def main():
                         comments += 1
                     if line.startswith('b+'):
                         line = line.split(' ', 7)
+                        authors[line[0][2:]] += 1
                         if line[7] != '\n':
                             comments += 1
             sessions[session].append(comments)
@@ -43,6 +45,10 @@ def main():
                 print(session, ' '.join(str(i) for i in sessions[session]))
         else:
             del sessions[session]
+
+    print("Nombre de commentaires faits :")
+    for author, nbr in sorted(authors.items()):
+        print(f'{author:20} {nbr}')
 
     while histo[-1] == 0:
         histo.pop()

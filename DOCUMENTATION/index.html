@@ -254,10 +254,10 @@
         L'ensemble de l'environnement est programmé en Python.
     </p>
     <ul>
-        <li> Vous composez votre sujet dans un fichier <tt>nom_session.py</tt>,
-            ce nom sera affiché aux étudiants,
-            il est conseillé de le préfixer par le code du cours
-            suivi de «_».
+        <li> Vous composez votre sujet dans un fichier comme par exemple
+                <tt>CodeUE_TD_01.py</tt> les «_» représentent
+                un séparateur comme «/» et permettent d'afficher
+                une abrescence de sujets aux étudiants.
         <li>
             Chaque sujet contient un ensemble de questions s'enchaînant successivement.
     </ul>
@@ -282,6 +282,10 @@
             Elle autorise le passage à la question suivante
             si la réponse de l'étudiant est correcte.
         </li>
+        <li> <tt>expected_answer(self)</tt> affiche la correction à l'étudiant.
+            La correction ne doit pas directement être indiquée dans
+            le sujet mais dans un fichier séparé afin de ne pas fuiter.
+        </li>
     </ul>
     </p>
     <pre>class Q1(Question):
@@ -298,15 +302,14 @@
         if self.worker.execution_result == 'Bonjour\n':
             self.next_question()
     def default_answer(self):
-        return "# Tapez votre programme ici :\n"</pre>
+        return "# Tapez votre programme ici :\n"
         # Possible d'utiliser des LOAD_DEFAULT("nom_de_fichier")
     def expected_answer(self):
         """Fonction optionnelle.
-
         Enregistrement du corrigé dans un fichier externe
         afin que les étudiants n'y aient pas accès avant que
         l'enseignant ne le décide."""
-        return LOAD_ANSWER("solution_question_1.txt")
+        return LOAD_ANSWER("solution_question_1.txt")</pre>
     <p>
         Un sujet complet est une liste de questions gérées
         par un unique compilateur.
@@ -687,11 +690,28 @@ System calls allowable for g++/gcc:
             <th> Exemple de cours
         </tr>
         <tr>
+            <td> HTML
+            <td> compile_html.py
+            <td> Traduction dans le navigateur web.<br>
+                Pas de cours en exemple,<br>
+                c'est pour éditer les questions en HTML<br>
+                <a target="_blank" href="COMPILE_HTML/editor/questions.py">COMPILE_HTML/editor</a>
+            <td>
+        </tr>
+        <tr>
             <td> JavaScript
             <td> compile_js.py
             <td> Compilation et exécution nativement<br>
                 dans le navigateur web.
             <td> <a target="_blank" href="COMPILE_JS/introduction/questions.py">COMPILE_JS/<br>introduction</a>
+        </tr>
+        <tr>
+            <td> Markdown
+            <td> compile_md.py
+            <td> Traduction dans le navigateur web.
+                Pas de cours en exemple,<br>
+                c'est pour éditer les questions en HTML<br>
+            <td> <a target="_blank" href="COMPILE_MD/editor/questions.py">COMPILE_MD/editor</a>
         </tr>
         <tr>
             <td> Python
@@ -1150,8 +1170,8 @@ System calls allowable for g++/gcc:
             la configuration alors seul les étudiants présents dans les
             salles affichées complètement (pas à moitié) sur l'écran
             seront indiqués dans la liste des étudiants à placer.
-            Il suffit d'appuyer sur la touche «Espace» pour placer
-            l'étudiant sur la chaise devant sa machine fixe.
+            <b>Il suffit d'appuyer sur la touche «Espace» pour placer
+            l'étudiant sur la chaise devant sa machine fixe.</b>
         </li>
         <li>
             Le haut du plan contient la légende et comment l'utiliser.
@@ -1211,7 +1231,7 @@ System calls allowable for g++/gcc:
         <li>
             On peut utiliser peut aussi utiliser «Naviguer dans le temps»
             qui affiche un ascenseur temporel pour voir l'évolution
-            de ce que des étudiants on fait seconde par seconde.
+            de ce que des étudiants ont fait seconde par seconde.
         </li>
     </ul>
     <p>
@@ -1837,6 +1857,14 @@ server {
                 contenant les titres des questions des différentes sessions.
                 C'est nécessaire pour faire les export ZIP et GIT.
         </tr>
+        <tr class="executable">
+            <td>rewrite.py
+            <td>A partir d'un <tt>questions.js</tt> génère les différentes
+                version à diffuser au navigateur web en remplaçant les
+                <tt>LOAD_(QUESTION|DEFAULT|ANSWER|GRADING)('xxx')</tt> s'ils sont
+                définis.
+                Conversion des questions de markdown en HTML.
+        </tr>
         <tr class="serveur">
             <td>runner.py
             <td>Classe s'occupant des communications Process/Navigateur
@@ -1944,63 +1972,26 @@ server {
 
     <h2>Utilisation de C5 à l'université Lyon 1.</h2>
     <p>
-        Les cours qui ont utilisé C5 :
+        Les cours qui ont utilisé C5 (mis à jour le 3 avril 2026) :
     </p>
+    <!-- ls COMPILE_REMOTE/ | sed 's/[-_].*//' | awk '{T[$0]++} END {for(i in T) print(i, T[i]);}' | sort -->
+
     <table>
         <tr>
-            <th>Quand</th>
-            <th>Quoi</th>
-            <th>Année</th>
-            <th>Nbr Inscrits</th>
-            <th>Utilisation</th>
+            <th></th>
+            <th>Nombre<br>d'étudiants<br>par année</th>
+            <th>Code</th>
+            <th>Intitulé</th>
+            <th></th>
+            <th>Nombre<br>de<br>sujets</th>
         </tr>
-        <tr>
-            <td> 2022-09→2022-12</td>
-            <td>
-                Initiation Algorithmique et<br>
-                Programmation Impérative<br>
-                en langage C
-            <td> L1
-            <td> 585
-            <td>
-                2 sujets d'examen.<br>
-                5 sujets d'annales.<br>
-                2 devoirs maison.<br>
-                15 sujets de TD.<br>
-                11 sujets de TP.
-        </tr>
-        <tr>
-            <td> 2023-01→2023-05<br>
-                Pas terminée.</td>
-            <td>
-                Algorithmique et<br>
-                Programmation Récursive<br>
-                en LISP
-            <td> L1
-            <td> 414
-            <td>
-                ? sujets d'examen.<br>
-                ≥8 sujets de TP.
-        </tr>
-        <tr>
-            <td> 2023-02</td>
-            <td>
-                Programmation concurrente
-            <td> L3
-            <td> 165
-            <td>
-                1 sujet d'examen.<br>
-                1 sujet d'entraînement.<br>
-        </tr>
-        <tr>
-            <td> 2023-04</td>
-            <td>
-                Applications en Mathématiques et Informatique
-            <td> L1
-            <td> 312
-            <td>
-                1 sujet d'examen.
-        </tr>
+        <tr> <td> 2022 <td> 750 <td>INF1010L <td> Initiation Algorithmique et Programmation Impérative <td> C   <td> 95
+        <tr> <td> 2023 <td> 430 <td>INF1011L <td> Applications En Mathématiques Et Informatique        <td> C   <td> 16
+        <tr> <td> 2023 <td> 480 <td>INF1012L <td> Algorithmique Et Programmation Récursive             <td> LISP<td> 20
+        <tr> <td> 2023 <td> 150 <td>INF3055L <td> Programmation Concurrente Et Administration Système  <td> C   <td> 7
+        <tr> <td> 2023 <td> 170 <td>PHY2002L <td> Programmation C/C++                                  <td> C   <td> 60
+        <tr> <td> 2025 <td> 150 <td>INF3034L <td> Logique Classique                                    <td> Coq <td> 3
+        <tr> <td> 2025 <td> 150 <td>INF3038L <td> Théorie Des Langages Formels                         <td> Coq <td> 2
     </table>
 
     <p>
@@ -2158,10 +2149,6 @@ server {
         </li>
         <li>
             Le sujet doit pouvoir définir dans les options le nombre de sujets qu'il permet.
-        </li>
-        <li>
-            L'éditeur interactif de sujet devrait avoir la colonne
-            d'index des questions à gauche.
         </li>
     </ul>
     <p>Dette technique :</p>
