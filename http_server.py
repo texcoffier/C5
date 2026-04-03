@@ -1951,9 +1951,14 @@ async def adm_editor(request:Request) -> Response:
     if not is_admin:
         return answer("Vous n'êtes pas autorisé à modifier les questions.")
     file = request.match_info.get('file', 'questions.py')
+
     if file.endswith('questions.py'):
-        return await editor(session, is_admin, course, f'PYTHON=editor:{file}')
-    return await editor(session, is_admin, course, f'TEXT=editor:{file}')
+        compiler = 'PYTHON'
+    elif file.endswith('.html'):
+        compiler = 'HTML'
+    else:
+        compiler = 'TEXT'
+    return await editor(session, is_admin, course, f'{compiler}=editor:{file}')
 
 async def get_media(request:Request) -> Response:
     """Get a media file"""

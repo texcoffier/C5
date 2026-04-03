@@ -2478,11 +2478,26 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     span = document.createElement('DIV')
                     # The first space is replaced by an unsecable space
                     # in order to display it on span start <span> foo</span>
-                    span.innerHTML = value.replace(' ', ' ')
-                    if value[-1] not in '>\n':
-                        span.style.float = 'left'
-                    if value[0] == '\n':
-                        span.style.clear = 'left'
+                    if self.options['language'] == 'html':
+                        span.innerHTML = value
+                        try:
+                            line = 0
+                            for a, b in zip(value.split('\n'), span.innerHTML.split('\n')):
+                                line += 1
+                                if a.lower() != b.lower():
+                                    col = 0
+                                    while a[col] == b[col]:
+                                        col += 1
+                                    self.highlight_errors[line + ':' + col] = 'error'
+                                    self.add_highlight_errors(line, col, 'error')
+                        except ValueError:
+                            pass
+                    else:
+                        span.innerHTML = value.replace(' ', ' ')
+                        if value[-1] not in '>\n':
+                            span.style.float = 'left'
+                        if value[0] == '\n':
+                            span.style.clear = 'left'
                     self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
         elif what == 'index':
             links = []
