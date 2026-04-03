@@ -42,7 +42,7 @@ favicon.ico:c5.svg
 
 prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js \
         node_modules/alasql libsandbox killer \
-		favicon.ico node_modules/@jcubic/lips
+		favicon.ico node_modules/@jcubic/lips node_modules/marked
 	@$(MAKE) -j $$(nproc) \
 		$$(echo COMPILE_*/*/*.py | sed 's/\.py/.js/g') \
 		$$(echo $(COMPILERS) | sed -e 's,^,JS/,' -e 's, , JS/,g' -e 's/\.py/\.js/g') \
@@ -81,6 +81,8 @@ node_modules/@jcubic/lips:
 	npm install @jcubic/lips
 	sed -i 's/(token.token || token)/(token.toUpperCase ? token : token.token)/' \
 	    "node_modules/@jcubic/lips/src/lips.js"
+node_modules/marked:
+	npm install marked
 ############# Misc ############
 lint:
 	-mypy dns_server.py infos_server.py http_server.py compile_server.py

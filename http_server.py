@@ -1956,6 +1956,8 @@ async def adm_editor(request:Request) -> Response:
         compiler = 'PYTHON'
     elif file.endswith('.html'):
         compiler = 'HTML'
+    elif file.endswith('.md'):
+        compiler = 'MD'
     else:
         compiler = 'TEXT'
     return await editor(session, is_admin, course, f'{compiler}=editor:{file}')

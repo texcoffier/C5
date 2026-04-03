@@ -2478,20 +2478,21 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     span = document.createElement('DIV')
                     # The first space is replaced by an unsecable space
                     # in order to display it on span start <span> foo</span>
-                    if self.options['language'] == 'html':
+                    if self.options['language'] in ('html', 'markdown'):
                         span.innerHTML = value
-                        try:
-                            line = 0
-                            for a, b in zip(value.split('\n'), span.innerHTML.split('\n')):
-                                line += 1
-                                if a.lower() != b.lower():
-                                    col = 0
-                                    while a[col] == b[col]:
-                                        col += 1
-                                    self.highlight_errors[line + ':' + col] = 'error'
-                                    self.add_highlight_errors(line, col, 'error')
-                        except ValueError:
-                            pass
+                        if self.options['language'] == 'html':
+                            try:
+                                line = 0
+                                for a, b in zip(value.split('\n'), span.innerHTML.split('\n')):
+                                    line += 1
+                                    if a.lower() != b.lower():
+                                        col = 0
+                                        while a[col] == b[col]:
+                                            col += 1
+                                        self.highlight_errors[line + ':' + col] = 'error'
+                                        self.add_highlight_errors(line, col, 'error')
+                            except ValueError:
+                                pass
                     else:
                         span.innerHTML = value.replace(' ', ' ')
                         if value[-1] not in '>\n':
@@ -2628,6 +2629,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.tree_canvas() # Here because scheduler do not call coloring
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
             if what == 'question' and self.journal_question:
+                # Add ticket to images
+                for img in span.getElementsByTagName('IMG'):
+                    if img.src.startswith(location.origin) and '?' not in img.src:
+                        img.src = img.src + '?ticket=' + TICKET
+
                 self.question.onscroll = "" # To not change scrollTop when erased
                 def spy_onscroll():
                     def onscroll():

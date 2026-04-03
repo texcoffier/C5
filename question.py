@@ -36,7 +36,7 @@ class Question:
         self.set_question(self.worker.current_question + 1)
     def question(self):
         """Display the question"""
-        self.display("No test defined")
+        self.display("No question defined")
     def default_answer(self): # pylint: disable=no-self-use
         """The initial edit content"""
         return "// Saisissez votre programme au dessous :\n\n\n"

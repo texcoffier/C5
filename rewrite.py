@@ -17,6 +17,7 @@ import re
 import collections
 import json
 import os
+import subprocess
 
 class Rewriter:
     def __init__(self, filename_js):
@@ -62,6 +63,15 @@ class Rewriter:
                 else:
                     with open(self.src + filename, 'r', encoding='utf-8') as file:
                         replace = file.read()
+                    if action == 'QUESTION' and filename.endswith('.md'):
+                        p = subprocess.Popen(
+                            ('node', 'node_modules/marked/bin/marked.js'),
+                            stdin = subprocess.PIPE,
+                            stdout = subprocess.PIPE)
+                        p.stdin.write(replace.encode('utf-8'))
+                        p.stdin.close()
+                        replace = p.stdout.read().decode('utf-8')
+                        p.wait()
                 self.replacements.append((i, action, full, json.dumps(replace)))
 
     def generate_files(self):
