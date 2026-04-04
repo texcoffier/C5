@@ -1351,8 +1351,7 @@ async def store_media(request:Request, course:CourseConfig) -> str:
         os.mkdir(course.dir_media)
     with open(f'{course.dir_media}/{media_name}' , "wb") as file:
         file.write(filehandle.file.read())
-    return f"""<tt style="font-size:100%">'&lt;img src="media/{course.course}/{media_name}'
-        + location.search + '"&gt;'</tt>"""
+    return f"""<tt style="font-size:100%">'&lt;img src="{media_name}"&gt;'</tt> or <tt style="font-size:100%">'&lt;img src="media/{course.course}/{media_name}"&gt;'</tt> from other sessions"""
 
 async def upload_media(request:Request) -> Response:
     """Add a new media"""

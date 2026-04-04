@@ -2319,7 +2319,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Add the ticket if no '?' and on C5"""
         for img in element.getElementsByTagName('IMG'):
             if img.src.startswith(location.origin) and '?' not in img.src:
-                img.src = img.src + '?ticket=' + TICKET
+                print(img.src)
+                if '/media/' not in img.src:
+                    img.src = img.src.replace(RegExp('(/[^/]*)$'), '/media/' + COURSE + '$1') + '?ticket=' + TICKET
+                else:
+                    img.src = img.src + '?ticket=' + TICKET
 
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         """Interprete messages from the worker: update self.messages"""
