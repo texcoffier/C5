@@ -1,6 +1,6 @@
 // Arguments:
 //   * The SECCOMP_SYSCALL_ALLOW value
-//   * The UID
+//   * The UID (same GID) of the process to run
 //   * The HOME path
 //   * CPU max
 //   * The executable name
@@ -26,7 +26,7 @@ void chown_dir(const char *dir, int uid)
 {
     DIR *content;
     chown(dir, uid, -1);
-    chmod(dir, 0775);
+    chmod(dir, 0777);
     content = opendir(dir);
     if(content) {
         struct dirent *item;
@@ -70,6 +70,7 @@ int main(int argc, char **argv)
             rmdir(filename); // Clear stats
             mkdir(filename, 055);
         }
+    chmod(filename, 055);
 
     // Add this processus to the control group
     sprintf(filename, "/sys/fs/cgroup/C5_%d/cgroup.procs", uid);
@@ -98,7 +99,7 @@ int main(int argc, char **argv)
     chown_dir(argv[3], uid);
 
     // The created files must be writable/destroyable by compile_server
-    umask(7);
+    umask(0);
 
     // Do not leak environment variables
     setup_env(argv);
@@ -108,9 +109,6 @@ int main(int argc, char **argv)
         perror(argv[3]);
         return 43;
     }
-
-    // Give the right to read in HOME parent (to run the executable)
-    chmod("..", 0755);
 
     // Drop root rights
     if (setgroups(0, NULL)) {

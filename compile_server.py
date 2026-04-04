@@ -46,39 +46,27 @@ FREE_USERS = list(range(UID_MIN, UID_MIN+1000))
 
 resource.setrlimit(resource.RLIMIT_NOFILE, (10000, 10000))
 
+os.umask(0o077)
+
 class Process: # pylint: disable=too-many-instance-attributes
     """A websocket session"""
     cmp = runner = compiler = None
     filetree_in = filetree_out = None
     max_time = max_data = None
     compile_options = ld_options = allowed = source = None
-    def __init__(self, websocket, login:str, course:str,
-                 uid:int) -> None:
+    def __init__(self, websocket, uid:int) -> None:
         self.websocket = websocket
         self.conid = str(id(websocket))
         self.allowed = ()
-        self.login = login
         self.uid = uid
-        self.course = utilities.CourseConfig.get(utilities.get_course(course))
-        self.feedback = self.course.get_feedback(login)
-        self.dir = f"{self.course.dir_log}/{login}"
+        self.dir = f"PROC/{uid}"
         self.home = f"{self.dir}/HOME"
         if not os.path.exists(self.dir):
-            if not os.path.exists(self.course.dir_log):
-                os.mkdir(self.course.dir_log)
             os.mkdir(self.dir)
-        self.exec_file = f"{self.dir}/{self.conid}"
-        self.source_file = f"{self.dir}/{self.conid}.cpp"
 
     def log(self, more:Union[str,Tuple]) -> None:
         """Log"""
-        if self.feedback:
-            return
         print(f"{time.strftime('%Y%m%d%H%M%S')} {self.conid} {more}", flush=True)
-
-    def course_running(self) -> bool:
-        """Check if the course is running for the user"""
-        return self.course.running(self.login) or self.feedback
 
     async def compile(self, data:Tuple) -> None:
         """Compile"""
@@ -88,7 +76,7 @@ class Process: # pylint: disable=too-many-instance-attributes
             self.cmp = COMPILERS[self.compiler]
         self.log(("COMPILE", data[:6]))
         self.source = self.cmp.patch_source(source)
-        with open(self.source_file, "w", encoding="utf-8") as file:
+        with open(f'{self.dir}/{self.cmp.source_file}', "w", encoding="utf-8") as file:
             file.write(self.source)
         await self.cmp.compile(self)
     async def indent(self, data:str) -> None:
@@ -118,6 +106,19 @@ class Process: # pylint: disable=too-many-instance-attributes
         else:
             self.log("UNCOMPILED2")
             await self.websocket.send(json.dumps(['return', "Non compilé"]))
+    def erase_files(self):
+        """Erase files before the compilation or on session close"""
+        for dirpath, dirnames, filenames in os.walk(self.dir, topdown=False):
+            for filename in filenames:
+                os.unlink(f'{dirpath}/{filename}')
+            for dirname in dirnames:
+                os.rmdir(f'{dirpath}/{dirname}')
+    async def cancel_tasks(self):
+        """Stop reading data"""
+        if self.runner and (not self.cmp or self.cmp.cancel_tasks):
+            self.log('CANCEL RUNNER')
+            await self.runner.stop(self.uid)
+            self.runner = None
 
 async def bad_session(websocket) -> None:
     """Tail the browser that the session is bad"""
@@ -176,8 +177,9 @@ N'actualisez PAS la page."""]))
 
     login = session.login
     course = urllib.parse.unquote(course)
+    course_config = utilities.CourseConfig.get(utilities.get_course(course))
 
-    process = Process(websocket, login, course, FREE_USERS.pop())
+    process = Process(websocket, FREE_USERS.pop())
     PROCESSES.append(process)
     try:
         process.log(("START", ticket, login, course, process.uid))
@@ -186,8 +188,8 @@ N'actualisez PAS la page."""]))
             if action != 'input': # To many logs (Grapic)
                 process.log(('ACTION', action))
             if (not session.is_admin()
-                    and not process.course_running()
-                    and not session.is_grader(process.course)):
+                    and not (course_config.running(login) or course_config.get_feedback(login))
+                    and not session.is_grader(course_config)):
                 if action == 'compile':
                     await process.websocket.send(json.dumps(
                         ['compiler', f"La session est terminée pour {login}"]))
@@ -222,8 +224,8 @@ N'actualisez PAS la page."""]))
     finally:
         process.log(("STOP", len(PROCESSES), len(FREE_USERS)))
         if process.cmp:
-            await process.cmp.cancel_tasks(process)
-            process.cmp.erase_files(process)
+            await process.cancel_tasks()
+            process.erase_files()
         PROCESSES.remove(process)
         FREE_USERS.append(process.uid)
     # search_leak()
@@ -248,7 +250,7 @@ def clean():
     print("STOP SERVER: Erase files")
     for process in PROCESSES:
         if process.cmp:
-            process.cmp.erase_files(process)
+            process.erase_files()
     print("STOP SERVER: cleanup compilers")
     for cmp in COMPILERS.values():
         cmp.server_exit()

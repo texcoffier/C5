@@ -7,6 +7,7 @@ from compilers import Compiler
 class Prolog(Compiler):
     """Prolog runner"""
     name = 'prolog'
+    source_file = 'unused.pl'
     def patch_source(self, source):
         return source + '\nccinqquery(Goal) :- forall(Goal, writeln(Goal)).\n'
     async def run(self, session):

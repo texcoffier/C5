@@ -1,6 +1,6 @@
 """Base class for compiler definition.
 
-Only singleton are created.
+Only singleton are created. NOTHING SHOULD BE STORED INSIDE THIS INSTANCE
 
 The state is in the session because on one compilation/execution at the same time
 """
@@ -10,6 +10,8 @@ import json
 class Compiler:
     """Base class for compiler definition"""
     name = None
+    cancel_tasks = True
+    source_file = 'source.undefined'
     def __init_subclass__(cls):
         """Update the compiler dictionnary"""
         COMPILERS[cls.name] = cls() # Singleton
@@ -19,22 +21,6 @@ class Compiler:
     async def compile(self, session):
         """Compile the modifier source"""
         await session.websocket.send(json.dumps(['compiler', "Bravo, il n'y a aucune erreur"]))
-    async def cancel_tasks(self, session):
-        """Stop reading data"""
-        if session.runner:
-            session.log('CANCEL RUNNER')
-            await session.runner.stop(session.uid)
-            session.runner = None
-    def erase_files(self, session):
-        """Erase files before the compilation or on session close"""
-        try:
-            os.unlink(session.exec_file)
-        except FileNotFoundError:
-            pass
-        try:
-            os.unlink(session.source_file)
-        except FileNotFoundError:
-            pass
     async def need_to_read_more(self, _the_runner):
         """Do not send the output to the browser, wait more data"""
         return False

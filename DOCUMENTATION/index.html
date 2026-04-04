@@ -2111,6 +2111,47 @@ server {
         être dans un environnement qu'ils ne connaissent pas.
     </p>
 
+    <h2>Sécurité.</h2>
+    <p>
+        Concernant COMPILE_REMOTE pour lequel les programmes s'exécutent coté serveur.
+    </p>
+    <ul>
+        <li>
+            Racket : On utilise la sandbox Racket qui interdit tout accès fichier et réseaux
+            et limite le temps de calcul et la place mémoire.
+        </li>
+        <li>
+            C, C++, Prolog sont exécutés dans une sandbox
+            restreignant les appels systèmes utilisables, le temps CPU
+            le nombre de threads et avec un UID différent par page ouverte.
+        </li>
+        <li>
+            Coq ne permet pas d'interaction avec le système d'exploitation.
+        </li>
+    </ul>
+    <p>
+        Dans le cas de la sandbox, la hiérarchie des fichiers est faite ainsi
+        pour la page utilisant l'UID 3999 :
+    </p>
+    <ul>
+        <li> PROC : drwx------ c5
+            <ul>
+                <li>
+                    3999 : drwx------ c5 (so nobody can go here from top or bottom)
+                    <ul>
+                        <li>
+                            HOME : drwxrwxrwx 3999 (so 'c5' can cleanup the content)
+                            <ul>
+                                <li> a.out : -rwxrwxrwx c5</li>
+                                <li> a_file : -rwxrwxrwx 3999</li>
+                                <li> a_dir : drwxrwxrwx 3999</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+    </ul>
+
     <h2>TODO</h2>
     <p>Fonctionnalités manquantes dans l'<b>éditeur</b> :</p>
     <ul>

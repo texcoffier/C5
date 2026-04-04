@@ -26,10 +26,6 @@ sandbox/libsandbox.so:
     (cd libseccomp && ./configure --enable-shared=no && make) ; \
 	make libsandbox.so)
 
-libsandbox:sandbox/libsandbox.so
-	if [ ! -e /tmp/libsandbox.so ] ; then cp sandbox/libsandbox.so /tmp/libsandbox.so ; fi
-	diff /tmp/libsandbox.so sandbox/libsandbox.so
-
 launcher:launcher.c
 	$(CC) -Wall $@.c -o $@
 	chown root $@
@@ -41,7 +37,7 @@ favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
 prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js \
-        node_modules/alasql libsandbox killer \
+        node_modules/alasql sandbox/libsandbox.so killer \
 		favicon.ico node_modules/@jcubic/lips node_modules/marked
 	@$(MAKE) -j $$(nproc) \
 		$$(echo COMPILE_*/*/*.py | sed 's/\.py/.js/g') \
@@ -49,6 +45,12 @@ prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js \
 		JS/ccccc.js JS/live_link.js JS/adm_root.js JS/adm_course.js JS/adm_session.js \
 		JS/checkpoint.js JS/checkpoint_list.js JS/home.js JS/stats.js
 	@if [ ! -d SSL ] ; then ./c5.py SSL-SS ; fi
+	@for ORIG in sandbox/libsandbox.so Grapic.h ; \
+	do \
+		DEST=/tmp/$$(basename $$ORIG) ; \
+		if [ ! -e $$DEST ] ; then cp $$ORIG $$DEST ; fi ; \
+		if ! diff $$ORIG $$DEST ; then exit 1 ; fi ; \
+	done
 
 all:prepare
 	@echo

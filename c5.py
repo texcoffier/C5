@@ -292,7 +292,7 @@ With Firefox:
         echo START SERVERS {C5_DIR}
         cd {C5_DIR} 2>/dev/null || true
         chmod 700 . # No access for students
-        mkdir TICKETS LOGS 2>/dev/null || true
+        mkdir TICKETS LOGS PROC 2>/dev/null || true
         make prepare
         if [ '' != '{C5_URL}' ]
         then

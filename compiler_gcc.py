@@ -32,8 +32,10 @@ def set_compiler_limits() -> None:
 class GCC(Compiler):
     """C/C++ compiler"""
     name = 'gcc'
+    source_file = 'source.cpp'
     async def compile(self, session):
         """Compile with gcc or g++"""        
+        shutil.rmtree(session.home, ignore_errors=True)
         session.log(('COMPILE', session))
         stderr = ''
         forbiden = re.findall(r'(^\s*#.*(((/\.|\./|</|"/).*)|\\)$)', session.source, re.MULTILINE)
@@ -51,11 +53,15 @@ class GCC(Compiler):
         if stderr:
             session.allowed_str = ''
         else:
+            try:
+                os.mkdir(session.home)
+            except OSError:
+                pass
             session.allowed_str = ':'.join(list(ALWAYS_ALLOWED) + session.allowed)
             process = await asyncio.create_subprocess_exec(
                 session.compiler, *session.compile_options,
-                '-I', '../../../..', '-I', '../../MEDIA',
-                session.conid + '.cpp', *session.ld_options, '-o', session.conid,
+                '-I', '/tmp',
+                self.source_file, *session.ld_options, '-o', 'HOME/a.out',
                 stderr=asyncio.subprocess.PIPE,
                 preexec_fn=set_compiler_limits,
                 close_fds=True,
@@ -63,19 +69,22 @@ class GCC(Compiler):
                 )
             assert process.stderr
             stderr_bytes = await process.stderr.read()
+            try:
+                os.chmod(f'{session.home}/a.out', 0o755)
+            except OSError:
+                pass
             if stderr_bytes:
-                stderr = stderr_bytes.decode('utf-8').replace(session.conid, 'c5')
+                stderr = stderr_bytes.decode('utf-8')
             else:
                 stderr = "Bravo, il n'y a aucune erreur"
         await session.websocket.send(json.dumps(['compiler', stderr]))
         session.log(("ERRORS", stderr.count(': error:'), stderr.count(': warning:')))
-        os.unlink(session.source_file)
 
     async def run(self, session):
         """Execute the compiled file using the launcher sandbox."""
         session.log(('RUN', session, session.runner))
-        await self.cancel_tasks(session)
-        if not os.path.exists(session.exec_file):
+        await session.cancel_tasks()
+        if not os.path.exists(f'{session.home}/a.out'):
             session.log("RUN nothing")
             await session.websocket.send(json.dumps(['return', "Rien à exécuter"]))
             return
@@ -83,8 +92,7 @@ class GCC(Compiler):
             session.log("RUNNING not allowed")
             return
         session.log(f'./launcher {session.allowed_str} {session.uid} {session.home} '
-                    f'{session.max_time} ../{session.conid}')
-        shutil.rmtree(session.home, ignore_errors=True)
+                    f'{session.max_time} a.out')
         pathlib.Path(session.home).mkdir(exist_ok=True)
         for filename, content in session.filetree_in:
             filename = pathlib.Path(f"{session.home}/{filename}")
@@ -97,7 +105,7 @@ class GCC(Compiler):
             str(session.uid),
             session.home,
             str(session.max_time),
-            '../' + session.conid,
+            'a.out',
             stdout=asyncio.subprocess.PIPE,
             stdin=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,

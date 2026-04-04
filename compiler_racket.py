@@ -15,6 +15,8 @@ def get_free_runner():
 class Racket(Compiler):
     """Racket compiler"""
     name = 'racket'
+    source_file = 'source.rkt'
+    cancel_tasks = False # Keep runner alive because it is a process pool
     async def run(self, session):
         """Evaluate a racket program"""
         session.log('RACKET START')
@@ -41,10 +43,7 @@ class Racket(Compiler):
 
         session.runner.session = session
         session.runner.racket_free = False
-        session.runner.process.stdin.write(session.source_file.encode('utf-8') + b'\n')
-    async def cancel_tasks(self, _session):
-        """Do not cancel runner, it must stay because it is a pool"""
-        return
+        session.runner.process.stdin.write(f'{session.dir}/{self.source_file}'.encode('utf-8') + b'\n')
     async def need_to_read_more(self, the_runner):
         """Wait the end of the racket output"""
         if the_runner.line == b'\001' or b'\001' not in the_runner.line:

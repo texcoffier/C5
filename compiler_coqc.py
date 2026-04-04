@@ -13,16 +13,12 @@ def set_coq_limits() -> None:
 class CoqC(Compiler):
     """CocC compiler"""
     name = 'coqc'
+    source_file = 'source.v'
     async def run(self, session):
         """Run a coqc program"""
         # Should use a runner in order to read values
-        try:
-            os.unlink(session.dir + '/test.v')
-        except FileNotFoundError:
-            pass
-        os.symlink(session.conid + '.cpp', session.dir + '/test.v')
         process = await asyncio.create_subprocess_exec(
-            'coqc', 'test.v',
+            'coqc', self.source_file,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             preexec_fn=set_coq_limits,
