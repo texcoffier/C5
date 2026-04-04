@@ -2315,6 +2315,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.unlock_worker()
         self.compilation_run(memorize_input=False) # Force run even if deactivated
 
+    def add_ticket_to_images(self, element):
+        """Add the ticket if no '?' and on C5"""
+        for img in element.getElementsByTagName('IMG'):
+            if img.src.startswith(location.origin) and '?' not in img.src:
+                img.src = img.src + '?ticket=' + TICKET
+
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
@@ -2500,6 +2506,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                         if value[0] == '\n':
                             span.style.clear = 'left'
                     self.executor.appendChild(span) # pylint: disable=unsubscriptable-object
+                    self.add_ticket_to_images(span)
         elif what == 'index':
             links = []
             tips = []
@@ -2629,11 +2636,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.tree_canvas() # Here because scheduler do not call coloring
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
             if what == 'question' and self.journal_question:
-                # Add ticket to images
-                for img in span.getElementsByTagName('IMG'):
-                    if img.src.startswith(location.origin) and '?' not in img.src:
-                        img.src = img.src + '?ticket=' + TICKET
-
+                self.add_ticket_to_images(span)
                 self.question.onscroll = "" # To not change scrollTop when erased
                 def spy_onscroll():
                     def onscroll():
