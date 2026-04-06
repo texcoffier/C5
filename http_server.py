@@ -615,15 +615,23 @@ async def adm_media(request:Request) -> Response:
     with open(course.file_loads, 'r', encoding='utf-8') as file:
         files = json.loads(file.read())
     nbr = 0
-    medias.append('<table style="border-spacing: 0px">')
-    medias.append('<tr><th>Clic to edit<th>Question<th>Default<th>Answer<th>Grading</tr>')
+    medias.append('''
+    <style>
+    .media_table { border-spacing: 0px; }
+    .media_table A { text-decoration: none; vertical-align: top; }
+    .media_table IFRAME { height:1.4em; width:8.5em; border: 0px; }
+    </style>
+    <table class="media_table">
+    <tr><th>Clic to edit<th>Question<th>Default<th>Answer<th>Grading</tr>
+    ''')
     for question, loads in sorted(files.items()):
         medias.append(f'<tr><th>{question}')
         for i in ('QUESTION', 'DEFAULT', 'ANSWER', 'GRADING'):
             medias.append('<td style="border: 1px solid #888">')
             if i in loads:
                 for name in loads[i]:
-                    medias.append(f'<a target="_blank" href="https://{utilities.C5_URL}/adm/editor/{course.course}/{name}?ticket={session.ticket}">{name}</a><br>')
+                    medias.append(f'<a target="_blank" href="https://{utilities.C5_URL}/adm/editor/{course.course}/{name}?ticket={session.ticket}">{name}</a>')
+                    medias.append(f' <iframe src="https://{utilities.C5_URL}/media_info/{course.course}/{name}?ticket={session.ticket}"></iframe><br>')
                     nbr += 1
         medias.append('</tr>')
     medias.append('</table>')
@@ -1971,6 +1979,49 @@ async def get_media(request:Request) -> Response:
         return answer('Not allowed', content_type='text/plain')
     return File.get(f'{course.dir_media}/{request.match_info["value"]}').answer()
 
+async def media_info(request:Request) -> Response:
+    """Media info"""
+    session = await Session.get_or_fail(request)
+    course = CourseConfig.get(utilities.get_course(request.match_info['course']))
+    if not course:
+        return answer('Session inconnue', content_type='text/plain')
+    if not session.is_admin(course):
+        return answer('Not allowed', content_type='text/plain')
+    style = '''<style>
+    BODY { margin: 0px ; font-size: 70%; font-family: monospace, monospace}
+    SPAN { line-height: 1em }
+    M { background: #0F0 }
+    N { background: #F00; color: #FFF; }
+    </style>'''
+    media = f'{course.dir_src}/{request.match_info["value"]}'
+    if not os.path.exists(media):
+        return answer(f'{style}<span style="background:#F88">Not exists')
+    s = os.stat(media)
+    now = time.strftime("%Y-%m-%d %H:%M:%S")
+    mtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(s.st_mtime))
+    for i, (a, b) in enumerate(zip(now, mtime)):
+        if a != b:
+            mtime = f'{mtime[:i]}<M>{mtime[i:]}</M>'
+            break
+    if os.path.exists(media + '.log'):
+        with open(media + '.log', encoding='utf-8') as file:
+            content = file.readlines()
+        modified_time = 0
+        modified = False
+        for line in content[::-1]:
+            if modified and line.startswith('T'):
+                modified_time = int(line[1:])
+                break
+            if line.startswith(('I', 'D')):
+                modified = True
+        if modified_time < s.st_mtime:
+            more = '✅'
+        else:
+            more = ' <N>unsaved</N>'
+    else:
+        more = ''
+    return answer(f'{style}<span>{s.st_size/1000}kB{more}<br>{mtime}')
+
 async def adm_building(request:Request) -> Response:
     """Get building editor"""
     session = await Session.get_or_fail(request)
@@ -2614,6 +2665,7 @@ def main():
                     web.get('/zip/{course}', my_zip),
                     web.get('/git/{course}', my_git),
                     web.get('/media/{course}/{value}', get_media),
+                    web.get('/media_info/{course}/{value}', media_info),
                     web.get('/debug/change_session_ip', change_session_ip),
                     web.get('/stats/{param}', full_stats),
                     web.get('/live_link/session', live_link),

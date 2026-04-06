@@ -41,5 +41,14 @@ class Q1(Question):
 <p>
     L'énoncé qui est inutile sans les consignes importantes.
 </p>
+<p>
+    Insertion d'image venant d'une autre session :<br>
+    <img src="media/REMOTE=grapic/chien.png">
+</p>
+<p>
+    Insertion d'image venant de la session courante :<br>
+    <img src="chien.png"><br>
+    Rien à afficher car il n'y a pas de media dans cette session.
+</p>
 </div>
 """
