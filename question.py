@@ -46,6 +46,9 @@ class Question:
     def expected_answer(self):
         """For grader and may be student"""
         return ''
+    def grading_ladder(self):
+        """For grader and may be student"""
+        return ''
     def append_to_source_code(self): # pylint: disable=no-self-use
         """Add this to the user source code"""
         return ""
