@@ -32,7 +32,7 @@
                             (display "\001\002RACKET")
                             (display ast)
                             (display "\n")
-                            (display result)
+                            (print result)
                             (display "\001")
                             (flush-output)
                             (if (exn:fail? result)
