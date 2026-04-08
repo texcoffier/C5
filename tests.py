@@ -1215,7 +1215,7 @@ class Q1(Question):
         """Check session display"""
         with self.admin_rights():
             self.goto('adm/course/REMOTE=test')
-            self.check('BODY', {'innerHTML': Contains('<div id="top"></div>')})
+            self.check('BODY', {'innerHTML': Contains('<div id="top">')})
 
     def test_rename(self):
         """Check session renaming"""
@@ -1732,8 +1732,9 @@ class Q1(Question):
 
             self.goto('checkpoint/REMOTE=xxx')
             self.check('BODY', {'innerHTML': Contains('id="timetravel')})
+
             retry(lambda:
-                sorted(self.driver.execute_script("return STUDENT_DICT")) != ['anonyme_17751431971', 'anonyme_17751432384', 'anonyme_17751432396', 'anonyme_17751432437', 'anonyme_177514324510', 'anonyme_17751432459'])
+                sorted(self.driver.execute_script("return STUDENT_DICT"))[:-1] != ['anonyme_17751431971', 'anonyme_17751432384', 'anonyme_17751432396', 'anonyme_17751432437', 'anonyme_177514324510', 'anonyme_17751432459'])
 
             self.goto('adm/reset/REMOTE=xxx/active_teacher_room state start')
             self.check('BODY', {

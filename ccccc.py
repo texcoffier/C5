@@ -112,6 +112,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     highlight_errors = {}
     question_original = {}
     expected_answer = {}
+    grading_ladder = {}
     copied = None # Copy with ^C ou ^X
     state = "uninitalised"
     input_index = -1 # The input number needed
@@ -161,6 +162,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     coach_previous_position = 0
     current_selection = ''
     session_information = ''
+    grade_dict = None
 
     def init(self):
         self.options = options = COURSE_CONFIG
@@ -2150,11 +2152,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         if not buttons:
             setTimeout(bind(self.update_grading, self), 100)
             return
+        # Update interface from grading
         grading = parse_grading(self.grading_history)
-        grading_sum = 0
-        competences = []
-        nr_grades = 0
-        nr_real_grade = 0
         for button in buttons.getElementsByTagName('BUTTON'):
             g = button.getAttribute('g')
             if button.nextSibling is None:
@@ -2170,24 +2169,35 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 else:
                     button.title = grading[g][1].split('\n')[-1]
                 button.className = 'grade_selected'
-                value = grading[g][0]
-                if g.isdigit(): # Not a competence
-                    if value != '?':
-                        grading_sum += Number(value)
-                    nr_real_grade += 1
-                else:
-                    if value >= 0:
-                        competences.append(Number(value))
-                nr_grades += 1
             else:
                 button.className = 'grade_unselected'
+
+        #Compute totals
+        grading_sum = 0
+        competences = []
+        nr_graded = 0
+        for key, value in grading.Items():
+            if key not in self.grade_dict:
+                continue # A grade has been removed
+            value = value[0]
+            if key.split('\t')[-1].isdigit(): # Not a competence
+                if value != '?':
+                    grading_sum += Number(value)
+                    nr_graded += 1
+            else:
+                if value != '':
+                    if value >= 0:
+                        competences.append(Number(value))
+                    nr_graded += 1
         self.grading_sum = grading_sum
         self.competence_average = (sum(competences)/len(competences)).toFixed(1)
+
+        # Update totals on screen
         element = document.getElementById('grading_value')
         if element:
-            if nr_real_grade:
+            if len(grading):
                 element.parentNode.style.display = 'initial'
-            element.innerHTML = grading_sum
+            element.innerHTML = grading_sum.toFixed(2)
             element2 = document.getElementById('competence_value')
             if len(competences):
                 element2.parentNode.style.display = 'initial'
@@ -2197,7 +2207,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
             element = document.getElementById('grading_sum')
             button = document.getElementById('grading_feedback')
-            if self.nr_grades == nr_grades:
+            if len(self.grade_dict) == nr_graded:
                 element.style.background = "#0F0"
                 if button:
                     button.style.opacity = 1
@@ -2207,6 +2217,22 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 if button and button.feedback != 5:
                     button.style.opacity = 0.3
                     button.style.pointerEvents = 'none'
+
+    def get_grades(self):
+        if not self.grade_dict:
+            notations = [['', NOTATION]]
+            for notation in self.grading_ladder.Items():
+                notations.append(notation)
+            self.grade_dict = {}
+            for grade in Grades(notations).content:
+                if grade.key:
+                    self.grade_dict[grade.key] = grade
+
+        notations = [['', NOTATION]]
+        for notation in self.grading_ladder.Items():
+            if notation[0] == str(self.current_question):
+                notations.append(notation)
+        return Grades(notations)
 
     def add_grading(self):
         """HTML of the grading interface"""
@@ -2252,7 +2278,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             content.append('<pre>')
             use_triangle = '▶' in NOTATION
             self.nr_grades = 0
-            for grade in Grades(NOTATION).content:
+            global_grading = True
+            for grade in self.get_grades().content:
+                if global_grading and '\t' in grade.key:
+                    content.append('<hr>')
+                    global_grading = False
                 for line in grade.text_before.split('\r\n'):
                     line_clean = line.replace('▶', '').strip()
                     if (len(line) <= 5 # Too short line
@@ -2603,6 +2633,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.question_original[value[0]] = value[1]
         elif what == 'expected_answer':
             self.expected_answer[value[0]] = value[1]
+        elif what == 'grading_ladder':
+            self.grading_ladder[value[0]] = value[1]
         elif what in ('tester', 'compiler', 'question', 'time'):
             if not value:
                 return
@@ -2973,7 +3005,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if 'grade_selected' in button.className:
                 graded[button.getAttribute('g')] = True
 
-        for grade in Grades(NOTATION).grades:
+        for grade in self.get_grades().grades:
             if grade.key not in graded:
                 if index == 1:
                     if grade.grades[0] >= 0 or grade.grades[0] == '?':

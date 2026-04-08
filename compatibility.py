@@ -168,3 +168,48 @@ def post(url, value, iframe=False):
     #form.onload = remove_form
 
 inf = Infinity
+
+@external
+class Grades:
+    pass
+
+def init_minimal_worker(notation_a, notation_b, hook):
+    """Return the worker.
+            worker.notation_a
+            worker.notation_b
+    """
+    def init_worker(worker, version):
+        worker.postMessage(['reset'])
+        worker.postMessage(['config',
+            {
+                'WHERE': [0, "", ",,," + version, 0, 0, 0, "", 0, [0, 0, 0, 0], 0, 0, 0, ""],
+                'ANSWERS': [],
+            }])
+    def onmessage(event):
+        if event.data[0] == 'grading_ladder':
+            worker._notation.append(event.data[1])
+        elif event.data[0] == 'allow_edit' and event.data[1] == "1":
+            if not hasattr(worker, 'notation_a'):
+                worker.notation_a_list = worker._notation
+                worker.notation_a = Grades(worker._notation)
+                worker._notation = [['', notation_b]]
+                init_worker(worker, 'b')
+            else:
+                worker.notation_b_list = worker._notation
+                worker.notation_b = Grades(worker._notation)
+                worker.notation = {
+                    'a':  worker.notation_a,
+                    'b':  worker.notation_b,
+                }
+                hook()
+    def onerror(event):
+        print(event)
+    worker_url = BASE + '/' + COURSE + "?ticket=" + TICKET
+    worker_url += '&login=' + LOGIN
+    worker = eval('new Worker(worker_url)') # pylint: disable=eval-used
+    worker._notation = [['', notation_a]]
+    worker.onmessage = onmessage
+    worker.onmessageerror = onerror
+    worker.onerror = onerror
+    init_worker(worker, 'a')
+    return worker

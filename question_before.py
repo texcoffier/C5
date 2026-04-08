@@ -9,6 +9,14 @@ def millisecs():
 
 PREAMBLE = ''
 
+def load(filename):
+    try:
+        with open(f'SRC/{filename}', 'r', encoding='utf-8')  as file:
+            return file.read()
+    except FileNotFoundError:
+        return ''
+
+LOAD_GRADING = load
 class Session(Session): # pylint: disable=too-few-public-methods
     """Create a session with all the questions"""
     def __init__(self, questions):
@@ -22,3 +30,7 @@ class Question: # pylint: disable=too-few-public-methods
     def __init_subclass__(cls, /, **kwargs):
         super().__init_subclass__(**kwargs)
         question_classes.append(cls)
+    def grading_ladder(self):
+        return ''
+    def version(self):
+        return self._version

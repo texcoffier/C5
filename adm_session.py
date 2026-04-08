@@ -119,8 +119,10 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                     <th style="writing-mode: sideways-lr">Teacher feedback</th>
                     <th>Proctor remarks</th>
                     ''']
-                grade_a = Grades(State.config.notation)
-                grade_b = Grades(State.config.notationB)
+                WORKER.notation_a_list[0] = ['', State.config.notation]
+                WORKER.notation_b_list[0] = ['', State.config.notationB or State.config.notation]
+                grade_a = Grades(WORKER.notation_a_list)
+                grade_b = Grades(WORKER.notation_b_list)
                 for login in value:
                     active, teacher, room, timestamp, nr_blurs, nr_questions, \
                         hostname, time_bonus, grade, blur_time, feedback, fullscreen, remarks = value[login]
@@ -149,7 +151,7 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                         nbr = grade[1]
                         if nbr != version.nr_grades:
                             nbr = '<span style="color:red">' + nbr + '</span>'
-                        txt_grade += replace_all(str(grade[0]).rjust(4), ' ', ' '
+                        txt_grade += replace_all(grade[0].toFixed(2).rjust(5), ' ', ' '
                             ) + '<sub><small>' + nbr + '</small></sub>'
                     if grade[3] > 0:
                         nbr = grade[3]
@@ -722,8 +724,8 @@ def update_interface():
     notation = document.getElementById("notation")
     notationB = document.getElementById("notationB")
     if grading_sum and notation:
-        update_interface.grade_a = grade_a = Grades(notation.value)
-        update_interface.grade_b = grade_b = Grades(notationB.value)
+        update_interface.grade_a = grade_a = Grades([['', notation.value]])
+        update_interface.grade_b = grade_b = Grades([['', notationB.value]])
 
         if grade_a.max_grade or grade_b.max_grade:
             message = 'Maximum possible grade: <b>'
@@ -747,4 +749,4 @@ def update_interface():
         if notationB.value:
             notationB.value = grade_b.with_keys()
 
-init()
+WORKER = init_minimal_worker('', '', init)

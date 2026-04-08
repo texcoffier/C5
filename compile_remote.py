@@ -28,6 +28,8 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
 
     def connect(self): # pylint: disable=too-many-statements
         """Connect to the remote compiler/executor with a WebSocket"""
+        if not self.options.COURSE:
+            return
         print('connect', self.connecting)
         if self.connecting or self.stoped:
             return

@@ -27,8 +27,6 @@ def show(what):
 
 def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Create the admin home page"""
-    notation = Grades(NOTATION)
-    notationb = Grades(NOTATIONB)
     document.title = "👁" + COURSE.split('=')[1]
     students = []
     for student in STUDENTS:
@@ -40,7 +38,7 @@ def display(): # pylint: disable=too-many-locals,too-many-branches,too-many-stat
         sums[what] = ''
         sums[what + '\001done']  = ''
         sums[what + '\001feedback']  = ''
-    text = ["""<!DOCTYPE html>
+    text = ["""
 <style>
 BODY { font-family: sans-serif; }
 TABLE { border-spacing: 0px; }
@@ -115,6 +113,10 @@ DIV[onclick]:hover { background: #EEE }
             print(login, "In LOGS but not in session.cf")
             continue
         version = journal['version'] = STUDENT_DICT[login][2].split(',')[3]
+        if version == 'a':
+            notation = WORKER.notation_a
+        else:
+            notation = WORKER.notation_b
         journal['feedback'] = STUDENT_DICT[login][10]
         if STUDENT_DICT[login][11]:
             journal['fullscreen'] = '**'
@@ -146,7 +148,7 @@ DIV[onclick]:hover { background: #EEE }
             ungraded.append(login)
             journal['grades'] = ''
         else:
-            journal['grades'] = grade
+            journal['grades'] = grade.toFixed(2)
         graders.sort()
         journal['graders'] = ' '.join(graders)
 
@@ -242,8 +244,8 @@ DIV[onclick]:hover { background: #EEE }
     by_teacher = {}
     partially_graded = []
     nr_grades_max = {
-        'a': notation.nr_grades_and_competences(),
-        'b': notationb.nr_grades_and_competences(),
+        'a': WORKER.notation_a.nr_grades_and_competences(),
+        'b': WORKER.notation_b.nr_grades_and_competences(),
     }
     for login, nrg in nr_grades.Items():
         if nrg and nrg < nr_grades_max[cache[login]['version']]:
@@ -286,7 +288,7 @@ DIV[onclick]:hover { background: #EEE }
     ###########################################################################
     ###########################################################################
 
-    if NOTATIONB.strip() != '':
+    if WORKER.notation_b.nr_grades_and_competences() != 0:
         text.append("<h2>Importation du détail des notes dans TOMUSS impossible car 2 barèmes</h2>")
     else:
         text.append("""<h2>Importation du détail des notes dans TOMUSS</h2>
@@ -299,7 +301,7 @@ DIV[onclick]:hover { background: #EEE }
         <table id="TOMUSS"><tr><td>ID<td>Nom<td>Prénom""")
         labels = {}
         header2 = '' # Second line of headers
-        for grade in notation.grades:
+        for grade in WORKER.notation_a.grades:
             while grade.label in labels:
                 grade.label += '+'
             labels[grade.label] = True
@@ -336,7 +338,7 @@ DIV[onclick]:hover { background: #EEE }
             text.append(login)
             text.append('<td><td>')
             grading = parse_grading(student['grades'])
-            for grade in notation.grades:
+            for grade in WORKER.notation_a.grades:
                 text.append('<td>')
                 if grading[grade.key]:
                     text.append(grading[grade.key][0])
@@ -379,7 +381,7 @@ DIV[onclick]:hover { background: #EEE }
         text.append('</tr>')
     text.append('</table>')
 
-    document.body.innerHTML = text.join('') # pylint: disable=no-member
+    document.getElementById('top').innerHTML = text.join('') # pylint: disable=no-member
 
 def sort_report(col):
     print("Sorting")
@@ -406,4 +408,4 @@ def sort_report(col):
     for _, line in lines:
         table.firstChild.insertBefore(line, last)
 
-display()
+WORKER = init_minimal_worker(NOTATION, NOTATIONB, display)

@@ -19,6 +19,7 @@ ROOM_BORDER = ('d', 'w', '|', '-', '+', None)
 MESSAGES_TO_HIDE = {}
 LONG_CLICK = 500
 SPY_FONT = 12
+SERVER_TIME_DELTA = int(millisecs()/1000 - SERVER_TIME)
 
 if COURSE in ('=MAPS', '=IPS'):
     del BUILDINGS['empty']
@@ -33,14 +34,6 @@ SOURCES = {} # student_id -> [ line -> true, line -> true, ...]
 SOURCES_ORIG = {} # student_id -> [ [line, ...], [line, ...], ...]
 GRAPH = {} # student_id -> [ student_id, ...]
 LINES = {} # line -> number of time this line was found for all students
-
-if OPTIONS.notation:
-    NR_MAX_GRADE = {
-        'a': Grades(OPTIONS.notation).nr_grades_and_competences(),
-        'b': Grades(OPTIONS.notationB).nr_grades_and_competences()
-        }
-else:
-    NR_MAX_GRADE = {'a': 0, 'b': 0}
 
 def filters(element):
     """Update student filter"""
@@ -925,7 +918,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Draw grading (2 triangles: done and visible)
             if student.grade[1]:
                 ctx.fillStyle = "#0F0"
-                if student.grade[1] == NR_MAX_GRADE[student.version]:
+                if student.grade[1] == WORKER.notation[student.version].nr_grades_and_competences():
                     ctx.beginPath()
                     ctx.moveTo(left + width/2, top + height)
                     ctx.lineTo(left + width  , top + height)
@@ -1891,7 +1884,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             blur = ' ' + student.blur + ' pertes de focus (' + student.blur_time + ' secs)'
 
         if student.grade != '':
-            grades = ' Somme des ' + student.grade[1] + '/' + NR_MAX_GRADE[student.version] + ' notes → ' + student.grade[0]
+            grades = ' Somme des ' + student.grade[1] + '/' + WORKER.notation[student.version].nr_grades_and_competences() + ' notes → ' + student.grade[0]
             feedback = ' ' + [
                 "Rien d'affiché à l'étudiant",
                 "Code source commenté",
@@ -2927,6 +2920,7 @@ if COURSE == "=MAPS":
     ROOM = Room(INFO)
     STUDENT_DICT = {}
     scheduler.update_page = True
+    setInterval(scheduler, 20)
 else:
     create_page(INFO.building)
     ROOM = Room(INFO)
@@ -2934,11 +2928,12 @@ else:
     for student in STUDENTS:
         create_or_update_student(student)
 
-    update_page()
-    if STUDENT_DICT[INFO['student']]:
-        ROOM.zoom_student(INFO['student'])
-    scheduler.update_page = True
-    REAL_COURSE = COURSE
+    def init():
+        update_page()
+        if STUDENT_DICT[INFO['student']]:
+            ROOM.zoom_student(INFO['student'])
+        scheduler.update_page = True
+        setInterval(scheduler, 20)
 
     def reload_on_error(event):
         if isinstance(event, ProgressEvent):
@@ -2960,6 +2955,5 @@ else:
         XHR.open("GET", 'journal/' + COURSE + '?ticket=' + TICKET)
         XHR.send()
 
-SERVER_TIME_DELTA = int(millisecs()/1000 - SERVER_TIME)
+    WORKER = init_minimal_worker(OPTIONS.notation, OPTIONS.notationB, init)
 
-setInterval(scheduler, 20)

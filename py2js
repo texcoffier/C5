@@ -82,7 +82,7 @@ if [ "$COMPILER" != "" ]
 then
 	if cat options.py compile.py $COMPILER.py question_before.py $PY question_after.py |
 		tee xxx.py |
-		python3 >$JSON
+		(cd $(dirname $JS) ; python3) >$JSON
     then
         echo "$PY → $JSON OK"
     else

@@ -193,6 +193,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
     """A course session"""
     configs:Dict[str,"CourseConfig"] = {}
     autoclose_done = False
+    file_json_timestamp = 0
     def __init__(self, course):
         if not os.path.exists(course):
             return
@@ -211,11 +212,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.dir_session = course
         self.time = 0
         self.parse_position = 0
-        try:
-            with open(self.file_json, 'r', encoding="ascii") as file:
-                self.questions = json.loads(file.read())
-        except FileNotFoundError:
-            self.questions = []
+        self.read_file_json()
         self.load()
         self.update()
         self.configs[course] = self
@@ -226,6 +223,17 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         # Add the API key stats if there is none:
         if not self.config['key_stats']:
             self.set_parameter('key_stats', f'{random.randrange(1 << 63, 1 << 64):x}')
+
+    def read_file_json(self):
+        """May change on question change"""
+        try:
+            t = os.path.getmtime(self.file_json)
+            if t > self.file_json_timestamp:
+                self.file_json_timestamp = t
+                with open(self.file_json, 'r', encoding="ascii") as file:
+                    self.questions = json.loads(file.read())
+        except FileNotFoundError:
+            self.questions = []
 
     def get_config(self):
         """Config not leaking informations to students"""
@@ -387,9 +395,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.sequential = int(self.config['sequential'])
         self.highlight = self.config['highlight']
         self.allow_ip_change = int(self.config['allow_ip_change'])
-        self.notation = self.config['notation']
+
+        self.read_file_json()
+        self.notation = [['', self.config['notation']]]
+        for i, infos in enumerate(self.questions):
+            self.notation.append([i, infos.get('notation_a', '')])
         self.notation_parsed = common.Grades(self.notation)
-        self.notationB = self.config['notationB']
+        self.notationB = [['', self.config['notationB'] or self.config['notation']]]
+        for i, infos in enumerate(self.questions):
+            self.notationB.append([i, infos.get('notation_b', '')])
         self.notationB_parsed = common.Grades(self.notationB)
         self.theme = self.config['theme']
         self.active_teacher_room = self.config['active_teacher_room']
@@ -578,14 +592,14 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         if len(version) < 3:
             return 'a'
         version = version[3]
-        if version == 'b' and self.notationB:
+        if version == 'b':
             return 'b'
         return 'a'
     def get_notation(self, login:str) -> str:
         """Return the notation for the student"""
         if self.get_version(login) == 'a':
-            return self.notation
-        return self.notationB
+            return self.notation[0][1]
+        return self.notationB[0][1]
     def get_notation_parsed(self, login:str) -> str:
         """Return the notation for the student"""
         if self.get_version(login) == 'a':
@@ -626,12 +640,15 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             if value is not None:
                 values.append(float(value))
         competences = []
+        nr_competences = 0
         for grade in notation.competences:
             value = grading.get(grade.key, None)
-            if value is not None and value != '?':
-                competences.append(float(value))
+            if value is not None:
+                if value != '?':
+                    competences.append(float(value))
+                nr_competences += 1
         new_value = [sum(values), len(values),
-                     sum(competences)/len(competences) if competences else 0, len(competences)]
+                     sum(competences)/len(competences) if competences else 0, nr_competences]
         self.set_active_teacher_room(login, 'grade', new_value)
         return grades
 
@@ -659,62 +676,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
             # No file with this name
             cls.configs.pop(course, None)
             return None
-        if not re.match('.*{[^:}{]+:([?],)?[-.,0-9]*}', config.notation, flags=re.S):
-            return config
-        try:
-            print("REWRITE GRADES", course, flush=True)
-            renames = []
-            notations = []
-            for notation in (config.notation, config.notationB):
-                translate = {}
-                grades = common.Grades(notation)
-                notations.append(grades)
-                for i, grade in enumerate(grades.content[:-1]):
-                    if grade.key_original:
-                        translate[str(i)] = str(grade.key)
-                    else:
-                        translate[str(i)] = str(i)
-                renames.append(translate)
-            for login, state in config.active_teacher_room.items():
-                grades = config.get_grades(login)
-                if not grades:
-                    continue
-                grade_file = f'{config.dir_log}/{login}/grades.log'
-                print(f'Translate «{grade_file}»: ', end='')
-                if state.room.count(',') < 3:
-                    translate = renames[0]
-                    print('no version, assume «a» ', end='')
-                elif state.room.split(',')[3] == 'a': # Check subject version
-                    translate = renames[0]
-                else:
-                    translate = renames[1]
-                old = [json.loads(line) for line in grades.strip().split('\n')]
-                new = []
-                for line in old:
-                    line = list(line)
-                    # Use 'get' because the translations may yet has been done
-                    line[2] = translate.get(line[2], line[2])
-                    new.append(line)
-                if old == new:
-                    print('no change', flush=True)
-                else:
-                    with open(grade_file, "w", encoding='utf-8') as file:
-                        for line in new:
-                            file.write(json.dumps(line) + '\n')
-                    print('done', flush=True)
-            # Update configuration only if the translation was successful
-            print("Update session configuration: ", end='', flush=True)
-            if config.notation:
-                config.set_parameter('notation', notations[0].with_keys())
-            if config.notationB:
-                config.set_parameter('notationB', notations[1].with_keys())
-            print("done", flush=True)
-            return config
-        except: # pylint: disable=bare-except
-            print('Grade translation failure')
-            import traceback
-            traceback.print_exc()
-            sys.exit(1)
+        return config
 
     @classmethod
     def load_all_configs(cls) -> None:

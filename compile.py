@@ -16,6 +16,9 @@ def onmessage(event):
             Compile.worker.source = event.data[2]
         elif event.data[0] == 'indent':
             Compile.worker.run_indent(event.data[1])
+        elif event.data[0] == 'reset':
+            print('Reset')
+            Compile.worker.options = {}
         elif event.data[0] == 'config':
             init_needed = len(Compile.worker.options) == 0
             Compile.worker.set_config(event.data[1])
@@ -94,6 +97,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             quest.worker = self
             self.post('default', [i, quest.default_answer()])
             self.post('expected_answer', [i, quest.expected_answer()])
+            self.post('grading_ladder', [i, quest.grading_ladder()])
         self.current_question = self.current_question_max
         if self.current_question != 0 or self.questions[self.current_question].last_answer:
             self.source = (self.questions[self.current_question].last_answer
@@ -151,7 +155,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('run', 'No indenter defined')
     def start_question(self):
         """Start a new question"""
-        # print("START QUESTION", self.current_question, '/', self.current_question_max)
+        print("START QUESTION", self.current_question, '/', self.current_question_max)
         if self.current_question < 0:
             return
         self.post('current_question', self.current_question)
