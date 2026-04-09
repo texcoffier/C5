@@ -2578,10 +2578,11 @@ async def live_link(request:Request) -> StreamResponse:
                     # Remove IP
                     content = re.sub('\nO([^ ]*)[^\n]*', '\nO\\1 ?', content)
                 await socket.send_str(port + ' J' + content + '\n')
-            if allow_edit:
-                await journa.write(f'T{int(time.time())}', session.login)
-                await journa.write(f'O{session.login} {session.client_ip} {port}')
-            # log(f'New journalLink {asked_login}/{login} {for_editor} msg_id:{journa.msg_id}')
+                if allow_edit:
+                    await journa.write(f'T{int(time.time())}', session.login)
+                    await journa.write(f'O{session.login} {session.client_ip} {port}')
+            else:
+                await socket.send_str(port + " JQ0\nIVous n'êtes pas autorisé à voir ce que l'étudiant a fait\n")
 
     for journa in tuple(JournalLink.journals.values()):
         if (not journa.course.checkpoint                     # Not an exam
