@@ -141,6 +141,8 @@ class File:
         """Get or create File object"""
         if filename not in cls.file_cache:
             if not os.path.exists(filename):
+                if filename.endswith(('.png', '.jpg', '.gif')):
+                    return File.get('badname.png')
                 raise web.HTTPUnauthorized(body="Arrêtez de hacker! " + filename)
             cls.file_cache[filename] = File(filename)
         return cls.file_cache[filename]
@@ -1972,9 +1974,12 @@ async def adm_editor(request:Request) -> Response:
 async def get_media(request:Request) -> Response:
     """Get a media file"""
     session = await Session.get_or_fail(request)
-    course = CourseConfig.get(utilities.get_course(request.match_info['course']))
+    try:
+        course = CourseConfig.get(utilities.get_course(request.match_info['course']))
+    except ValueError:
+        course = None
     if not course:
-        return answer('Session inconnue', content_type='text/plain')
+        return File.get('badname.png').answer()
     if not session.is_grader(course) and not course.status(session.login).startswith('running'):
         return answer('Not allowed', content_type='text/plain')
     return File.get(f'{course.dir_media}/{request.match_info["value"]}').answer()
