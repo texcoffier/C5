@@ -124,7 +124,13 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self.start_time = millisecs()
                 self.source = source
                 self.post('compiler', self.compiler_initial_content())
-                self.executable = self.run_compiler(source)
+                try:
+                    self.executable = self.run_compiler(source)
+                except Error as error: # pylint: disable bare-except
+                    self.post('compiler',
+                        '<b style="color: #F00">' + str(error) + '</b><pre>'
+                        + html(error.stack) + '</pre>')
+                    return
                 if self.executable:
                     self.run_after_compile()
         finally:
@@ -137,8 +143,14 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.execution_returns = None
         self.post('executor', self.executor_initial_content())
         self.post('state', "running")
-        self.run_executor()
         self.post('tester', self.tester_initial_content())
+        try:
+            self.run_executor()
+        except Error as error: # pylint: disable bare-except
+            self.post('tester',
+                '<b style="color: #F00">' + str(error) + '</b><pre>'
+                + html(error.stack) + '</pre>')
+            return
         if self.run_tester_after_exec:
             self.run_tester()
         self.post('time', self.time_initial_content())
@@ -181,8 +193,10 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.quest.all_tests_are_fine = True
         try:
             self.quest.tester()
-        except:
-            print("Il y a un bug dans le testeur de la question " + current_question)
+        except Error as error:
+            self.post('tester',
+                '<b style="color: #F00">' + str(error) + '</b><pre>'
+                + html(error.stack) + '</pre>')
             self.current_question = current_question # Keep same question
             return
         if (current_question != self.current_question # Question has been solved now
