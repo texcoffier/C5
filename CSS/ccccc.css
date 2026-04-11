@@ -425,7 +425,7 @@ DIV.overlay {
     font-size: 100%;
 }
 
-.executor BUTTON {
+.executor BUTTON.clear {
     position: absolute;
     right: 0px;
     font-size: 100%;

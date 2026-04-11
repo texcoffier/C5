@@ -2275,43 +2275,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 content.append('<button onclick="ccccc.set_all_grades(0)">premières cases</button> ')
                 content.append('<button onclick="ccccc.set_all_grades(1)">premières cases sauf malus</button> ')
                 content.append('<button onclick="ccccc.set_all_grades(-1)">dernières cases</button>')
-            content.append('<pre>')
-            use_triangle = '▶' in NOTATION
-            self.nr_grades = 0
-            global_grading = True
-            for grade in self.get_grades().content:
-                if global_grading and '\t' in grade.key:
-                    content.append('<hr>')
-                    global_grading = False
-                for line in grade.text_before.split('\r\n'):
-                    line_clean = line.replace('▶', '').strip()
-                    if (len(line) <= 5 # Too short line
-                            or use_triangle and '▶' not in line # ▶ is required
-                            or len(self.source.split(RegExp(
-                                protect_regexp(line_clean)))) != 2 # Duplicate line
-                            ):
-                        line = '<span>' + html(line) + '</span>'
-                    else:
-                        line = '''<span
-                            onclick="ccccc.goto_source_line(this.textContent.replace('▶', '').strip())"
-                            class="link">''' + html(line) + "</span>"
-                    content.append(line)
-                    content.append('\n')
-                content.pop()
-                if len(grade.label):
-                    if grade.is_competence:
-                        content.append('<span class="competence">')
-                    else:
-                        content.append('<span class="grade_value">')
-                    self.nr_grades += 1
-                    content.append(grade.label)
-                    for choice in grade.grades:
-                        content.append('<button g="' + grade.key + '" v="'
-                                       + choice + '">' + choice + '</button>')
-                    content.append('</span>')
-                else:
-                    content.append('\n')
-            content.append('</pre>')
+            self.nr_grades = self.get_grades().get_html(content, self.source)
             self.grading.id = "grading"
             if GRADING:
                 self.grading.onclick = bind(self.grade, self)
@@ -2489,6 +2453,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     clear = document.createElement('BUTTON')
                     clear.textContent = '×'
                     clear.tabIndex = -1
+                    clear.className = 'clear'
                     clear.setAttribute('onclick',
                         "ccccc.clear_input(" + self.current_question + ',' + self.input_index + ')')
                     if not self.options.forget_input:

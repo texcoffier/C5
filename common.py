@@ -167,6 +167,53 @@ class Grades:
             content.append(grade.with_key())
         return ''.join(content)
 
+    def get_html(self, content, source):
+        """Add the grading HTML in content string list.
+        Returns the number of grades.
+        """
+        content.append('<pre>')
+        use_triangle = False
+        for grade in self.content:
+            if grade.text and '▶' in grade.text:
+                use_triangle = True
+                break
+        nr_grades = 0
+        global_grading = True
+        for grade in self.content:
+            if global_grading and '\t' in grade.key:
+                content.append('<hr>')
+                global_grading = False
+            for line in grade.text_before.split('\r\n'):
+                line_clean = line.replace('▶', '').strip()
+                if (len(line) <= 5 # Too short line
+                        or use_triangle and '▶' not in line # ▶ is required
+                        or len(source.split(RegExp(
+                            protect_regexp(line_clean)))) != 2 # Duplicate line
+                        ):
+                    line = '<span>' + html(line) + '</span>'
+                else:
+                    line = '''<span
+                        onclick="ccccc.goto_source_line(this.textContent.replace('▶', '').strip())"
+                        class="link">''' + html(line) + "</span>"
+                content.append(line)
+                content.append('\n')
+            content.pop()
+            if len(grade.label):
+                if grade.is_competence:
+                    content.append('<span class="competence">')
+                else:
+                    content.append('<span class="grade_value">')
+                nr_grades += 1
+                content.append(grade.label)
+                for choice in grade.grades:
+                    content.append('<button g="' + grade.key + '" v="'
+                                    + choice + '">' + choice + '</button>')
+                content.append('</span>')
+            else:
+                content.append('\n')
+        content.append('</pre>')
+        return nr_grades
+
 try:
     nice_date(0)
 except: # pylint: disable=bare-except

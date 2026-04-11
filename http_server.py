@@ -621,22 +621,29 @@ async def adm_media(request:Request) -> Response:
     <style>
     .media_table { border-spacing: 0px; }
     .media_table A { text-decoration: none; vertical-align: top; }
-    .media_table IFRAME { height:1.4em; width:8.5em; border: 0px; }
+    .media_table TD IFRAME { height:1.2em; width:50em; border: 0px; }
+    .media_table TR:hover TD { background: #FFF }
+    .media_table TR:hover TD[rowspan] { background: #EEE }
     </style>
-    <table class="media_table">
-    <tr><th>Clic to edit<th>Question<th>Default<th>Answer<th>Grading</tr>
     ''')
-    for question, loads in sorted(files.items()):
-        medias.append(f'<tr><th>{question}')
-        for i in ('QUESTION', 'DEFAULT', 'ANSWER', 'GRADING'):
-            medias.append('<td style="border: 1px solid #888">')
+    def url(path):
+        return f'https://{utilities.C5_URL}/{path}/{course.course}/{name}?ticket={session.ticket}'
+
+    for i in ('QUESTION', 'DEFAULT', 'ANSWER', 'GRADING'):
+        medias.append(f'<b>{i}</b><table class="media_table">')
+        for question, loads in sorted(files.items()):
             if i in loads:
+                question = f'<td rowspan="{len(loads[i])}">{question}'
                 for name in loads[i]:
-                    medias.append(f'<a target="_blank" href="https://{utilities.C5_URL}/adm/editor/{course.course}/{name}?ticket={session.ticket}">{name}</a>')
-                    medias.append(f' <iframe src="https://{utilities.C5_URL}/media_info/{course.course}/{name}?ticket={session.ticket}"></iframe><br>')
+                    medias.append(f'''
+                    <tr>
+                    {question}
+                    <td><a target="_blank" href="{url('adm/editor')}">{name}</a>
+                    <td><iframe src="{url('media_info')}"></iframe>
+                    </tr>''')
                     nbr += 1
-        medias.append('</tr>')
-    medias.append('</table>')
+                    question = ''
+        medias.append('</table>')
     medias.append('<hr>')
 
     if nbr == 0:
@@ -1967,6 +1974,8 @@ async def adm_editor(request:Request) -> Response:
         compiler = 'HTML'
     elif file.endswith('.md'):
         compiler = 'MD'
+    elif file.endswith('.gl'):
+        compiler = 'GL'
     else:
         compiler = 'TEXT'
     return await editor(session, is_admin, course, f'{compiler}=editor:{file}')
@@ -1993,21 +2002,19 @@ async def media_info(request:Request) -> Response:
     if not session.is_admin(course):
         return answer('Not allowed', content_type='text/plain')
     style = '''<style>
-    BODY { margin: 0px ; font-size: 70%; font-family: monospace, monospace}
-    SPAN { line-height: 1em }
-    M { background: #0F0 }
-    N { background: #F00; color: #FFF; }
+    BODY { margin: 0px ; font-family: monospace, monospace; white-space: pre}
     </style>'''
     media = f'{course.dir_src}/{request.match_info["value"]}'
     if not os.path.exists(media):
-        return answer(f'{style}<span style="background:#F88">Not exists')
+        return answer(f'{style}<span style="background:#F88">File does not exists')
     s = os.stat(media)
     now = time.strftime("%Y-%m-%d %H:%M:%S")
     mtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(s.st_mtime))
     for i, (a, b) in enumerate(zip(now, mtime)):
         if a != b:
-            mtime = f'{mtime[:i]}<M>{mtime[i:]}</M>'
+            mtime = f'{mtime[:i]}<span style="background:#0F0">{mtime[i:]}</span>'
             break
+    size = f'{s.st_size/1000}kB'
     if os.path.exists(media + '.log'):
         with open(media + '.log', encoding='utf-8') as file:
             content = file.readlines()
@@ -2020,12 +2027,20 @@ async def media_info(request:Request) -> Response:
             if line.startswith(('I', 'D')):
                 modified = True
         if modified_time < s.st_mtime:
-            more = '✅'
+            status = ''
         else:
-            more = ' <N>unsaved</N>'
+            status = '<span style="background: #F88">UNSAVED</span>'
     else:
-        more = ''
-    return answer(f'{style}<span>{s.st_size/1000}kB{more}<br>{mtime}')
+        status = ''
+    if media.endswith('.gl'):
+        with open(media, 'r', encoding='utf-8') as file:
+            content = file.read()
+        grades = common.Grades([['', content]])
+        grades = f' max:{grades.max_grade:5.2f}  #grades:{grades.nr_grades:3}  #competences:{grades.nr_competences:2}'
+    else:
+        grades = ''
+
+    return answer(f'{style}{size:10} {status:7} {mtime} {grades}')
 
 async def adm_building(request:Request) -> Response:
     """Get building editor"""

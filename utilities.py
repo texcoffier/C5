@@ -863,9 +863,10 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
             if os.path.exists(self.file_to_edit):
                 content = pathlib.Path(self.file_to_edit).read_text(encoding='utf-8')
                 content = content.replace('\n', '\0')
+                self.path.write_text(f'Q0\nI{content}\n', encoding='utf-8')
             else:
                 content = ''
-            self.path.write_text(f'Q0\nI{content}\ntI\n', encoding='utf-8')
+                self.path.write_text(f'Q0\n', encoding='utf-8')
         if self.path.exists():
             content = self.path.read_text(encoding='utf-8')
             if content:
