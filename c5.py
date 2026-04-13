@@ -307,14 +307,14 @@ With Firefox:
         """,
     'stop': r"""#C5_LOGIN
         echo STOP SERVERS
-        for I in http_server compile_server infos_server dns_server
+        for SIGNAL in '' '-1'
         do
-            pkill --uid \$(id -u) --oldest -f ^python3.\$I
-        done
-        sleep 0.1
-        for I in http_server compile_server infos_server dns_server
-        do
-            pkill -1 --uid \$(id -u) --oldest -f ^python3.\$I
+            for I in http_server compile_server infos_server dns_server
+            do
+                PID=\$(pgrep --uid \$(id -u) -f python3.\$I.py$)
+                kill \$SIGNAL \$PID 2>/dev/null
+            done
+            sleep 0.1
         done
         """,
     'open': f"""
