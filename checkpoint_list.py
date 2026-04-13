@@ -203,7 +203,7 @@ def init_interface(nr_doing_grading):
     document.body.appendChild(element)
 
     top = ['''<title>SESSIONS</title>
-<input id="filter" onclick="show_filter_menu()"> ← filter only what matters to you.
+<input id="filter" autofocus onclick="show_filter_menu()"> ← filter only what matters to you.
 <datalist id="filter_menu"></datalist>''']
     if window.IS_AUTHOR:
         top.append('<button onclick="edit()">Edit all sessions</button> ')
