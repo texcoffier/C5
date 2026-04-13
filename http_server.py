@@ -109,6 +109,9 @@ class File:
         elif filename.endswith('.gif'):
             self.mime = 'image/gif'
             self.charset = None
+        elif filename.endswith('.txt'):
+            self.mime = 'text/plain'
+            self.charset = None
         elif filename.endswith('.jpg'):
             self.mime = 'image/jpg'
             self.charset = None
@@ -619,24 +622,48 @@ async def adm_media(request:Request) -> Response:
     nbr = 0
     medias.append('''
     <style>
-    .media_table { border-spacing: 0px; }
+    .media_table { border-spacing: 0px; width: 100% }
     .media_table A { text-decoration: none; vertical-align: top; }
-    .media_table TD IFRAME { height:1.2em; width:50em; border: 0px; }
-    .media_table TR:hover TD { background: #FFF }
-    .media_table TR:hover TD[rowspan] { background: #EEE }
+    .media_table TD IFRAME { height:1.2em; width:40em; border: 0px; }
+    .media_table TD { white-space: nowrap; }
+    .media_table TR.selected TD { background: #FFF }
+    .media_table TR.selected TD[rowspan] { background: #EEE }
+    #preview { background: #FFF; position: sticky; top: 0px; width: 100%; height: 100vh; }
+    .top_src { width: 100% }
+    .top_src TD { vertical-align: top }
+    .preview { width: 100%; position: relative; }
     </style>
+    <script>
+    selected = undefined;
+    function preview(element, filename) {
+        var e = document.getElementById('preview');
+        if ( selected )
+            selected.className = '';
+        e.src = "https://''' + utilities.C5_URL + '/src/' + course.course + '/" + filename + "?ticket=' + session.ticket + '''";
+        element.className = "selected";
+        selected = element;
+    }
+    </script>
+    <table class="top_src"><tr><td>
     ''')
     def url(path):
         return f'https://{utilities.C5_URL}/{path}/{course.course}/{name}?ticket={session.ticket}'
 
+    titles = {
+        "QUESTION": "HTML source of all the questions and versions",
+        "DEFAULT": "Initial contents of the editor",
+        "ANSWER": "The expected answers",
+        "GRADING": "The grading ladders"
+    }
+
     for i in ('QUESTION', 'DEFAULT', 'ANSWER', 'GRADING'):
-        medias.append(f'<b>{i}</b><table class="media_table">')
-        for question, loads in sorted(files.items()):
+        medias.append(f'<b>{titles[i]}</b> :<table class="media_table">')
+        for quest, loads in sorted(files.items()):
             if i in loads:
-                question = f'<td rowspan="{len(loads[i])}">{question}'
+                question = f'<td rowspan="{len(loads[i])}">{quest}'
                 for name in loads[i]:
                     medias.append(f'''
-                    <tr>
+                    <tr onmouseenter="preview(this, '{name}')">
                     {question}
                     <td><a target="_blank" href="{url('adm/editor')}">{name}</a>
                     <td><iframe src="{url('media_info')}"></iframe>
@@ -644,6 +671,7 @@ async def adm_media(request:Request) -> Response:
                     nbr += 1
                     question = ''
         medias.append('</table>')
+    medias.append('<td class="preview"><iframe id="preview"></iframe></tr></table>')
     medias.append('<hr>')
 
     if nbr == 0:
@@ -1993,6 +2021,19 @@ async def get_media(request:Request) -> Response:
         return answer('Not allowed', content_type='text/plain')
     return File.get(f'{course.dir_media}/{request.match_info["value"]}').answer()
 
+async def get_src(request:Request) -> Response:
+    """Get a SRC file"""
+    session = await Session.get_or_fail(request)
+    try:
+        course = CourseConfig.get(utilities.get_course(request.match_info['course']))
+    except ValueError:
+        course = None
+    if not course:
+        return answer('Course unknown', content_type='text/plain')
+    if not session.is_admin(course):
+        return answer('Not allowed', content_type='text/plain')
+    return File.get(f'{course.dir_src}/{request.match_info["value"]}').answer()
+
 async def media_info(request:Request) -> Response:
     """Media info"""
     session = await Session.get_or_fail(request)
@@ -2036,7 +2077,7 @@ async def media_info(request:Request) -> Response:
         with open(media, 'r', encoding='utf-8') as file:
             content = file.read()
         grades = common.Grades([['', content]])
-        grades = f' max:{grades.max_grade:5.2f}  #grades:{grades.nr_grades:3}  #competences:{grades.nr_competences:2}'
+        grades = f' /{grades.max_grade} #grades:{grades.nr_grades} #comp:{grades.nr_competences}'
     else:
         grades = ''
 
@@ -2686,6 +2727,7 @@ def main():
                     web.get('/zip/{course}', my_zip),
                     web.get('/git/{course}', my_git),
                     web.get('/media/{course}/{value}', get_media),
+                    web.get('/src/{course}/{value}', get_src),
                     web.get('/media_info/{course}/{value}', media_info),
                     web.get('/debug/change_session_ip', change_session_ip),
                     web.get('/stats/{param}', full_stats),
