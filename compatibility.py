@@ -213,3 +213,58 @@ def init_minimal_worker(notation_a, notation_b, hook):
     worker.onerror = onerror
     init_worker(worker, 'a')
     return worker
+
+class Positions:
+    """Manage the position and color of screen blocs"""
+    def __init__(self, blocs):
+        """blocs :
+             { "bloc_name": [X, DX, Y, DY, COLOR], ... }
+           The dictionnary content may be modified in the future.
+        """
+        self.blocs = blocs
+    def move(self, xy, old_pos, new_pos):
+        """
+        xy = 0 : move_pos
+        xy = 2 : move y
+        """
+        if old_pos == new_pos:
+            return
+        for bloc in self.blocs.Values():
+            if bloc[xy] == old_pos:
+                bloc[xy+1] += old_pos - new_pos
+                bloc[xy] = new_pos
+            elif bloc[xy] + bloc[xy+1] == old_pos:
+                bloc[xy+1] += new_pos - old_pos
+    def update(self, bloc_name, new_bloc):
+        old_bloc = self.blocs[bloc_name]
+        self.move(0, old_bloc[0], new_bloc[0])
+        self.move(0, old_bloc[0]+old_bloc[1], new_bloc[0]+new_bloc[1])
+        self.move(2, old_bloc[2], new_bloc[2])
+        self.move(2, old_bloc[2]+old_bloc[3], new_bloc[2]+new_bloc[3])
+    def set_width(self, bloc_name, width):
+        new_bloc = self.blocs[bloc_name][:]
+        if new_bloc[0] + new_bloc[1] == 100:
+            new_bloc[0] -= width - new_bloc[1]
+        new_bloc[1] = width
+        self.update(bloc_name, new_bloc)
+
+def positions_regtest():
+    a = [2, 2, 2, 2]
+    b = [0, 2, 0, 4]
+    c = [2, 4, 0, 2]
+    d = [4, 2, 2, 4]
+    e = [0, 4, 4, 2]
+    p = Positions({'a': a, 'b': b, 'c': c, 'd': d, 'e': e})
+    p.update('a', [1, 4, 1, 4])
+    if (a != [1, 4, 1, 4]
+        or b != [0, 1, 0, 5]
+        or c != [1, 5, 0, 1]
+        or d != [5, 1, 1, 5]
+        or e != [0, 5, 5, 1]
+    ):
+        print(p.blocs)
+        alert('BUG Position')
+    else:
+        print('Positions regtest fine')
+
+positions_regtest()

@@ -28,6 +28,11 @@ REAL_GRADING = GRADING
 if not COURSE_CONFIG['display_grading']:
     GRADING = False
 
+try:
+    COURSE_CONFIG['options_url'] = JSON.parse(decodeURIComponent(location.hash[1:]))
+except: # pylint: disable=bare-except
+    COURSE_CONFIG['options_url'] = {}
+
 SHARED_WORKER, JOURNAL = create_shared_worker(LOGIN)
 EDITMODE = ['', ''] # Journals without and with comments
 
@@ -374,6 +379,13 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.indent_button.style.opacity = 0.2
         else:
             self.indent_button.style.opacity = 1
+
+        for bloc in ['question', 'executor']:
+            width = self.options['options_url'][bloc + '_width']
+            if width:
+                p = Positions(self.options['positions'])
+                p.set_width(bloc, width)
+
         self.options['positions']['editor_title'] = self.options['positions']['editor']
         if GRADING or self.options['feedback'] >= 5:
             left, width, top, height, background = self.options['positions']['editor']

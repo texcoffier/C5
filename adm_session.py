@@ -21,13 +21,14 @@ def load_config():
     script = document.createElement('SCRIPT')
     script.src = BASE + '/course_config/' + COURSE + '?ticket=' + TICKET
     add(script)
-    select_tab('Config')
 
 def update_course_config(config, feedback): # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Update the HTML with the configuration.
     This function is called by server answer.
     """
     State.config = config
+    if not init.done:
+        init()
     if len(State['original_value']) == 0:
         for attr in config:
             State['original_value'][attr] = config[attr]
@@ -196,6 +197,10 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
         else:
             div.className = ""
 
+    if not init.done:
+        init.done = True
+        select_tab('Config')
+
 def upload():
     """Send the source file"""
     document.getElementById('server_feedback').innerHTML = """
@@ -317,7 +322,9 @@ def select_tab(label):
     elif label == "Place":
         content =  '<iframe src="checkpoint/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
     elif label == 'Edit':
-        content = '<iframe src="adm/editor/' + COURSE + '?ticket=' + TICKET + '"></iframe>'
+        content = ('<iframe src="adm/editor/' + COURSE + '?ticket=' + TICKET
+        + '#' + encodeURIComponent('{"question_width":' + State.config.positions['question'][1] + '}')
+        + '"></iframe>')
     elif label == "Media":
         content = '<iframe src="adm/media/' + COURSE + '/list/*?ticket=' + TICKET + '"></iframe>'
     elif label == 'Results':
@@ -696,7 +703,6 @@ def init():
     </form>
     """)
     add(div)
-    setTimeout(load_config, 10) # Wait CSS loading
     setInterval(update_interface, 5000)
 
 def count_words(element):
@@ -749,4 +755,4 @@ def update_interface():
         if notationB.value:
             notationB.value = grade_b.with_keys()
 
-WORKER = init_minimal_worker('', '', init)
+WORKER = init_minimal_worker('', '', load_config)

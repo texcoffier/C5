@@ -647,7 +647,11 @@ async def adm_media(request:Request) -> Response:
     <table class="top_src"><tr><td>
     ''')
     def url(path):
-        return f'https://{utilities.C5_URL}/{path}/{course.course}/{name}?ticket={session.ticket}'
+        if i in ('QUESTION', 'GRADING'):
+            more = '#' + html.escape('{"executor_width":' + str(course.config['positions']['question'][1]) + '}')
+        else:
+            more = ''
+        return f'https://{utilities.C5_URL}/{path}/{course.course}/{name}?ticket={session.ticket}{more}'
 
     titles = {
         "QUESTION": "HTML source of all the questions and versions",
