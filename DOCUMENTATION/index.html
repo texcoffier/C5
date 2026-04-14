@@ -1529,6 +1529,18 @@ make</pre>
         <li> <tt>./c5 c5 ; ./c5 restart</tt> Mise à jour d'une nouvelle version à partir de GitHub</li>
         <li> <tt>./c5 cp ; ./c5 restart</tt> Mise à jour d'une nouvelle version à partir des sources locaux</li>
     </ul>
+    <p>
+        Pour le lancement automatique de C5 quand il a planté
+        ou que la machine à redémarré :
+    </p>
+    <ul>
+        <li> <tt>./c5 create_start_script</tt> pour créer le script <tt>xxx-c5-start</tt>
+            avec le bon paramétrage sur la machine sur laquelle on installe.</li>
+        <li> Si vous n'utilisez pas 'systemd' lancez <tt>crontab -e</tt>
+             et ajoutez par exemple :<br>
+            <tt>0,5,10,15,20,25,30,35,40,45,50,55 * * * * GET http://127.0.0.1:4201/ &gt;/dev/null || (cd C5 ; ./xxx-start-c5) &gt;&gt;xxx-C5.cron 2&gt;&amp;1</tt>
+        </li>
+    </ul>
 
     <h3>Configuration NGINX.</h3>
     <p>

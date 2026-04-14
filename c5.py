@@ -80,7 +80,7 @@ def create_start_script():
         file.write('# Starts C5 with configuration\n')
         file.write(''.join(var(name, comment).replace("LOCAL='0'", "LOCAL='1'") + '\n'
                            for name, comment, _default in CONFIGURATIONS))
-        file.write('[ "" = "$1" ] && ARG=$1 || ARG=start\n')
+        file.write('[ "" != "$1" ] && ARG="$1" || ARG=start\n')
         file.write('./c5.py $ARG\n')
     os.chmod('xxx-start-c5', 0o755)
 
