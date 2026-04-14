@@ -457,6 +457,11 @@ Grade maximum displayed to the students: <input id="notation_max" size="4">.
                     indent = ''
                 tag = indent + '<input style="width: 5em" id="' + key + '"> ' + comment
                 comment = ''
+            elif key == 'positions':
+                tag = ('<textarea style="width: 30em" onkeydown="setTimeout(update_canvas_blocs, 10)" id="'
+                    + key + '"></textarea><canvas id="canvas_blocs" style="width:23em;height:13em"></canvas>')
+                comment = '<div style="float:right">' + comment + '</div>'
+                setTimeout(update_canvas_blocs, 100)
             else:
                 if isinstance(default_value, Object):
                     tag = ('<textarea style="width: 100%" id="' + key + '"></textarea>')
@@ -754,5 +759,14 @@ def update_interface():
             notation.value = grade_a.with_keys()
         if notationB.value:
             notationB.value = grade_b.with_keys()
+
+def update_canvas_blocs():
+    textarea = document.getElementById('positions')
+    canvas = document.getElementById('canvas_blocs')
+    try:
+        positions = JSON.parse(textarea.value)
+    except: # pylint: disable=bare-except
+        return
+    Positions(positions).draw(canvas)
 
 WORKER = init_minimal_worker('', '', load_config)

@@ -247,6 +247,42 @@ class Positions:
             new_bloc[0] -= width - new_bloc[1]
         new_bloc[1] = width
         self.update(bloc_name, new_bloc)
+    def draw(self, canvas):
+        canvas.width = canvas.offsetWidth
+        canvas.height = canvas.offsetHeight
+        ctx = canvas.getContext('2d')
+        width = canvas.width
+        height = canvas.height
+        dx = width / 100
+        dy = height / 100
+        ctx.fillStyle = '#000'
+        ctx.fillRect(0, 0, width, height)
+        for key, bloc in self.blocs.Items():
+            ctx.fillStyle = bloc[4]
+            ctx.fillRect(bloc[0]*dx, bloc[2]*dy, bloc[1]*dx, bloc[3]*dy)
+        ctx.strokeStyle = '#0004'
+        ctx.fillStyle = '#000'
+        ctx.lineWidth = 1
+        for key, bloc in self.blocs.Items():
+            x1 = bloc[0] * dx
+            y1 = bloc[2] * dy
+            x2 = (bloc[0] + bloc[1]) * dx
+            y2 = (bloc[2] + bloc[3]) * dy
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath(); ctx.stroke()
+            ctx.beginPath(); ctx.moveTo(x1, y2); ctx.lineTo(x2, y1); ctx.closePath(); ctx.stroke()
+            box = ctx.measureText(key)
+            ctx.fillText(key, (bloc[0] + bloc[1]/2)*dx - box.width/2,
+                              bloc[2]*dy + box.fontBoundingBoxAscent+box.fontBoundingBoxDescent)
+        ctx.fillStyle = '#F004'
+        for b1 in self.blocs.Values():
+            for b2 in self.blocs.Values():
+                if b1 is not b2:
+                    minx = max(b1[0], b2[0])
+                    maxx = min(b1[0]+b1[1], b2[0]+b2[1])
+                    miny = max(b1[2], b2[2])
+                    maxy = min(b1[2]+b1[3], b2[2]+b2[3])
+                    if minx < maxx and miny < maxy:
+                        ctx.fillRect(minx*dx, miny*dy, (maxx - minx)*dx, (maxy - miny)*dy)
 
 def positions_regtest():
     a = [2, 2, 2, 2]
