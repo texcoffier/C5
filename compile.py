@@ -250,22 +250,12 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     ###########################################################################
 
-    def add_answer(self, title):
-        answer = self.quest.expected_answer()
-        if answer:
-            title = '''<select class="select-correction"
-                onchange="ccccc.update_expected_answer(this)">
-                <option>''' + title + '''</option>
-                <option>Correction</option>
-            </select>'''
-        return title
-
     def question_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return '<h2>' + self.add_answer(self.options['question_title']) +'</h2>'
+        return '<H2><BLOCTITLE>' + self.options['question_title'] +'</BLOCTITLE></H2>'
     def tester_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
-        return "<h2>" + self.add_answer(self.options['tester_title']) + "</h2>"
+        return '<H2><BLOCTITLE>' + self.options['tester_title'] + '</BLOCTITLE></H2>'
     def executor_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         if self.options['positions'] and (
@@ -292,13 +282,13 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
         # Keep <!-- --> explanation is in ccccc.py
         # about : The first space is replaced by an unsecable space
-        return ("<h2><!-- -->" + self.add_answer(self.options['executor_title'])
+        return ("<H2><!-- --><BLOCTITLE>" + self.options['executor_title'] + '</BLOCTITLE>'
             + more
             + '<tt class="truncate_sn">' + self.options['INFOS']['sn'].upper() + '</tt>'
             + ' '
             + '<tt class="truncate_fn">' + self.options['INFOS']['fn'].title() + '</tt>'
             + '<br>' + self.options['LOGIN']
-            + "</span></h2>")
+            + "</span></H2>")
     def compiler_initial_content(self): # pylint: disable=no-self-use
         """Used by the subclass"""
         if self.options['automatic_compilation']:
@@ -312,8 +302,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                         + self.options['compiler_title_button'] + '</label>')
             else:
                 more = ''
-        return ('<h2>' + self.add_answer(self.options['compiler_title']) + ' '
-                + more + '</h2>')
+        return ('<H2><BLOCTITLE>' + self.options['compiler_title'] + '</BLOCTITLE>'
+                + more + '</H2>')
     def time_initial_content(self):
         """The message terminate the job. It indicates the worker time"""
         more = ' ' + self.current_question_max

@@ -216,7 +216,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.worker.postMessage(['array', self.shared_buffer])
         if GRADING or self.options['feedback'] >= 5:
             # Will be updated after
-            self.options['positions']['grading'] = [0, 1, 0, 75, '#FFF8']
+            self.options['positions']['grading'] = self.options['positions']['question'][:]
+            self.options['positions']['grading'][4] = '#FFF8'
+            self.options['positions']['grading'][3] = 100 # All window height
         if options['language'] == 'lisp':
             self.name_chars = '[a-zA-Z0-9!$%&*+-./:<=>?@^_~]'
             self.name_first = RegExp(self.name_chars)
@@ -377,14 +379,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             left, width, top, height, background = self.options['positions']['editor']
             self.options['positions']['comments'] = [
                 left + width, 100 - (left + width), top, height]
-            left, width, top, height, background = self.options['positions']['question']
-            if COURSE_CONFIG['display_grading']:
-                height = 75
-            else:
-                height = 20
-            self.options['positions']['question'][2] = height
-            self.options['positions']['question'][3] = 100 - height
-            self.options['positions']['grading'] = [left, width, 0, height, '#FFF8']
+            self.options['positions']['question'][0] = 100 # Hide question
             self.options['positions']['tester'][0] = 100 # Hide tester
 
         if document.body.classList.contains('versions'):
@@ -491,11 +486,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.comments.className = 'comments'
                 self.layered.appendChild(self.comments)
                 e = self.layered
-            if GRADING and key in ('executor', 'compiler'):
-                e.style.position = 'fixed'
-                self.layered.appendChild(e)
-            else:
-                self.top.appendChild(e)
+            self.top.appendChild(e)
         self.editor.contentEditable = True
         self.editor.spellcheck = False
         self.editor.autocorrect = False
@@ -540,7 +531,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         border:1px solid #000;
         overflow: auto;
         top: 3em;
-        white-space: break-spaces;
         z-index: 10;
         position:absolute"""
         self.top.appendChild(self.answer)
@@ -1856,10 +1846,16 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.stop_completion()
             if not self.completion_running and self.search_input.style.display == 'block':
                 self.search_input.style.display = 'none'
+            self.overlay_hide()
+            return
         if event.target is self.editor and event.key not in (
-                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'Home', 'End'):
+                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'Home', 'End', 'Escape'):
             self.clear_highlight_errors()
-
+        if event.key == 'Escape':
+            self.answer.style.display = 'none'
+            for e in document.getElementsByClassName('select-correction'):
+                e.selectedIndex = 0
+            return
         if event.target.tagName == 'TEXTAREA':
             # The teacher enter a comment
             return
@@ -2238,7 +2234,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """HTML of the grading interface"""
         self.version = 0 # (ANSWERS[self.current_question] or [0, 0])[1]
         content = ['<div><h2>',
-            GRADING and 'Noter' or '',
+            GRADING and '<BLOCTITLE>Noter</BLOCTITLE>' or '',
             ]
         if GRADING:
             content.append('<span style="vertical-align: bottom" id="grading_sum">')
@@ -2361,15 +2357,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     self.update_grading(GRADES)
             self.hide_expected_answer()
 
-            # The title may change if there is an expected answer or not
-            title = self.options['editor_title']
-            if (self.expected_answer[self.current_question] or '') != '':
-                title = '''<select class="select-correction"
-                    onchange="ccccc.update_expected_answer(this, 1)">
-                    <option>''' + title + '''</option>
-                    <option>Correction</option>
-                </select>'''
-            document.getElementById('editor_name').innerHTML = title
+            document.getElementById('editor_name').innerHTML = '<BLOCTITLE>' + self.options['editor_title'] + '</BLOCTITLE>'
 
         elif what in ('error', 'warning'):
             self.highlight_errors[value[0] + ':' + value[1]] = what
@@ -2666,30 +2654,56 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         elif what == 'recompile':
             self.compilation_run()
 
-    def update_expected_answer(self, element, source):
-        if element.selectedIndex:
-            if source:
-                title_height = 0
-                bloc = self.layered
+        for title in document.getElementsByTagName('BLOCTITLE'):
+            options = []
+            if self.expected_answer[self.current_question]:
+                options.append('<option>Correction</option>')
+            if self.options['GRADING']:
+                options.append('<option>Question</option>')
+            if len(options):
+                content = ('''<select class="select-correction"
+                    onchange="ccccc.update_expected_answer(this)">
+                    <option>''' + title.innerHTML + '</option>'
+                    + ''.join(options)
+                    + '</select>')
             else:
-                title_height = 60
-                bloc = element
-                while bloc.parentNode is not self.top:
-                    bloc = bloc.parentNode
+                content = title.innerHTML
+            title.outerHTML = content
+
+    def update_expected_answer(self, element, source):
+        if element.value not in ('Correction', 'Question'):
+            self.answer.style.display = 'none'
+            return
+
+        if source:
+            title_height = 0
+            bloc = self.layered
+        else:
+            title_height = 60
+            bloc = element
+            while bloc.parentNode is not self.top:
+                bloc = bloc.parentNode
+
+        if element.value == 'Correction':
             self.answer.className = 'hljs language-' + self.options['language']
+            self.answer.style.whiteSpace = 'break-spaces'
             self.answer.textContent = self.expected_answer[self.current_question]
             hljs.highlightElement(self.answer)
-            self.answer.style.left = bloc.offsetLeft + 'px'
-            self.answer.style.width = (bloc.offsetWidth - 30) + 'px'
-            self.answer.style.top = (bloc.offsetTop + title_height) + 'px'
-            self.answer.style.height = (bloc.offsetHeight - title_height - 20) + 'px'
-            self.answer.style.display = 'block'
 
-            for e in document.getElementsByClassName('select-correction'):
-                if e is not element:
-                    e.selectedIndex = 0
-        else:
-            self.answer.style.display = 'none'
+        elif element.value == 'Question':
+            self.answer.className = 'question'
+            self.answer.style.whiteSpace = 'normal'
+            self.answer.innerHTML = self.question.innerHTML.split("</h2>")[1]
+
+        self.answer.style.left = bloc.offsetLeft + 'px'
+        self.answer.style.width = (bloc.offsetWidth - 30) + 'px'
+        self.answer.style.top = (bloc.offsetTop + title_height) + 'px'
+        self.answer.style.height = (bloc.offsetHeight - title_height - 20) + 'px'
+        self.answer.style.display = 'block'
+
+        for e in document.getElementsByClassName('select-correction'):
+            if e is not element:
+                e.selectedIndex = 0
 
     def hide_expected_answer(self):
         for e in document.getElementsByClassName('select-correction'):
