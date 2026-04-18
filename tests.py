@@ -158,7 +158,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 os.unlink(i)
             for i in glob.glob(course_name + '/MEDIA/*'):
                 os.unlink(i)
-        os.system('rm -r COMPILE_REMOTE/XXX COMPILE_REMOTE/xxx')
+        os.system('rm -r COMPILE_REMOTE/XXX* COMPILE_REMOTE/xxx*')
 
         start = time.time()
         self.wait_start()
@@ -195,6 +195,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_manage_import, # need manage_tree test done before
                     self.test_manage_reset,
                     self.test_comments,
+                    self.test_bloc,
                     self.test_bad_scroll, # VERY very LONG test
                     # self.test_git,
                     ):
@@ -1751,6 +1752,47 @@ class Q1(Question):
             self.goto('checkpoint/REMOTE=xxx')
             self.check('BODY', {'innerHTML': Contains('id="timetravel')})
             retry(lambda: 'anonyme_17751431971' in self.driver.execute_script("return STUDENT_DICT"))
+
+    def test_bloc(self):
+        """Test menu on bloc titles"""
+        try:
+            os.mkdir('COMPILE_REMOTE/XXXX')
+            os.mkdir('COMPILE_REMOTE/XXXX/LOGS')
+            os.mkdir('COMPILE_REMOTE/XXXX/LOGS/john.doe')
+        except:
+            pass
+        with open('COMPILE_REMOTE/XXXX/questions.py', 'w', encoding='ascii') as file:
+            file.write('''
+class Q(Question):
+    def question(self):
+        return 'XXXX-Q'
+    def expected_answer(self):
+        return 'XXXX-expected'
+    def grading_ladder(self):
+        return 'XXXX-grading'
+    def test(self):
+        pass''')
+        with open('COMPILE_REMOTE/XXXX/session.cf', 'w', encoding='ascii') as file:
+            file.write('''
+('state', 'Done')
+('feedback', 5)''')
+        with open('COMPILE_REMOTE/XXXX/LOGS/john.doe/journal.log', 'w', encoding='ascii') as file:
+            file.write('''T1775229020
+Ojohn.doe 192.168.0.1 3
+Q0
+T1775229051
+IXXX-answer
+''')
+        os.system('make COMPILE_REMOTE/XXXX/questions.js')
+        with self.admin_rights():
+            self.goto('grade/REMOTE=XXXX/john.doe')
+            retry(lambda: len(self.driver.find_elements(BY_SELECTOR, '.select-correction')) != 4)
+            self.check('.floating_bloc', {'innerHTML': ~Contains('XXXX-expected') & ~Contains('XXXX-Q')})
+            self.check('.executor .select-correction').click()
+            self.check('.executor .select-correction OPTION:nth-child(2)').click()
+            self.check('.floating_bloc', {'innerHTML': Contains('XXXX-expected')})
+            self.check('.executor .select-correction OPTION:nth-child(3)').click()
+            self.check('.floating_bloc', {'innerHTML': Contains('XXXX-Q')})
 
     def test_bad_scroll(self):
         """Search a case with a bad scroll VERY LONG TEST : 10 minutes"""

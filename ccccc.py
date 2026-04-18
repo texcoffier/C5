@@ -537,6 +537,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.editor_title.firstChild.appendChild(self.save_history)
 
         self.answer = document.createElement('DIV')
+        self.answer.className = 'floating_bloc'
         self.answer.style = """
         display: none;
         background: #EEE;
@@ -2706,7 +2707,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.answer.className = 'question'
             self.answer.style.whiteSpace = 'normal'
             self.answer.innerHTML = self.question.innerHTML.split("</h2>")[1]
-
+        self.answer.className += ' floating_bloc'
         self.answer.style.left = bloc.offsetLeft + 'px'
         self.answer.style.width = (bloc.offsetWidth - 30) + 'px'
         self.answer.style.top = (bloc.offsetTop + title_height) + 'px'
