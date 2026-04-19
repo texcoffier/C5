@@ -213,8 +213,12 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.time = 0
         self.parse_position = 0
         self.read_file_json()
-        self.load()
-        self.update()
+        try:
+            self.load()
+            self.update()
+        except: # pylint: disable=bare-except
+            print(f'\n{self.file_cf} not loadable\n')
+            raise
         self.configs[course] = self
         self.streams = [] # To send changes
         self.to_send = [] # Data to send
@@ -341,15 +345,32 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                     print('Line:', binary_line, flush=True)
                     traceback.print_exc()
 
+    def get_add_comment_function(self):
+        if not os.path.exists(self.file_cf):
+            return repr
+        comments = {}
+        with open(self.file_cf, 'r', encoding='utf-8') as file:
+            for line in file:
+                if ') # 20' in line:
+                    line, comment = line.split(') # 20')
+                    comments[line + ')'] = comment
+        def add_comment(line_tuple):
+            line = repr(line_tuple)
+            if line in comments:
+                line += ' # 20' + comments[line]
+            return line
+        return add_comment
+
     def record_config(self):
         """Record the default start configuration"""
+        add_comment = self.get_add_comment_function()
         with open(self.file_cf, 'w', encoding='utf-8') as file:
             for key, value in self.config.items():
                 if isinstance(value, dict):
                     for key2, value2 in value.items():
-                        file.write(repr((key, key2, value2)) + '\n')
+                        file.write(add_comment((key, key2, value2)) + '\n')
                 else:
-                    file.write(repr((key, value)) + '\n')
+                    file.write(add_comment((key, value)) + '\n')
         self.parse_position = os.path.getsize(self.file_cf)
         self.time = time.time()
         self.file_config_need_update = True
@@ -360,6 +381,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
               * Placement
            No history recorded.
         """
+        add_comment = self.get_add_comment_function()
         lines = []
         for key in tuple(what):
             if key in self.config:
@@ -370,7 +392,7 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
                     for message in self.config[key]:
                         lines.append(repr(('messages', '+', message)))
                 else:
-                    lines.append(repr((key, self.config[key])))
+                    lines.append(add_comment((key, self.config[key])))
                 what.remove(key)
         return '\n'.join(lines) + '\n'
 
