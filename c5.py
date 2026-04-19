@@ -296,13 +296,16 @@ With Firefox:
         make prepare
         if [ '' != '{C5_URL}' ]
         then
+            touch LOGS/http_server LOGS/compile_server
+            HTTP_SERVER=\$(wc -l <LOGS/http_server)
+            COMPILE_SERVER=\$(wc -l <LOGS/compile_server)
             {start_server("http_server")}
             {start_server("compile_server")}
             sleep 2
-            echo ============================== Last 4 lines of http_server logs:
-            tail -5 LOGS/http_server
-            echo ============================== Last 3 lines of compile_server logs:
-            tail -3 LOGS/compile_server
+            echo ============================== Last lines of http_server logs:
+            tail +\$HTTP_SERVER LOGS/http_server
+            echo ============================== Last lines of compile_server logs:
+            tail +\$COMPILE_SERVER LOGS/compile_server
         fi
         """,
     'stop': r"""#C5_LOGIN
