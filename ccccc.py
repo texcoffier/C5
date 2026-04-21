@@ -1680,6 +1680,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             SHARED_WORKER.post('P' + self.cursor_position)
         self.wait_indent = True # Indent will trigger compile
         self.unlock_worker()
+        self.user_compilation = self.user_execution = True
         self.worker.postMessage(['indent', self.source])
 
     def try_completion(self):
