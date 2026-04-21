@@ -1,5 +1,13 @@
 """Home page for students"""
 
+def home_key_down(event):
+    if event.key == 'F11':
+        alert("Vous passerez en plein écran en cliquant sur "
+            + "le bouton «Plein écran» une fois l'examen lancé")
+        event.preventDefault()
+
+window.onkeydown = home_key_down
+
 def home(sessions, infos):
     """Display student home page"""
     content = [
