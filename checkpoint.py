@@ -2513,10 +2513,12 @@ def reader(event): # pylint: disable=too-many-branches
     if event.target.readyState == XMLHttpRequest.DONE:
         reload_on_error()
         return
-    length = len(event.target.responseText)
     while True: # Because it is a critical section
+        length = len(event.target.responseText)
         chunk = event.target.responseText.substr(event.target.last_size or 0)
-        if length == len(event.target.responseText):
+        if chunk == '':
+            return
+        if length == len(event.target.responseText) and chunk[-1] == '\n':
             break
     event.target.last_size = length
     for expression in chunk.split('\n'):
