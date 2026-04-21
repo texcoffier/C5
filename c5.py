@@ -293,6 +293,8 @@ With Firefox:
         cd {C5_DIR} 2>/dev/null || true
         chmod 700 . # No access for students
         mkdir TICKETS LOGS PROC 2>/dev/null || true
+        for I in COMPILE_*/* # Force recompilation if new files are missing
+            do if [ ! -f \$I/questions+.js ] ; then rm \$I/questions.js ; fi ; done
         make prepare
         if [ '' != '{C5_URL}' ]
         then
