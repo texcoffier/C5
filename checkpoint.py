@@ -918,7 +918,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             # Draw grading (2 triangles: done and visible)
             if student.grade[1]:
                 ctx.fillStyle = "#0F0"
-                if student.grade[1] == WORKER.notation[student.version].nr_grades_and_competences():
+                if student.grade[1]+student.grade[3] == WORKER.notation[student.version].nr_grades_and_competences():
                     ctx.beginPath()
                     ctx.moveTo(left + width/2, top + height)
                     ctx.lineTo(left + width  , top + height)
