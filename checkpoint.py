@@ -976,7 +976,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
                 y_pos += line_height
                 grade = student.grade[0]
                 if student.grade[3]:
-                    grade += ' c:' + (student.grade[2]/student.grade[3]).toFixed(1)
+                    grade += ' c:' + student.grade[2].toFixed(1)
                 ctx.fillText(grade, x_pos, y_pos)
             if self.rotate:
                 ctx.restore()
@@ -1879,12 +1879,13 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         else:
             fullscreen += "le désactiver"
 
-        blur = grades = feedback = None
+        blur = grades = feedback = competences = None
         if student.blur:
             blur = ' ' + student.blur + ' pertes de focus (' + student.blur_time + ' secs)'
 
         if student.grade != '':
-            grades = ' Somme des ' + student.grade[1] + '/' + WORKER.notation[student.version].nr_grades_and_competences() + ' notes → ' + student.grade[0]
+            grades = ' Somme des ' + student.grade[1] + ' notes (sur ' + WORKER.notation[student.version].nr_grades + ') → ' + student.grade[0]
+            competences = ' Moyenne des ' + student.grade[3] + ' compétences (sur ' + WORKER.notation[student.version].nr_competences + ') → ' + student.grade[2]
             feedback = ' ' + [
                 "Rien d'affiché à l'étudiant",
                 "Code source commenté",
@@ -1920,7 +1921,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             temps, fullscreen, state, grade,
             student.mail or 'Adresse mail inconnue',
             "",
-            blur, grades, feedback,
+            blur, grades, competences, feedback,
             'Ajouter une remarque (indélébile)'
             ]
 

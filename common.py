@@ -80,7 +80,7 @@ else:
 
 class Grade:
     """Pattern:  text_before {label:key:-1,0,0.5,1,2}
-    If key does not starts with '#' it is a compétence.
+    If key does not starts with a digit it is a competence.
     """
     def __init__(self, text_before, label, key, grades):
         self.text_before = text_before
