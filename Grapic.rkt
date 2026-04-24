@@ -1,11 +1,19 @@
 #lang racket
 
-(provide turtles turn move draw disc)
+(provide turtles turn move draw disc text)
+
+(define convert (lambda (X)
+  (cond
+    ((string? X) X)
+    ((number? X) (number->string X))
+    ((list? X) (string-join (list "'" (convert (car X)) "'") ""))
+    (else (number->string X))
+)))
 
 (define grapic-parameters (lambda (L)
     (if (empty? (cdr L))
-      (list (number->string (car L)) ")\001")
-      (cons (number->string (car L))
+      (list (convert (car L)) ")\001")
+      (cons (convert (car L))
         (cons "," (grapic-parameters (cdr L)))
         ))))
 (define grapic (lambda (L) ; Function and args
@@ -53,4 +61,11 @@
 (define disc ; -> turtle
   (lambda (radius T) ; Rayon du disc. Turtle
     (grapic (list "circleFill" (car T) (cadr T) radius))
+    T
+    ))
+
+(define text ; -> turtle
+  (lambda (string T) ; Texte. Turtle
+    (grapic (list "print" (car T) (cadr T) (list string)))
+    T
     ))
