@@ -126,23 +126,20 @@ DIV[onclick]:hover { background: #EEE }
         grade = 0
         graders = []
         nbr_grades = 0
-        for grd in notation.grades:
-            value = grading[grd.key]
-            if not value or value[0] == '?':
+        for grd in notation.content:
+            if grd.key == '':
                 continue
-            grade += Number(value[0])
-            grader = value[1].split('\n')[1]
-            nbr_grades += 1
-            if grader not in graders:
-                graders.append(grader)
-        for grd in notation.competences:
             value = grading[grd.key]
-            if not value or value[0] == '?':
+            if not value:
+                continue
+            nbr_grades += 1
+            if value[0] == '?':
                 continue
             grader = value[1].split('\n')[1]
-            nbr_grades += 1
             if grader not in graders:
                 graders.append(grader)
+            if not grd.is_competence:
+                grade += Number(value[0])
         nr_grades[login] = nbr_grades
         if nbr_grades == 0 and student.status == 'done':
             ungraded.append(login)
