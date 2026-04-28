@@ -937,6 +937,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if old == replace:
             return
         self.record_pending_goto()
+        SHARED_WORKER.timestamp()
         rep = replace
         for what, position, value in compute_diffs(old, rep):
             if what:
@@ -2840,15 +2841,17 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         else:
             document.getSelection().collapse(self.editor_lines[line-1], column)
         if move_on_screen:
-            cursor = self.editor_lines[line-1]
-            last_good = None
-            for _ in range(10):
-                if cursor.previousElementSibling:
-                    cursor = cursor.previousElementSibling
-                    if cursor.scrollIntoView:
-                        last_good = cursor
-            if last_good:
-                cursor.scrollIntoView()
+            y_cursor = line * self.line_height - self.layered.scrollTop
+            if y_cursor < 0 or y_cursor > self.layered.offsetHeight:
+                cursor = self.editor_lines[line-1]
+                last_good = None
+                for _ in range(10):
+                    if cursor.previousElementSibling:
+                        cursor = cursor.previousElementSibling
+                        if cursor.scrollIntoView:
+                            last_good = cursor
+                if last_good:
+                    cursor.scrollIntoView()
 
         if self.get_cursor_position() != position:
             print('********************************** want', position,

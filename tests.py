@@ -633,6 +633,16 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.ticket_ttl').send_keys(Keys.ENTER)
             time.sleep(0.1)
             self.check('#more', {'innerText': Contains(f'to {ttl} seconds')})
+
+    def control_z_point(self, editor):
+        editor.send_keys('Z')
+        time.sleep(0.2)
+        t = int(time.time())
+        editor.send_keys(Keys.BACKSPACE)
+        time.sleep(0.1)
+        while int(time.time()) == t:
+            time.sleep(0.1)
+
     def test_editor(self):
         """Test editor line insert"""
         # Previous tests must run before this one.
@@ -640,13 +650,24 @@ class Tests: # pylint: disable=too-many-public-methods
         self.click(question(3)) # Returns to the first question
         self.goto_initial_version()
         self.check('.overlay', {'innerHTML': ~Contains('§')})
-        self.control('y')
-        self.control('y')
-        self.control('y')
-        self.check('.overlay', {'innerHTML': Contains('§')})
-        while '§' in self.driver.find_elements(BY_SELECTOR, '.overlay')[0].get_attribute('innerHTML'):
+        for _ in range(5):
+            self.control('y')
+            try:
+                self.check('.overlay', {'innerHTML': Contains('§')}, nbr=4)
+                break
+            except ValueError:
+                pass
+        else:
+            raise ValueError('Ctrl+Y not working')
+        for _ in range(2):
             self.control('z')
-            time.sleep(0.2)
+            try:
+                self.check('.overlay', {'innerHTML': ~Contains('§')}, nbr=3)
+                break
+            except ValueError:
+                pass
+        else:
+            raise ValueError('Ctrl+Z not working')
         #for line in sys.stdin:
         #    try:
         #        self.click(question(int(line.strip())))
@@ -655,28 +676,37 @@ class Tests: # pylint: disable=too-many-public-methods
         editor = self.move_cursor('.editor')
         editor.click()
         self.control(Keys.HOME)
-        editor.send_keys('A') # First line
+        self.control_z_point(editor)
+        editor.send_keys('A')
+        time.sleep(0.2)
         self.check('.overlay', {'innerHTML': Contains('A\n<span class="hljs-comment">// Lisez')})
         self.control('z')
         self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez')})
         editor.send_keys(Keys.ARROW_DOWN) # Second line
+        time.sleep(1.1)
         editor.send_keys('B')
-        self.check('.overlay', {'innerHTML': Contains('\nB<span class="hljs-comment">// Lisez')})
+        self.check('.overlay', {'innerHTML': Contains('\nB<span class="hljs-comment">// Lisez')
+            | Contains('B</span><span class="hljs-comment">// Lisez')})
         self.control('z')
+        editor.send_keys(Keys.ARROW_DOWN) # Second line
         editor.send_keys(Keys.ARROW_RIGHT) # Second line second char
+        self.control_z_point(editor)
         editor.send_keys('C')
-        self.check('.overlay', {'innerHTML': Contains('\n/C/ <span class="hljs-title class_">Lisez')})
+        self.check('.overlay', {'innerHTML': Contains('\n/C/ <span class="hljs-title class_">Lisez')
+            | Contains('>/C/</span> <span class="hljs-type">Lisez')})
         self.control('z')
         editor.send_keys(Keys.END) # Second line second char
+        self.control_z_point(editor)
         editor.send_keys('D')
         self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauche.D</span>\n\n')})
         self.control('z')
         self.control(Keys.END)
         editor.send_keys('/')
+        self.control_z_point(editor)
         editor.send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains(');\n\n/\n')})
+        self.check('.overlay', {'innerHTML': Contains(');\n/\n')})
         editor.send_keys('/')
-        self.check('.overlay', {'innerHTML': Contains(');\n\n/\n/\n')})
+        self.check('.overlay', {'innerHTML': Contains(');\n/\n/\n')})
     def test_many_inputs(self):
         """Test IP change in grader editor"""
         nbr = 5
