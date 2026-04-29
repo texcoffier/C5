@@ -973,26 +973,27 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 line_nr, char_nr, width = line_char
             self.add_highlight_errors(line_nr, char_nr, what, width)
 
-        i = 0
-        for i, line in enumerate(self.editor_lines):
-            rect = self.get_rect(line)
-            if not self.line_numbers.childNodes[i]:
-                self.line_numbers.appendChild(document.createElement('DIV'))
-                self.line_numbers.childNodes[i].textContent = i+1
-            self.line_numbers.childNodes[i].style.top = rect['top'] + 'px'
-            if not self.char_width:
-                nr_chars = len(line.textContent)
-                if nr_chars:
-                    self.char_width = rect['width'] / nr_chars
-            if rect['height'] < self.line_height * 1.8:
-                continue
-            marker = document.createElement('DIV')
-            marker.className = 'wrapped'
-            marker.style.left = rect['left'] + 'px'
-            marker.style.top = rect['top'] + self.line_height + 'px'
-            marker.style.width = rect['width'] + 'px'
-            marker.style.height = rect['height'] - self.line_height + 'px'
-            self.overlay.appendChild(marker)
+        if self.options['display_line_numbers']:
+            i = 0
+            for i, line in enumerate(self.editor_lines):
+                rect = self.get_rect(line)
+                if not self.line_numbers.childNodes[i]:
+                    self.line_numbers.appendChild(document.createElement('DIV'))
+                    self.line_numbers.childNodes[i].textContent = i+1
+                self.line_numbers.childNodes[i].style.top = rect['top'] + 'px'
+                if not self.char_width:
+                    nr_chars = len(line.textContent)
+                    if nr_chars:
+                        self.char_width = rect['width'] / nr_chars
+                if rect['height'] < self.line_height * 1.8:
+                    continue
+                marker = document.createElement('DIV')
+                marker.className = 'wrapped'
+                marker.style.left = rect['left'] + 'px'
+                marker.style.top = rect['top'] + self.line_height + 'px'
+                marker.style.width = rect['width'] + 'px'
+                marker.style.height = rect['height'] - self.line_height + 'px'
+                self.overlay.appendChild(marker)
 
         def set_hovered(bubble, value):
             line = bubble.bubble
