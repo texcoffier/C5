@@ -25,7 +25,7 @@ BY_XPATH = selenium.webdriver.common.by.By.XPATH
 
 urllib3.disable_warnings()
 
-def retry(test, required=True, nbr=30):
+def retry(test, required=True, nbr=30, fail_hook=None):
     """Retry if test failure"""
     for _ in range(nbr):
         try:
@@ -39,6 +39,8 @@ def retry(test, required=True, nbr=30):
             pass
         time.sleep(0.05)
     if required:
+        if fail_hook:
+            fail_hook()
         raise ValueError(error)
 class Test:
     """Contruct an expression to test a string"""
@@ -678,29 +680,36 @@ class Tests: # pylint: disable=too-many-public-methods
         self.control(Keys.HOME)
         self.control_z_point(editor)
         editor.send_keys('A')
-        time.sleep(0.2)
         self.check('.overlay', {'innerHTML': Contains('A\n<span class="hljs-comment">// Lisez')})
+        time.sleep(0.2)
         self.control('z')
-        self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez')})
+        self.check('.overlay', {'innerHTML': ~Contains('A')})
         editor.send_keys(Keys.ARROW_DOWN) # Second line
         time.sleep(1.1)
         editor.send_keys('B')
         self.check('.overlay', {'innerHTML': Contains('\nB<span class="hljs-comment">// Lisez')
             | Contains('B</span><span class="hljs-comment">// Lisez')})
+        time.sleep(0.1)
         self.control('z')
+        self.check('.overlay', {'innerHTML': ~Contains('B')})
         editor.send_keys(Keys.ARROW_DOWN) # Second line
         editor.send_keys(Keys.ARROW_RIGHT) # Second line second char
         self.control_z_point(editor)
         editor.send_keys('C')
         self.check('.overlay', {'innerHTML': Contains('\n/C/ <span class="hljs-title class_">Lisez')
             | Contains('>/C/</span> <span class="hljs-type">Lisez')})
+        time.sleep(0.1)
         self.control('z')
+        self.check('.overlay', {'innerHTML': ~Contains('C')})
         editor.send_keys(Keys.END) # Second line second char
         self.control_z_point(editor)
         editor.send_keys('D')
         self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauche.D</span>\n\n')})
+        time.sleep(0.1)
         self.control('z')
+        self.check('.overlay', {'innerHTML': ~Contains('D')})
         self.control(Keys.END)
+        time.sleep(0.1)
         editor.send_keys('/')
         self.control_z_point(editor)
         editor.send_keys(Keys.ENTER)
@@ -1765,7 +1774,8 @@ class Q1(Question):
             self.check('BODY', {'innerHTML': Contains('id="timetravel')})
 
             retry(lambda:
-                sorted(self.driver.execute_script("return STUDENT_DICT"))[:-1] != ['anonyme_17751431971', 'anonyme_17751432384', 'anonyme_17751432396', 'anonyme_17751432437', 'anonyme_177514324510', 'anonyme_17751432459'])
+                sorted(self.driver.execute_script("return STUDENT_DICT"))[:-1] != ['anonyme_17751431971', 'anonyme_17751432384', 'anonyme_17751432396', 'anonyme_17751432437', 'anonyme_177514324510', 'anonyme_17751432459'],
+                fail_hook=lambda: sorted(self.driver.execute_script("return STUDENT_DICT"))[:-1])
 
             self.goto('adm/reset/REMOTE=xxx/active_teacher_room state start')
             self.check('BODY', {
@@ -1816,7 +1826,7 @@ IXXX-answer
         os.system('make COMPILE_REMOTE/XXXX/questions.js')
         with self.admin_rights():
             self.goto('grade/REMOTE=XXXX/john.doe')
-            retry(lambda: len(self.driver.find_elements(BY_SELECTOR, '.select-correction')) != 4)
+            retry(lambda: len(self.driver.find_elements(BY_SELECTOR, '.select-correction')) != 6)
             self.check('.floating_bloc', {'innerHTML': ~Contains('XXXX-expected') & ~Contains('XXXX-Q')})
             self.check('.executor .select-correction').click()
             self.check('.executor .select-correction OPTION:nth-child(2)').click()
