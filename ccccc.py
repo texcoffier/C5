@@ -177,6 +177,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     current_selection = ''
     session_information = ''
     grade_dict = None
+    compositing = False
 
     def __init__(self):
         trace("CCCCC create")
@@ -670,7 +671,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
     def scheduler(self): # pylint: disable=too-many-branches,too-many-statements
         """Send a new job if free and update the screen"""
-        if not self.allow_edit:
+        if not self.allow_edit or self.compositing:
             return
 
         remote_scroll = False
@@ -1822,6 +1823,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def onkeydown(self, event): # pylint: disable=too-many-branches
         """Key down"""
+        if self.compositing:
+            return
         if not self.allow_edit or event.key == 'F12' or event.key == 'F11' and not GRADING and self.options['checkpoint']:
             stop_event(event)
             return
@@ -2009,8 +2012,19 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
         self.overlay_hide()
+    def compositionstart(self, _event):
+        self.update_source()
+        self.update_cursor_position_now()
+        self.compositing = True
+        self.overlay_hide()
+    def compositionend(self, _event):
+        self.compositing = False
+    def oninputcompose(self, event):
+        """Insert composed characters"""
     def onkeyup(self, event):
         """Key up"""
+        if self.compositing:
+            return
         if not self.allow_edit:
             stop_event(event)
             return
@@ -2901,6 +2915,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         window.onkeydown = bind(self.onkeydown, self)
         window.onkeyup = bind(self.onkeyup, self)
         window.onkeypress = bind(self.onkeypress, self)
+        window.addEventListener('input', bind(self.oninputcompose, self))
+        window.addEventListener('compositionstart', bind(self.compositionstart, self))
+        window.addEventListener('compositionend', bind(self.compositionend, self))
         window.onblur = bind(self.onblur, self)
         window.onfocus = bind(self.onfocus, self)
         def do_coloring():
