@@ -21,13 +21,17 @@ def onmessage(event):
             Compile.worker.options = {}
         elif event.data[0] == 'config':
             trace('Worker: Config')
+            Compile.worker.post('allow_edit', '0')
             init_needed = len(Compile.worker.options) == 0
             Compile.worker.set_config(event.data[1])
             if init_needed:
-                Compile.worker.start_question()
-                Compile.worker.init()
-                print("Worker: init done. current_question_max=",
-                      Compile.worker.current_question_max)
+                Compile.worker.post('allow_edit', '1')
+        elif event.data[0] == 'start':
+            trace('Worker: Start')
+            Compile.worker.start_question()
+            Compile.worker.init()
+            trace("Worker: init done. current_question_max=",
+                    Compile.worker.current_question_max)
 
     else:
         if Compile.worker.shared_buffer:

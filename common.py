@@ -270,9 +270,10 @@ class QuestionStats:
     def __init__(self, start):
         self.start = start # <index> of the question creation
         self.head = None # <index> of the last version
-        self.tags = [('', start+2)] # List[Tuple[<tag>, <index>]]
+        # The 'start' value is updated after
+        self.tags = [['', start]] # List[Tuple[<tag>, <index>]]
         self.good = False
-        self.source_old = self.source = self.last_tagged_source = self.first_source = ''
+        self.original = self.source_old = self.source = self.last_tagged_source = self.first_source = ''
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
 
@@ -288,7 +289,7 @@ class Bubble:
             return self.login+' '+str(self.pos_start)+' '+str(self.pos_end)+' '+str(self.line)+' '+str(self.column)+' '+str(self.width)+' '+str(self.height)+' '+self.comment
         return self.login+' '+self.pos_start+' '+self.pos_end+' '+self.line+' '+self.column+' '+self.width+' '+self.height+' '+self.comment
 class Journal:
-    def __init__(self, journal=''):
+    def __init__(self, lines=None):
         self.position = self.content = self.scroll_line = self.height = None
         self.remote_update = self.question = None
         self._tree = self._tree_question = self.last_event = None
@@ -317,19 +318,25 @@ class Journal:
         self.questions = {}
         self.cache = {}
         self.action_Q(-42, 0) # -1 does not work
-        if journal == '' or journal == '\n':
-            self.lines = []
-        else:
-            self.lines = journal.split('\n')
-            self.lines.pop()
         self.children = []
         self.bubbles = []
         self.timestamps = []
         self.blur_times = {}
         self.clear_pending_goto()
-        self.evaluate(self.lines, 0)
         self.offset_x = None
         self.offset_y = None
+        if lines:
+            self.init(lines)
+        else:
+            self.lines = []
+
+    def init(self, journal):
+        if journal == '' or journal == '\n':
+            self.lines = []
+        else:
+            self.lines = journal.split('\n')
+            self.lines.pop()
+        self.evaluate(self.lines, 0)
     def clear_pending_goto(self):
         """No currently pending goto in the past"""
         self.pending_goto = False
@@ -362,13 +369,14 @@ class Journal:
         """Tag"""
         self.questions[self.question].tags.append((tag, start + 1)) # overwrite Save position
         self.questions[self.question].last_tagged_source = self.content
-    def action_I(self, value, _start):
+    def action_I(self, value, start):
         """Text insert"""
         string = unprotect_crlf(value)
         if not self.content:
             question = self.questions[self.question]
             if not question.first_source:
                 question.first_source = string
+                question.tags[0][1] = start+1
         self.content = self.content[:self.position] + string + self.content[self.position:]
         size = len(string)
         for bubble in self.bubbles:
@@ -1570,7 +1578,7 @@ def journal_regtest():
     #        print("computed", JSON.stringify(parents))
     #        raise ValueError('bug')
 
-journal_regtest()
+# journal_regtest()
 
 def create_shared_worker(login='', hook=None, readonly=False):
     trace("CCCCC: Start shared worker and create uninitialized journal")
@@ -1589,17 +1597,16 @@ def create_shared_worker(login='', hook=None, readonly=False):
         """Message from the shared worker"""
         trace("SharedWorker", event.data)
         if event.data.startswith('J'):
-            journal.__init__(event.data[1:])
-            print('Init journal: ' + len(journal.lines) + ' lines')
+            journal.init(event.data[1:])
             journal.remote_update = True
             if hook:
                 hook(journal)
             try:
-                ccccc.init()
+                ccccc.terminate_init()
             except ReferenceError:
                 pass # ccccc does not exist (checkpoint spy)
         elif event.data.startswith('M'):
-            print("SHARED WORKER SAYS:", event.data[1:])
+            pass
         elif event.data.startswith('R'):
             reload_page("Il y a eu un problème.")
         elif event.data.startswith('A'):
@@ -1607,10 +1614,14 @@ def create_shared_worker(login='', hook=None, readonly=False):
         else:
             try:
                 ccccc.save_button.setAttribute('state', 'ok')
-            except: # pylint: disable=bare-except
+            except ReferenceError:
                 pass # ccccc does not exist (checkpoint spy)
             msg_id = event.data.split(' ')[0]
             message = event.data.replace(RegExp('[0-9]* '), '')
+            if message.startswith('O') and not ccccc.really_started:
+                trace("CCCCC: initial journal update received, ask first question")
+                ccccc.really_started = True
+                ccccc.worker.postMessage(['start']) # It will send first question
             if journal.lines[msg_id] == message:
                 trace("Local change")
                 return
@@ -1785,13 +1796,19 @@ def create_shared_worker(login='', hook=None, readonly=False):
     shared_worker.debug = shared_worker_debug
     shared_worker.port.onmessage = shared_worker_message
     shared_worker.port.start()
-    if REAL_COURSE != COURSE:
-        course = REAL_COURSE.split(':')[0]
-        login = 'FOR_EDITOR:' + login + ':' + REAL_COURSE.split(':')[1]
-    else:
-        course = COURSE
-    shared_worker.port.postMessage(['TICKET', window.location.search, course, login, BASE, readonly])
+    course = COURSE
+    try:
+        if REAL_COURSE != COURSE:
+            course = REAL_COURSE.split(':')[0]
+            login = 'FOR_EDITOR:' + login + ':' + REAL_COURSE.split(':')[1]
+    except ReferenceError:
+        pass
     window.onbeforeunload = shared_worker_close
+
+    def load_journal():
+        shared_worker.port.postMessage(['TICKET', window.location.search, course, login, BASE, readonly])
+    shared_worker.load_journal = load_journal
+
     return shared_worker, journal
 
 def compute_diffs_fast(old, rep):

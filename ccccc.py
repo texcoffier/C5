@@ -8,6 +8,15 @@ CCCCC          class manages the GUI
                It receives events to update the GUI
 Compile        worker base class to manage the question list, compilation, execution
 Question       base class for question definition
+
+The operation order:
+   * Connexion to the shared worker is connected (not yet initialized).
+   * CCCCC is created and initialized.
+   * The Compile worker is launched: send informations about the questionnary.
+   * Once Compile worker finished init (allow_edit=1): initialize shared worker.
+   * Once the journal is received : ccccc.terminate_init()
+   * Once the journal 'O' received : tell Compile Worker to choose the question.
+
 """
 try:
     @external
@@ -169,6 +178,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     session_information = ''
     grade_dict = None
 
+    def __init__(self):
         trace("CCCCC create")
         self.options = options = COURSE_CONFIG
         # Initialize coach with adapter for platform independence
@@ -233,7 +243,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.not_name_chars = '[^' + self.name_chars[1:]
         self.name = RegExp(self.name_chars)
 
-        print("GUI: wait worker")
         if options['state'] == 'Ready':
             self.add_comments = 0
         trace("CCCCC: wait worker")
@@ -281,7 +290,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.do_not_clear = {}
         self.seconds = int(millisecs() / 1000)
         EDITMODE[0] = EDITMODE[1] = '\n'.join(JOURNAL.lines)
-        print("GUI: init done")
         self.update_gui()
 
     def popup_message(self, txt, cancel='', ok='OK', callback=None, add_input=False, init=None, title=None): # pylint: disable=no-self-use
@@ -2327,7 +2335,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Add the ticket if no '?' and on C5"""
         for img in element.getElementsByTagName('IMG'):
             if img.src.startswith(location.origin) and '?' not in img.src:
-                print(img.src)
                 if '/media/' not in img.src:
                     img.src = img.src.replace(RegExp('(/[^/]*)$'), '/media/' + COURSE + '$1') + '?ticket=' + TICKET
                 else:
@@ -2346,7 +2353,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 else:
                     self.options[key] = value[key]
         elif what == 'current_question':
-            self.terminate_init()
             if JOURNAL.pending_goto:
                 JOURNAL.pop()
                 JOURNAL.pending_goto_history = []
@@ -2669,6 +2675,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 + "</ul>")
         elif what == 'allow_edit':
             self.allow_edit = int(value)
+            if self.allow_edit:
+                if SHARED_WORKER.load_journal:
+                    SHARED_WORKER.load_journal()
+                    SHARED_WORKER.load_journal = None
+                    self.allow_edit = 0 # Wait journal
         elif what == 'recompile':
             self.compilation_run()
 
