@@ -300,7 +300,5 @@ def positions_regtest():
     ):
         print(p.blocs)
         alert('BUG Position')
-    else:
-        print('Positions regtest fine')
 
 positions_regtest()

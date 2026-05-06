@@ -169,7 +169,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
     session_information = ''
     grade_dict = None
 
-    def init(self):
+        trace("CCCCC create")
         self.options = options = COURSE_CONFIG
         # Initialize coach with adapter for platform independence
         self.coach = create_coach(self.options, self)
@@ -199,7 +199,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         options['ADMIN'] = ADMIN                           # True if administrator
         options['REAL_COURSE'] = REAL_COURSE
 
-        print("GUI: start")
+        trace("CCCCC: GUI")
         window.onerror = bind(self.onJSerror, self)
         self.start_time = millisecs()
         self.course = COURSE
@@ -236,6 +236,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         print("GUI: wait worker")
         if options['state'] == 'Ready':
             self.add_comments = 0
+        trace("CCCCC: wait worker")
 
     def coach_analyse(self, event, previous_position):
         """Analyse event for coaching (called from onmouseup and onkeydown)"""
@@ -273,6 +274,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Only terminate init when the worker started"""
         if self.init_done:
             return
+        trace("CCCCC: terminate_init")
         self.init_done = True
         self.create_html()
         self.inputs = {} # Indexed by the question number
@@ -749,7 +751,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return # Program is running
         if (self.options['automatic_compilation'] and self.source != self.old_source
             or self.compile_now):
-            print('compile')
+            trace('CCCCC: compile')
             self.compile_now = False
             self.old_source = self.source # Do not recompile the same thing
             self.clear_highlight_errors()
@@ -2334,7 +2336,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
-        # print(event.data)
+        trace('Worker Message', event.data)
         value = event.data[1]
         if what == 'options':
             for key in value:

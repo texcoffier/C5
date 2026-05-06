@@ -17,9 +17,10 @@ def onmessage(event):
         elif event.data[0] == 'indent':
             Compile.worker.run_indent(event.data[1])
         elif event.data[0] == 'reset':
-            print('Reset')
+            trace('Worker: Reset')
             Compile.worker.options = {}
         elif event.data[0] == 'config':
+            trace('Worker: Config')
             init_needed = len(Compile.worker.options) == 0
             Compile.worker.set_config(event.data[1])
             if init_needed:
@@ -53,7 +54,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     default_options = {} # Default options for the compiler can be defined here
 
     def __init__(self, questions):
-        print("Worker: start")
+        trace("Worker: start")
         Compile.worker = self
         self.questions = questions
         self.allow_tip = True
@@ -167,7 +168,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('run', 'No indenter defined')
     def start_question(self):
         """Start a new question"""
-        print("START QUESTION", self.current_question, '/', self.current_question_max)
+        trace("Worker: question", self.current_question + '/' + self.current_question_max)
         if self.current_question < 0:
             return
         self.post('current_question', self.current_question)
@@ -210,7 +211,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def question_yet_solved(self, question):
         """Return True if the current question has been correctly answered"""
-        # print(question, self.options['ANSWERS'])
+        # trace(question, self.options['ANSWERS'])
         if not self.options['ANSWERS'][question]:
             return False
         return self.options['ANSWERS'][question][1]

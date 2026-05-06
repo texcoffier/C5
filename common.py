@@ -504,6 +504,7 @@ class Journal:
 
     def append(self, line):
         """Add a line in the journal"""
+        trace('Journal append', line)
         self.lines.append(line)
         self.evaluate([line], len(self.lines)-1)
         self._tree = None
@@ -1572,9 +1573,8 @@ def journal_regtest():
 journal_regtest()
 
 def create_shared_worker(login='', hook=None, readonly=False):
-    print("Start shared worker for communication")
+    trace("CCCCC: Start shared worker and create uninitialized journal")
     journal = Journal()
-    print(millisecs())
     shared_worker = eval('new SharedWorker("JS/live_link.js' + window.location.search + '")')
     def reload_page(message):
         def reload_page():
@@ -1587,6 +1587,7 @@ def create_shared_worker(login='', hook=None, readonly=False):
             reload_page()
     def shared_worker_message(event):
         """Message from the shared worker"""
+        trace("SharedWorker", event.data)
         if event.data.startswith('J'):
             journal.__init__(event.data[1:])
             print('Init journal: ' + len(journal.lines) + ' lines')
@@ -1611,7 +1612,7 @@ def create_shared_worker(login='', hook=None, readonly=False):
             msg_id = event.data.split(' ')[0]
             message = event.data.replace(RegExp('[0-9]* '), '')
             if journal.lines[msg_id] == message:
-                print("Local change")
+                trace("Local change")
                 return
             try:
                 if journal.pending_goto:
@@ -1644,11 +1645,11 @@ def create_shared_worker(login='', hook=None, readonly=False):
     def shared_worker_post(message):
         """Send a message to the journal"""
         if SESSION_LOGIN != LOGIN and not GRADING:
-            print('Not recording ' + message)
+            trace('CCCCC: Not recording ' + message)
             journal.append(message)
             return
         if GRADING and not (ccccc.add_comments and message[0] in 'GbTt') or ccccc.options['feedback'] or VERSION != '':
-            print('Not recording ' + message)
+            trace('CCCCC: Not recording ' + message)
             if message[0] not in 'LH':
                 journal.append(message)
             return # To keep journals in sync
@@ -1659,7 +1660,7 @@ def create_shared_worker(login='', hook=None, readonly=False):
             return
         if message[0] not in 'IDPTLHgG':
             shared_worker_timestamp()
-        print('Post ' + message)
+        trace('CCCCC: Post ' + message)
         shared_worker.port.postMessage(len(journal.lines) + ' ' + message)
         journal.append(message)
     shared_worker.post = shared_worker_post
@@ -2146,3 +2147,22 @@ def login_links(login, onmap=True):
             + '<a target="_blank" href="grade/' + COURSE + '/' + login + '?ticket=' + TICKET
             + '">grade</a>')
 
+try:
+    if 'debug' in location.hash:
+        def trace(*args):
+            def stringify(obj):
+                res = JSON.stringify(obj)
+                if res[0] == '"':
+                    res = res[1:-1]
+                    if len(res) > 100:
+                        res = res[:100] + '🛑'
+                else:
+                    res = obj
+                return res
+            print('🟢', *[stringify(i) for i in args])
+    else:
+        def trace(*_args):
+            pass
+except NameError:
+    def trace(*_args):
+        pass
