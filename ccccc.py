@@ -111,6 +111,120 @@ def stop_event(event):
     event.stopPropagation()
     event.stopImmediatePropagation()
 
+def erase_text(source, left, length, can_put):
+    """Remove the selected text and replace it by spaces.
+    The text at the right is moved left but stays between unwritables chars.
+    See regression tests for more examples.
+    Returns :
+        * new_source
+        * last position
+
+    If the source contains:
+
+       |    ABCDEFGHIJ|KLMN|OPQRSTUVWXYZabcdefgh|ijklmnop
+            ^              ^            ^       ^
+            left           cell_start   right   cell_end
+
+    After ABCDEFGHIJKLMNOPQRSTUVWXYZ deletion:
+
+       |              |    |abcdefgh            |ijklmnop
+            ^               ^
+            first           right
+    """
+    if length == 0:
+        return source, left, left
+    right = left + length
+    new_content = source[:left]
+    cell_start = left - 1
+    # Put spaces everywhere. Update cell_start
+    for i, old_char in enumerate(source[left:right]):
+        if can_put(left + i):
+            new_content += ' '
+        else:
+            cell_start = left + i
+            new_content += old_char
+    # Move the end cell to the start
+    cell_end = cell_start + 1
+    while can_put(cell_end):
+        cell_end += 1
+    new_content = new_content[:cell_start+1] + source[right:cell_end]
+    for _ in range(right - cell_start - 1):
+        new_content += ' '
+    new_content += source[cell_end:]
+    return new_content, cell_start + 1
+
+def insert_text(source, pos, text, can_put):
+    trace('CCCCC insert_text', pos, text)
+    new_content = source[:pos]
+    start_cell = pos - 1
+    for i, char in enumerate(text):
+        old_char = source[pos + i]
+        if can_put(pos + i, char):
+            new_content += char
+        else:
+            if old_char:
+                start_cell = pos + i
+                new_content += old_char
+            else:
+                return new_content
+    i_read = start_cell + 1
+    i_write = pos + len(text)
+    while can_put(i_read) and can_put(i_write):
+        new_content += source[i_read]
+        i_read += 1
+        i_write += 1
+    new_content += source[i_write:]
+    return new_content
+
+def regtests_text():
+    trace('Regtests text')
+    def can_put(pos, char='0'):
+        return source_in[pos] and source_in[pos] != '|' and char != '|'
+    for source_in, left, length, source_out, last in [
+        ('|abc', 1, 1, '|bc ', 1),
+        ('|abc|', 1, 1, '|bc |', 1),
+        ('|abc|', 2, 1, '|ac |', 2),
+        ('|abc|', 3, 1, '|ab |', 3),
+        ('|abc|def|ghi|', 3, 2, '|ab |def|ghi|', 5),
+        ('|abc|def|ghi|', 3, 3, '|ab |ef |ghi|', 5),
+        ('|abc|def|ghi|', 3, 4, '|ab |f  |ghi|', 5),
+        ('|abc|def|ghi|', 3, 5, '|ab |   |ghi|', 5),
+        ('|abc|def|ghi|', 3, 6, '|ab |   |ghi|', 9),
+        ('|abc|def|ghi|', 3, 7, '|ab |   |hi |', 9),
+    ]:
+        s, l = erase_text(source_in, left, length, can_put)
+        if s != source_out or l != last:
+            trace('Source', source_in)
+            trace('Left', left)
+            trace('Length', length)
+            trace('Source expected', source_out)
+            trace('Source computed', s)
+            trace('Last expected', last)
+            trace('Last computed', l)
+            alert('bug')
+    for source_in, pos, text, source_out in [
+        ('|abc|def|', 1, 'A'        , '|Aab|def|'),
+        ('|abc|def|', 1, 'AB'       , '|ABa|def|'),
+        ('|abc|def|', 1, 'ABC'      , '|ABC|def|'),
+        ('|abc|def|', 1, 'ABCD'     , '|ABC|def|'),
+        ('|abc|def|', 1, 'ABCDE'    , '|ABC|Ede|'),
+        ('|abc|def|', 1, 'ABCDEFG'  , '|ABC|EFG|'),
+        ('|abc|def|', 1, 'ABCDEFGHI', '|ABC|EFG|'),
+        ('|abc|def|', 8, 'A'        , '|abc|def|'),
+        ('|abc|def|', 8, 'B'        , '|abc|def|'),
+    ]:
+        s = insert_text(source_in, pos, text, can_put)
+        if s != source_out:
+            trace('Source', source_in)
+            trace('Pos', pos)
+            trace('Text', text)
+            trace('Source expected', source_out)
+            trace('Source computed', s)
+            alert('bug')
+    trace('OK')
+regtests_text()
+
+
 class CCCCC: # pylint: disable=too-many-public-methods
     """Create the GUI and launch worker"""
     course = worker = shared_buffer = line_height = char_width = active_completion = completion = None
@@ -1380,11 +1494,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         # Selection in source code
         if event.button == 1:
             if self.allow_edit and (self.options['allow_copy_paste'] or self.text_allowed(self.current_selection)):
+                self.update_source() # New because the scheduler may have not yet do its job.
                 self.update_cursor_position_now()
-                source = self.source[:self.cursor_position] + self.current_selection + self.source[self.cursor_position:]
-                self.set_editor_content(source, self.cursor_position + len(self.current_selection))
+                text = self.current_selection
+                self.insert_text_in_source(text)
+                self.set_editor_content(self.source, self.cursor_position, move_on_screen=False)
                 self.update_source()
-                self.update_cursor_position_now()
             self.disable_on_paste = millisecs()
             stop_event(event)
             return
@@ -1424,14 +1539,38 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
             return
         self.copied = text
+
+    def insert_text_in_source(self, text):
+        if self.journal_question.form:
+            self.source = insert_text(self.source, self.cursor_position, text, bind(self.can_put, self))
+        else:
+            self.source = self.source[:self.cursor_position] + text + self.source[self.cursor_position:]
+        self.cursor_position += len(text)
+
+    def erase_selection(self, nbr_to_delete_left):
+        self.source, position = erase_text(
+            self.source, self.cursor_position - nbr_to_delete_left, nbr_to_delete_left, bind(self.can_put, self))
+        return position
+
     def oncut(self, event):
         """Cut"""
+        trace('CCCCC: cut')
         if event.target.tagName == 'TEXTAREA':
             return # Grading comment
         if not self.allow_edit:
             stop_event(event)
             return
         if self.add_comments:
+            stop_event(event)
+            return
+        if self.journal_question.form:
+            self.update_source() # New because the scheduler may have not yet do its job.
+            self.update_cursor_position_now()
+            nbr_to_delete_left = len(self.get_current_selection())
+            self.erase_selection(nbr_to_delete_left)
+            self.set_editor_content(self.source, self.cursor_position - nbr_to_delete_left,
+                move_on_screen=False)
+            self.update_source()
             stop_event(event)
             return
         self.oncopy(event, 'Cut')
@@ -1441,6 +1580,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Insert the pasted text"""
         self.overlay_hide()
         if event.type == 'drop':
+            if self.journal_question.form:
+                self.popup_message("""Le glisser/déposer est interdit""")
+                stop_event(event)
+                return
             clean = event.dataTransfer.getData('text/html').replace(
                 RegExp('</?(span|div|br)', 'g'), '')
             if '<' in clean:
@@ -1453,7 +1596,16 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             #     document.execCommand('insertText', False, text)
             # setTimeout(xxx, 500)
         else:
-            document.execCommand('insertText', False, replace_all(text, '\r', ''))
+            text = replace_all(text, '\r', '')
+            if self.journal_question.form:
+                self.update_source() # New because the scheduler may have not yet do its job.
+                self.update_cursor_position_now()
+                self.insert_text_in_source(text)
+                self.set_editor_content(self.source, self.cursor_position, move_on_screen=False)
+                self.update_source()
+                stop_event(event)
+                return
+            document.execCommand('insertText', False, text)
             stop_event(event)
         self.clear_highlight_errors()
         self.do_coloring = self.do_update_cursor_position = "insert_text"
@@ -1821,8 +1973,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.search_input.select()
         update_search()
 
+    def can_put(self, pos, char='0'):
+        return self.journal_question.can_put(pos, char)
+
     def onkeydown(self, event): # pylint: disable=too-many-branches
         """Key down"""
+        trace('CCCCC onkeydown', self.allow_edit, self.compositing, event)
         if self.compositing:
             return
         if not self.allow_edit or event.key == 'F12' or event.key == 'F11' and not GRADING and self.options['checkpoint']:
@@ -1894,7 +2050,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
             return
 
-        if event.key == 'Tab':
+        if event.key == 'Tab' and not self.journal_question.form:
             if event.shiftKey:
                 self.update_source() # New because the scheduler may have not yet do its job.
                 self.update_cursor_position_now()
@@ -1956,32 +2112,54 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         elif event.key == 'Enter' and event.target is self.editor:
             self.update_source() # New because the scheduler may have not yet do its job.
             self.update_cursor_position_now()
-            to_insert = '\n'
-            if not event.shiftKey:
-                # Automatic indent
-                i = self.cursor_position
-                while i > 0 and self.source[i-1] != '\n':
-                    i -= 1
-                j = i
-                while j < self.cursor_position and self.source[j] in '\t ':
-                    j += 1
-                if j != i:
-                    to_insert += self.source[i:j]
-            to_delete = len(self.get_current_selection())
-            source = self.source[:self.cursor_position-to_delete] + to_insert + self.source[self.cursor_position:]
-            self.set_editor_content(source, self.cursor_position + len(to_insert) - to_delete, move_on_screen=False)
-            self.update_source()
-            line, _column = self.get_line_column(self.cursor_position)
-            if self.layered.offsetHeight + self.layered.scrollTop - line * self.line_height < 50:
-                self.layered.scrollBy(0, 50)
-            self.update_cursor_position_now()
-            stop_event(event)
-            if self.options['compiler'] == 'coqc': # Automatic compilation on Enter
-                i = self.cursor_position - 1
-                while self.source[i] in (' ', '\n'):
-                    i -= 1
-                if self.source[i] == '.':
-                    self.compile_now = True
+            if self.journal_question.form:
+                pos = self.cursor_position
+                _line, column = self.get_line_column(pos)
+                while self.source[pos] != '\n':
+                    pos += 1
+                    if not self.source[pos]:
+                        stop_event(event)
+                        return
+                pos += 1
+                cell_start = pos
+                for _ in range(column):
+                    if not self.source[pos]:
+                        stop_event(event)
+                        self.set_cursor_position(pos)
+                        return
+                    if not self.can_put(pos):
+                        cell_start = pos
+                    pos += 1
+                self.set_cursor_position(cell_start + 1)
+                stop_event(event)
+                return
+            else:
+                to_insert = '\n'
+                if not event.shiftKey:
+                    # Automatic indent
+                    i = self.cursor_position
+                    while i > 0 and self.source[i-1] != '\n':
+                        i -= 1
+                    j = i
+                    while j < self.cursor_position and self.source[j] in '\t ':
+                        j += 1
+                    if j != i:
+                        to_insert += self.source[i:j]
+                to_delete = len(self.get_current_selection())
+                source = self.source[:self.cursor_position-to_delete] + to_insert + self.source[self.cursor_position:]
+                self.set_editor_content(source, self.cursor_position + len(to_insert) - to_delete, move_on_screen=False)
+                self.update_source()
+                line, _column = self.get_line_column(self.cursor_position)
+                if self.layered.offsetHeight + self.layered.scrollTop - line * self.line_height < 50:
+                    self.layered.scrollBy(0, 50)
+                self.update_cursor_position_now()
+                stop_event(event)
+                if self.options['compiler'] == 'coqc': # Automatic compilation on Enter
+                    i = self.cursor_position - 1
+                    while self.source[i] in (' ', '\n'):
+                        i -= 1
+                    if self.source[i] == '.':
+                        self.compile_now = True
             return
         elif not self.options['allow_copy_paste'] and (
                 event.key == 'OS'
@@ -1991,26 +2169,83 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             # Disables these keys to not lost focus
             stop_event(event)
             return
-        elif event.key == 'Home' and not event.ctrlKey and not event.shiftKey:
-            i = self.cursor_position - 1
-            while i >= 0 and self.source[i] != '\n':
-                i -= 1
-            if i == self.cursor_position - 1 or self.source[i:self.cursor_position].strip() != '':
-                # Yet at the line beginning
-                # or some non-spaces on the left.
-                # Move to the text start (if there is one)
-                i += 1
-                while self.source[i] in ' \t':
-                    i += 1
-                if self.source[i] != '\n' and self.source[i]:
-                    self.set_cursor_position(i)
+        elif (event.key == 'End' or event.key == 'Tab' and not event.shiftKey) and not event.ctrlKey and self.journal_question.form:
+            pos = self.cursor_position
+            while self.source[pos] and self.can_put(pos):
+                pos += 1
+            while self.source[pos] and not self.can_put(pos):
+                pos += 1
+            self.set_cursor_position(pos)
+            stop_event(event)
+            return
+        elif (event.key == 'Home' or event.key == 'Tab' and event.shiftKey) and not event.ctrlKey:
+            if self.journal_question.form:
+                pos = self.cursor_position
+                if pos != 0:
+                    pos -= 1
+                    while pos > 0 and not self.can_put(pos):
+                        pos -= 1
+                    while pos > 0 and self.can_put(pos):
+                        pos -= 1
+                    if pos != 0:
+                        pos += 1
+                    self.set_cursor_position(pos)
             else:
-                # Only spaces left: move to the line start
-                self.set_cursor_position(i+1)
+                i = self.cursor_position - 1
+                while i >= 0 and self.source[i] != '\n':
+                    i -= 1
+                if i == self.cursor_position - 1 or self.source[i:self.cursor_position].strip() != '':
+                    # Yet at the line beginning
+                    # or some non-spaces on the left.
+                    # Move to the text start (if there is one)
+                    i += 1
+                    while self.source[i] in ' \t':
+                        i += 1
+                    if self.source[i] != '\n' and self.source[i]:
+                        self.set_cursor_position(i)
+                else:
+                    # Only spaces left: move to the line start
+                    self.set_cursor_position(i+1)
             stop_event(event)
             return
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
             return # Do not hide overlay: its only a cursor move
+        elif self.journal_question.form and not event.ctrlKey:
+            trace('CCCCC form')
+            self.update_source() # New because the scheduler may have not yet do its job.
+            self.update_cursor_position_now()
+            nbr_to_delete_left = len(self.get_current_selection())
+            pos = self.cursor_position
+            if event.key == 'Backspace':
+                if nbr_to_delete_left == 0:
+                    self.erase_selection(1)
+                    new_pos = pos - 1
+                else:
+                    self.erase_selection(nbr_to_delete_left)
+                    new_pos = pos - nbr_to_delete_left
+            elif event.key == 'Delete':
+                if nbr_to_delete_left == 0:
+                    self.cursor_position += 1
+                    self.erase_selection(1)
+                    new_pos = pos
+                else:
+                    self.erase_selection(nbr_to_delete_left)
+                    new_pos = pos - nbr_to_delete_left
+            else:
+                if not self.can_put(pos, event.key):
+                    self.cursor_position += 1
+                    self.set_cursor_position(self.cursor_position)
+                    stop_event(event)
+                    return
+                if nbr_to_delete_left:
+                    self.erase_selection(nbr_to_delete_left)
+                self.source = insert_text(self.source, pos - nbr_to_delete_left, event.key, bind(self.can_put, self))
+                new_pos = pos - nbr_to_delete_left + 1
+
+            self.set_editor_content(self.source, new_pos, move_on_screen=False)
+            self.update_source()
+            stop_event(event)
+
         self.overlay_hide()
     def compositionstart(self, _event):
         self.update_source()
@@ -2021,6 +2256,14 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.compositing = False
     def oninputcompose(self, event):
         """Insert composed characters"""
+        if self.compositing:
+            return
+        if self.journal_question.form:
+            self.source = insert_text(self.source, self.cursor_position, event.data,
+                bind(self.can_put, self))
+            self.set_editor_content(self.source, self.cursor_position+1, move_on_screen=False)
+            self.update_source()
+            stop_event(event)
     def onkeyup(self, event):
         """Key up"""
         if self.compositing:
@@ -2620,8 +2863,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.user_compilation = True
                 self.compilation_run()
         elif what == 'default':
-            print("DEFAULT", value)
-            self.question_original[value[0]] = value[1]
+            self.question_original[value[0]] = JOURNAL.check_form(value[0], value[1])
         elif what == 'expected_answer':
             self.expected_answer[value[0]] = value[1]
         elif what == 'grading_ladder':

@@ -274,6 +274,12 @@ class QuestionStats:
         self.tags = [['', start]] # List[Tuple[<tag>, <index>]]
         self.good = False
         self.original = self.source_old = self.source = self.last_tagged_source = self.first_source = ''
+        self.form = False
+    def can_put(self, position, char='0'):
+        return (
+            self.original[position] == '✽'
+            or self.original[position] == '♯' and char in '0123456789.'
+        )
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
 
@@ -295,6 +301,7 @@ class Journal:
         self._tree = self._tree_question = self.last_event = None
         self.timestamp = 0
         self.fullscreen_disabled = 0
+        self.forms = {}
         self.actions = {
             'G': bind(self.action_G, self),
             'T': bind(self.action_T, self),
@@ -337,6 +344,15 @@ class Journal:
             self.lines = journal.split('\n')
             self.lines.pop()
         self.evaluate(self.lines, 0)
+
+    def check_form(self, question, default_answer):
+        """Store the form for future usage and return cleaned default_answer"""
+        if default_answer and '♯' in default_answer or '✽' in default_answer:
+            trace("Journal: checkform", question, len(default_answer))
+            self.forms[question] = default_answer
+            default_answer = replace_all(replace_all(default_answer, '♯', ' '), '✽', ' ')
+        return default_answer
+
     def clear_pending_goto(self):
         """No currently pending goto in the past"""
         self.pending_goto = False
@@ -354,6 +370,9 @@ class Journal:
         self.question = int(value)
         if self.question not in self.questions:
             self.questions[self.question] = QuestionStats(start)
+            if self.question in self.forms:
+                self.questions[self.question].form = True
+                self.questions[self.question].original = self.forms[self.question]
     def action_P(self, value, _start):
         """Cursor position, 0 is before first char"""
         self.position = int(value)

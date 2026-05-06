@@ -2219,6 +2219,7 @@ def create_page(building_name):
             background: #FFCE;
             text-align: left;
             max-width: 35em;
+            font-family: monospace, monospace;
         }
         #live_spy > DIV > DIV {
             margin-bottom: 100em;
@@ -2293,6 +2294,7 @@ def create_page(building_name):
             font-size: 12px;
             line-height: 12px;
             border-bottom: 1px solid #000;
+            font-family: monospace, monospace;
         }
         </style>
         <div id="top"
@@ -2615,6 +2617,7 @@ def load_source(login):
     print("LOAD", login)
     ROOM.similarity_todo_pending += 1
     shared_worker, _journal = create_shared_worker(login, record_source, readonly=True)
+    shared_worker.load_journal()
 
 def compute_similarities():
     student = ROOM.similarity_todo[-1]
@@ -2842,10 +2845,16 @@ def time_jump(event=None, secs=None):
             + nice_date(secs, True).replace(' ', ' <b>')
             + '</b></span>')
     for div, _shared_worker, journal, student, letter in TIME_TRAVEL_STUDENTS:
+        i_selected = None
         for i, line in enumerate(journal.lines):
             if line.startswith('T') and line > timestamp:
-                journal.see_past(i)
-                break
+                if i_selected:
+                    i_selected = i
+                    break
+            if line.startswith('Q') and not i_selected:
+                i_selected = i
+        if i_selected:
+            journal.see_past(i_selected)
         display_student_screen(journal, div, student, letter)
 
 def create_timetravel(login):
@@ -2863,6 +2872,7 @@ def create_timetravel(login):
     letter = spy_letter(student)
     document.getElementById('tt_students').appendChild(div)
     div.shared_worker, journal = create_shared_worker(login, nothing, readonly=True)
+    div.shared_worker.load_journal()
     TIME_TRAVEL_STUDENTS.append([div, div.shared_worker, journal, student, letter])
     document.getElementById('timeline').style.display = 'block'
 
@@ -2899,6 +2909,7 @@ def create_realtime_spy(student):
             return
         display_student_screen(journal, feedback, student, letter)
     feedback.shared_worker, _journal = create_shared_worker(student.login, update_real_time, readonly=True)
+    feedback.shared_worker.load_journal()
 
 try:
     INFO = JSON.parse(decodeURI(location.hash[1:]))
