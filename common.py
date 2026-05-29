@@ -278,7 +278,7 @@ class QuestionStats:
     def can_put(self, position, char='0'):
         return (
             self.original[position] == '✽'
-            or self.original[position] == '♯' and char in '0123456789.'
+            or self.original[position] == '♯' and char in '0123456789. '
         )
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
