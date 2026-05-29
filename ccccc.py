@@ -2641,8 +2641,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             document.getElementById('editor_name').innerHTML = '<BLOCTITLE>' + self.options['editor_title'] + '</BLOCTITLE>'
 
         elif what in ('error', 'warning'):
-            self.highlight_errors[value[0] + ':' + value[1]] = what
-            self.add_highlight_errors(value[0], value[1], what)
+            if value[2]:
+                self.highlight_errors[value[0] + ':' + value[1] + ':' + value[2]] = what
+                self.add_highlight_errors(value[0], value[1], what, width=value[2])
+            else:
+                self.highlight_errors[value[0] + ':' + value[1]] = what
+                self.add_highlight_errors(value[0], value[1], what)
         elif what == 'state':
             self.state = value
             if self.state == "started":
