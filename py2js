@@ -47,6 +47,11 @@ case $1 in
 		FILES="compatibility.py xxx_local.py options.py compile.py question.py $PY"
 		JS=JS/$JS
 		;;
+    bare_*)
+		COMPILER=
+		FILES="$PY"
+		JS=JS/$JS
+		;;
 	*)
 		COMPILER=
 		FILES="compatibility.py xxx_local.py options.py $PY"

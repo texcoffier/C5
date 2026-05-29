@@ -43,7 +43,7 @@ prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js \
 		$$(echo COMPILE_*/*/*.py | sed 's/\.py/.js/g') \
 		$$(echo $(COMPILERS) | sed -e 's,^,JS/,' -e 's, , JS/,g' -e 's/\.py/\.js/g') \
 		JS/ccccc.js JS/live_link.js JS/adm_root.js JS/adm_course.js JS/adm_session.js \
-		JS/checkpoint.js JS/checkpoint_list.js JS/home.js JS/stats.js
+		JS/checkpoint.js JS/checkpoint_list.js JS/home.js JS/stats.js JS/bare_particles.js
 	@if [ ! -d SSL ] ; then ./c5.py SSL-SS ; fi
 	@for ORIG in sandbox/libsandbox.so Grapic.h ; \
 	do \

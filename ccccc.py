@@ -2258,7 +2258,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Insert composed characters"""
         if self.compositing:
             return
-        if self.journal_question.form:
+        if self.journal_question.form and event.data:
             self.source = insert_text(self.source, self.cursor_position, event.data,
                 bind(self.can_put, self))
             self.set_editor_content(self.source, self.cursor_position+1, move_on_screen=False)
