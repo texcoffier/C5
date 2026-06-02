@@ -6,6 +6,7 @@ import json
 import time
 import socket
 import html
+import getpass
 import options
 
 def init_globals(global_dict):
@@ -37,7 +38,7 @@ CONFIGURATIONS = (
     ('C5_HOST'         ,'Production host (for SSH)'            , local_ip()),
     ('C5_IP'           ,'For Socket IP binding'                , local_ip()),
     ('C5_ROOT'         ,'login allowed to sudo'                , 'root'),
-    ('C5_LOGIN'        ,'user C5 login'                        , os.getlogin()),
+    ('C5_LOGIN'        ,'user C5 login'                        , getpass.getuser()),
     ('C5_HTTP'         ,'Port number for HTTP'                 , 8000),
     ('C5_SOCK'         ,'Port number for WebSocket'            , 4200),
     ('C5_MAIL'         ,"To create Let's Encrypt certificate"  , lambda: 'root@' + C5_ROOT),
