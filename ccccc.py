@@ -2233,6 +2233,17 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     new_pos = pos - nbr_to_delete_left
             else:
                 if not self.can_put(pos, event.key):
+                    if pos > 0 and not self.can_put(pos) and self.can_put(pos-1):
+                        start_cell = pos - 1
+                        while start_cell > 0 and self.can_put(start_cell):
+                            start_cell -= 1
+                        self.source = (self.source[:start_cell+1]
+                                       + self.source[start_cell+2:pos]
+                                       + event.key + self.source[pos:])
+                        self.set_editor_content(self.source, new_pos, move_on_screen=False)
+                        self.update_source()
+                        stop_event(event)
+                        return
                     self.cursor_position += 1
                     self.set_cursor_position(self.cursor_position)
                     stop_event(event)
