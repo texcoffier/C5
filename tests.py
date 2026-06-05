@@ -1815,7 +1815,8 @@ class Q(Question):
         with open('COMPILE_REMOTE/XXXX/session.cf', 'w', encoding='ascii') as file:
             file.write('''
 ('state', 'Done')
-('feedback', 5)''')
+('feedback', 5)
+''')
         with open('COMPILE_REMOTE/XXXX/LOGS/john.doe/journal.log', 'w', encoding='ascii') as file:
             file.write('''T1775229020
 Ojohn.doe 192.168.0.1 3
