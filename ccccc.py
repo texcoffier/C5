@@ -238,7 +238,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
     source = None # The source code to compile
     old_source = None
     highlight_errors = {}
-    question_original = {}
     expected_answer = {}
     grading_ladder = {}
     copied = None # Copy with ^C ou ^X
@@ -795,9 +794,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 self.unlock_worker()
                 self.worker.postMessage(['goto', JOURNAL.question])
                 return
-            if not self.journal_question.created_now: # Not the first time
-                self.set_editor_content(JOURNAL.content)
-            self.journal_question.created_now = False
+            self.set_editor_content(JOURNAL.content)
             if JOURNAL.old_scroll_line != JOURNAL.scroll_line:
                 # Remote scroll
                 line = (self.line_numbers.childNodes[JOURNAL.scroll_line]
@@ -1363,8 +1360,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.line_numbers.childNodes[i].style.top = '-10em'
 
         if self.options['diff'] and self.journal_question:
-            sep = RegExp('[ \t]', 'g')
-            old = self.journal_question.first_source or self.question_original[self.current_question]
+            old = self.journal_question.get_current_default()
             if not REAL_GRADING and not self.options['diff_original']:
                 old = self.journal_question.last_tagged_source or old
             diffs = compute_diffs([i.strip() for i in old.split('\n')],
@@ -2350,11 +2346,9 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         choosen = event.target.selectedOptions[0].innerHTML
         JOURNAL.offset_x = None
         if choosen == 'Version mise à jour':
-            index = self.journal_question.start + 1
-            if JOURNAL.lines[index].startswith('I'):
-                index += 1
-            self.goto_line(index)
-            self.set_editor_content(self.question_original[self.current_question])
+            self.record_pending_goto()
+            SHARED_WORKER.post('d' + protect_crlf(self.journal_question.last_default_raw))
+            self.set_editor_content(JOURNAL.content)
         elif choosen == "Dernière version":
             if JOURNAL.pending_goto:
                 self.goto_line(len(JOURNAL.lines)-1)
@@ -2382,16 +2376,18 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             content.append('<option>' + 'Dernière version' + '</option>')
         for tag in self.journal_question.tags[::-1]:
             content.append('<option>' + (html(tag[0] or "Version initiale")) + '</option>')
-        original = self.question_original[self.current_question].strip() 
-        if original != '' and original != self.journal_question.first_source.strip():
+        self.save_history.style.background = 'initial'
+        if self.journal_question.last_default_raw != self.journal_question.current_default_raw:
             content.append('<option>Version mise à jour</option>')
-        if len(JOURNAL.lines) < 5 and JOURNAL.content.strip() == '' and original != '':
-            # In some rare case, the default source code is not
-            # displayed on screen.
-            # But 'question_original' contains it.
-            self.update_save_history_running = True
-            self.set_editor_content(self.question_original[self.current_question])
-            self.update_save_history_running = False
+            if self.journal_question.get_current_default().strip() == self.source.strip():
+                # Update content if it is the initial default content (no user change)
+                SHARED_WORKER.post('d' + protect_crlf(self.journal_question.last_default_raw))
+                self.set_editor_content(JOURNAL.content)
+            else:
+                if not self.alert_displayed:
+                    self.popup_message('Le texte initial du sujet a été modifié')
+                    self.alert_displayed = True
+            self.save_history.style.background = '#F00'
         self.save_history.innerHTML = ''.join(content)
 
     def save(self):
@@ -2634,7 +2630,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if self.journal_question.start + 1 == self.journal_question.head:
                 if not REAL_GRADING: # If not default answer: do set one
                     # Initialize with the default answer
-                    self.set_editor_content(self.question_original[value])
+                    self.set_editor_content(self.journal_question.get_current_default())
             else:
                 self.set_editor_content(JOURNAL.content)
             self.compilation_run()
@@ -2878,7 +2874,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.user_compilation = True
                 self.compilation_run()
         elif what == 'default':
-            self.question_original[value[0]] = JOURNAL.check_form(value[0], value[1])
+            JOURNAL.record_default(value[0], value[1])
         elif what == 'expected_answer':
             self.expected_answer[value[0]] = value[1]
         elif what == 'grading_ladder':

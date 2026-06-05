@@ -2599,9 +2599,8 @@ def load_source(login):
         record_source.done = True
         for q, question in journal.questions.Items():
             if q >= 0 and question.head >= 0:
-                print('LOADED', len(question.first_source or " "), len(question.source or " "))
                 initial = {}
-                for line in get_lines(question.first_source):
+                for line in get_lines(question.get_current_default()):
                     initial[line] = True
                 source = {}
                 SOURCES[login].append(source)

@@ -154,7 +154,8 @@ class Q3(Question): # pylint: disable=undefined-variable
             self.next_question()
 
     def default_answer(self):
-        return self.worker.source # The last question content
+        return ''
+        # return self.worker.source # The last question content
 
 
 class QEnd(Question): # pylint: disable=undefined-variable

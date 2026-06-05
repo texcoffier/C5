@@ -97,7 +97,7 @@ kill:
 	-pkill -f http_server.py
 	-pkill -f compile_server.py
 pre-commit:
-	@echo "Running regression tests before commiting (it takes 2 minutes)"
+	@echo "Running regression tests before commiting (it may takes 20 minutes)"
 	unset MAKEFLAGS MAKELEVEL ; \
 	./tests.py hidden nosleep 1 2>&1 | tee xxx.regtests | grep -a -e FIREFOX -e CHROME
 	@if grep 'TESTS FAILED' xxx.regtests ; then cat xxx.regtests ; exit 1 ; fi

@@ -265,23 +265,38 @@ def parse_grading(history, fast=False):
 #    't<tag>'        # Add a tag
 #    'g'             # Question passed (good)
 #    'b<description> # A bubble comment
+#    'd<defaultraw>' # The default text to use (question creation or use the new default)
 
 class QuestionStats:
-    def __init__(self, start):
-        self.start = start # <index> of the question creation
-        self.head = None # <index> of the last version
-        # The 'start' value is updated after
-        self.tags = [['', start]] # List[Tuple[<tag>, <index>]]
+    def __init__(self):
+        self.start = None               # <index> of the question creation
+        self.head = None                # <index> of the last version
+        self.tags = []                  # [['', None]]        # List[Tuple[<tag>, <index>]]
         self.good = False
-        self.original = self.source_old = self.source = self.last_tagged_source = self.first_source = ''
+        self.last_default_raw = '∅'     # Last default RAW
+        self.current_default_raw = '∅'  # Current default in use RAW
+        self.source_old = ''            # The previous source value (for pop())
+        self.source = ''                # The current source
+        self.last_tagged_source = ''    # The last saved source (for green diff)
         self.form = False
     def can_put(self, position, char='0'):
         return (
-            self.original[position] == '✽'
-            or self.original[position] == '♯' and char in '0123456789. '
+            self.current_default_raw[position] == '✽'
+            or self.current_default_raw[position] == '♯' and char in '0123456789. '
         )
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
+    def get_current_default(self):
+        if self.current_default_raw != '∅':
+            txt = self.current_default_raw # For old journals
+        else:
+            txt = self.last_default_raw
+        return replace_all(replace_all(txt, '♯', ' '), '✽', ' ')
+    def set_current_default_raw(self, value):
+        """The current default has changed"""
+        trace("Set current_default_raw", value)
+        self.current_default_raw = value
+        self.form = '✽' in value  or  '♯' in value
 
 class Bubble:
     last_comment_change = None # Line number of the last comment change
@@ -301,7 +316,6 @@ class Journal:
         self._tree = self._tree_question = self.last_event = None
         self.timestamp = 0
         self.fullscreen_disabled = 0
-        self.forms = {}
         self.actions = {
             'G': bind(self.action_G, self),
             'T': bind(self.action_T, self),
@@ -321,10 +335,10 @@ class Journal:
             'F': bind(self.action_F, self),
             'B': bind(self.action_B, self),
             'b': bind(self.action_b, self),
+            'd': bind(self.action_d, self),
         }
         self.questions = {}
         self.cache = {}
-        self.action_Q(-42, 0) # -1 does not work
         self.children = []
         self.bubbles = []
         self.timestamps = []
@@ -344,14 +358,20 @@ class Journal:
             self.lines = journal.split('\n')
             self.lines.pop()
         self.evaluate(self.lines, 0)
+        for q in self.questions:
+            question = self.questions[q]
+            if question.current_default_raw == '∅':
+                trace("Fix old journal without 'd' action", q)
+                question.set_current_default_raw(question.last_default_raw)
 
-    def check_form(self, question, default_answer):
-        """Store the form for future usage and return cleaned default_answer"""
-        if default_answer and '♯' in default_answer or '✽' in default_answer:
-            trace("Journal: checkform", question, len(default_answer))
-            self.forms[question] = default_answer
-            default_answer = replace_all(replace_all(default_answer, '♯', ' '), '✽', ' ')
-        return default_answer
+    def record_default(self, question, default_answer_raw):
+        """Create question and record default answer for the question"""
+        if self.question in self.questions:
+            raise ValueError('Yet created')
+        trace("Store default answer", question, default_answer_raw)
+        q = QuestionStats()
+        self.questions[question] = q
+        q.last_default_raw = default_answer_raw
 
     def clear_pending_goto(self):
         """No currently pending goto in the past"""
@@ -368,11 +388,9 @@ class Journal:
         self.position = 0
         self.scroll_line = 0
         self.question = int(value)
-        if self.question not in self.questions:
-            self.questions[self.question] = QuestionStats(start)
-            if self.question in self.forms:
-                self.questions[self.question].form = True
-                self.questions[self.question].original = self.forms[self.question]
+        if start is not None and self.question in self.questions:
+            self.questions[self.question].start = start
+            self.questions[self.question].tags.append(['', start+2])
     def action_P(self, value, _start):
         """Cursor position, 0 is before first char"""
         self.position = int(value)
@@ -391,11 +409,6 @@ class Journal:
     def action_I(self, value, start):
         """Text insert"""
         string = unprotect_crlf(value)
-        if not self.content:
-            question = self.questions[self.question]
-            if not question.first_source:
-                question.first_source = string
-                question.tags[0][1] = start+1
         self.content = self.content[:self.position] + string + self.content[self.position:]
         size = len(string)
         for bubble in self.bubbles:
@@ -440,7 +453,7 @@ class Journal:
         while True:
             line = self.lines[index]
             action = line[0]
-            if action in 'PIDLbH': # Position/Insert/Delete/Line/Bubble/Height
+            if action in 'PIDLbHd': # Position/Insert/Delete/Line/Bubble/Height/Default
                 lines.append(line)
                 index -= 1
             elif action in 'TOC#ScgtFB':
@@ -511,6 +524,14 @@ class Journal:
             bubble.login = ''
         else:
             raise ValueError('Bad journal')
+    def action_d(self, value, _start):
+        """Replace source content by the default value."""
+        string = unprotect_crlf(value)
+        question = self.questions[self.question]
+        question.set_current_default_raw(string)
+        self.content = question.get_current_default()
+        self.bubbles = []
+        self.position = 0
 
     def evaluate_fast(self, lines):
         """Evaluate all these lines in the current state"""
@@ -522,10 +543,15 @@ class Journal:
         for line in lines:
             self.actions[line[0]](line[1:], start)
             start += 1
-            question = self.questions[self.question]
-            question.head = start
-            question.source_old = question.source
-            question.source = self.content
+            if self.question is not None:
+                if self.question in self.questions:
+                    question = self.questions[self.question]
+                else:
+                    # Only server side (no known default texts)
+                    question = self.questions[self.question] = QuestionStats()
+                question.head = start
+                question.source_old = question.source
+                question.source = self.content
             self.children.append([start])
             self.timestamps.append(self.timestamp)
 
@@ -776,6 +802,8 @@ class Journal:
                 text = 'Perte de focus ou plein écran'
             elif line.startswith('F'):
                 text = 'Focus ou plein écran perdu : ' + self.blur_times[index] + ' secondes'
+            elif line.startswith('d'):
+                text = 'Initialisation avec la réponse par défaut'
             else:
                 continue
             lines.append(text)
@@ -839,7 +867,7 @@ class Journal:
             else:
                 nb_d = 0
             index_start = tree[0]
-            if char in ('I', 'D', 'P', 'L', 'H', 'b'):
+            if char in ('I', 'D', 'P', 'L', 'H', 'b', 'd'):
                 if char == 'b':
                     mergeable = ('P', 'L', 'H', 'b')
                 else:
@@ -1018,6 +1046,7 @@ class Journal:
             'H': draw_nothing, '#': draw_nothing, 'G': draw_nothing,
             'B': draw_B, 'F': draw_F,
             'b': draw_b, 'O': draw_O, 'S': draw_S, 'g': draw_g, '✍': draw_hand,
+            'd': draw_nothing
         }
         x = (self.offset_x or 0)
         feedback = None
@@ -1733,24 +1762,23 @@ def create_shared_worker(login='', hook=None, readonly=False):
         shared_worker.post('D' + length)
     shared_worker.delete_nr = shared_worker_delete
     def shared_worker_question(index):
-        """Change question.
-        Returns True if it is NOT the first time"""
-        question = journal.get_question(index)
+        """Change question."""
+        question = journal.questions[index]
+        trace("Question change", index, question.start)
         journal.offset_x = None
         journal.offset_y = None
         ccccc.set_editor_visibility(True)
-        if question:
+        if question.start is not None:
             if question.head != len(journal.lines):
                 shared_worker.post('G' + question.head)
                 shared_worker_timestamp() # For  Ctrl+Z
-            return True
+            return
         if ccccc.add_comments:
             ccccc.set_editor_visibility(False) # Must not modify editor content
             ccccc.popup_message("L'étudiant n'a rien enregistré, choisissez une autre question.")
-            return False # Do not create a question when commenting
+            return # Do not create a question when commenting
         shared_worker.post('Q' + index)
-        journal.get_question(index).created_now = True
-        return False
+        shared_worker.post('d' + protect_crlf(question.last_default_raw))
     shared_worker.question = shared_worker_question
     def shared_worker_scroll_line(line, height):
         """Scroll position"""

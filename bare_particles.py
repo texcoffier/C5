@@ -41,10 +41,10 @@ class Particles: # pylint: disable=too-many-instance-attributes
         self.canvas.onmouseup = self.onmouseup.bind(self)
         self.canvas.onmouseout = self.onmouseup.bind(self)
         self.canvas.onmousemove = self.onmousemove.bind(self)
-        self.canvas.setAttribute('width', self.canvas.offsetWidth)
-        self.canvas.setAttribute('height', self.canvas.offsetHeight)
-        width = self.canvas.offsetWidth
-        height = self.canvas.offsetHeight
+        width = self.canvas.offsetWidth * window.devicePixelRatio
+        height = self.canvas.offsetHeight * window.devicePixelRatio
+        self.canvas.setAttribute('width', width)
+        self.canvas.setAttribute('height', height)
         self.font = 12 * width / 1024
         self.center_x = width / 2
         self.center_y = height / 2
@@ -53,7 +53,7 @@ class Particles: # pylint: disable=too-many-instance-attributes
         positions = JSON.parse(localStorage[netname] or '{}')
         for name, color in masses:
             if name in positions:
-                x, y = positions[name]
+                x, y = positions[name] # Reuse last position
             else:
                 x = self.center_x + width * (Math.random() - 0.5) / 2
                 y = self.center_y + height * (Math.random() - 0.5) / 2
@@ -78,8 +78,8 @@ class Particles: # pylint: disable=too-many-instance-attributes
     def onmousemove(self, event):
         """Update current mouse position for the next drawing"""
         box = event.target.getBoundingClientRect()
-        self.current_x = (event.clientX - box.x) # * 1024 / self.canvas.width
-        self.current_y = (event.clientY - box.y) # * 1024 / self.canvas.height
+        self.current_x = (event.clientX - box.x) * window.devicePixelRatio
+        self.current_y = (event.clientY - box.y) * window.devicePixelRatio
     def draw(self, do_select=False): # pylint: disable=too-many-branches,too-many-statements
         """Draw the network.
         Use 'selected', 'current_x', 'current_y', 'nodes', 'arcs'
@@ -194,8 +194,14 @@ class Particles: # pylint: disable=too-many-instance-attributes
             delta_x = node1.coord_x - node2.coord_x
             delta_y = node1.coord_y - node2.coord_y
             d = delta_x*delta_x + delta_y*delta_y
-            delta_x *= -10 / (d+1)
-            delta_y *= -10 / (d+1)
+            if d < 1:
+                # Not a good case, eliminate it.
+                node1.coord_x += 5 * Math.random()
+                node1.coord_y += 5 * Math.random()
+                repulsion(node1, node2)
+                return
+            delta_x *= -10 / d
+            delta_y *= -10 / d
             node1.speed_x -= delta_x
             node1.speed_y -= delta_y
             node2.speed_x += delta_x
@@ -208,6 +214,7 @@ class Particles: # pylint: disable=too-many-instance-attributes
             y_min = min(y_min, node.coord_y)
             x_max = max(x_max, node.coord_x)
             y_max = max(y_max, node.coord_y)
+        # Translation of the particles cloud center to the screen center
         speed_x = (self.center_x - (x_max + x_min) / 2) / 100
         speed_y = (self.center_y - (y_max + y_min) / 2) / 100
         for node in self.nodes:
