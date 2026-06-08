@@ -330,7 +330,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         JOURNAL.stop_timestamp = STOP   # Normal end session timestamp
         JOURNAL.tt = TT                 # True if TT
 
-        self.worker_url = BASE + '/' + COURSE + "?ticket=" + TICKET
+        self.worker_url = BASE + '/' + COURSE + "?ticket=" + TICKET + location.hash
         if REAL_GRADING:
             self.worker_url += '&login=' + LOGIN
         self.worker = Worker(self.worker_url)

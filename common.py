@@ -1631,7 +1631,8 @@ def journal_regtest():
 def create_shared_worker(login='', hook=None, readonly=False):
     trace("CCCCC: Start shared worker and create uninitialized journal")
     journal = Journal()
-    shared_worker = eval('new SharedWorker("JS/live_link.js' + window.location.search + '")')
+    shared_worker = eval('new SharedWorker("JS/live_link.js' + window.location.search
+        +  window.location.hash + '")')
     def reload_page(message):
         def reload_page():
             window.location.reload()
