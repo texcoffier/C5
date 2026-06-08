@@ -132,7 +132,7 @@ ACTIONS = {
         sudo sh -c '
             set -e
             apt update
-            apt -y install astyle nginx certbot python3-venv python3-wheel python3-dev libldap-dev libsasl2-dev python3-psutil python3-certbot-nginx npm racket zip curl rsync coq swi-prolog
+            apt -y install astyle nginx certbot python3-venv python3-wheel python3-dev libldap-dev libsasl2-dev python3-psutil python3-certbot-nginx npm racket zip curl rsync coq swi-prolog cargo rustfmt
             apt -y upgrade
             # set-timezone Europe/Paris
             '

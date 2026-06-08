@@ -37,6 +37,7 @@ import compiler_gcc    # pylint: disable=unused-import
 import compiler_racket # pylint: disable=unused-import
 import compiler_prolog # pylint: disable=unused-import
 import compiler_coqc   # pylint: disable=unused-import
+import compiler_cargo  # pylint: disable=unused-import
 from compilers import COMPILERS
 
 MIN_TIME_BETWEEN_CONNECT = 0.2 # Racket start time
@@ -81,7 +82,16 @@ class Process: # pylint: disable=too-many-instance-attributes
         await self.cmp.compile(self)
     async def indent(self, data:str) -> None:
         """Indent"""
-        process = await asyncio.create_subprocess_exec(
+        #self.cmp.name = instace du compkiler autorisé
+
+        if self.cmp.name == 'cargo' or 'rust':
+            process = await asyncio.create_subprocess_exec(
+                'rustfmt',
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                )
+        else:
+            process = await asyncio.create_subprocess_exec(
                 'astyle',
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
@@ -92,6 +102,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         assert process.stdout
         indented = await process.stdout.read()
         await self.websocket.send(json.dumps(['indented', indented.decode('utf-8')]))
+
     async def run(self, data) -> None:
         """Launch process"""
         self.filetree_in, self.filetree_out, self.max_time, self.max_data = data
