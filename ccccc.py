@@ -2383,7 +2383,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         for tag in self.journal_question.tags[::-1]:
             content.append('<option>' + (html(tag[0] or "Version initiale")) + '</option>')
         self.save_history.style.background = 'initial'
-        if self.journal_question.last_default_raw != self.journal_question.current_default_raw:
+        if self.journal_question.last_default_raw != self.journal_question.current_default_raw and COURSE[-7:] != '=editor':
             content.append('<option>Version mise à jour</option>')
             if self.journal_question.get_current_default().strip() == self.source.strip():
                 # Update content if it is the initial default content (no user change)
