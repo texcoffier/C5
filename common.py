@@ -15,6 +15,8 @@ def bind(fct, _obj):
 
 try:
     Object # pylint: disable=pointless-statement
+    def replace_regexp(txt, regexp, value):
+        return txt.replace(RegExp(regexp, 'g'), value)
     def protect_regexp(txt):
         return txt.replace(RegExp('([.*+?[()\\\\$^])', 'g'), '\\$1')
     def replace_all(txt, regexp, value):
@@ -24,6 +26,9 @@ try:
         return x.toLowerCase
     PYTHON = False
 except NameError:
+    def replace_regexp(txt, regexp, value):
+        import re
+        return re.sub(regexp, value, txt)
     def replace_all(txt, regexp, value):
         return txt.replace(regexp, value)
     def is_string(x):
@@ -281,22 +286,34 @@ class QuestionStats:
         self.form = False
     def can_put(self, position, char='0'):
         return (
-            self.current_default_raw[position] == '✽'
-            or self.current_default_raw[position] == '♯' and char in '0123456789. '
+            self.current_can_put[position] == '✽'
+            or self.current_can_put[position] == '♯' and char in '0123456789. '
         )
     def dump(self):
         return f'start={self.start}, head={self.head}, good={self.good}, bytes={len(self.source)}, {self.tags}'
     def get_current_default(self):
         if self.current_default_raw != '∅':
-            txt = self.current_default_raw # For old journals
-        else:
-            txt = self.last_default_raw
-        return replace_all(replace_all(txt, '♯', ' '), '✽', ' ')
+            return self.current_default
+        # For old journals
+        return replace_regexp(self.last_default_raw, '[♯✽]', ' ')
     def set_current_default_raw(self, value):
         """The current default has changed"""
         trace("Set current_default_raw", value)
+        def replace_hash(txt):
+            return replace_regexp(txt, '.', '♯')
+        can_put = replace_regexp(value, '<£(.|(?!£>))*£>', replace_hash)
+        def replace_star(txt):
+            return replace_regexp(txt, '.', '✽')
+        can_put = replace_regexp(can_put, '<§(.|(?!§>))*§>', replace_star)
+        def replace_space(txt):
+            return '  ' + txt[2:-2] + '  '
+        current_default = replace_regexp(value, '<£(.|(?!£>))*£>', replace_space)
+        current_default = replace_regexp(current_default, '<§(.|(?!§>))*§>', replace_space)
+        current_default = replace_regexp(current_default, '[♯✽]', ' ')
+        self.current_can_put = can_put
         self.current_default_raw = value
-        self.form = '✽' in value  or  '♯' in value
+        self.current_default = current_default
+        self.form = self.current_default_raw != self.current_default
 
 class Bubble:
     last_comment_change = None # Line number of the last comment change
