@@ -91,7 +91,8 @@ lint:
 	pylint [^x]*.py
 clean:
 	-rm -r xxx* COMPILE_REMOTE/test/LOGS/anonyme_* COMPILE_REMOTE/test/session.cf \
-	      *.log *.js *~ COMPILE_*/*~ COMPILE_*/questions.js COMPILE_*/questions.json \
+	      LOGS/*.log JS/*.js *~ COMPILE_*/*~ COMPILE_*/questions.js COMPILE_*/questions.json \
+          PROC
 	-find COMPILE_REMOTE/ -name 'HOME' -exec rmdir {} + 2>/dev/null
 kill:
 	-pkill -f http_server.py
