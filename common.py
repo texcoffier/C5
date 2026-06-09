@@ -366,8 +366,11 @@ class Journal:
 
     def record_default(self, question, default_answer_raw):
         """Create question and record default answer for the question"""
-        if self.question in self.questions:
-            raise ValueError('Yet created')
+        if question in self.questions:
+            if self.questions[question].last_default_raw != '∅':
+                raise ValueError('Bug')
+            self.questions[question].last_default_raw = default_answer_raw
+            return
         trace("Store default answer", question, default_answer_raw)
         q = QuestionStats()
         self.questions[question] = q
@@ -1670,7 +1673,10 @@ def create_shared_worker(login='', hook=None, readonly=False):
             if message.startswith('O') and not ccccc.really_started:
                 trace("CCCCC: initial journal update received, ask first question")
                 ccccc.really_started = True
-                ccccc.worker.postMessage(['start']) # It will send first question
+                if JOURNAL.question is None:
+                    ccccc.worker.postMessage(['start', 0])
+                else:
+                    ccccc.worker.postMessage(['start', JOURNAL.question])
             if journal.lines[msg_id] == message:
                 trace("Local change")
                 return

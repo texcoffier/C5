@@ -28,10 +28,14 @@ def onmessage(event):
                 Compile.worker.post('allow_edit', '1')
         elif event.data[0] == 'start':
             trace('Worker: Start')
+            Compile.worker.goto(event.data[1])
             Compile.worker.start_question()
             Compile.worker.init()
             trace("Worker: init done. current_question_max=",
                     Compile.worker.current_question_max)
+        elif event.data[0] == 'next_question':
+            trace('Worker: Next question')
+            Compile.worker.start_question()
 
     else:
         if Compile.worker.shared_buffer:
@@ -85,6 +89,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def set_config(self, config):
         """Record config, update old question answer, jump to the last question"""
+        trace('Worker: set config')
         for key in config:
             if key not in self.options:
                 self.options[key] = config[key]
@@ -172,7 +177,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('run', 'No indenter defined')
     def start_question(self):
         """Start a new question"""
-        trace("Worker: question", self.current_question + '/' + self.current_question_max)
+        trace("Worker: start question", self.current_question + '/' + self.current_question_max)
         if self.current_question < 0:
             return
         self.post('current_question', self.current_question)
@@ -209,7 +214,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
            ):
             self.post("good", self.source)
             self.options['ANSWERS'][current_question] = [self.source, 1]
-            self.start_question()
         else:
             self.current_question = current_question # Keep same question
 

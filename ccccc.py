@@ -10,13 +10,14 @@ Compile        worker base class to manage the question list, compilation, execu
 Question       base class for question definition
 
 The operation order:
-   * Connexion to the shared worker is connected (not yet initialized).
+   * Connexion to the shared worker is started (not yet initialized).
    * CCCCC is created and initialized.
-   * The Compile worker is launched: send informations about the questionnary.
-   * Once Compile worker finished init (allow_edit=1): initialize shared worker.
+   * Compile Worker is launched: send informations about the questionnary.
+     (will set last_default_raw)
+   * Shared Worker is initialized: send journal
+     (will set current_default_raw)
    * Once the journal is received : ccccc.terminate_init()
-   * Once the journal 'O' received : tell Compile Worker to choose the question.
-
+   * Once the journal 'O' received : tell the Compile Worker the initial question
 """
 try:
     @external
@@ -306,43 +307,23 @@ class CCCCC: # pylint: disable=too-many-public-methods
                         options['positions'][key] = [100, 1, 100, 1, '#0000']
                 break
 
-        answers = {}
-        for question_index, question in JOURNAL.questions.Items():
-            answers[question_index] = [question.source, question.good]
-
         # XXX to remove
         options['allow_copy_paste'] = options.allow_copy_paste or GRADING or ADMIN
         options['COURSE'] = COURSE                         # Course short name
         options['TICKET'] = TICKET                         # Session ticket: ?ticket=TICKET
         options['LOGIN'] = LOGIN                           # Login of the connected user
         options['SOCK'] = SOCK                             # Websocked for remote compilation
-        options['ANSWERS'] = answers                       # All the questions/answers recorded
         options['WHERE'] = WHERE                           # See 'active_teacher_room' declaration
         options['INFOS'] = INFOS                           # Student identity
         options['GRADING'] = GRADING                       # True if in grading mode
         options['ADMIN'] = ADMIN                           # True if administrator
         options['REAL_COURSE'] = REAL_COURSE
-
         trace("CCCCC: GUI")
         window.onerror = bind(self.onJSerror, self)
         self.start_time = millisecs()
         self.course = COURSE
         JOURNAL.stop_timestamp = STOP   # Normal end session timestamp
         JOURNAL.tt = TT                 # True if TT
-
-        self.worker_url = BASE + '/' + COURSE + "?ticket=" + TICKET + location.hash
-        if REAL_GRADING:
-            self.worker_url += '&login=' + LOGIN
-        self.worker = Worker(self.worker_url)
-        self.worker.onmessage = bind(self.onmessage, self)
-        self.worker.onmessageerror = bind(self.onerror, self)
-        self.worker.onerror = bind(self.onSocketError, self)
-        self.worker.postMessage(['config', self.options])
-        try:
-            self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
-        except: # pylint: disable=bare-except
-            self.shared_buffer = None
-        self.worker.postMessage(['array', self.shared_buffer])
         if GRADING or self.options['feedback'] >= 5:
             # Will be updated after
             self.options['positions']['grading'] = self.options['positions']['question'][:]
@@ -360,6 +341,30 @@ class CCCCC: # pylint: disable=too-many-public-methods
         if options['state'] == 'Ready':
             self.add_comments = 0
         trace("CCCCC: wait worker")
+        SHARED_WORKER.load_journal()
+
+    def init_worker(self):
+        """Starts the compile/tester worker"""
+        trace("CCCCC: start worker")
+
+        answers = {}
+        for question_index, question in JOURNAL.questions.Items():
+            answers[question_index] = [question.source, question.good]
+        self.options['ANSWERS'] = answers # All the questions/answers recorded
+
+        self.worker_url = BASE + '/' + COURSE + "?ticket=" + TICKET + location.hash
+        if REAL_GRADING:
+            self.worker_url += '&login=' + LOGIN
+        self.worker = Worker(self.worker_url)
+        self.worker.onmessage = bind(self.onmessage, self)
+        self.worker.onmessageerror = bind(self.onerror, self)
+        self.worker.onerror = bind(self.onSocketError, self)
+        self.worker.postMessage(['config', self.options])
+        try:
+            self.shared_buffer = eval('new Int32Array(new SharedArrayBuffer(1024))') # pylint: disable=eval-used
+        except: # pylint: disable=bare-except
+            self.shared_buffer = None
+        self.worker.postMessage(['array', self.shared_buffer])
 
     def coach_analyse(self, event, previous_position):
         """Analyse event for coaching (called from onmouseup and onkeydown)"""
@@ -397,6 +402,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         """Only terminate init when the worker started"""
         if self.init_done:
             return
+        self.init_worker()
         trace("CCCCC: terminate_init")
         self.init_done = True
         self.create_html()
@@ -2663,10 +2669,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.state = "running"
         elif what == 'good':
             if not self.journal_question.good:
-                messages = self.options['good']
-                self.popup_message(messages[millisecs() % len(messages)])
                 SHARED_WORKER.good()
-                self.tree_canvas() # Here because scheduler do not call coloring
+                messages = self.options['good']
+                def next_question():
+                    ccccc.worker.postMessage(['next_question'])
+                    self.tree_canvas() # Here because scheduler do not call coloring
+                self.popup_message(messages[millisecs() % len(messages)], cancel='', ok='OK', callback=next_question)
         elif what == 'executor':
             if self.options['compiler'] == 'coqc':
                 if self.clear_if_needed(what) or not self.coqc_content:
@@ -2942,11 +2950,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 + "</ul>")
         elif what == 'allow_edit':
             self.allow_edit = int(value)
-            if self.allow_edit:
-                if SHARED_WORKER.load_journal:
-                    SHARED_WORKER.load_journal()
-                    SHARED_WORKER.load_journal = None
-                    self.allow_edit = 0 # Wait journal
         elif what == 'recompile':
             self.compilation_run()
 
