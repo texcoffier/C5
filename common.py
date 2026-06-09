@@ -391,9 +391,13 @@ class Journal:
         self.position = 0
         self.scroll_line = 0
         self.question = int(value)
-        if start is not None and self.question in self.questions:
-            self.questions[self.question].start = start
-            self.questions[self.question].tags.append(['', start+2])
+        if start is not None:
+            if self.question in self.questions:
+                question = self.questions[self.question]
+            else:
+                question = self.questions[self.question] = QuestionStats()
+            question.start = start
+            question.tags.append(['', start+2])
     def action_P(self, value, _start):
         """Cursor position, 0 is before first char"""
         self.position = int(value)

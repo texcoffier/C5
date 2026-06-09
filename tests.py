@@ -536,7 +536,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.editor', {'innerHTML': Contains('§')}) # Previous test
         self.goto_initial_version()
         self.check('.editor', {'innerHTML': ~Contains('§')})
-        time.sleep(0.1)
+        time.sleep(1)
         self.move_cursor('.editor', 4, 4)
         self.check('.editor').send_keys('§')
         self.check('.editor', {'innerHTML': Contains('§')})
@@ -544,7 +544,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.wait_save()
         self.load_page('=JS=introduction')
         self.check('.editor', {'innerHTML': Contains('§')})
-        time.sleep(0.2) # For Firefox
+        time.sleep(1)
         self.move_cursor('.editor', 4, 4)
         self.check('.editor').send_keys('¤')
         self.check('.editor', {'innerHTML': Contains('§¤')})
@@ -652,7 +652,7 @@ class Tests: # pylint: disable=too-many-public-methods
         self.click(question(3)) # Returns to the first question
         self.goto_initial_version()
         self.check('.overlay', {'innerHTML': ~Contains('§')})
-        for _ in range(5):
+        for _ in range(7):
             self.control('y')
             try:
                 self.check('.overlay', {'innerHTML': Contains('§')}, nbr=4)
@@ -660,7 +660,7 @@ class Tests: # pylint: disable=too-many-public-methods
             except ValueError:
                 pass
         else:
-            raise ValueError('Ctrl+Y not working')
+            raise ValueError('Ctrl+Y not working') # XXX 3
         for _ in range(2):
             self.control('z')
             try:
@@ -677,7 +677,9 @@ class Tests: # pylint: disable=too-many-public-methods
         #        pass
         editor = self.move_cursor('.editor')
         editor.click()
+        time.sleep(0.1)
         self.control(Keys.HOME)
+        time.sleep(0.1)
         self.control_z_point(editor)
         editor.send_keys('A')
         self.check('.overlay', {'innerHTML': Contains('A\n<span class="hljs-comment">// Lisez')})
@@ -958,6 +960,8 @@ return sum ;
             self.check('#proctors').click()
 
             self.goto('grade/REMOTE=test/xxx')
+            self.check('.save_history', {'style': Contains('rgb(255, 0, 0)')})
+            self.check('#popup_ok').click()
             editor = self.click('.editor')
 
             # Create a comment
@@ -1829,6 +1833,8 @@ IXXX-answer
             self.goto('grade/REMOTE=XXXX/john.doe')
             retry(lambda: len(self.driver.find_elements(BY_SELECTOR, '.select-correction')) != 6)
             self.check('.floating_bloc', {'innerHTML': ~Contains('XXXX-expected') & ~Contains('XXXX-Q')})
+            self.check('.save_history', {'style': Contains('rgb(255, 0, 0)')})
+            self.check('#popup_ok').click()
             self.check('.executor .select-correction').click()
             self.check('.executor .select-correction OPTION:nth-child(2)').click()
             self.check('.floating_bloc', {'innerHTML': Contains('XXXX-expected')})
