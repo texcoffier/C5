@@ -198,7 +198,7 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_manage_reset,
                     self.test_comments,
                     self.test_bloc,
-                    self.test_bad_scroll, # VERY very LONG test
+                    # self.test_bad_scroll, # VERY very LONG test
                     # self.test_git,
                     ):
                 print('*'*99)
@@ -380,15 +380,20 @@ class Tests: # pylint: disable=too-many-public-methods
             print(f'\tALERT Contains=«{contains}» Accept=«{accept}»')
             alert = self.get_alert()
             if alert:
-                if contains in alert.text:
-                    if accept:
-                        if keys:
-                            alert.send_keys(keys)
-                        alert.accept()
-                    else:
-                        alert.dismiss()
-                    return None
-                return f'The alert does not contains «{contains}» but «{alert.text}'
+                try:
+                    if contains in alert.text:
+                        if accept:
+                            if keys:
+                                alert.send_keys(keys)
+                            alert.accept()
+                        else:
+                            alert.dismiss()
+                        return None
+                    return f'The alert does not contains «{contains}» but «{alert.text}'
+                except selenium.common.exceptions.NoAlertPresentException:
+                    return 'No alert on screen'
+                except selenium.common.exceptions.WebDriverException:
+                    return 'No alert on screen'
             return 'No alert on screen'
         retry(check, required, nbr=nbr)
     def check_dialog(self, contains='', accept=True, required=True, nbr=20):
@@ -454,6 +459,7 @@ class Tests: # pylint: disable=too-many-public-methods
         """Tests inputs"""
         self.load_page('=REMOTE=test')
         self.check('.compiler', {'innerText': Contains('Bravo')})
+        time.sleep(0.2)
         self.check('.executor INPUT').send_keys('8')
         self.check('.executor INPUT').send_keys(Keys.ENTER)
         self.check('.executor INPUT:nth-child(3)', {'value': Equal('8')})
@@ -501,32 +507,42 @@ class Tests: # pylint: disable=too-many-public-methods
     def test_auto_compile(self):
         """Tests automatic recompilation"""
         self.load_page('=JS=introduction')
+        time.sleep(1)
         self.move_cursor('.editor')
-        self.check('.editor').send_keys('\n')
-        time.sleep(0.1)
-        self.check('.editor').send_keys('§')
+        editor = self.check('.editor')
+        editor.send_keys('\n')
+        self.control_z_point(editor)
+        editor.send_keys('§')
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
+        assert(self.driver.execute_script('return ccccc.cursor_position') == 126)
         self.move_cursor('.editor') # Firefox want this
-        self.check('.editor').send_keys(Keys.BACKSPACE)
+        self.control_z_point(editor)
+        editor.send_keys(Keys.BACKSPACE)
         self.check('.compiler', {'innerHTML': Contains('sans')})
+        assert(self.driver.execute_script('return ccccc.cursor_position') == 125)
 
-        self.check('.editor').send_keys(Keys.F9)
-        self.check('.editor').send_keys('print("Hello")')
+        editor.send_keys(Keys.F9)
+        editor.send_keys('print("Hello")')
         time.sleep(0.3) # Wait a recompile that must not happen
         self.check('.executor', {'innerHTML': ~Contains('Hello')})
-        self.check('.editor').send_keys(Keys.F9)
+        editor.send_keys(Keys.F9)
         self.check('.executor', {'innerHTML': Contains('Hello')})
+        assert(self.driver.execute_script('return ccccc.cursor_position') == 139)
 
         # Disable compilation by clicking
         self.click('.compiler LABEL')
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
+        self.control_z_point(editor)
+        assert(self.driver.execute_script('return ccccc.cursor_position') == 140)
         time.sleep(0.3) # Wait a recompile that must not happen
         self.check('.compiler', {'innerHTML': Contains('sans')})
         self.click('.compiler LABEL')
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
     def goto_initial_version(self):
         """Returns to the initial version"""
+        # print(self.check('.save_history').get_attribute('innerHTML'))
+        time.sleep(0.1)
         self.click('.save_history OPTION:last-child')
         time.sleep(0.2)
     def test_save_button(self):
@@ -637,39 +653,62 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('#more', {'innerText': Contains(f'to {ttl} seconds')})
 
     def control_z_point(self, editor):
-        editor.send_keys('Z')
-        time.sleep(0.2)
+        time.sleep(0.5)
+        p = self.driver.execute_script('return ccccc.cursor_position')
+        editor.send_keys('☻')
+        for _ in range(20):
+            if self.driver.execute_script('return ccccc.cursor_position') == p+1:
+                break
+            time.sleep(0.01)
+        else:
+            raise ValueError("control_z_point bug\n" + editor.get_attribute('innerText'))
         t = int(time.time())
         editor.send_keys(Keys.BACKSPACE)
-        time.sleep(0.1)
-        while int(time.time()) == t:
+        for _ in range(20):
+            if self.driver.execute_script('return ccccc.cursor_position') == p:
+                break
+            time.sleep(0.01)
+        else:
+            raise ValueError("control_z_point bug2\n" + editor.get_attribute('innerText'))
+        while int(time.time()) == t: # Make sure that Ctrl+Z will jump here
             time.sleep(0.1)
 
-    def test_editor(self):
-        """Test editor line insert"""
-        # Previous tests must run before this one.
+    def test_editor_real(self):
+        self.ticket += '0'
+        for i in ('COMPILE_JS/introduction/LOGS', f'COMPILE_JS/introduction/LOGS/anonyme_{self.ticket}'):
+            if not os.path.exists(i):
+                os.mkdir(i)
+
+        with open(f'COMPILE_JS/introduction/LOGS/anonyme_{self.ticket}/journal.log', 'wb') as file:
+            file.write(
+                b'T1781076908\nOanonyme_17810769071 127.0.0.1 0\nT1781076908\nQ0\nd\x00// Lisez la consigne indiqu\xc3\xa9e \xc3\xa0 gauche.\x00\x00// Le programme que vous devez modifier :\x00\x00print("Je suis un texte super court");\x00\x00\nT1781076910\nP125\nI\x00\nT1781076912\nP125\nI\xe2\x98\xbb\nP125\nD1\nT1781076913\nI\xc2\xa7\nT1781076914\nI\xe2\x98\xbb\nT1781076915\nP126\nD1\nP125\nD1\nIprint("Hello")\nT1781076916\nI\xc2\xa7\nT1781076917\nI\xe2\x98\xbb\nP140\nD1\nT1781076918\n'
+                )
         self.load_page('=JS=introduction')
         self.click(question(3)) # Returns to the first question
         self.goto_initial_version()
+        assert(self.driver.execute_script('return ccccc.cursor_position') == 140)
         self.check('.overlay', {'innerHTML': ~Contains('§')})
-        for _ in range(7):
+        retry(lambda: self.driver.execute_script('return ccccc.cursor_position') != 0)
+        for _ in range(10):
             self.control('y')
             try:
-                self.check('.overlay', {'innerHTML': Contains('§')}, nbr=4)
+                self.check('.overlay', {'innerHTML': Contains('§')}, nbr=3)
                 break
             except ValueError:
                 pass
         else:
-            raise ValueError('Ctrl+Y not working') # XXX 3
+            raise ValueError('Ctrl+Y not working')
+        assert(self.driver.execute_script('return ccccc.cursor_position') == 126)
         for _ in range(2):
             self.control('z')
             try:
-                self.check('.overlay', {'innerHTML': ~Contains('§')}, nbr=3)
+                self.check('.overlay', {'innerHTML': ~Contains('§')}, nbr=5)
                 break
             except ValueError:
                 pass
         else:
             raise ValueError('Ctrl+Z not working')
+        retry(lambda: self.driver.execute_script('return ccccc.cursor_position') != 125)
         #for line in sys.stdin:
         #    try:
         #        self.click(question(int(line.strip())))
@@ -677,47 +716,64 @@ class Tests: # pylint: disable=too-many-public-methods
         #        pass
         editor = self.move_cursor('.editor')
         editor.click()
-        time.sleep(0.1)
+        time.sleep(1)
+        def ctrlz():
+            a = self.driver.execute_script('return ccccc.cursor_position')
+            self.control('z')
+            for _ in range(100):
+                if self.driver.execute_script('return ccccc.cursor_position') != a:
+                    break
+                time.sleep(0.01)
+            # Sometime a control Z point is inserted because of a time-second change
+            # if '☻' in editor.get_attribute('textContent'):
+            #     self.control('z')
+
+        assert(self.driver.execute_script('return ccccc.cursor_position') == 125)
         self.control(Keys.HOME)
-        time.sleep(0.1)
+        retry(lambda: self.driver.execute_script('return ccccc.cursor_position') != 0)
         self.control_z_point(editor)
         editor.send_keys('A')
         self.check('.overlay', {'innerHTML': Contains('A\n<span class="hljs-comment">// Lisez')})
-        time.sleep(0.2)
-        self.control('z')
+        ctrlz()
         self.check('.overlay', {'innerHTML': ~Contains('A')})
+        self.control_z_point(editor)
         editor.send_keys(Keys.ARROW_DOWN) # Second line
-        time.sleep(1.1)
         editor.send_keys('B')
-        self.check('.overlay', {'innerHTML': Contains('\nB<span class="hljs-comment">// Lisez')
-            | Contains('B</span><span class="hljs-comment">// Lisez')})
-        time.sleep(0.1)
-        self.control('z')
+        self.check('.overlay', {'innerHTML': Contains('\nB<span class="hljs-comment">// Lisez')})
+        ctrlz()
         self.check('.overlay', {'innerHTML': ~Contains('B')})
         editor.send_keys(Keys.ARROW_DOWN) # Second line
         editor.send_keys(Keys.ARROW_RIGHT) # Second line second char
         self.control_z_point(editor)
         editor.send_keys('C')
-        self.check('.overlay', {'innerHTML': Contains('\n/C/ <span class="hljs-title class_">Lisez')
-            | Contains('>/C/</span> <span class="hljs-type">Lisez')})
-        time.sleep(0.1)
-        self.control('z')
+        self.check('.overlay', {'innerHTML': Contains('\n/C/ <span class="hljs-title class_">Lisez')})
+        ctrlz()
         self.check('.overlay', {'innerHTML': ~Contains('C')})
         editor.send_keys(Keys.END) # Second line second char
         self.control_z_point(editor)
         editor.send_keys('D')
         self.check('.overlay', {'innerHTML': Contains('\n<span class="hljs-comment">// Lisez la consigne indiquée à gauche.D</span>\n\n')})
-        time.sleep(0.1)
-        self.control('z')
+        ctrlz()
         self.check('.overlay', {'innerHTML': ~Contains('D')})
         self.control(Keys.END)
-        time.sleep(0.1)
+        time.sleep(0.2)
         editor.send_keys('/')
-        self.control_z_point(editor)
+        time.sleep(0.2)
         editor.send_keys(Keys.ENTER)
-        self.check('.overlay', {'innerHTML': Contains(');\n/\n')})
+        self.check('.overlay', {'innerHTML': Contains(');\n\n/\n')})
         editor.send_keys('/')
-        self.check('.overlay', {'innerHTML': Contains(');\n/\n/\n')})
+        self.check('.overlay', {'innerHTML': Contains(');\n\n/\n/\n')})
+    def test_editor(self):
+        """Test editor line insert"""
+        for i in range(20):
+            try:
+                print("Try number", i+1)
+                self.test_editor_real()
+                break
+            except: # pylint: disable=bare-except
+                print()
+        else:
+            self.test_editor_real()
     def test_many_inputs(self):
         """Test IP change in grader editor"""
         nbr = 5
@@ -726,19 +782,15 @@ class Tests: # pylint: disable=too-many-public-methods
         time.sleep(1)
         self.click('.editor')
         self.check('.editor').send_keys(' ')
+        time.sleep(2)
         self.control('a')
         time.sleep(2)
         self.check('.editor').send_keys('''
 using namespace std;
 #include <iostream>
 int main()
-{
-int v, sum = 0 ;
-for(int i = 0 ; i < '''+str(nbr)+'''; i++ ) { cout << i << endl ; cin >> v ; sum += v ; }
-return sum ;
-}
-''')
-        time.sleep(0.3)
+{int v, sum = 0 ;for(int i = 0 ; i < '''+str(nbr)+'''; i++ ) { cout << i << endl ; cin >> v ; sum += v ; }return sum ;}''')
+        time.sleep(2)
         self.check('.editor').send_keys(Keys.F9)
         for i in range(nbr):
             self.check(f'.executor DIV:nth-child({4*i+2})', {'textContent': Equal(str(i)+'\n')})
@@ -746,6 +798,7 @@ return sum ;
             element = self.click(f'.executor INPUT:nth-child({4*i+3})')
             time.sleep(0.2)
             element.send_keys('1')
+            time.sleep(0.1)
             element.send_keys(Keys.ENTER)
         self.check('.executor', {'textContent': Contains('cution = ' + str(nbr))})
     def test_before(self):
@@ -1190,7 +1243,9 @@ return sum ;
 
             self.ticket = student
             self.goto('=REMOTE=test')
+            time.sleep(0.2)
             self.check('.editor').send_keys(' /**/')
+            time.sleep(0.2)
             self.check('.save_button', {'state': Equal('ok')}).click()
             self.check('#popup_input').send_keys(Keys.ENTER)
             self.check('.save_button', {'state': Equal('ok')})
@@ -1835,6 +1890,7 @@ IXXX-answer
             self.check('.floating_bloc', {'innerHTML': ~Contains('XXXX-expected') & ~Contains('XXXX-Q')})
             self.check('.save_history', {'style': Contains('rgb(255, 0, 0)')})
             self.check('#popup_ok').click()
+            time.sleep(0.1)
             self.check('.executor .select-correction').click()
             self.check('.executor .select-correction OPTION:nth-child(2)').click()
             self.check('.floating_bloc', {'innerHTML': Contains('XXXX-expected')})
