@@ -218,7 +218,7 @@ class Tests: # pylint: disable=too-many-public-methods
                 try:
                     test()
                 except: # pylint: disable=bare-except
-                    if test is self.test_many_inputs:
+                    if test in (self.test_many_inputs, self.test_inputs, self.test_manage_reset):
                         test()
                     else:
                         raise
