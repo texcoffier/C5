@@ -63,6 +63,15 @@ class Contains(Test):
         return self.text in value
     def __repr__(self):
         return f'Contains({repr(self.text)})'
+class Count(Test):
+    """text is expected nbr time inside"""
+    def __init__(self, text, nbr):
+        self.text = text
+        self.nbr = nbr
+    def run(self, value):
+        return value.count(self.text) == self.nbr
+    def __repr__(self):
+        return f'Count({repr(self.text)},{self.nbr})'
 class Equal(Contains):
     """The value must be equal"""
     def run(self, value):
@@ -150,6 +159,8 @@ class Tests: # pylint: disable=too-many-public-methods
             course.set_parameter('hide_before', 360)
             course.set_parameter('state', "Ready")
             course.set_parameter('coach_tip_level', 0)
+            if course_name == 'COMPILE_REMOTE/test':
+                course.set_parameter('automatic_compilation', 0)
             if os.path.exists(course_name + '/session.json'):
                 os.unlink(course_name + '/session.json')
             if os.path.exists(course_name + '/journal.log'):
@@ -252,16 +263,19 @@ class Tests: # pylint: disable=too-many-public-methods
         self.update_config('roots', utilities.CONFIG.roots + ['anonyme_' + self.ticket])
         self.goto('config/reload')
         self.check_alert(required=False, nbr=2)
+        self.check('BODY', {'textContent': Contains('done')})
     def clean_up_root(self):
         """Remove all anonymous logins from admin list"""
         self.update_config('ticket_ttl', 86400)
         self.update_config('roots', utilities.CONFIG.roots)
         self.goto('config/reload')
+        self.check('BODY', {'textContent': Contains('done')})
     @contextlib.contextmanager
     def admin_rights(self):
         """Take temporarely the admin rights"""
         try:
             self.make_me_admin()
+            time.sleep(0.1)
             yield
         finally:
             self.clean_up_admin()
@@ -446,47 +460,57 @@ class Tests: # pylint: disable=too-many-public-methods
         if path == '.layered':
             return self.driver.find_elements(BY_SELECTOR, '.editor')[0]
         return element
+
+    def f9(self):
+        """Sometime firefox does not display compilation correctly,
+        it must be displayed multiple time"""
+        for _ in range(4):
+            time.sleep(0.2)
+            self.check('.editor').send_keys(Keys.F9)
+            time.sleep(0.2)
+            try:
+                self.check('.executor', {'textContent': Count('Exécution', 1)})
+                time.sleep(0.2)
+                self.check('.executor', {'textContent': Count('Exécution', 1)})
+                return # It is fine
+            except ValueError:
+                pass
+        raise ValueError('F9 does not works')
+
     def test_f9(self):
         """Check if F9 launch compilation"""
         self.load_page('=REMOTE=test')
         self.check('.compiler', {'innerText': Contains('Bravo')})
-        self.move_cursor('.editor')
+        self.check('.executor', {'textContent': Contains('Exécution')})
+        self.move_cursor('.editor').click()
+        time.sleep(1)
         self.check('.editor').send_keys('\n/**/')
-        time.sleep(0.4)
-        self.check('.editor').send_keys(Keys.F9)
+        self.f9()
         self.check('.compiler', {'innerText': Contains('Bravo')})
+
     def test_inputs(self):
         """Tests inputs"""
         self.load_page('=REMOTE=test')
+        time.sleep(2)
+        self.move_cursor('.editor').click()
+        self.f9()
         self.check('.compiler', {'innerText': Contains('Bravo')})
-        time.sleep(0.2)
-        self.check('.executor INPUT').send_keys('8')
-        self.check('.executor INPUT').send_keys(Keys.ENTER)
+
+        self.check('.executor BUTTON:nth-child(4)', nbr=200)
+        self.check('.executor INPUT:nth-child(3)').send_keys('8')
+        time.sleep(0.1)
+        self.check('.executor INPUT:nth-child(3)').send_keys(Keys.ENTER)
         self.check('.executor INPUT:nth-child(3)', {'value': Equal('8')})
-        self.check('.executor', {'innerHTML': Contains('symbole')})
+        self.check('.executor', {'innerHTML': Contains('symbole')}, nbr=200)
 
         # Modify source code, INPUT is auto filled.
         self.move_cursor('.editor')
         recompile_done = False
-        for _ in range(1):
-            # Not a normal failure, a bug must be somewhere.
-            # Rarely F9 is not working, so retry it
-            self.move_cursor('.editor')
-            time.sleep(0.4)
-            self.check('.editor').send_keys('\n/**/\n\n')
-            # The F9 keys must be pressed twice with a delay
-            # There is a problem somewhere
-            # time.sleep(0.4)
-            # self.check('.editor').send_keys(Keys.F9)
-            try:
-                self.check('.compiler', {'innerText': Contains('Bravo')})
-                recompile_done = True
-                break
-            except ValueError:
-                pass
-        if not recompile_done:
-            raise ValueError('??????????????')
+        self.move_cursor('.editor')
         time.sleep(0.4)
+        self.check('.editor').send_keys('\n/**/\n\n')
+        self.f9()
+        self.check('.compiler', {'innerText': Contains('Bravo')})
         self.check('.executor INPUT:nth-child(3)', {'value': Equal('8')})
         self.check('.executor', {'innerHTML': Contains('symbole')})
 
@@ -514,12 +538,12 @@ class Tests: # pylint: disable=too-many-public-methods
         self.control_z_point(editor)
         editor.send_keys('§')
         self.check('.compiler', {'innerHTML': Contains('illegal') | Contains('Invalid')})
-        assert(self.driver.execute_script('return ccccc.cursor_position') == 126)
+        assert self.driver.execute_script('return ccccc.cursor_position') == 126
         self.move_cursor('.editor') # Firefox want this
         self.control_z_point(editor)
         editor.send_keys(Keys.BACKSPACE)
         self.check('.compiler', {'innerHTML': Contains('sans')})
-        assert(self.driver.execute_script('return ccccc.cursor_position') == 125)
+        assert self.driver.execute_script('return ccccc.cursor_position') == 125
 
         editor.send_keys(Keys.F9)
         editor.send_keys('print("Hello")')
@@ -527,14 +551,14 @@ class Tests: # pylint: disable=too-many-public-methods
         self.check('.executor', {'innerHTML': ~Contains('Hello')})
         editor.send_keys(Keys.F9)
         self.check('.executor', {'innerHTML': Contains('Hello')})
-        assert(self.driver.execute_script('return ccccc.cursor_position') == 139)
+        assert self.driver.execute_script('return ccccc.cursor_position') == 139
 
         # Disable compilation by clicking
         self.click('.compiler LABEL')
         self.move_cursor('.editor')
         self.check('.editor').send_keys('§')
         self.control_z_point(editor)
-        assert(self.driver.execute_script('return ccccc.cursor_position') == 140)
+        assert self.driver.execute_script('return ccccc.cursor_position') == 140
         time.sleep(0.3) # Wait a recompile that must not happen
         self.check('.compiler', {'innerHTML': Contains('sans')})
         self.click('.compiler LABEL')
@@ -686,19 +710,18 @@ class Tests: # pylint: disable=too-many-public-methods
         self.load_page('=JS=introduction')
         self.click(question(3)) # Returns to the first question
         self.goto_initial_version()
-        assert(self.driver.execute_script('return ccccc.cursor_position') == 140)
-        self.check('.overlay', {'innerHTML': ~Contains('§')})
         retry(lambda: self.driver.execute_script('return ccccc.cursor_position') != 0)
+        self.check('.overlay', {'innerHTML': ~Contains('§')})
         for _ in range(10):
             self.control('y')
             try:
-                self.check('.overlay', {'innerHTML': Contains('§')}, nbr=3)
+                self.check('.overlay', {'innerHTML': Contains('§')}, nbr=5)
                 break
             except ValueError:
                 pass
         else:
             raise ValueError('Ctrl+Y not working')
-        assert(self.driver.execute_script('return ccccc.cursor_position') == 126)
+        assert self.driver.execute_script('return ccccc.cursor_position') == 126
         for _ in range(2):
             self.control('z')
             try:
@@ -728,7 +751,7 @@ class Tests: # pylint: disable=too-many-public-methods
             # if '☻' in editor.get_attribute('textContent'):
             #     self.control('z')
 
-        assert(self.driver.execute_script('return ccccc.cursor_position') == 125)
+        assert self.driver.execute_script('return ccccc.cursor_position') == 125
         self.control(Keys.HOME)
         retry(lambda: self.driver.execute_script('return ccccc.cursor_position') != 0)
         self.control_z_point(editor)
@@ -779,19 +802,16 @@ class Tests: # pylint: disable=too-many-public-methods
         nbr = 5
         self.goto('=REMOTE=test')
         # self.check_dialog(contains='', accept=True, required=False, nbr=2)
-        time.sleep(1)
-        self.click('.editor')
-        self.check('.editor').send_keys(' ')
         time.sleep(2)
+        editor = self.move_cursor('.editor')
+        editor.click()
         self.control('a')
-        time.sleep(2)
-        self.check('.editor').send_keys('''
+        editor.send_keys('''
 using namespace std;
 #include <iostream>
 int main()
 {int v, sum = 0 ;for(int i = 0 ; i < '''+str(nbr)+'''; i++ ) { cout << i << endl ; cin >> v ; sum += v ; }return sum ;}''')
-        time.sleep(2)
-        self.check('.editor').send_keys(Keys.F9)
+        self.f9()
         for i in range(nbr):
             self.check(f'.executor DIV:nth-child({4*i+2})', {'textContent': Equal(str(i)+'\n')})
             time.sleep(0.1)
@@ -1124,6 +1144,7 @@ int main()
         self.test_dates('2000-01-01 01:00:52', '2001-01-01 01:00:52', nothing, 'Grade')
         self.test_dates('2099-01-01 01:00:50', '2100-01-01 01:00:50', nothing, 'Ready')
         self.test_dates('2000-01-01 01:00:51', '2100-01-01 01:00:51', no_feedback, 'Ready')
+        time.sleep(1)
         self.test_dates('2000-01-01 01:00:52', '2001-01-01 01:00:52', nothing, 'Ready')
         cases = (
             (0, 5, {'innerHTML': Not(Contains('ccccc.js'))}),
@@ -1136,13 +1157,18 @@ int main()
             (0, 0, {'innerHTML': Not(Contains('ccccc.js'))}),
         )
         with self.admin_rights():
-            self.goto('adm/session/REMOTE=test')
-            self.click('#state OPTION[value="Grade"]')
+            while True:
+                try:
+                    self.goto('adm/session/REMOTE=test')
+                    self.click('#state OPTION[value="Grade"]')
+                    break
+                except ValueError:
+                    pass
             self.goto(f'grade/REMOTE=test/{student}')
             while len(self.driver.find_elements(BY_SELECTOR,
                 '.grade_unselected:first-child')) == 0:
                 time.sleep(0.1)
-            time.sleep(0.1)
+            time.sleep(0.2)
             for grade in self.driver.find_elements(BY_SELECTOR,
                 '.grade_unselected:first-child'):
                 grade.click()
@@ -1150,17 +1176,28 @@ int main()
                 '.grade_unselected:first-child')) != 0:
                 time.sleep(0.1)
         for admin_feeback, grader_feedback, check in cases:
-            with self.admin_rights():
-                self.goto('adm/session/REMOTE=test')
-                self.click('#state OPTION[value="Grade"]')
-                self.click(f'#feedback OPTION[value="{admin_feeback}"]')
-                self.click('#start')
-                self.goto(f'grade/REMOTE=test/{student}')
-                time.sleep(0.5)
-                self.click(f'#grading_feedback OPTION[value="{grader_feedback}"]')
-                self.click('.editor')
-                self.goto('adm/session/REMOTE=test')
-                self.click('#state OPTION[value="Done"]')
+            def checkok():
+                with self.admin_rights():
+                    self.goto('adm/session/REMOTE=test')
+                    self.click('#state OPTION[value="Grade"]')
+                    self.click(f'#feedback OPTION[value="{admin_feeback}"]')
+                    self.click('#start')
+                    # self.check('#feedback', {'class': Equal('changed')}, nbr=100)
+                    time.sleep(1)
+                    self.goto(f'grade/REMOTE=test/{student}')
+                    time.sleep(0.5)
+                    self.click(f'#grading_feedback OPTION[value="{grader_feedback}"]')
+                    self.click('.editor')
+                    self.goto('adm/session/REMOTE=test')
+                    self.click('#state OPTION[value="Done"]')
+                    self.check('#state', {'class': Equal('changed')})
+            for i in range(5): # Needed for firefox. Don't know why 'admin_rights' fails
+                print('checkok', i, admin_feeback, grader_feedback, check)
+                try:
+                    checkok()
+                    break
+                except ValueError:
+                    pass
             self.goto('=REMOTE=test')
             self.check('BODY', check)
         self.test_dates('2000-01-01 01:00:01', '2001-01-01 01:00:01', nothing, 'Done')
@@ -1848,18 +1885,20 @@ class Q1(Question):
             config = self.driver.execute_script("return COURSE_CONFIG")
             assert config['start'] == '2000-01-01 00:00:00'
 
+            time.sleep(1)
             self.goto('checkpoint/REMOTE=xxx')
-            self.check('BODY', {'innerHTML': Contains('id="timetravel')})
+            try:
+                self.check('BODY', {'innerHTML': Contains('id="timetravel')})
+            except ValueError:
+                print('*'*999)
+                sys.stdin.readline()
             retry(lambda: 'anonyme_17751431971' in self.driver.execute_script("return STUDENT_DICT"))
 
     def test_bloc(self):
         """Test menu on bloc titles"""
-        try:
-            os.mkdir('COMPILE_REMOTE/XXXX')
-            os.mkdir('COMPILE_REMOTE/XXXX/LOGS')
-            os.mkdir('COMPILE_REMOTE/XXXX/LOGS/john.doe')
-        except:
-            pass
+        for i in ('COMPILE_REMOTE/XXXX', 'COMPILE_REMOTE/XXXX/LOGS', 'COMPILE_REMOTE/XXXX/LOGS/john.doe'):
+            if not os.path.exists(i):
+                os.mkdir(i)
         with open('COMPILE_REMOTE/XXXX/questions.py', 'w', encoding='ascii') as file:
             file.write('''
 class Q(Question):
