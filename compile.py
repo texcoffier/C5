@@ -58,6 +58,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     shared_buffer = []
     current_question_max = 0
     run_tester_after_exec = True
+    phase = None
+    nr_input = None
     options = {}
     default_options = {} # Default options for the compiler can be defined here
 
@@ -136,7 +138,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self.post('compiler', self.compiler_initial_content())
                 try:
                     self.executable = self.run_compiler(source)
-                except Error as error: # pylint: disable bare-except
+                except: # pylint: disable bare-except
                     self.post('compiler',
                         '<b style="color: #F00">' + str(error) + '</b><pre>'
                         + html(error.stack) + '</pre>')
@@ -154,6 +156,10 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.post('executor', self.executor_initial_content())
         self.post('state', "running")
         self.post('tester', self.tester_initial_content())
+        self.phase = 0
+        self.nr_input = 0
+        self.quest.all_tests_are_fine = True
+        self.quest.tester_realtime_init()
         try:
             self.run_executor()
         except Error as error: # pylint: disable bare-except
@@ -164,7 +170,10 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         if self.run_tester_after_exec:
             self.run_tester()
         self.post('time', self.time_initial_content())
-
+    def restart(self):
+        """Next test phase on executable"""
+        self.phase += 1
+        self.run_executor()
     def run_compiler(self, _source): # pylint: disable=no-self-use
         """Do the compilation"""
         self.post('compile', 'No compiler defined')
@@ -200,7 +209,6 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
     def run_tester(self):
         """Do the regression tests"""
         current_question = self.current_question
-        self.quest.all_tests_are_fine = True
         try:
             self.quest.tester()
         except Error as error:
@@ -226,6 +234,9 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def read_input(self, hide=False):
         """Ask the webpage some input text, wait the answer."""
+        self.nr_input += 1
+        if self.phase:
+            return self.quest.tester_realtime_input(self.phase, self.nr_input-1)
         if not self.shared_buffer:
             return "SharedArrayBuffer not allowed by HTTP server"
         if not hide:

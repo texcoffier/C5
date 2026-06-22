@@ -295,6 +295,46 @@
             dans la zone «Les buts que vous devez atteindre» de l'interface étudiant.
             Elle autorise le passage à la question suivante
             si la réponse de l'étudiant est correcte.
+            Cette fonction est appelée une fois l'exécution terminée.
+        </li>
+        <li>
+            <tt>expectations(self)</tt> permet de
+            paliez aux limitations de <tt>tester</tt> et autorise plusieurs lancements
+            du programme avec des saisies utilisateurs différentes.
+            Elle retourne une description de l'exécution attendue :
+<pre>    def expectations(self):
+        def TRUE(infos)        : return True
+        def premier_entier()   : return '666'
+        def deuxieme_entier()  : return '-111'
+        def args(txt)          : return '666+-111' in txt
+        def resultat(txt)      : return '555' in txt
+        def complet(txt)       : return '666+-111=555' in txt
+        def flottant()         : return '3.14'
+        def erreur_lecture(txt): return 'ParseIntError' in txt
+        def exit_ok(infos)     : return '= 0' in infos[0]
+        def exit_error(infos)  : return '= -' in infos[0]
+
+        return [
+            ['EXIT', "Première exécution terminée."          , TRUE],
+
+            ['MSG' , "Teste l'addition de 2 entiers :"],
+            ['IN'  , "Lecture première valeur."              , premier_entier],
+            ['IN'  , "Lecture deuxième valeur."              , deuxieme_entier],
+            ['OUT' , "Affichage des arguments."              , args],
+            ['OUT' , "Affichage correcte du résultat."       , resultat],
+            ['OUT' , "Affichage complet."                    , complet],
+            ['EXIT', "Se termine sans erreur."               , exit_ok],
+
+            ['MSG' , "Teste l'addition de flottants (doit échouer)."],
+            ['IN'  , "Lecture première valeur."              , flottant],
+            ['OUT' , "La lecture d'un flottant doit échouer.", erreur_lecture],
+            ['EXIT', "Se termine en faisant une erreur."     , exit_error],
+        ]
+</pre>
+        Tous les messages sont affichés dès le début de l'exécution.
+        Lors de l'exécution les lignes deviennent progressivement vertes
+        quand le test retourne True.
+        Si aucun test ne retourne faux, on passe à la question suivante.
         </li>
         <li> <tt>expected_answer(self)</tt> affiche la correction à l'étudiant.
             La correction ne doit pas directement être indiquée dans

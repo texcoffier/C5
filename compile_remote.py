@@ -68,17 +68,23 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                             pass
 
             elif data[0] in ('executor', 'return'):
-                self.post('executor', self.escape(data[1]))
                 if data[0] == 'executor':
                     self.execution_result += data[1]
                 else:
                     self.execution_returns += data[1]
                     self.files = data[2]
+                if data[0] == 'return':
+                    self.quest.tester_realtime_exit(self.phase, self.nr_input, data[1:])
+                else:
+                    if data[1] != '':
+                        self.quest.tester_realtime_display(self.phase, self.nr_input, data[1])
+                if self.phase != 0:
+                    return
+                self.post('executor', self.escape(data[1]))
                 if '\002WAIT' in data[1]:
                     self.socket.send(JSON.stringify(['input', self.read_input(True)]))
                 if data[0] == 'return':
                     self.post('state', "stopped")
-                    self.run_tester()
                 if self.options['compiler'] == 'coqc':
                     for err in data[1].split('File "./test.v", line ')[1:]:
                         self.post('error',
