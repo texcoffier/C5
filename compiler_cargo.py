@@ -14,7 +14,7 @@ ALWAYS_ALLOWED = {  # Allowed system call for cargo project
                 "execve", "brk", "mmap", "access", "openat", "fstat", "close", "read", "pread64",
                 "arch_prctl", "set_tid_address", "set_robust_list", "rseq", "mprotect", "prlimit64",
                 "getrandom", "munmap", "poll", "rt_sigaction", "lseek", "sched_getaffinity", "sigaltstack",
-                "gettid", "write", "exit_group", "mkdir", "rmdir", "chmod", "newfstatat"
+                "gettid", "write", "exit_group", "newfstatat"
                 }
 
 
@@ -57,24 +57,28 @@ class Cargo(Compiler):
             'cargo', 'new', '--bin', project_name,
             cwd=project_dir.parent
         )
+
         await process.wait()
 
         if not (project_path / "src").exists():
             raise RuntimeError("Cargo project creation failed")
 
-        # replace main.rs with the code in source_file (better than rename)
+        # Rename the project using lowercase to avoid the snake_case warning (user warning/error).
+        cargo_toml = project_path / "Cargo.toml"
+        content = cargo_toml.read_text()
+        content = content.replace(f'name = "{project_name}"', 'name = "home"')
+        cargo_toml.write_text(content)
+
+        # replace main.rs with the code in source_file
         src_file = pathlib.Path(session.dir) / self.source_file
         dst_dir = project_path / "src"
         dst_dir.mkdir(parents=True, exist_ok=True)
-
-        os.replace(src_file, dst_dir / "main.rs")
-
-        src_file.unlink(missing_ok=True)
+        os.rename(src_file, dst_dir / "main.rs")
 
         session.allowed_str = ':'.join(list(ALWAYS_ALLOWED) + session.allowed)
 
         process = await asyncio.create_subprocess_exec(
-            'cargo', 'build',
+            'cargo', 'build', '--quiet',
             stderr=asyncio.subprocess.PIPE,
             preexec_fn=set_compiler_limits,
             close_fds=True,
@@ -90,7 +94,7 @@ class Cargo(Compiler):
         await process.wait()
 
         project_name = pathlib.Path(session.home).name
-        session.binary_path = pathlib.Path(session.home) / "target" / "debug" / project_name
+        session.binary_path = pathlib.Path(session.home) / "target" / "debug" / "home"
 
         if stderr_bytes:
             stderr = stderr_bytes.decode('utf-8')
@@ -140,7 +144,7 @@ class Cargo(Compiler):
             str(session.uid),
             session.home,
             str(session.max_time),
-            "target/debug/HOME",
+            "target/debug/home",
             stdout=asyncio.subprocess.PIPE,
             stdin=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
