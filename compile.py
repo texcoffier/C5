@@ -8,7 +8,8 @@ def onmessage(event):
     """Evaluate immediatly the function if in the worker"""
     if event.data.splice:
         if event.data[0] == 'goto':
-            Compile.worker.goto(event.data[1])
+            print('COMPILE', event.data)
+            Compile.worker.goto(event.data[1], event.data[2])
         elif event.data[0] == 'array':
             Compile.worker.shared_buffer = event.data[1]
         elif event.data[0] == 'source':
@@ -28,7 +29,7 @@ def onmessage(event):
                 Compile.worker.post('allow_edit', '1')
         elif event.data[0] == 'start':
             trace('Worker: Start')
-            Compile.worker.goto(event.data[1])
+            Compile.worker.goto(event.data[1], event.data[2])
             Compile.worker.start_question()
             Compile.worker.init()
             trace("Worker: init done. current_question_max=",
@@ -99,21 +100,33 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.send_options()
         for question in self.options['ANSWERS']:
             question = Number(question)
-            if self.questions[question] and self.options['ANSWERS'][question]:
-                self.questions[question].last_answer = self.options['ANSWERS'][question][0]
-                if question >= self.current_question and self.options['ANSWERS'][question][1]:
+            quest = self.questions[question]
+            option = self.options['ANSWERS'][question]
+            if quest and option:
+                quest.round = option[2]
+                quest.last_answer = option[0]
+                if question >= self.current_question and option[1]:
                     if self.questions[question + 1]:
                         # Only if not after the last question
                         self.current_question_max = question + 1
+        current_seed = 0
         for i, quest in enumerate(self.questions):
             quest.worker = self
-            self.post('default', [i, quest.default_answer()])
-            self.post('expected_answer', [i, quest.expected_answer()])
-            self.post('grading_ladder', [i, quest.grading_ladder()])
+            quest.index = i
+            if quest.round is None:
+                quest.round = 0
+            if self.options['LOGIN']:
+                quest.random_seed(
+                    sum([1/i.charCodeAt(0) for i in self.options['LOGIN']]) + current_seed
+                    )
+            else:
+                quest.random_seed(0) # For session admin page
+            current_seed = quest.seed
         self.current_question = self.current_question_max
-        if self.current_question != 0 or self.questions[self.current_question].last_answer:
-            self.source = (self.questions[self.current_question].last_answer
-                           or self.questions[self.current_question].default_answer())
+        quest = self.questions[self.current_question]
+        if self.current_question != 0 or quest.last_answer:
+            quest.random_restart()
+            self.source = quest.last_answer or quest.default_answer()
             self.start_question()
 
     def disable_goto(self):
@@ -189,26 +202,35 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
         trace("Worker: start question", self.current_question + '/' + self.current_question_max)
         if self.current_question < 0:
             return
-        self.post('current_question', self.current_question)
+        self.quest = quest = self.questions[self.current_question]
+        quest.random_restart()
+        self.post('default', [quest.index, quest.default_answer()])
+        quest.random_restart()
+        self.post('expected_answer', [quest.index, quest.expected_answer()])
+        quest.random_restart()
+        self.post('grading_ladder', [quest.index, quest.grading_ladder()])
+        self.post('current_question', [self.current_question, quest.round])
         self.post('allow_edit', '0')
         if self.quest:
             self.quest.last_answer = self.source
         if self.current_question > self.current_question_max:
             self.current_question_max = self.current_question
-        self.quest = self.questions[self.current_question]
         self.post('question', self.question_initial_content())
-        self.post('question', self.quest.question())
+        quest.random_restart()
+        self.post('question', quest.question())
         self.post('index', self.index_initial_content())
         self.send_options()
         self.post('allow_edit', '1')
 
-    def goto(self, question):
+    def goto(self, question, the_round):
         """Change question"""
         self.current_question = question
+        self.questions[self.current_question].round = the_round
         self.start_question()
     def run_tester(self):
         """Do the regression tests"""
         current_question = self.current_question
+        self.quest.random_restart()
         try:
             self.quest.tester()
         except Error as error:
@@ -221,16 +243,23 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 and not self.question_yet_solved(current_question)
            ):
             self.post("good", self.source)
-            self.options['ANSWERS'][current_question] = [self.source, 1]
+            option = self.options['ANSWERS'][current_question]
+            if option:
+                option[0] = self.source
+                option[1] += 1
+            else:
+                self.options['ANSWERS'][current_question] = [self.source, 1, self.quest.round]
         else:
             self.current_question = current_question # Keep same question
+        if self.current_question >= len(self.questions):
+            self.current_question = len(self.questions) - 1
 
     def question_yet_solved(self, question):
         """Return True if the current question has been correctly answered"""
         # trace(question, self.options['ANSWERS'])
         if not self.options['ANSWERS'][question]:
             return False
-        return self.options['ANSWERS'][question][1]
+        return self.options['ANSWERS'][question][1] > self.questions[question].round
 
     def read_input(self, hide=False):
         """Ask the webpage some input text, wait the answer."""

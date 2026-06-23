@@ -271,18 +271,20 @@ def parse_grading(history, fast=False):
 #    'g'             # Question passed (good)
 #    'b<description> # A bubble comment
 #    'd<defaultraw>' # The default text to use (question creation or use the new default)
+#    'R'             # Question next round.
 
 class QuestionStats:
     def __init__(self):
         self.start = None               # <index> of the question creation
         self.head = None                # <index> of the last version
         self.tags = []                  # [['', None]]        # List[Tuple[<tag>, <index>]]
-        self.good = False
+        self.good = 0                   # +1 on each round
         self.last_default_raw = '∅'     # Last default RAW
         self.current_default_raw = '∅'  # Current default in use RAW
         self.source_old = ''            # The previous source value (for pop())
         self.source = ''                # The current source
         self.last_tagged_source = ''    # The last saved source (for green diff)
+        self.round = 0                  # Question round (+1 when student asks next version)
         self.form = False
     def can_put(self, position, char='0'):
         return (
@@ -353,6 +355,7 @@ class Journal:
             'B': bind(self.action_B, self),
             'b': bind(self.action_b, self),
             'd': bind(self.action_d, self),
+            'R': bind(self.action_R, self),
         }
         self.questions = {}
         self.cache = {}
@@ -384,8 +387,6 @@ class Journal:
     def record_default(self, question, default_answer_raw):
         """Create question and record default answer for the question"""
         if question in self.questions:
-            if self.questions[question].last_default_raw != '∅':
-                raise ValueError('Bug')
             self.questions[question].last_default_raw = default_answer_raw
             return
         trace("Store default answer", question, default_answer_raw)
@@ -407,6 +408,8 @@ class Journal:
         self.content = ''
         self.position = 0
         self.scroll_line = 0
+        self.round = 0
+        self.good = 0
         self.question = int(value)
         if start is not None:
             if self.question in self.questions:
@@ -468,7 +471,7 @@ class Journal:
         """Goto in the past.
         The value is index of the line after the goal"""
         if value in self.cache:
-            self.position, self.content, self.scroll_line, self.height, self.question, bubbles = self.cache[value]
+            self.position, self.content, self.scroll_line, self.height, self.question, bubbles, self.round, self.good = self.cache[value]
             self.bubbles = [Bubble(i) for i in bubbles]
             self.update_tree(value, start)
             return
@@ -480,8 +483,8 @@ class Journal:
             if action in 'PIDLbHd': # Position/Insert/Delete/Line/Bubble/Height/Default
                 lines.append(line)
                 index -= 1
-            elif action in 'TOC#ScgtFB':
-                # Time/Open/Close/Debug/compile/good/tag/Focus/Blur
+            elif action in 'TOC#ScgtFBR':
+                # Time/Open/Close/Debug/compile/good/tag/Focus/Blur/Round
                 index -= 1
                 if index < 0:
                     break
@@ -496,7 +499,7 @@ class Journal:
                 raise ValueError('Unexpected :' + action)
         self.bubbles = []
         self.evaluate_fast(lines[::-1])
-        self.cache[value] = (self.position, self.content, self.scroll_line, self.height, self.question, [i.str() for i in self.bubbles])
+        self.cache[value] = (self.position, self.content, self.scroll_line, self.height, self.question, [i.str() for i in self.bubbles], self.round, self.good)
         self.update_tree(value, start)
 
     def action_T(self, value, _start):
@@ -526,7 +529,7 @@ class Journal:
         """Last compilation result, currently unused"""
     def action_g(self, _value, _start):
         """Question passed test (no argument)"""
-        self.questions[self.question].good = True
+        self.questions[self.question].good += 1
     def action_b(self, value, start):
         """Add a bubble or update it"""
         if value.startswith('+'):
@@ -556,6 +559,9 @@ class Journal:
         self.content = question.get_current_default()
         self.bubbles = []
         self.position = 0
+    def action_R(self, _value, _start):
+        """Question next version"""
+        self.questions[self.question].round += 1
 
     def evaluate_fast(self, lines):
         """Evaluate all these lines in the current state"""
@@ -828,6 +834,8 @@ class Journal:
                 text = 'Focus ou plein écran perdu : ' + self.blur_times[index] + ' secondes'
             elif line.startswith('d'):
                 text = 'Initialisation avec la réponse par défaut'
+            elif line.startswith('R'):
+                text = 'Nouvelle version de la question'
             else:
                 continue
             lines.append(text)
@@ -1008,6 +1016,15 @@ class Journal:
             ctx.lineTo(x+center+3, y)
             ctx.fill()
             return 1
+        def draw_R(action, x, y):
+            "New round"
+            y += 0.5
+            ctx.strokeStyle = '#000'
+            ctx.beginPath()
+            ctx.moveTo(x+center, y - zoom + 0.5)
+            ctx.lineTo(x+center, y - size - 0.5)
+            ctx.stroke()
+            return zoom
         def draw_O(_action, x, y):
             "Connection"
             ctx.strokeStyle = '#88F'
@@ -1070,8 +1087,7 @@ class Journal:
             'H': draw_nothing, '#': draw_nothing, 'G': draw_nothing,
             'B': draw_B, 'F': draw_F,
             'b': draw_b, 'O': draw_O, 'S': draw_S, 'g': draw_g, '✍': draw_hand,
-            'd': draw_nothing
-        }
+            'd': draw_nothing, 'R': draw_R}
         x = (self.offset_x or 0)
         feedback = None
         self.positions = positions = {}
@@ -1695,9 +1711,9 @@ def create_shared_worker(login='', hook=None, readonly=False):
                 trace("CCCCC: initial journal update received, ask first question")
                 ccccc.really_started = True
                 if JOURNAL.question is None:
-                    ccccc.worker.postMessage(['start', 0])
+                    ccccc.worker.postMessage(['start', 0, 0])
                 else:
-                    ccccc.worker.postMessage(['start', JOURNAL.question])
+                    ccccc.worker.postMessage(['start', JOURNAL.question, JOURNAL.questions[JOURNAL.question].round])
             if journal.lines[msg_id] == message:
                 trace("Local change")
                 return
@@ -1808,6 +1824,10 @@ def create_shared_worker(login='', hook=None, readonly=False):
         shared_worker.post('Q' + index)
         shared_worker.post('d' + protect_crlf(question.last_default_raw))
     shared_worker.question = shared_worker_question
+    def shared_worker_new_round():
+        """New round for the current question"""
+        shared_worker.post('R')
+    shared_worker.new_round = shared_worker_new_round
     def shared_worker_scroll_line(line, height):
         """Scroll position"""
         shared_worker.post('L' + line)

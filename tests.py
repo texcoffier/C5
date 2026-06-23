@@ -140,7 +140,8 @@ class Tests: # pylint: disable=too-many-public-methods
         os.system('./127 restart') # Clear all server states
 
         self.driver.set_window_size(1024, 1024)
-        for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction', 'COMPILE_JS/example'):
+        for course_name in ('COMPILE_REMOTE/test', 'COMPILE_JS/introduction',
+                'COMPILE_JS/example', 'COMPILE_REMOTE/tests_random'):
             course = utilities.CourseConfig(course_name)
             course.set_parameter('proctors', 'REGTESTS\n') # Marker for 'clean.py'
             if course_name == 'COMPILE_JS/example':
@@ -209,8 +210,9 @@ class Tests: # pylint: disable=too-many-public-methods
                     self.test_manage_reset,
                     self.test_comments,
                     self.test_bloc,
-                    # self.test_bad_scroll, # VERY very LONG test
-                    # self.test_git,
+                    self.test_random,
+                    self.test_bad_scroll, # VERY very LONG test
+                    # self.test_git, # No more working
                     ):
                 print('*'*99)
                 print(f'{self.driver.name.upper()} «{test.__func__.__name__}» {test.__doc__.strip()}')
@@ -1994,6 +1996,64 @@ IXXX-answer
                     #     sys.stdin.readline()
                     editor.send_keys(Keys.ENTER)
                     self.check('.layered', {'scrollTop': GreaterInt(1000)}, nbr=1, quiet=True)
+
+    def test_random(self):
+        """Tests inputs"""
+        self.load_page('=REMOTE=tests_random')
+        time.sleep(0.2)
+
+        def next_round():
+            self.check('.question BUTTON').click()
+        def check_index(value):
+            index = self.check('.questions:nth-child(2)').get_attribute('innerHTML')
+            if index != '<div class="tips"><div>Get a single random</div><div>Check that random_version() does not returns twice the same</div></div><style></style>' + value:
+                raise ValueError(
+                    "\nExpected: " + value + "\n" + "\nComputed: " + index)
+        def try_answer(title):
+            answer = self.check('#test_answer').get_attribute('textContent')
+            editor = self.move_cursor('.editor')
+            source = editor.get_attribute('innerHTML')
+            self.driver.execute_script("arguments[0].innerHTML = arguments[1]",
+                editor, source.replace('NUMBER', answer))
+            self.f9()
+            self.check('.executor', {'innerText': Contains("'" + answer + "'")})
+            self.check_dialog(contains='⭐', accept=True, required=True)
+            if title:
+                self.check('.editor_title H2', {'innerText': Contains(title)})
+            try:
+                self.check('.question BUTTON', nbr=2)
+                raise ValueError("Unexpected next round")
+            except: # pylint: disable=bare-except
+                pass
+            return answer
+
+        # Answer first question
+        check_index('<div class="current possible">1</div><div class="">2</div>')
+        answer1 = try_answer(title="") # No start because next question
+        check_index('<div class="good" onclick="ccccc.goto_question(0)">1</div><div class="current possible">2</div>')
+
+        # Answer second question
+        answer2 = try_answer(title='⭐')
+        check_index('<div class="good" onclick="ccccc.goto_question(0)">1</div><div class="current good">2</div>')
+
+        # Return to first question to take the next round
+        self.check('DIV.good[onclick="ccccc.goto_question(0)"]').click()
+        next_round()
+        answer3 = try_answer(title='⭐⭐')
+        check_index('<div class="current possible">1</div><div class="good" onclick="ccccc.goto_question(1)">2</div>')
+
+        # Return to second question to take the second round
+        self.check('DIV.good[onclick="ccccc.goto_question(1)"]').click()
+        next_round()
+        check_index('<div class="good" onclick="ccccc.goto_question(0)">1</div><div class="current possible">2</div>')
+        answer4 = try_answer(title='⭐⭐')
+        assert answer2 != answer4 # Not twice the same version in a row
+        check_index('<div class="good" onclick="ccccc.goto_question(0)">1</div><div class="current good">2</div>')
+
+        # Third round on second question
+        next_round()
+        answer5 = try_answer(title='⭐⭐⭐')
+        assert answer2 == answer5 # Because only 2 versions
 
     def screenshots(self):
         """Dump screen shots"""

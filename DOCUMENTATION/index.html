@@ -396,6 +396,49 @@
         session à la fois à partir de la page listant les sessions.
     </p>
 
+    <h3>Utilisation de nombres aléatoires</h3>
+    <p>
+        Dans les méthodes <tt>default_answer</tt> <tt>question</tt>,
+        <tt>tester</tt> et <tt>expected_answer</tt> une suite
+        de nombres aléatoires peut être utilisée.
+        Il faut bien entendu que les appels soient faits dans
+        le même ordre dans les différentes fonctions pour que
+        les mêmes valeurs soient retournées.
+    </p>
+    <ul>
+        <li> <tt>self.random()</tt> retourne un nombre flottant dans [0; 1[</li>
+        <li> <tt>self.random_version(N)</tt> retourne un entier entre 0 et N exclus.
+            Limitation : il ne faut pas appeler <tt>random</tt> avant.
+        </li>
+    </ul>
+
+    <h3>Multiple alternatives de la même question</h3>
+    <p>
+        Il est possible d'offrir plusieurs alternatives des questions.
+        On peut par exemple faire apparaître le bouton de changement
+        d'alternative dans l'énoncé de la question
+        quand la question courante a été réussie :
+    </p>
+    <pre>if self.question_yet_solved():
+    question += self.new_round_button('Essayer une autre alternative')
+</pre>
+    <p>
+        Si l'étudiant a réussi 3 alternatives de la question
+        alors <tt>self.round == 3</tt> et il y a ⭐⭐⭐ dans le titre du bloc source.
+    </p>
+    <p>
+        Il est conseillé d'utiliser <tt>self.random_version(N)</tt>
+        pour choisir l'alternative car l'entier retourné pour
+        les différentes alternatives sera différents.
+        Au bout de N+1 alternatives on retombera forcément
+        sur une alternative déjà réussie.
+        De plus il est garanti que les alternatives x-1 et x seront
+        toujours différentes (même entre 2 blocs de N valeurs).
+    </p>
+    <p>
+        Un exemple d'utilisation est dans la session <tt>tests_random</tt>.
+    </p>
+
     <h3>Essayer le sujet.</h3>
     <p>
         On suppose que :
@@ -697,13 +740,13 @@ def default_answer(self):
 <tr><td>time_m<td><tt>&#x27; m &#x27;</tt><td>Time message</tr>
 <tr><td>time_h<td><tt>&#x27; h &#x27;</tt><td>Time message</tr>
 <tr><th style="background: #FFF" colspan="3">Options defined by the compiler used by the course</tr>
-<tr><td>compiler<td><tt>&#x27;&#x27;</tt><td>Compiler to use (should not be changed):<br>«g++» «gcc» «racket» «coqc» «prolog»</tr>
+<tr><td>compiler<td><tt>&#x27;&#x27;</tt><td>Compiler to use (should not be changed):<br>«g++» «gcc» «racket» «coqc» «prolog» «cargo»</tr>
 <tr><td>compile_options<td><pre>[
 ]</pre><td>C Compile options:<br>«-Wall» «-pedantic» «-pthread» «-std=c++11» «-std=c++20»</tr>
 <tr><td>ld_options<td><pre>[
 ]</pre><td>C Libraries to link with:<br>«-lm»</tr>
-<tr><td>language<td><tt>&#x27;&#x27;</tt><td>Language to use for syntaxic coloring:<br> «cpp» «python» «coq»...</tr>
-<tr><td>extension<td><tt>&#x27;&#x27;</tt><td>Source code filename extension for ZIP and GIT: «cpp», «py», «v»...</tr>
+<tr><td>language<td><tt>&#x27;&#x27;</tt><td>Language to use for syntaxic coloring:<br> «cpp» «python» «coq» «rust»...</tr>
+<tr><td>extension<td><tt>&#x27;&#x27;</tt><td>Source code filename extension for ZIP and GIT: «cpp», «py», «v» «rs»...</tr>
 <tr><th style="background: #FFF" colspan="3">Running parameters</tr>
 <tr><td>max_time<td>1<td>Maximum CPU time allowed between 1 and 10 seconds</tr>
 <tr><td>max_data<td>200000<td>Maximum number of kilo-bytes transfered (no more than 200_000KB)</tr>

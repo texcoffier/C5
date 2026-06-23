@@ -349,7 +349,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         answers = {}
         for question_index, question in JOURNAL.questions.Items():
-            answers[question_index] = [question.source, question.good]
+            answers[question_index] = [question.source, question.good, question.round]
         self.options['ANSWERS'] = answers # All the questions/answers recorded
 
         self.worker_url = BASE + '/' + COURSE + "?ticket=" + TICKET + location.hash
@@ -652,6 +652,9 @@ class CCCCC: # pylint: disable=too-many-public-methods
         self.indent_button.className = 'indent_button'
         if self.options['display_indent']:
             self.editor_title.firstChild.appendChild(self.indent_button)
+
+        self.stars = document.createElement('TT')
+        self.editor_title.firstChild.appendChild(self.stars)
 
         self.save_button = document.createElement('TT')
         self.save_button.innerHTML = self.options['icon_save']
@@ -2610,6 +2613,18 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 else:
                     img.src = img.src + '?ticket=' + TICKET
 
+    def new_round(self):
+        """
+        New round of the same question.
+        """
+        self.worker.postMessage(['goto', self.current_question, JOURNAL.questions[self.current_question].round+1])
+
+    def update_stars(self):
+        stars = ''
+        for _ in range(self.journal_question.good):
+            stars += '⭐'
+        self.stars.textContent = stars
+
     def onmessage(self, event): # pylint: disable=too-many-branches,too-many-statements,too-many-locals
         """Interprete messages from the worker: update self.messages"""
         what = event.data[0]
@@ -2623,14 +2638,19 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 else:
                     self.options[key] = value[key]
         elif what == 'current_question':
+            the_question, the_round = value
             if JOURNAL.pending_goto:
                 JOURNAL.pop()
                 JOURNAL.pending_goto_history = []
             self.do_not_clear = {}
-            self.current_question = value
-            # self.record_pending_goto() # Record pending goto because if ^Z
-            SHARED_WORKER.question(value)
-            self.journal_question = JOURNAL.questions[value]
+            if self.current_question != the_question:
+                self.current_question = the_question
+                # self.record_pending_goto() # Record pending goto because if ^Z
+                SHARED_WORKER.question(the_question)
+            elif the_round != JOURNAL.questions[the_question].round:
+                SHARED_WORKER.new_round()
+                self.set_editor_content(self.journal_question.get_current_default())
+            self.journal_question = JOURNAL.questions[the_question]
             if not self.journal_question:
                 return
             if self.journal_question.start + 1 == self.journal_question.head:
@@ -2650,6 +2670,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 if self.options['feedback'] >= 5 and GRADES:
                     self.update_grading(GRADES)
             self.hide_expected_answer()
+            self.update_stars()
 
             document.getElementById('editor_name').innerHTML = '<BLOCTITLE>' + self.options['editor_title'] + '</BLOCTITLE>'
 
@@ -2668,13 +2689,18 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if self.state == "inputdone":
                 self.state = "running"
         elif what == 'good':
-            if not self.journal_question.good:
+            if self.journal_question.good == self.journal_question.round:
                 SHARED_WORKER.good()
                 messages = self.options['good']
-                def next_question():
-                    ccccc.worker.postMessage(['next_question'])
-                    self.tree_canvas() # Here because scheduler do not call coloring
-                self.popup_message(messages[millisecs() % len(messages)], cancel='', ok='OK', callback=next_question)
+                if (self.current_question+1) not in JOURNAL.questions:
+                    def next_question():
+                        ccccc.worker.postMessage(['next_question'])
+                        self.tree_canvas() # Here because scheduler do not call coloring
+                else:
+                    def next_question():
+                        self.update_stars()
+                self.popup_message('⭐ ' + messages[millisecs() % len(messages)],
+                    cancel='', ok='OK', callback=next_question)
         elif what == 'executor':
             if self.options['compiler'] == 'coqc':
                 if self.clear_if_needed(what) or not self.coqc_content:
@@ -3040,7 +3066,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             #if self.in_past_history:
             #    JOURNAL.pop()
             #self.worker.postMessage(['source', self.current_question, JOURNAL.content])
-            self.worker.postMessage(['goto', index])
+            self.worker.postMessage(['goto', index, JOURNAL.questions[index].round or 0])
 
     def get_element_box(self, element):
         #if element.offsetWidth == 0:

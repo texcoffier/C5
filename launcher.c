@@ -68,9 +68,9 @@ int main(int argc, char **argv)
     if ( mkdir(filename, 0555) )
         {
             rmdir(filename); // Clear stats
-            mkdir(filename, 055);
+            mkdir(filename, 0555);
         }
-    chmod(filename, 055);
+    chmod(filename, 0555);
 
     // Add this processus to the control group
     sprintf(filename, "/sys/fs/cgroup/C5_%d/cgroup.procs", uid);

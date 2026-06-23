@@ -7,9 +7,14 @@ class Question:
     all_tests_are_fine = True
     to_test = []
     to_test_index = 0
+    round = None         # Version of the question +1 at each question restart
+    seed = None          # The random seed (common to each version)
+    index = None         # in the questions list of the session
+    random_called = None # The random_version() is broken if random() called before
     def __init__(self):
         self.worker = None
         self.__doc__ = self.__doc__ # Fix RapydScript problem
+        self.current_random = []    # Current random for each question version
     def display(self, message):
         """Display the message in the student feedback"""
         self.worker.post('tester', message)
@@ -28,8 +33,7 @@ class Question:
             self.message(text.match(RegExp(needle)), message)
     def set_question(self, index):
         """Change question"""
-        if index < len(self.worker.questions):
-            self.worker.current_question = index
+        self.worker.current_question = index
     def set_options(self, options):
         """Change options"""
         self.worker.set_options(options)
@@ -182,6 +186,75 @@ class Question:
         """Start a new execution"""
         self.worker.nr_input = 0
         self.worker.restart()
+    def question_yet_solved(self):
+        return self.worker.question_yet_solved(self.index)
+    def new_round_button(self, label="New round"):
+        """Call the function so the student may have a button «New version».
+        It may be when :
+            * the answer is good.
+            * the student fails to answer a very long time.
+        You should not call it when all the versions have been displayed.
+        """
+        return '<button onclick="ccccc.new_round()">' + label + '</button>'
+    def random_seed(self, seed):
+        """Called by the worker before calling default_answer/question/tester
+        to restart the random sequences.
+        The seed value is computed from the student login.
+        The seed is a float number
+        """
+        self.seed = seed
+        self.random_restart()
+    def random_restart(self):
+        self.current_random = []
+        self.random_called = False
+    def random(self, the_round=None):
+        """Returns the next random number in [0;1[
+        If 'the_round' is None, use the current the_round random serie.        
+        """
+        if the_round is None:
+            the_round = self.round
+        current_random = self.current_random[the_round]
+        if not current_random and current_random != 0:
+            current_random = self.seed
+        self.current_random[the_round] = (current_random * (12.3456789012345678901 + the_round)) % 1.
+        self.random_called = True
+        return self.current_random[the_round]
+    def random_shuffle(self, values, the_round=None):
+        """Randomize the order of the items of the values."""
+        nbr = len(values)
+        for i in range(nbr-1):
+            j = i + int((nbr - i) * self.random(the_round))
+            values[i], values[j] = values[j], values[i]
+    def random_ints(self, nbr, the_round=None):
+        """Randomize the first integers."""
+        choices = range(nbr)
+        self.random_shuffle(choices, the_round)
+        return choices
+    def random_version(self, nbr_choices):
+        """Return a random choice between 0 and 'nbr_choices' excluded.
+        Returns a choice yet returned only if 'self.round >= nbr_choices'
+
+        With 'nbr_choices=3',  after 6 differents versions:
+        0 0           NO : Not twice the same choice in a group of three
+        0 1 2  2      NO : not the same choice twice in a row
+        0 1 2  1 2 1  NO : Not twice the same choice in a group of three
+        0 1 2  0 1 2  OK
+        0 1 2  0 2 1  OK : 2  0 2 allowed because not in the same group of three
+        0 1 2  1 0 2  OK
+        0 1 2  1 2 0  OK : last of the possibles sequence starting by 0 1 2
+        """
+        if self.random_called:
+            alert("random() must not be called before random_version()")
+        group = self.round // nbr_choices
+        choices = self.random_ints(nbr_choices, the_round=group)
+        if group >= 1:
+            previous_choices = self.random_ints(nbr_choices, the_round=group - 1)
+            if choices[0] == previous_choices[-1]:
+                # Take the next to not have twice the same in a row.
+                return choices[(self.round + 1) % nbr_choices]
+        self.random_called = False
+        return choices[self.round % nbr_choices]
+
 
 def LOAD_QUESTION(filename):
     return "LOAD_QUESTION(" + filename + ") # Missing file"
