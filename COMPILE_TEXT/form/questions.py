@@ -11,7 +11,7 @@ COURSE_OPTIONS = {'positions' : {
     },
     'state': 'Ready',
     'checkpoint': 0,
-    'expected_students_required': 1, # Do not display to student
+    'expected_students': 'nobody', # Do not display to student
     'title': "Démonstrateur de saisie de formulaire"
     }
 

@@ -11,7 +11,6 @@ COURSE_OPTIONS = {
     'state': 'Ready',
     'checkpoint': 0,
     'allow_copy_paste': 1,
-    'expected_students_required': 0, # Do display to all students
     'automatic_compilation': 0,
     'compile_options': ['-Wall', '-pedantic'],
     'allowed': ['brk'],

@@ -7,7 +7,7 @@ COURSE_OPTIONS = {
     'state': 'Ready',
     'checkpoint': 0,
     'automatic_compilation': 1,
-    'expected_students_required': 1, # Do not display to student
+    'expected_students': 'nobody', # Do not display to student
     'question_title': 'Explications',
     'tester_title': 'Les points',
     'editor_title': 'Définition du barème',

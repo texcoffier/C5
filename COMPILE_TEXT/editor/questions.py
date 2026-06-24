@@ -6,7 +6,7 @@ COURSE_OPTIONS = {
     'forbid_question_copy': 0,
     'state': 'Ready',
     'checkpoint': 0,
-    'expected_students_required': 1, # Do not display to student
+    'expected_students': 'nobody', # Do not display to student
     'automatic_compilation': 1,
     'positions' : {
         'question': [1, 29, 0, 20, '#EFE'],
