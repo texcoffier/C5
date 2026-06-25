@@ -813,10 +813,13 @@ System calls allowable for g++/gcc:
             <td> HTML
             <td> compile_html.py
             <td> Traduction dans le navigateur web.<br>
-                Pas de cours en exemple,<br>
                 c'est pour éditer les questions en HTML<br>
-                <a target="_blank" href="COMPILE_HTML/editor/questions.py">COMPILE_HTML/editor</a>
-            <td>
+                Pour utiliser cette interface de saisie :
+                <pre>def question(self):
+    return LOAD_QUESTION("1-question.html")</pre>
+                Puis aller dans l'onglet média de la page d'administration
+                de la session pour modifier son contenu.
+            <td> <a target="_blank" href="COMPILE_HTML/editor/questions.py">COMPILE_HTML/editor</a>
         </tr>
         <tr>
             <td> JavaScript
@@ -828,10 +831,25 @@ System calls allowable for g++/gcc:
         <tr>
             <td> Markdown
             <td> compile_md.py
-            <td> Traduction dans le navigateur web.
-                Pas de cours en exemple,<br>
-                c'est pour éditer les questions en HTML<br>
+            <td> Traduction dans le navigateur web.<br>
+                c'est pour éditer les questions en Markdown<br>
+                Pour utiliser cette interface de saisie :
+                <pre>def question(self):
+    return LOAD_QUESTION("1-question.md")</pre>
+                Puis aller dans l'onglet média de la page d'administration
+                de la session pour modifier son contenu.
             <td> <a target="_blank" href="COMPILE_MD/editor/questions.py">COMPILE_MD/editor</a>
+        </tr>
+        <tr>
+            <td> Grading<br>Ladder
+            <td> compile_gl.py
+            <td> Langage de description de barèmes de notation.<br>
+                Pour utiliser cette interface de saisie :
+                <pre>def grading_ladder(self):
+    return LOAD_GRADING("1-grading.gl")</pre>
+                Puis aller dans l'onglet média de la page d'administration
+                de la session pour modifier son contenu.
+            <td> <a target="_blank" href="COMPILE_GL/editor/questions.py">COMPILE_GL/editor</a>
         </tr>
         <tr>
             <td> Python
@@ -903,6 +921,13 @@ System calls allowable for g++/gcc:
                 <p>
                 Mettre %% en début de ligne pour faire une requête
             <td> <a target="_blank" href="COMPILE_REMOTE/prolog/questions.py">COMPILE_REMOTE/<br>prolog</a>
+        </tr>
+        <tr>
+            <td> Rust
+            <td> <b>compile_remote.py</b><br>
+                compile_cargo.py
+            <td> Utilise <tt>cargo</tt> pour compiler
+            <td> <a target="_blank" href="COMPILE_REMOTE/rust/questions.py">COMPILE_REMOTE/<br>rust</a>
         </tr>
         <tr>
             <td> Lisp
@@ -1925,7 +1950,8 @@ server {
             <td>compiler_coqc.py<br>
                 compiler_gcc.py<br>
                 compiler_prolog.py<br>
-                compiler_racket.py
+                compiler_racket.py<br>
+                compiler_cargo.py
             <td>Les différents compilateurs.
                 Les instances de compilateur sont des singletons.
                 <p>
