@@ -878,8 +878,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
             return # Compiler is running
         if self.options['automatic_compilation'] and self.state == 'running':
             return # Program is running
-        if (self.options['automatic_compilation'] and self.source != self.old_source
-            or self.compile_now):
+        if (self.options['automatic_compilation'] or self.compile_now) and self.source != self.old_source:
             trace('CCCCC: compile')
             self.compile_now = False
             self.old_source = self.source # Do not recompile the same thing
