@@ -82,25 +82,22 @@ class Process: # pylint: disable=too-many-instance-attributes
         await self.cmp.compile(self)
     async def indent(self, data: str) -> None:
         """Indent"""
-        #self.cmp.name = instace du compkiler autorisé
-        if self.cmp.name == 'cargo' or 'rust':
-            process = await asyncio.create_subprocess_exec(
-                'rustfmt',
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                )
-        else:
-            process = await asyncio.create_subprocess_exec(
-                'astyle',
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
+        process = await asyncio.create_subprocess_exec(
+            'rustfmt' if self.cmp.name in ('cargo' or 'rust') else 'astyle',
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
             )
         assert process.stdin
         process.stdin.write(data.encode('utf-8'))
         process.stdin.close()
         assert process.stdout
         indented = await process.stdout.read()
-        await self.websocket.send(json.dumps(['indented', indented.decode('utf-8')]))
+        process.wait()
+        if process.returncode:
+            indented = data # Change nothing on error
+        else:
+            indented = indented.decode('utf-8')
+        await self.websocket.send(json.dumps(['indented', indented]))
 
 
     async def run(self, data) -> None:
