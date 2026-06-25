@@ -510,9 +510,6 @@ H2 {
 
 .questions>DIV.good {
     background: #0F0;
-    border-top-right-radius: 0.5vw;
-    border-bottom-right-radius: 0.5vw;
-    padding-right: 1.8vw;
 }
 
 .questions>DIV.current.good,
