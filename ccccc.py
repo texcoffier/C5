@@ -3066,7 +3066,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             #if self.in_past_history:
             #    JOURNAL.pop()
             #self.worker.postMessage(['source', self.current_question, JOURNAL.content])
-            self.worker.postMessage(['goto', index, JOURNAL.questions[index].round or 0])
+            if JOURNAL.questions[index]:
+                the_round = JOURNAL.questions[index].round
+            else:
+                the_round = 0
+            self.worker.postMessage(['goto', index, the_round])
 
     def get_element_box(self, element):
         #if element.offsetWidth == 0:
