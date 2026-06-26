@@ -1315,7 +1315,10 @@ async def update_file(request:Request, session:Session, compiler:str, replace:st
     if os.path.exists(dst_dirname + '/questions.py'):
         os.rename(dst_dirname + '/questions.py', dst_dirname + '/questions.py~')
     with open(dst_dirname + '/questions.py', "wb") as file:
-        file.write(filehandle.file.read())
+        content = filehandle.file.read()
+        if content[-1] != b'\n':
+            content += b'\n'
+        file.write(content)
 
     process = await asyncio.create_subprocess_exec(
         "make", dst_dirname + '/questions.js',
