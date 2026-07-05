@@ -1033,6 +1033,17 @@ class JournalLink: # pylint: disable=too-many-instance-attributes
         return journa
 
     @classmethod
+    def journals_deleted(cls, course):
+        """Remove all reference to the course journals"""
+        journals = {}
+        for key, journallink in JournalLink.journals.items():
+            if journallink.course is course:
+                journallink.connections = None
+            else:
+                journals[key] = journallink
+        JournalLink.journals = journals
+
+    @classmethod
     def closed_socket(cls, socket):
         """Close socket (shared worker stop), so all the ports using this socket)"""
         # tuple() because journals may be removed while looping.

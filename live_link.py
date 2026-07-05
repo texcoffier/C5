@@ -77,8 +77,9 @@ class Server:
             #SELF.print("port=" + event.data + ', message=' + message + ', client=' + CLIENTS[port])
             client = CLIENTS[port]
             if client:
+                if message == '@':
+                    CLIENTS[port.my_index] = None
                 client.postMessage(message)
-
         socket.onopen = onopen
         socket.onerror = onerror
         socket.onclose = onclose

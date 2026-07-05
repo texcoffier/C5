@@ -1697,7 +1697,9 @@ def create_shared_worker(login='', hook=None, readonly=False):
         elif event.data.startswith('M'):
             pass
         elif event.data.startswith('R'):
-            reload_page("Il y a eu un problème.")
+            reload_page("Il y a eu un problème de connexion.")
+        elif event.data.startswith('@'):
+            reload_page("La session a été détruite.")
         elif event.data.startswith('A'):
             ccccc.popup_message('<pre>' + html(event.data[1:]) + '</pre>')
         else:

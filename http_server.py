@@ -2335,6 +2335,8 @@ async def adm_reset(request:Request) -> Response:
                     await write(f'Delete {filename}<br>')
                     move_to_trash(filename)
                     await asyncio.sleep(0)
+        if 'Journal' in what:
+            JournalLink.journals_deleted(course)
         await asyncio.sleep(0)
         if 'Media' in what:
             await write('Delete all media<br>')
@@ -2354,9 +2356,9 @@ async def adm_reset(request:Request) -> Response:
             if course.config[attr] != default_value:
                 course.config[attr] = copy.deepcopy(default_value)
                 changed.append(attr)
-        for attr in ('active_teacher_room', 'messages'):
+        for attr, default_value in (('active_teacher_room', {}), ('messages', [])):
             if attr in what and course.config[attr]:
-                del course.config[attr]
+                course.config[attr] = default_value
                 changed.append(attr)
                 what.discard(attr)
 
@@ -2603,6 +2605,10 @@ async def live_link(request:Request) -> StreamResponse:
                 continue
             # Allow grader comments and moving around
         if journa:
+            if journa.connections is None: # Deleted journal
+                journals.pop(port, None)
+                await socket.send_str(f'{port} @')
+                continue
             msg_id, message = message.split(' ', 1)
             if msg_id == journa.msg_id:
                 if not journa.course.running(session.login, session.hostname):
