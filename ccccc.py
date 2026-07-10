@@ -2926,6 +2926,19 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self[what].style.background = '#FAA' # pylint: disable=unsubscriptable-object
             else:
                 self[what].style.background = self[what].background # pylint: disable=unsubscriptable-object
+            if what == 'compiler' and self.user_execution:
+                nr_errors = nr_warnings = 0
+                if '<error ' in value:
+                    error = value.split('<error')
+                    if len(error) == 2:
+                        error = error[1].split('>')[0].split(' ')
+                        if len(error) == 3: # <error 1 4> for example
+                            nr_errors = int(error[1])
+                            nr_warnings = int(error[2])
+                        else:
+                            nr_warnings = 1
+                SHARED_WORKER.compile(nr_errors, nr_warnings)
+                self.tree_canvas() # Here because scheduler do not call coloring
             if (what == 'compiler'
                     and '<h2>' not in value
                     and not JOURNAL.pending_goto
@@ -2934,19 +2947,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     ):
                 self.user_execution = True
                 self.user_compilation = False
-                error = value.split('<error')
-                if len(error) == 2:
-                    error = error[1].split('>')[0].split(' ')
-                    if len(error) == 3: # <error 1 4> for example
-                        nr_errors = int(error[1])
-                        nr_warnings = int(error[2])
-                    else:
-                        nr_errors = 0
-                        nr_warnings = 1
-                else:
-                    nr_errors = nr_warnings = 0
-                SHARED_WORKER.compile(nr_errors, nr_warnings)
-                self.tree_canvas() # Here because scheduler do not call coloring
             self[what].appendChild(span)  # pylint: disable=unsubscriptable-object
             if what == 'question' and self.journal_question:
                 self.add_ticket_to_images(span)
