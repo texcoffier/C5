@@ -44,30 +44,48 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                 self.nr_errors = 0
                 self.nr_warnings = 0
                 self.run_after_compile()
+                if self.options['compiler'] == 'cargo':
+                    previous_line = ''
+                    for line in data[1].split('\n'):
+                        location = line.split('  --> src/main.rs:')
+                        if len(location) == 2:
+                            try:
+                                line_nr, col_nr = location[1].split(':')
+                                if previous_line.startswith('error'):
+                                    self.post('error', [int(line_nr), int(col_nr)])
+                                    self.nr_errors += 1
+                                elif previous_line.startswith('warning'):
+                                    self.post('warning', [int(line_nr), int(col_nr)])
+                                    self.nr_warnings += 1
+                                else:
+                                    print('Bug:', previous_line)
+                            except: # pylint: disable=bare-except
+                                pass
+                        previous_line = line
+                else:
+                    for line in data[1].split('\n'):
+                        line = line.split(':')
+                        if line[0][-4:] == '.cpp':
+                            try:
+                                line_nr = int(line[1])
+                                char_nr = int(line[2])
+                                if 'error' in line[3]:
+                                    self.post('error', [line_nr, char_nr])
+                                    self.nr_errors += 1
+                                elif 'warning' in line[3]:
+                                    self.post('warning', [line_nr, char_nr])
+                                    self.nr_warnings += 1
+                            except: # pylint: disable=bare-except
+                                pass
                 message = data[1]
                 if 'Bravo, il' in message:
                     message = self.escape(message)
                 else:
-                    nr_errors = len(message.split(': error: ')) - 1
-                    nr_warnings = len(message.split(': warning: ')) - 1
-                    message = '<error ' + nr_errors + ' ' + nr_warnings + '>' + self.escape(message) + '</error>'
+                    message = '<error ' + self.nr_errors + ' ' + self.nr_warnings + '>' + self.escape(message) + '</error>'
                 self.post('compiler', message)
-                for line in data[1].split('\n'):
-                    line = line.split(':')
-                    if line[0][-4:] == '.cpp':
-                        try:
-                            line_nr = int(line[1])
-                            char_nr = int(line[2])
-                            if 'error' in line[3]:
-                                self.post('error', [line_nr, char_nr])
-                                self.nr_errors += 1
-                            elif 'warning' in line[3]:
-                                self.post('warning', [line_nr, char_nr])
-                                self.nr_warnings += 1
-                        except: # pylint: disable=bare-except
-                            pass
 
             elif data[0] in ('executor', 'return'):
+
                 if data[0] == 'executor':
                     self.execution_result += data[1]
                 else:
@@ -97,6 +115,7 @@ class Session(Compile): # pylint: disable=too-many-instance-attributes
                         line, col = err.split(':')[:2]
                         self.post('error', [int(line) - 1 - 2*self.nr_warnings, int(col)])
                         self.nr_warnings += 1
+
 
             elif data[0] == 'input':
                 try:
