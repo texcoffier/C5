@@ -1,51 +1,34 @@
-# Les options suivantes ne sont utilisées qu'à la création de la session.
-# Pour les modifier il faut cliquer sur 'Edit' pour éditer les paramètres de session.
-
 COURSE_OPTIONS = {
-            'title': 'Test Rust',
-            'compiler': 'cargo',
-            'state': 'Ready',
-            'checkpoint': 0,
-            "forbid_question_copy": 0,
-            'allow_copy_paste': 1,
-            "sequential": 0,
-            'allowed': [
-                "execve", "brk", "mmap", "access", "openat", "fstat", "close", "read", "pread64",
-                "arch_prctl", "set_tid_address", "set_robust_list", "rseq", "mprotect", "prlimit64",
-                "getrandom", "munmap", "poll", "rt_sigaction", "lseek", "sched_getaffinity", "sigaltstack",
-                "gettid", "exit_group", "rt_sigprocmask", "clone3"
-            ],
-            'positions' : {
-                "question":[1,32,0,50,"#EFE"],
-                "tester":[1,32,51,49,"#EFE"],
-                "editor":[33,37,0,70,"#FFF"],
-                "compiler":[33,67,70,30,"#EEF"],
-                "executor":[70,30,0,70,"#EEF"],
-                "time":[80,20,98,2,"#0000"],
-                "index":[0,1,0,100,"#0000"]
-                }
-            }
+    'title': 'Test Rust',
+    'compiler': 'cargo',
+    'state': 'Ready',
+    'checkpoint': 0,
+    "forbid_question_copy": 0,
+    'allow_copy_paste': 1,
+    "sequential": 0,
+    'allowed': [
+        "execve", "brk", "mmap", "access", "openat", "fstat", "close", "read", "pread64",
+        "arch_prctl", "set_tid_address", "set_robust_list", "rseq", "mprotect", "prlimit64",
+        "getrandom", "munmap", "poll", "rt_sigaction", "lseek", "sched_getaffinity", "sigaltstack",
+        "gettid", "exit_group", "rt_sigprocmask", "clone3"
+    ],
+    'positions' : {
+        "question":[1,32,0,50,"#EFE"],
+        "tester":[1,32,51,49,"#EFE"],
+        "editor":[33,37,0,70,"#FFF"],
+        "compiler":[33,67,70,30,"#EEF"],
+        "executor":[70,30,0,70,"#EEF"],
+        "time":[80,20,98,2,"#0000"],
+        "index":[0,1,0,100,"#0000"]
+        }
+    }
 
-
-def canonise(txt):
-    return txt.lower().replace(' ', '')
-
-def canoniseNotLower(txt):
-    txt = str(txt)
-    return txt.replace(' ', '')
-
-def canoniseALLNotLower(txt):
-    if txt is None :
-        return None
-    txt = str(txt)
-    while ' ' in txt or '\n' in txt:
-        txt = txt.replace(' ', '')
-        txt = txt.replace('\n','')
-    return txt
-
-def canoniseALL(txt):
-    return canoniseALLNotLower(txt.lower())
-
+def next_question(self):
+    self.next_question()
+    if self.round >= self.nb_version - 1:
+        self.display('<p style="background:#CCF">' + "Il n'y a plus de versions alternatives !")
+    else:
+        self.display(self.new_round_button('Essayer une alternative'))
 
 # Extract the '{}' block associated with a given search text
 def extract_block(txt, start, open_char='{', close_char='}'):
@@ -100,80 +83,14 @@ def extract_struct(source, search_text, block_start="{", block_end="}"):
 
     return extract_block(source, idx, block_start, block_end)
 
-
-# useful for check_args
-
-def is_number(x):
-    x.match(RegExp('[-+]?[0-9]+([.][0-9]*)?'))
-
-# def is_number(x):
-#     x = x.strip()
-
-#     if x == "":
-#         return False
-
-#     # allows numbers, -, .
-#     allowed = "0123456789.-"
-
-#     for c in x:
-#         if c not in allowed:
-#             return False
-#     return True
-
-# took values from racines(...) from 'main' in C5
-# This returns the 3 values ​​from the first valid call to 'racines'.
-def check_args(source):
-    chunks = source.split("racines(")
-
-    for chunk in chunks:
-        part = chunk.split(")")[0]
-        values = [x.strip() for x in part.split(",")]
-
-        if len(values) == 3:
-            if is_number(values[0]) and is_number(values[1]) and is_number(values[2]):
-                return float(values[0]), float(values[1]), float(values[2])
-
-    return None
-
-#calcul racines and put them in an array
-def compute_racinesTAB(source):
-    vals = check_args(source)
-    result = []
-    if vals is None:
-        return []
-
-    a, b, c = vals
-
-    if a == 0.0:
-        return "pas 2nd degré"
-
-    delta = b * b - 4 * a * c
-
-    if delta > 0:
-        sqrt_delta = delta ** 0.5
-
-        x1 = (-b + sqrt_delta) / (2 * a)
-        x2 = (-b - sqrt_delta) / (2 * a)
-        result.append(x1)
-        result.append(x2)
-
-    elif delta == 0:
-        x = -b / (2 * a)
-        result.append(x)
-    return result
-
-
-# Compare both array to see if they match
-def compare_racines(tab1, tab2):
-    if len(tab1) != len(tab2):
-        return False
-    tab1.sort()
-    tab2.sort()
-    for x, y in zip(tab1, tab2):
-        if abs(x - y) > 0.01:
-            return False
-    return True
-
+def bloc_source_et_execution(self):
+    result = self.worker.execution_result.strip()
+    self.display(
+        "L'exécution affiche contient :<pre>"
+        + self.worker.escape(result)
+        + "</pre>"
+        )
+    return self.worker.source, result
 
 class Q_Hello_World(Question):
     """Hello World et prise en main de C5"""
@@ -260,47 +177,34 @@ fn main() {
 }</pre>
         """
     def tester(self):
-        result = self.worker.execution_result.strip()
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-        nb_space = 0
-        too_many_spaces = False
-        for char in result:
-            if char == ' ': # if space in result
-                nb_space += 1
-                if nb_space >= 2 :
-                    too_many_spaces = True
-
+        _, result = bloc_source_et_execution(self)
         self.message(
             result == 'Hello World',
             "Le programme affiche bien «Hello World»."
         )
-        if self.all_tests_are_fine and not too_many_spaces:
+        self.message(
+            result.count(' ') < 2,
+            "L'affichage ne contient pas d'espaces en trop."
+        )
+        if self.all_tests_are_fine:
             self.next_question()
-            return
         else:
             self.display('<p style="background:#F88">' + "Copiez le texte exact demandé dans l'énoncé.")
-            return
     def default_answer(self):
-        return """// Copiez ici !
-"""
+        return "// Copiez ici !\n\n\n\n" # Keep empty lines at the end
 
 
 class Q_println(Question):
     """La fonction 'println!()'"""
-    answer = []
+    answer = [["votre pokémon préféré"          , "Bulbizarre", "Salamèche", "Carapuce"],
+              ["votre couleur préférée"         , "Bleu", "Jaune", "Rouge"],
+              ["votre ville préférée"           , "Paris", "Lyon", "Marseille"],
+              ["la ville ayant la plus grande superficie", "Paris", "Tokyo", "New-York"]
+             ]
     def question(self):
-        self.nb_version = 4
-        self.version = self.random_version(4)
+        self.nb_version = len(self.answer)
+        self.version = self.random_version(self.nb_version)
         self.worker.set_options({"allow_copy_paste": True})
-        self.answer = [["Bulbizarre", "Salamèche", "Carapuce"],
-                       ["Bleu", "Jaune", "Rouge"],
-                       ["Paris", "Lyon", "Marseille"],
-                       ["Paris", "Tokyo", "New-York"]
-                    ]
         question = """
         <h3>Introduction à Rust</h3>
         <p>
@@ -345,52 +249,17 @@ println!("Je m'appelle {}", "Rust");
 let nb: i32 = 25;
 println!("Il y a {} fleurs", nb);</pre>
 """
-        Exercice = [
-        """<h4>Exercice :</h4>
+        quest, choice1, choice2, choice3 = self.answer[self.version]
+        return question + """<h4>Exercice :</h4>
         <p>
         Cette question a plusieurs <b>versions alternatives</b>, que vous pouvez voir uniquement si vous avez su répondre correctement. Vous y accéderez en cliquant sur un bouton qui apparaîtra dans Les buts que vous devez atteindre. Lorsqu'il n'y en aura plus à disposition vous serez averti.
         </p>
         <p>
-        Écrivez un programme principal affichant uniquement
-        votre pokémon préféré parmi les 3 :
+        Écrivez un programme principal affichant uniquement """ + quest + """
+        parmi les 3 :
         </p>
-        <pre>""" + self.answer[0][0] + "   " + self.answer[0][1] + "   " + self.answer[0][2] + """</pre>
+        <pre>""" + choice1 + "   " + choice2 + "   " + choice3 + """</pre>
         """
-        ,
-        """<h4>Exercice :</h4>
-        <p>
-        Cette question a plusieurs <b>versions alternatives</b>, que vous pouvez voir uniquement si vous avez su répondre correctement. Vous y accéderez en cliquant sur un bouton qui apparaîtra dans Les buts que vous devez atteindre. Lorsqu'il n'y en aura plus à disposition vous serez averti.
-        </p>
-        <p>
-        Écrivez un programme principal affichant uniquement
-        votre couleur préférée parmi les 3 :
-        </p>
-        <pre>""" + self.answer[1][0] + "   " + self.answer[1][1] + "   " + self.answer[1][2] + """</pre>
-        """
-        ,
-        """<h4>Exercice :</h4>
-        <p>
-        Cette question a plusieurs <b>versions alternatives</b>, que vous pouvez voir uniquement si vous avez su répondre correctement. Vous y accéderez en cliquant sur un bouton qui apparaîtra dans Les buts que vous devez atteindre. Lorsqu'il n'y en aura plus à disposition vous serez averti.
-        </p>
-        <p>
-        Écrivez un programme principal affichant uniquement
-        votre ville préférée parmi les 3 :
-        </p>
-        <pre>""" + self.answer[2][0] + "   " + self.answer[2][1] + "   " + self.answer[2][2] + """</pre>
-        """
-        ,
-        """<h4>Exercice :</h4>
-        <p>
-        Cette question a plusieurs <b>versions alternatives</b>, que vous pouvez voir uniquement si vous avez su répondre correctement. Vous y accéderez en cliquant sur un bouton qui apparaîtra dans Les buts que vous devez atteindre. Lorsqu'il n'y en aura plus à disposition vous serez averti.
-        </p>
-        <p>
-        Écrivez un programme principal affichant la ville ayant la plus grande superficie parmi :
-        </p>
-        <pre>""" + self.answer[3][0] + "   " + self.answer[3][1] + "   " + self.answer[3][2] + """</pre>
-        """
-        ]
-        question += Exercice[self.version]
-        return question
     def tester(self):
         source = self.worker.source
         result = self.worker.execution_result
@@ -399,50 +268,32 @@ println!("Il y a {} fleurs", nb);</pre>
         if source.strip() == '':
             self.display("Vous n'avez encore rien écrit. Le message d'erreur est totalement normal. A vous de répondre à la question !")
             return
-        is_there_space = False
-        for char in result:
-            if char == ' ': # if space in result
-                is_there_space = True
-                self.display('<p style="background:#F88">' + 'Enlevez les espaces !')
-                return
+        if ' ' in result:
+            self.display('<p style="background:#F88">' + 'Enlevez les espaces !')
+            return
+        result = result.strip()
+        ok = False
+        good_answer = "Le texte est bon !"
+        for a in self.answer[self.version][1:]:
+            if a == result:
+                ok = True
+                if self.version == 3:
+                    if a == 'Tokyo':
+                        good_answer = "C'est bien la bonne réponse !"
+                    else:
+                        good_answer = False
+        if not ok:
+            self.display('<p style="background:#F88">' + """
+                Ce n'est pas une réponse proposée...
+                Auriez-vous mis un caractère en trop ?
+                Ou alors avez-vous un problème de majuscule ?""")
+            return
+        if good_answer:
+            self.display('<p style="background:#8F8">' + good_answer)
+            next_question(self)
+        else:
+            self.display('<p style="background:#FDB">' + "C'est faux !")
 
-        for a in self.answer[self.version]:
-
-            if self.version == 3:   # Special version when you need to have the good answer
-                if 'Tokyo' == canoniseALLNotLower(result):
-                    self.display('<p style="background:#8F8">' + "C'est bien la bonne réponse !")
-                    if self.round >= 3 :
-                        self.display('<p style="background:#CCF">' + "Il n'y a plus de versions alternatives !")
-                        self.next_question()
-                        return
-                    else :
-                        self.display(self.new_round_button('Essayer une alternative'))
-                        self.next_question()
-                        return
-                elif 'Paris' == canoniseALLNotLower(result) or 'New-York' == canoniseALLNotLower(result):
-                    self.display('<p style="background:#FDB">' + "C'est faux !")
-                    return
-                else:
-                    self.display('<p style="background:#F88">' + "Ce n'est pas une réponse proposée...")
-                    return
-
-            if result.strip() == a and not is_there_space : # Other versions
-                self.display('<p style="background:#8F8">' + 'Et elle contient bien le texte demandé !')
-                if self.round >= 3 :
-                    self.display('<p style="background:#CCF">' + "Il n'y a plus de versions alternatives !")
-                    self.next_question()
-                    return
-                else :
-                    self.display(self.new_round_button('Essayer une alternative'))
-                    self.next_question()
-                    return
-
-        for b in self.answer[self.version]:
-            if canonise(b) in canonise(result):
-                self.display('<p style="background:#FDB">'
-                            + 'Auriez-vous mis un caractère en trop ? Ou alors avez-vous un problème de majuscule ?')
-                return
-        self.display('<p style="background:#F88">' + 'Elle ne contient pas exactement : «'+self.answer[self.version][0]+'», «'+self.answer[self.version][1]+'» ou «'+self.answer[self.version][2]+"»")
     def default_answer(self):
         return """
 """
@@ -457,11 +308,11 @@ class Q_variables(Question):
         En Rust, on déclare une variable avec le mot-clé <b>let</b> :
         </p>
         <pre>
-let age: i32 = 25;            // entier
-let pi: f64 = 3.14;           // flottant
-let vrai: bool = true;        // booléen
-let lettre: char = 'A';       // caractère
-let prenom: &str = "Alice";   // ch. de caractères</pre>
+let age: i32 = 25;          // entier
+let pi: f64 = 3.14;         // flottant
+let vrai: bool = true;      // booléen
+let lettre: char = 'A';     // caractère
+let prenom: &str = "Alice"; // ch. de caractères</pre>
         <p>
         Rust est un langage typé : chaque variable a un type précis.
         Rust peut le deviner seul
@@ -513,47 +364,25 @@ println!("{}", entier as f64 == reel); // ✅</pre>
         </p>
         """
     def tester(self):
-        result = self.worker.execution_result
-        source = self.worker.source
-        self.display("La zone en bas à droite contient :<pre>"
-                     + self.worker.escape(result) + "</pre>")
-
-
-        self.display("Il y a un soucis ici. Il faut que nr_warnings/nr_errors correspondes au nombre de warnings/errors de la sortie compilation, hors ici les valeurs resteront à 0 tout le temps. Je peux faire marcher ça en créeant un self.compile_result=message dans le fichier compile_remote.py mais Thierry m'a demandé d'utiliser les variables nr_warnings/nr_errors---------------------------------------------------------------")
-        self.display("nr_warnings = "+ self.worker.nr_warnings)
-        self.display("nr_errors = "+ self.worker.nr_errors)
-        # self.display("compile_result = " + str(self.worker.compile_result))
-
+        source, result = bloc_source_et_execution(self)
         self.message(
             self.worker.nr_warnings == 0 and self.worker.nr_errors == 0,
             "Il ne reste aucun warning dû à la non-utilisation de certaines variables."
         )
-        self.message(
-            "let prenom:&str" in source or "let prenom : &str" in source or
-            "let prenom: &str" in source or "let prenom :&str" in source,
-            "Une variable «prenom» de type &amp;str déclarée."
-        )
-        self.message(
-            "let age:i32" in source or "let age : i32" in source or
-            "let age: i32" in source or "let age :i32" in source,
-            "Une variable «age» de type <b>i32</b> déclarée."
-        )
-
+        self.check(source, [
+            ["let +prenom *: *&str", "Une variable «prenom» de type &amp;str déclarée."],
+            ["let +age *: *i32", "Une variable «age» de type <b>i32</b> déclarée."],
+        ])
         main_struct = extract_struct(source, "fn main()")
         println_struct = extract_struct(main_struct, "println!(", '(', ')')
-
-        # 'prenom' and 'age' appear in the same 'println!'
-        found = False
-        if ',prenom' in canoniseALLNotLower(println_struct) and ',age' in canoniseALLNotLower(println_struct) :
-            found = True
-        self.message(
-            found,
-            '«prenom» et «age» affichés ensemble dans un println!.'
-        )
-        self.message(
-            'println!("{}",age==18)' in canoniseALLNotLower(source) or 'print!("{}",age==18)' in canoniseALLNotLower(source) or 'println!("{}",age<=18)' in canoniseALLNotLower(source) or 'print!("{}",age<=18)' in canoniseALLNotLower(source) or 'println!("{}",age>=18)' in canoniseALLNotLower(source) or 'print!("{}",age>=18)' in canoniseALLNotLower(source) or 'println!("{}",age>18)' in canoniseALLNotLower(source) or 'print!("{}",age>18)' in canoniseALLNotLower(source) or'println!("{}",age<18)' in canoniseALLNotLower(source) or 'print!("{}",age<18)' in canoniseALLNotLower(source) or 'println!("{}",age!=18)' in canoniseALLNotLower(source) or 'print!("{}",age!=18)' in canoniseALLNotLower(source),
-            "Affichez le résultat de la comparaison entre la variable 'age' que vous avez initialisé et '18'"
-        )
+        self.check(println_struct, [
+            [", *prenom", "La variable «prenom» est utilisée dans «println!»"],
+            [", *age", "La variable «age» est utilisée dans «println!»"],
+        ])
+        self.check(source, [
+            ['print(ln)?! *\\( *"\\{\\}" *, *age *([=!]=|[<>]=?) *18 *\\)',
+            "Affichez le résultat de la comparaison entre la variable 'age' que vous avez initialisé et '18'"],
+        ])
 
         if self.all_tests_are_fine :
             self.next_question()
@@ -569,31 +398,31 @@ println!("{}", entier as f64 == reel); // ✅</pre>
 }
 """
 
-def TestQ4(version,number):
+def test_q4(version, number):
+    if version == 0:
+        return "accepté"
     if version == 1:
-        if number >=30:
+        if number >= 30:
             return "canicule"
-        elif number >=20:
+        if number >= 20:
             return "agréable"
-        else:
-            return "frais"
+        return "frais"
     if version == 2:
         if number >= 18:
             return "félicitations"
-        elif number >=16:
+        if number >= 16:
             return "très bien"
-        elif number >=14:
+        if number >= 14:
             return "bien"
-        elif number >=12:
+        if number >= 12:
             return "assez bien"
-        elif number >=10:
+        if number >= 10:
             return "sans mention"
-        else:
-            return "raté"
+        return "raté"
 
-def RechercheVar(source, mot_a_chercher):
+def recherche_var(source, mot_a_chercher):
     """
-    Cherche une ligne d'une typo similaire à : 'let mot_a_chercher: type = valeur;'
+    Cherche une ligne d'une typo similaire à : '... mot_a_chercher ... = valeur;'
     et retourne la valeur entière affectée.
     Retourne None si non trouvée ou si la valeur n'est pas un entier.
     """
@@ -608,9 +437,59 @@ def RechercheVar(source, mot_a_chercher):
 
 class Q_Condition(Question):
     """Les conditions if/else"""
+    exercices = [
+        #######################################################################
+        ["""Initialisez un entier <b>moyenne</b> à 15.<br>
+        Avec <b>if/else</b>, affichez <b>"accepté"</b> si <b>moyenne</b> est supérieure
+        à 10, sinon affichez <b>"redouble"</b>.
+        """,
+        [['let +moyenne *: *i32 *= *15 *;', "Une moyenne a bien été initialisée à 15."],
+         ['if +moyenne *>= *10[ \n]*\\{', "Une condition «if moyenne &gt;= 10» est présente."],
+         ['else[ \n]*\\{', "On utilise bien else pour vérifier les autres cas"],
+        ],
+        "moyenne"],
+        #######################################################################
+        ["""Initialisez un entier <b>temperature</b> avec la valeur de votre choix. Puis
+        en utilisant <b>if/else if</else/b> affichez :
+        <ul>
+            <li>30 ou plus → <b>"canicule"</b></li>
+            <li>20 ou plus → <b>"agréable"</b></li>
+            <li>sinon → <b>"frais"</b></li>
+        </ul>
+        """,
+        [['let +temperature *: *i32 *=',  "La température a bien été initialisée en tant qu'entier."],
+         ['if +temperature *>= *30[ \n]*\\{', "Une condition «if temperature >= 30» est présente."],
+         ['else[ \n]+if +temperature *>= *20[\n ]*\\{', "Une condition «else if temperature >= 20» est présente."],
+         ['else[ \n]*\\{', "On utilise bien else pour vérifier les autres cas"],
+        ],
+        "temperature"],
+        #######################################################################
+        [""" Initialisez un entier <b>moyenne</b> avec la valeur de votre choix. Puis
+        en utilisant <b>if/else if/else</b>, affichez la mention correspondante :
+        </p>
+        <ul>
+            <li>18 ou plus → <b>"félicitations"</b></li>
+            <li>16 ou plus → <b>"très bien"</b></li>
+            <li>14 ou plus → <b>"bien"</b></li>
+            <li>12 ou plus → <b>"assez bien"</b></li>
+            <li>10 ou plus → <b>"sans mention"</b></li>
+            <li>en dessous de 10 → <b>"raté"</b></li>
+        </ul>
+        """,
+        [['let +moyenne *: *i32 *=', "Une moyenne a bien été initialisée en tant qu'entier."],
+         ['if +moyenne *>= *18[ \n]*\\{', "Une condition «if moyenne >= 18» est présente."],
+         ['else[ \n]+if +moyenne *>= *16[ \n]*\\{', "Une condition «elif moyenne >= 16» est présente."],
+         ['else[ \n]+if +moyenne *>= *14[ \n]*\\{', "Une condition «elif moyenne >= 14» est présente."],
+         ['else[ \n]+if +moyenne *>= *12[ \n]*\\{', "Une condition «elif moyenne >= 12» est présente."],
+         ['else[ \n]+if +moyenne *>= *10[ \n]*\\{', "Une condition «elif moyenne >= 10» est présente."],
+         ['else[ \n]*\\{', "On utilise bien else pour vérifier les autres cas"],
+        ],
+        "moyenne"],
+    ]
+
     def question(self):
-        self.nb_version = 3
-        self.version = self.random_version(3)
+        self.nb_version = len(self.exercices)
+        self.version = self.random_version(self.nb_version)
         question = """
         <h3>Les conditions if/else</h3>
         <p>
@@ -655,145 +534,24 @@ if date >= 2020 {
         dont la condition est vraie. Le <b>else</b> final (facultatif) s'exécute si
         aucune condition n'est vérifiée.
         </p>
+        <h4>Exercice :</h4>
+        <p>
 """
-        Exercice = [
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Initialisez un entier <b>moyenne</b> à 15.<br>
-        Avec <b>if/else</b>, affichez <b>"accepté"</b> si <b>moyenne</b> est supérieure
-        à 10, sinon affichez <b>"redouble"</b>.
-        </p>
-        """
-        ,
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Initialisez un entier <b>temperature</b> avec la valeur de votre choix. Puis
-        en utilisant <b>if/else if</else/b> affichez :
-        </p>
-        <ul>
-            <li>30 ou plus → <b>"canicule"</b></li>
-            <li>20 ou plus → <b>"agréable"</b></li>
-            <li>sinon → <b>"frais"</b></li>
-        </ul>
-        """
-        ,
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Initialisez un entier <b>moyenne</b> avec la valeur de votre choix. Puis
-        en utilisant <b>if/else if/else</b>, affichez la mention correspondante :
-        </p>
-        <ul>
-            <li>18 ou plus → <b>"félicitations"</b></li>
-            <li>16 ou plus → <b>"très bien"</b></li>
-            <li>14 ou plus → <b>"bien"</b></li>
-            <li>12 ou plus → <b>"assez bien"</b></li>
-            <li>10 ou plus → <b>"sans mention"</b></li>
-            <li>en dessous de 10 → <b>"raté"</b></li>
-        </ul>
-        """
-        ]
-        question += Exercice[self.version]
+        question += self.exercices[self.version][0]
         return question
     def tester(self):
-        result = self.worker.execution_result
-        source = self.worker.source
-        self.display("La zone en bas à droite contient :<pre>"
-                     + self.worker.escape(result) + "</pre>")
+        source, result = bloc_source_et_execution(self)
 
         main_struct = extract_struct(source,"fn main()")
-
-        if self.version == 0 :
-
-            self.message(
-                'letmoyenne:i32=15;' in canoniseALLNotLower(main_struct),
-                "Une moyenne a bien été initialisée à 15."
-            )
-            self.message(
-                'ifmoyenne>=10{' in canoniseALLNotLower(main_struct),
-                "Une condition «if moyenne >= 10» est présente."
-            )
-            self.message(
-                'else{' in canoniseALLNotLower(main_struct),
-                "On utilise bien else pour vérifier les autres cas"
-            )
-            self.message(
-                canoniseALLNotLower(result) == 'accepté',
-                "Le résultat doit être <b>'accepté'</b>."
-            )
-
-        if self.version == 1 :
-
-            self.message(
-                'lettemperature:i32=' in canoniseALLNotLower(main_struct),
-                "La température a bien été initialisée en tant qu'entier."
-            )
-            self.message(
-                'iftemperature>=30{' in canoniseALLNotLower(main_struct),
-                "Une condition «if temperature >= 30» est présente."
-            )
-            self.message(
-                'elseiftemperature>=20{' in canoniseALLNotLower(main_struct),
-                "Une condition «else if temperature >= 20» est présente."
-            )
-            self.message(
-                'else{' in canoniseALLNotLower(main_struct),
-                "On utilise bien else pour vérifier les autres cas"
-            )
-            number = RechercheVar(source,"temperature")
-            self.message(
-                canoniseALLNotLower(result)==TestQ4(self.version,number),
-                "On a le résultat attendu !"
-            )
-
-        if self.version == 2 :
-
-            self.message(
-                'letmoyenne:i32=' in canoniseALLNotLower(main_struct),
-                "Une moyenne a bien été initialisée en tant qu'entier."
-            )
-            self.message(
-                'ifmoyenne>=18{' in canoniseALLNotLower(main_struct),
-                "Une condition «if moyenne >= 18» est présente."
-            )
-            self.message(
-                'elseifmoyenne>=16{' in canoniseALLNotLower(main_struct),
-                "Une condition «elif moyenne >= 16» est présente."
-            )
-            self.message(
-                'elseifmoyenne>=14{' in canoniseALLNotLower(main_struct),
-                "Une condition «elif moyenne >= 14» est présente."
-            )
-            self.message(
-                'elseifmoyenne>=12{' in canoniseALLNotLower(main_struct),
-                "Une condition «elif moyenne >= 12» est présente."
-            )
-            self.message(
-                'elseifmoyenne>=10{' in canoniseALLNotLower(main_struct),
-                "Une condition «elif moyenne >= 10» est présente."
-            )
-            self.message(
-                'else{' in canoniseALLNotLower(main_struct),
-                "On utilise bien else pour vérifier les autres cas"
-            )
-            number = RechercheVar(source,"moyenne")
-            self.message(
-                canoniseALLNotLower(result)==TestQ4(self.version,number),
-                "On a le résultat attendu !"
-            )
+        self.check(main_struct, self.exercices[self.version][1])
+        number = recherche_var(source, self.exercices[self.version][2])
+        expected = test_q4(self.version, number)
+        self.message(result.strip() == expected,
+             "Le résultat affiché est bien <b>'" + expected + "'</b>.")
 
         if self.all_tests_are_fine:
             self.display('<p style="background:#8F8">' + "Vous avez bien respectés les conditions.")
-            if self.round>=2 :
-                self.display('<p style="background:#CCF">' + "Il n'y a plus de versions alternatives !")
-                self.next_question()
-                return
-            else :
-                self.next_question()
-                self.display(self.new_round_button('Essayer une alternative'))
-                return
+            next_question(self)
 
     def default_answer(self):
         return """fn main(){
@@ -837,50 +595,23 @@ x += 1; // OK !</pre>
         </p>
         """
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-        reponse_init = False
-        count_print = 0
-        print_reponse = False
-        for line in source.split('\n'):
-            if 'let' in line and 'reponse:bool=false;' in canoniseALLNotLower(line):
-                reponse_init = True
-            if 'print' in line and """!("{}",reponse)""" in canoniseALLNotLower(line):
-                print_reponse = True
-                count_print += 1
-        self.message(
-            reponse_init,
-            "reponse» est bien initialisée."
-        )
-        self.message(
-            'letmutreponse:bool=false;' in canoniseALLNotLower(source),
-            "«reponse» est une variable mutable (modifiable)."
-        )
-        self.message(
-            print_reponse,
-            "Vous affichez la variable «reponse» une première fois."
-        )
-        self.message(
-            'reponse=true;' in canoniseALLNotLower(source),
-            "Vous affectez bien la variable à «true»"
-        )
-        self.message(
-            count_print == 2,
-            "Vous affichez la variable «reponse» une seconde fois."
-        )
+        _, result = bloc_source_et_execution(self)
+        display = 'print(ln)?! *\\( *"\\{\\}" *, *reponse *\\)'
+        self.check(self.worker.source, [
+            ['let.*reponse *: *bool *= *false *;', "reponse» est bien initialisée."],
+            ['let +mut +reponse *: *bool *= *false *;', "«reponse» est une variable mutable (modifiable)."],
+            [display, "Vous affichez la variable «reponse» une première fois."],
+            ['reponse *= *true *;', "Vous affectez bien la variable à «true»"],
+            ['(?s:' + display + '.*' + display + ')', "Vous affichez la variable «reponse» une seconde fois."],
+        ])
+        self.check(result, [
+            ['(?s:false.*true)', "C'est l'affichage attendu"],
+        ])
+
         if self.all_tests_are_fine:
-            if canoniseALLNotLower(result) == "falsetrue":
-                self.display('<p style="background:#8F8">' + "Parfait, vous semblez avoir compris le principe de mutabilité. Retenez le bien, vous l'utiliserez très souvent !")
-                self.next_question()
-                return
-            else:
-                self.display('<p style="background:#F88">' + "Ce n'est pas l'affichage attendu !")
-                return
+            self.display('<p style="background:#8F8">' + "Parfait, vous semblez avoir compris le principe de mutabilité. Retenez le bien, vous l'utiliserez très souvent !")
+            self.next_question()
+            return
     def default_answer(self):
         return """fn main() {
 
@@ -890,9 +621,60 @@ x += 1; // OK !</pre>
 
 class Q_Fonctions(Question):
     """Les fonctions"""
+    exercices = [
+        #######################################################################
+        ["""Écrivez une fonction <b>multiplication</b> qui prend deux arguments
+            <b>a</b> et <b>b</b> de type <b>i32</b>, et retourne leur produit
+            (en utilisant le retour implicite, sans <b>return</b>).
+            Appelez cette fonction dans <b>main</b> avec les valeurs 6 et 7,
+            puis affichez le résultat avec <b>println!</b>.
+            """,
+         [['fn +multiplication *\\(', "Une fonction «multiplication» est déclarée."],
+          ['\\) *-> *i32', "La fonction retourne bien un i32."],
+          ['multiplication *\\( *6 *, *7 *\\)', "La fonction est appelée avec 6 et 7."],
+         ],
+         [['^ *42 *$', "Le résultat affiché est correct (42)."]],
+         ['fn multiplication(', '(', ')',
+          [['a *: *i32 *, *b *: *i32', "Les arguments 'a' et 'b' sont de type i32."]]
+         ],
+         ['fn multiplication(', '{', '}',
+          [['{{{!}}}return', "Le retour implicite est utilisé (pas de «return»)"]],
+         ]
+        ],
+        #######################################################################
+        ["""Créez une fonction <b>afficher</b> qui prend un caractère <b>car</b>
+             en argument. La fonction devra afficher <b>Car</b>.
+             Appelez cette fonction depuis le <b>main</b> avec le caractère <b>'O'</b>.
+             """,
+        [['fn +afficher *\\(', 'Une fonction <b>afficher</b> est déclarée.'],
+         ['fn +afficher *\\( *car *: *char *\\)', "La fonction prend bien un paramètre '<b>car</b>' de type <b>char</b>."],
+        ],
+        [],
+        ['fn main()', '{', '}',
+         [["afficher *\\( *'O' *\\)", "La fonction est appelée avec le caractère 'O' depuis le main()."]]
+        ]
+        ],
+        #######################################################################
+        ["""Faites une fonction <b>est_pair</b> qui prend un entier '<b>nb</b>' en argument et renvoie un booléen.
+            Cette fonction regarde si 'nb modulo 2 est nul'. Elle renvoie «true» si tel est le cas et «false» sinon.
+            Appelez cette fonction dans <b>main</b> avec le chiffre <b>7</b> puis afficher son résultat. Vous devrez voir «false» affiché.
+            """,
+        [],
+        [["^ *false *$", "On affiche le booléen renvoyé par la fonction <b>est_pair</b> et le bon résultat est affiché."]],
+        ['fn est_pair(', '{', '}',
+         [['(?s:if.*else)', "if/else sont bien utilisés dans la fonction 'est_pair(...)'"],
+          ['if *nb *% *2 *== *0', "Le test de parité '<b>nb % 2 == 0</b>' est utilisé"],
+          ['{{{!}}}return', "Aucun return n'est utilisé dans la fonction 'est_pair(...)', on fait bien un retour implicite."],
+         ]
+        ],
+        ['fn main()', '{', '}',
+         [['est_pair *\\( *7 *\\)', "'est_pair(...)' est appelé avec le chiffre 7 en argument"]]
+        ]
+        ],
+    ]
     def question(self):
-        self.nb_version = 3
-        self.version = self.random_version(3)
+        self.nb_version = len(self.exercices)
+        self.version = self.random_version(self.nb_version)
         question = """
         <h3>Les fonctions en Rust</h3>
         <p>
@@ -995,138 +777,17 @@ fn main() {
     println!("{}", resultat); // affiche 8
 }</pre><br>
 """
-        Exercice = [
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Écrivez une fonction <b>multiplication</b> qui prend deux arguments
-        <b>a</b> et <b>b</b> de type <b>i32</b>, et retourne leur produit
-        (en utilisant le retour implicite, sans <b>return</b>).
-        Appelez cette fonction dans <b>main</b> avec les valeurs 6 et 7,
-        puis affichez le résultat avec <b>println!</b>.
-        </p>
-        """
-        ,
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Créez une fonction <b>afficher</b> qui prend un caractère <b>car</b>
-        en argument. La fonction devra afficher <b>Car</b>.
-        Appelez cette fonction depuis le <b>main</b> avec le caractère <b>'O'</b>.
-        </p>
-        """
-        ,
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Faites une fonction <b>est_pair</b> qui prend un entier '<b>nb</b>' en argument et renvoie un booléen.
-        Cette fonction regarde si 'nb modulo 2 est nul'. Elle renvoie «true» si tel est le cas et «false» sinon.
-        Appelez cette fonction dans <b>main</b> avec le chiffre <b>7</b> puis afficher son résultat. Vous devrez voir «false» affiché.
-        </p>
-        """
-        ]
-
-        question += Exercice[self.version]
-        return question
+        return question + "<h4>Exercice :</h4><p>" + self.exercices[self.version][0]
 
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-
-        if self.version == 0:
-            block_mult = extract_struct(source, "fn multiplication(", '(', ')')
-
-            self.message(
-                'fnmultiplication(' in canoniseALL(source),
-                "Une fonction «multiplication» est déclarée."
-            )
-            self.message(
-                'a:i32,b:i32' in canoniseALL(block_mult),
-                "Les arguments 'a' et 'b' sont de type i32."
-            )
-            self.message(
-                ')->i32' in canoniseALL(source),
-                "La fonction retourne bien un i32."
-            )
-            # Vérifie qu'il n'y a pas de 'return' (retour implicite attendu)
-            found_return = False
-            for line in source.split('\n'):
-                if 'fn multiplication' in line:
-                    body_mult = extract_struct(source,"fn multiplication(")
-                    if 'return' in body_mult:
-                        found_return = True
-
-            self.message(
-                not found_return,
-                "Le retour implicite est utilisé (pas de «return»)."
-            )
-            self.message(
-                'multiplication(6, 7)' in source or 'multiplication(6,7)' in source,
-                "La fonction est appelée avec 6 et 7."
-            )
-            self.message(
-                result.strip() == '42',
-                "Le résultat affiché est correct (42)."
-            )
-
-        if self.version == 1:
-            main_struct = extract_struct(source,"fn main()")
-
-            self.message(
-                'fn afficher(' in source,
-                'Une fonction <b>afficher</b> est déclarée.'
-            )
-            self.message(
-                'fn afficher(car: char)' in source or 'fn afficher (car: char)' in source or
-                'fn afficher(car : char)' in source or 'fn afficher (car : char)' in source,
-                "La fonction prend bien un paramètre '<b>car</b>' de type <b>char</b>."
-            )
-            self.message(
-                "afficher('O')" in canoniseALLNotLower(main_struct),
-                "La fonction est appelée avec le caractère 'O' depuis le main()."
-            )
-
-        if self.version == 2:
-            est_pair_struct = extract_struct(source, "fn est_pair(")
-            main_struct = extract_struct(source, "fn main()")
-            self.display(est_pair_struct)
-            self.message(
-                "return" not in canoniseALLNotLower(est_pair_struct),
-                "Aucun return n'est utilisé dans la fonction 'est_pair(...)', on fait bien un retour implicite."
-            )
-            self.message(
-                "if" in canoniseALLNotLower(est_pair_struct) and "else" in canoniseALLNotLower(est_pair_struct),
-                "if/else sont bien utilisés dans la fonction 'est_pair(...)'"
-            )
-            self.message(
-                "ifnb%2==0" in canoniseALLNotLower(est_pair_struct),
-                "Le test de parité '<b>nb % 2 == 0</b>' est utilisé"
-            )
-            self.message(
-                'est_pair(7)' in canoniseALLNotLower(main_struct),
-                "'est_pair(...)' est appelé avec le chiffre 7 en argument"
-            )
-            expected="false"
-            self.message(
-                expected==result,
-                "On affiche le booléen renvoyé par la fonction <b>est_pair</b> et le bon résultat est affiché."
-            )
+        source, result = bloc_source_et_execution(self)
+        self.check(source, self.exercices[self.version][1])
+        for blk_name, blk_begin, blk_end, tests in self.exercices[self.version][3:]:
+            self.check(extract_struct(source, blk_name, blk_begin, blk_end), tests)
+        self.check(result, self.exercices[self.version][2])
 
         if self.all_tests_are_fine:
-            if self.round>=2 :
-                self.display('<p style="background:#CCF">' + "Il n'y a plus de versions alternatives !")
-                self.next_question()
-                return
-            else :
-                self.next_question()
-                self.display(self.new_round_button('Essayer une alternative'))
-                return
-
+            next_question(self)
 
     def default_answer(self):
         return """// Écriture de la fonction
@@ -1137,13 +798,55 @@ fn main(){
 }
 """
 
-
 class Q_Boucle(Question):
     """Les boucles loop et while"""
-    answer = [1,2,3,4,5,6,7,8,9,10]
+    answer = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    exercices = [
+        #######################################################################
+        ["""Créez une fonction <b>boucle_loop</b> qui prend un paramètre
+        <b>limite: i32</b> et affiche, avec une boucle <b>loop</b>,
+        tous les nombres de <b>1</b> jusqu'à <b>limite</b> (inclus).
+        Dans <b>main</b>, vous appelerez boucle_loop(5) pour voir le résultat.
+        </p>
+        """,
+        [['fn +boucle_loop *\\( *limite *: *i32 *\\)[ \n]*\\{',
+          "La fonction <b>boucle_loop</b> est bien déclarée avec le bon argument"],
+         ['if.*[=<]= *limite',
+          "La condition d'arrêt de la boucle <b>loop</b> utilise le paramètre <b>limite</b> comme attendu."],
+        ],
+        [['boucle_loop *\\( *5 *\\)',
+          "On appelle <b>boucle_loop</b> avec pour argument <b>limite</b> = 5 dans la fonction <b>main</b>."],
+        ],
+        ['fn boucle_loop(',
+         [['loop *\\{', "<b>loop</b> est utilisé dans la fonction que nous avons créée."]],
+        ],
+        ['if',
+         [['break', "On met fin à la boucle loop quand le cas d'arrêt est vérifié avec <b>break</b>."]]
+        ],
+        ],
+        #######################################################################
+        ["""Créez une fonction <b>boucle_while</b> qui prend un paramètre
+        <b>limite: i32</b> et affiche, avec une boucle <b>while</b>,
+        tous les nombres de <b>1</b> jusqu'à <b>limite</b> (inclus).
+        Dans <b>main</b>, vous appelerez boucle_while(5) pour voir le résultat.
+        </p>
+        """,
+        [['fn +boucle_while *\\( *limite *: *i32 *\\)[ \n]*\\{',
+          "La fonction <b>boucle_while</b> est bien déclarée avec le bon argument"],
+         ['while.*<= *limite', # Et dans l'autre sens ?
+          "La condition d'arrêt de la boucle while utilise bien le paramètre <b>limite</b>."],
+        ],
+        [['boucle_while *\\( *5 *\\)',
+          "On appelle <b>boucle_while</b> avec pour argument <b>limite</b> = 5 dans la fonction <b>main</b>."],
+        ],
+        ['fn boucle_while(',
+         [['while', "<b>while</b> est utilisé dans la fonction que nous avons créée."]],
+        ],
+        ]
+        ]
     def question(self):
-        self.nb_version = 2
-        self.version = self.random_version(2)
+        self.nb_version = len(self.exercices)
+        self.version = self.random_version(self.nb_version)
         question = """
         <h3>La boucle loop</h3>
         <p>
@@ -1186,92 +889,13 @@ while condition {
         conditions possibles.
         </p>
         """
-
-        Exercice = [
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Créez une fonction <b>boucle_loop</b> qui prend un paramètre
-        <b>limite: i32</b> et affiche, avec une boucle <b>loop</b>,
-        tous les nombres de <b>1</b> jusqu'à <b>limite</b> (inclus).
-        Dans <b>main</b>, vous appelerez boucle_loop(5) pour voir le résultat.
-        </p>
-        """
-        ,
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Créez une fonction <b>boucle_while</b> qui prend un paramètre
-        <b>limite: i32</b> et affiche, avec une boucle <b>while</b>,
-        tous les nombres de <b>1</b> jusqu'à <b>limite</b> (inclus).
-        Dans <b>main</b>, vous appelerez boucle_while(5) pour voir le résultat.
-        </p>
-        """
-        ]
-        question += Exercice[self.version]
-        return question
+        return question + "<h4>Exercice :</h4><p>" + self.exercices[self.version][0]
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-        main_struct = extract_struct(source, "fn main()")
-
-        if self.version == 0 :
-            boucle_loop_struct = extract_struct(source, "fn boucle_loop(")
-            if_in_loop = extract_struct(boucle_loop_struct, "if")
-
-            self.message(
-                "fnboucle_loop(limite:i32){" in canoniseALLNotLower(source),
-                "La fonction <b>boucle_loop</b> est bien déclarée avec le bon argument"
-            )
-            self.message(
-                "loop{" in canoniseALLNotLower(boucle_loop_struct),
-                "<b>loop</b> est utilisé dans la fonction que nous avons créée."
-            )
-            is_if = False
-            for line in source.split('\n'):
-                if 'if' in canoniseALLNotLower(line) and "==limite" in canoniseALLNotLower(line):
-                    is_if = True
-            self.message(
-                is_if,
-                "La condition d'arrêt de la boucle <b>loop</b> utilise le paramètre <b>limite</b> comme attendu."
-            )
-            self.message(
-                "break" in canoniseALLNotLower(if_in_loop),
-                "On met fin à la boucle loop quand le cas d'arrêt est vérifié avec <b>break</b>."
-            )
-            self.message(
-                "boucle_loop(5)" in canoniseALLNotLower(main_struct),
-                "On appelle <b>boucle_loop</b> avec pour argument <b>limite</b> = 5 dans la fonction <b>main</b>."
-            )
-
-        if self.version == 1 :
-            boucle_while_struct = extract_struct(source, "fn boucle_while(")
-
-            self.message(
-                "fnboucle_while(limite:i32){" in canoniseALLNotLower(source),
-                "La fonction <b>boucle_while</b> est bien déclarée avec le bon argument"
-            )
-            self.message(
-                "while" in canoniseALLNotLower(boucle_while_struct),
-                "<b>while</b> est utilisé dans la fonction que nous avons créée."
-            )
-            end_while = False
-            for line in source.split('\n'):
-                if 'while' in canoniseALLNotLower(line) and ("<limite" in canoniseALLNotLower(line) or "<=limite" in canoniseALLNotLower(line)):
-                    end_while = True
-            self.message(
-                end_while,
-                "La condition d'arrêt de la boucle while utilise bien le paramètre <b>limite</b>."
-            )
-            self.message(
-                "boucle_while(5)" in canoniseALLNotLower(main_struct),
-                "On appelle <b>boucle_while</b> avec pour argument <b>limite</b> = 5 dans la fonction <b>main</b>."
-            )
+        source, result = bloc_source_et_execution(self)
+        self.check(source, self.exercices[self.version][1])
+        self.check(extract_struct(source, "fn main()"), self.exercices[self.version][2])
+        for blk_name, tests in self.exercices[self.version][3:]:
+            self.check(extract_struct(source, blk_name), tests)
 
         expected="1\n2\n3\n4\n5"
         self.message(
@@ -1280,14 +904,7 @@ while condition {
         )
         if self.all_tests_are_fine:
             self.display('<p style="background:#8F8">' + "Vous avez bien respectés les conditions.")
-            if self.round>=1 :
-                self.display('<p style="background:#CCF">' + "Il n'y a plus de versions alternatives !")
-                self.next_question()
-                return
-            else :
-                self.next_question()
-                self.display(self.new_round_button('Essayer une alternative'))
-                return
+            next_question(self)
     def default_answer(self):
         return """fn main() {
 
@@ -1300,13 +917,41 @@ class Q_tableaux(Question):
     elem0=0
     elem1=1
     elem2=2
-    answer =[]
+    exercices = [
+        #######################################################################
+        ["""Dans un premier temps vous déclarerez un tableau dynamique <b>tab</b> de 3 entiers qui ont pour valeurs <b>0</b>.<br>
+        Ensuite vous remplacerez une à une les valeurs de ce tableaux par les valeurs V1, V2 et V3<br>
+        """,
+        [['let +mut +tab *: *\\[i32 *; *3\\] *= *[ *0 *, *0 *, *0 *]',
+          "On a un tableau dynamique '<b>tab</b>' de taille 3 initialisé avec 3 entier à 0"],
+         ['tab\\[ *0 *\\] *= *V1', "On modifie le premier élément de 'tab'"],
+         ['tab\\[ *1 *\\] *= *V2', "On modifie le deuxième élément de 'tab'"],
+         ['tab\\[ *2 *\\] *= *V3', "On modifie le troisième élément de 'tab'"],
+        ],
+        ],
+        #######################################################################
+        ["""Dans un premier temps vous déclarerez un tableau dynamique <b>tab</b> de 3 entiers qui ont pour valeurs <b>0</b>.<br>
+        Vous remplacerez le premier élément du tableau par : V1.<br>
+        Le second élément aura pour valeur : <b>tab[0] multiplié par 2</b>.<br>
+        Le troisième élément sera : <b>tab[1] multiplié par 3</b>.<br>
+        """,
+        [['let +mut +tab *: *\\[i32 *; *3\\] *= *[ *0 *, *0 *, *0 *]',
+          "On a un tableau dynamique '<b>tab</b>' de taille 3 initialisé avec 3 entier à 0"],
+         ['tab\\[ *0 *\\] *= *V1',
+          "On modifie le premier élément de 'tab' en y insérant la bonne valeur"],
+         ['tab\\[ *1 *\\] *= *(2 *\\* tab\\[ *0 *\\]|tab\\[ *0 *\\] *\\* 2)',
+          "On modifie le second élément de 'tab' en y insérant le double du premier élément."],
+         ['tab\\[ *2 *\\] *= *(3 *\\* tab\\[ *1 *\\]|tab\\[ *1 *\\] *\\* 3)',
+          "On modifie le troisième élément de 'tab' en y insérant le triple du second élément"],        
+        ]
+        ],
+    ]
     def question(self):
-        self.elem0 = self.random_version(51)
-        self.elem1 = self.random_version(51)
-        self.elem2 = self.random_version(51)
-        self.answer=[self.elem0,self.elem1,self.elem2]
-        self.version=self.random_version(2)
+        self.nb_version = len(self.exercices)
+        self.version = self.random_version(2)
+        self.elem0 = 100 + int(900 * self.random())
+        self.elem1 = 100 + int(900 * self.random())
+        self.elem2 = 100 + int(900 * self.random())
         question = """
         <h3>Les tableaux en Rust</h3>
         <p>
@@ -1338,118 +983,35 @@ let mut notes: [i32; 3] = [12, 15, 18];
 notes[1] = 20; // on remplace 15 par 20
 // notes vaut maintenant [12, 20, 18]</pre>
 """
-        Exercice = [
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Dans un premier temps vous déclarerez un tableau dynamique <b>tab</b> de 3 entiers qui ont pour valeurs <b>0</b>.<br>
-        Ensuite vous remplacerez une à une les valeurs de ce tableaux par les valeurs """ + str(self.elem0) + ", " + str(self.elem1) + " et " + str(self.elem2) + """.<br>\
-        Enfin, vou afficherez chaque élément de ce tableau sur une seule et même ligne.
-        </p>
-        """
-        ,
-        """
-        <h4>Exercice :</h4>
-        <p>
-        Dans un premier temps vous déclarerez un tableau dynamique <b>tab</b> de 3 entiers qui ont pour valeurs <b>0</b>.<br>
-        Vous remplacerez le premier élément du tableau par : """ + str(self.elem0) +""".<br>
-        Le second élément aura pour valeur : <b>tab[0] multiplié par 2</b>.<br>
-        Le troisième élément sera : <b>tab[1] multiplié par 3</b>.<br>
-        Enfin, vou afficherez chaque élément de ce tableau sur une seule et même ligne.
-        </p>
-        """
-        ]
-        question += Exercice[self.version]
+        question += "<h4>Exercice :</h4><p>" + self.exercices[self.version][0] + """
+        Enfin, vous afficherez chaque élément de ce tableau sur une seule et même ligne.
+        </p>"""
+        question = question.replace('V1', str(self.elem0))
+        question = question.replace('V2', str(self.elem1))
+        question = question.replace('V3', str(self.elem2))
         return question
+
     def tester(self):
-        source = self.worker.source
-        result = self.worker.execution_result.strip()
         expected = str(self.elem0) + str(self.elem1) + str(self.elem2)
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
+        source, result = bloc_source_et_execution(self)
+        source = source.replace(str(self.elem0), 'V1')
+        source = source.replace(str(self.elem1), 'V2')
+        source = source.replace(str(self.elem2), 'V3')
+        self.check(source, self.exercices[self.version][1])
+        self.check(source,
+            [['println! *\\(.*tab\\[0\\] *, *tab\\[1\\] *, *tab\\[2\\] *\\)',
+              "les 3 éléments de «tab» sont affichés ensemble dans un println!."],
+             ['{{{!}}}(?s:println.*println)',
+              "Un seul println à été utilisé"],
+            ]
         )
-
-        if self.version == 0:
-
-            self.message(
-                'letmuttab:[i32;3]=[0,0,0]' in canoniseALLNotLower(source),
-                "On a un tableau dynamique '<b>tab</b>' de taille 3 initialisé avec 3 entier à 0"
-            )
-            self.message(
-                'tab[0]=' in source or 'tab[0] =' in source,
-                "On modifie le premier élément de 'tab'"
-            )
-            self.message(
-                'tab[1]=' in source or 'tab[1] =' in source,
-                "On modifie le deuxième élément de 'tab'"
-            )
-            self.message(
-                'tab[2]=' in source or 'tab[2] =' in source,
-                "On modifie le troisième élément de 'tab'"
-            )
-            count_println=0
-            found = False
-            for line in source.split('\n'):
-                if 'println!' in line :
-                    count_println += 1
-                if 'println!' in line and 'tab[0]' in line and 'tab[1]' in line and 'tab[2]' in line:
-                    found = True
-            self.message(
-                found,
-                'les 3 éléments de tab sont affichés ensemble dans un println!.'
-            )
-            if count_println > 1:
-                        self.display('<p style="background:#F88">'
-                                + 'Essayer avec un seul println!(), vous pouvez le faire !!!')
-
-        if self.version == 1:
-
-            self.message(
-                'letmuttab:[i32;3]=[0,0,0]' in canoniseALLNotLower(source),
-                "On a un tableau dynamique '<b>tab</b>' de taille 3 initialisé avec 3 entier à 0"
-            )
-            self.message(
-                'tab[0]='+str(self.elem0)+';' in canoniseALLNotLower(source),
-                "On modifie le premier élément de 'tab' en y insérant "+str(self.elem0)+"."
-            )
-            self.message(
-                'tab[1]=tab[0]*2;' in canoniseALLNotLower(source) or 'tab[1]=2*tab[0];' in canoniseALLNotLower(source),
-                "On modifie le second élément de 'tab' en y insérant le double du premier élément."
-            )
-            self.message(
-                'tab[2]=tab[1]*3;' in canoniseALLNotLower(source) or 'tab[2]=3*tab[1];' in canoniseALLNotLower(source),
-                "On modifie le troisième élément de 'tab' en y insérant le triple du second élément"
-            )
-            count_println=0
-            found = False
-            for line in source.split('\n'):
-                if 'println!' in line :
-                    count_println += 1
-                if 'println!' in line and 'tab[0]' in line and 'tab[1]' in line and 'tab[2]' in line:
-                    found = True
-            self.message(
-                found,
-                'les 3 éléments de tab sont affichés ensemble dans un println!.'
-            )
-            if count_println > 1:
-                self.display('<p style="background:#F88">'+ 'Essayer avec un seul println!(), vous pouvez le faire !!!')
         if self.all_tests_are_fine:
-            if self.round>=1 :
-                self.display('<p style="background:#CCF">' + "Il n'y a plus de versions alternatives !")
-                self.next_question()
-                return
-            else :
-                self.next_question()
-                self.display(self.new_round_button('Essayer une alternative'))
-                return
+            next_question(self)
     def default_answer(self):
         return """fn main() {
 
 }
 """
-
 
 class Q_tableaux_boucles(Question):
     """Les tableaux et des boucles"""
@@ -1493,53 +1055,21 @@ for i in 0..tab.len() {
         </p>
         """
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-        found_for_indice = False
-        found_for_tab = False
-        found_print = False
-        found_insert_tab = False
-        for line in source.split('\n'):
-            if 'for' in line and '0..tab.len()' in line:
-                found_for_indice = True
-            if 'tab[' in canoniseALL(line) and ']=' in canoniseALL(line):
-                found_insert_tab = True
-            if 'for' in line and ('in tab' in line or 'in &tab' in line):
-                found_for_tab = True
-            if 'println!("{}",' in canoniseALL(line) :
-                found_print = True
-        self.message(
-            found_for_indice,
-            "Un indice parcours bel et bien l'ensemble du tableau"
-        )
-        self.message(
-            found_insert_tab,
-            "On insère les élément saisis au clavier dans le tableau"
-        )
-        self.message(
-            found_for_tab,
-            "On parcours tous les éléments du tableau"
-        )
-        self.message(
-            found_print,
-            "On affiche uniquement les éléments du tableau"
-        )
+        source, result = bloc_source_et_execution(self)
+        self.check(source,
+            [['for.*0..tab.len()', "Un indice parcours bel et bien l'ensemble du tableau"],
+             ['tab\\[.*\\] *=', "On insère les élément saisis au clavier dans le tableau"],
+             ['for.*in &?tab', "On parcours tous les éléments du tableau"],
+             ['println! *\\( *"\\{\\}"', "On affiche uniquement les éléments du tableau"],
+            ])
         if self.all_tests_are_fine:
-            if canoniseALLNotLower(result) == "2121212121":
+            if result.count('21') == 5:
                 self.display('<p style="background:#8F8">' + "Bravo !")
                 self.next_question()
-                return
             else:
                 self.display('<p style="background:#F88">' + "Ce n'est pas les bonne valeurs qui sont affichées.")
-                return
         else:
             self.display('<p style="background:#F88">' + "Ce n'est pas ce qui est demandé.")
-            return
     def default_answer(self):
         return """use std::io;
 fn main() {
@@ -1645,64 +1175,33 @@ fn add_char_tab(mut tab: Vec&lt;char&gt;) -> Vec&lt;char&gt; {
         </p>
         """
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-        main_struct = extract_struct(source, "fn main()")
-        remplir_tab_struct = extract_struct(source, "fn remplir_tab(")
-        afficher_tab_struct = extract_struct(source, "fn afficher_tab(")
-
-        self.message(
-            'fnremplir_tab(muttab:Vec<i32>)->Vec<i32>{' in canoniseALLNotLower(source),
-            "La fonction <b>remplir_tab</b> est bien déclarée."
-        )
-        is_for1 = False
-        for line in remplir_tab_struct.split('\n'):
-            if 'for' in canoniseALLNotLower(line) and "in" in canoniseALLNotLower(line):
-                is_for1 = True
-        self.message(
-            is_for1,
-            "Une boucle <b>for</b> est utilisée pour remplir le tableau."
-        )
-        self.message(
-            '.push(' in canoniseALLNotLower(remplir_tab_struct),
-            "Les éléments sont ajoutés au tableau avec la méthode <b>push()</b>."
-        )
-        self.message(
-            'fnafficher_tab(tab:Vec<i32>){' in canoniseALLNotLower(source),
-            "remplir_tab déclarée correctement"
-        )
-        is_print = False
-        is_for2 = False
-        for line in afficher_tab_struct.split('\n'):
-            if 'print!(' in line and "{}" in line:
-                is_print = True
-            if 'for' in line and "in" in line:
-                is_for2 = True
-        self.message(
-            is_for2,
-            "On parcours le tableau avec une boucle <b>for</b> dans la fonction <b>afficher_tab</b>"
-        )
-        self.message(
-            is_print,
-            "Les éléments du tableau sont affichés avec la fonction <b>print!()</b>."
-        )
-        self.message(
-            'remplir_tab(tab)' in main_struct,
-            "On rempli le tableau 'tab' dans le <b>main</b> avec la fonction qu'on a créée"
-        )
-        self.message(
-            'afficher_tab(' in main_struct,
-            "On affiche le tableau 'tab' dans le <b>main</b> avec la fonction qu'on a créée"
-        )
-        self.message(
-            canoniseALLNotLower(result)=="12345",
-            "Le résultat de l'éxecution est le résultat attendu"
-        )
+        source, result = bloc_source_et_execution(self)
+        self.check(source, [
+            ['fn +remplir_tab *\\(mut +tab *: *Vec *< *i32 *> *\\) *-> *Vec *< *i32 *>[ \n]*\\{',
+             "La fonction <b>remplir_tab</b> est bien déclarée."],
+            ['for .*in',
+             "Une boucle <b>for</b> est utilisée pour remplir le tableau."],
+            ['fn +afficher_tab *\\( *tab *: *Vec *< *i32 *> *\\)[ \n]*\\{',
+             "afficher_tab déclarée correctement"],
+        ])
+        self.check(extract_struct(source, "fn afficher_tab("), [
+            ['print!\\(.*\\{\\}',
+             "Les éléments du tableau sont affichés avec la fonction <b>print!()</b>."],
+            ['for .*in',
+             "On parcours le tableau avec une boucle <b>for</b> dans la fonction <b>afficher_tab</b>"],
+        ])
+        self.check(extract_struct(source, "fn remplir_tab("), [
+            ['\\.push *\\(', "Les éléments sont ajoutés au tableau avec la méthode <b>push()</b>."]
+        ])
+        self.check(extract_struct(source, "fn main("), [
+            ['remplir_tab *\\( *tab *\\)',
+             "On rempli le tableau 'tab' dans le <b>main</b> avec la fonction qu'on a créée"],
+            ['afficher_tab *\\(',
+             "On affiche le tableau 'tab' dans le <b>main</b> avec la fonction qu'on a créée"],
+        ])
+        self.check(result, [
+            ['1.*2.*3.*4.*5', "Le résultat de l'éxecution est le résultat attendu"]
+        ])
         if self.all_tests_are_fine:
             self.next_question()
     def default_answer(self):
@@ -1711,33 +1210,20 @@ fn add_char_tab(mut tab: Vec&lt;char&gt;) -> Vec&lt;char&gt; {
 }
 """
 
-# fn remplir_tab(mut tab: Vec<i32>) -> Vec<i32> {
-#     for i in 1..=5 {
-#         tab.push(i);
-#     }
-#     tab
-# }
-
-# fn afficher_tab(tab: Vec<i32>) {
-#     for element in tab {
-#         print!("{} ", element);
-#     }
-# }
-
-# fn main() {
-#     let tab: Vec<i32> = vec![];
-
-#     let tab = remplir_tab(tab);
-
-#     afficher_tab(tab);
-# }
-
-
 class Q_pattern_matching(Question):
     """Le pattern matching avec match"""
     note = 0
     def question(self):
-        self.note = self.random_version(21)
+        note = self.version = self.random_version(4)
+        random = self.random()
+        if note == 0:
+            self.note = int(random * 10) # [0;10[
+        elif note == 1:
+            self.note = 10 + int(random * 2) # [10;11]
+        elif note == 2:
+            self.note = 12 + int(random * 3) # [12;15]
+        else:
+            self.note = 16 + int(random * 5) # [16;20]
         return """
         <h3>Le pattern matching en Rust</h3>
         <p>
@@ -1798,41 +1284,14 @@ match (x, y) {
         </p>
         """
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-
+        source, result = bloc_source_et_execution(self)
+        self.check(source, [
+            ['match', "«match» est utilisé."],
+            ['_ *=>', "Le cas par défaut a été défini."],
+            ['(?s:(=> *println!\\(".*){5})', 'Tous les cas sont définis.'],
+        ])
         self.message(
-            'match' in source,
-            '«match» est utilisé.'
-        )
-        self.message(
-            '_=>' in source or '_ =>' in source,
-            'Le cas par défaut a été défini.'
-        )
-        count_cases_in_match = len(source.split('=> println!("')) - 1 + len(source.split('=>println!("')) - 1
-        self.message(
-            count_cases_in_match == 5,
-            'Tous les cas sont définis.'
-        )
-
-        expected = ''
-        if self.note >= 16:
-            expected = 'Excellent'
-        elif self.note >= 12:
-            expected = 'Bien'
-        elif self.note >= 10:
-            expected = 'Passable'
-        else:
-            expected = 'Insuffisant'
-
-        self.message(
-            result == expected,
+            result == ['Insuffisant', 'Passable', 'Bien', 'Excellent'][self.version],
             'Le bon résultat est affiché pour la note ' + str(self.note) + '.'
         )
         if self.all_tests_are_fine:
@@ -1932,27 +1391,12 @@ while let Some(val) = curseur.next() {
 }</pre>
         """
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-
-        self.message(
-            'while let' in source,
-            '«while let» est utilisé.'
-        )
-        self.message(
-            'next()' in source,
-            '«next()» est utilisé pour retirer les éléments.'
-        )
-        self.message(
-            'Some' in source,
-            '«Some» est utilisé pour le pattern matching.'
-        )
+        source, result = bloc_source_et_execution(self)
+        self.check(source, [
+            ['while +let', "«while let» est utilisé."],
+            ['next *( *)', "«next()» est utilisé pour retirer les éléments."],
+            ['Some', "«Some» est utilisé pour le pattern matching."],
+        ])
         expected = "\n".join([str(v) for v in self.values])
         self.message(
             result == expected,
@@ -1974,8 +1418,93 @@ while let Some(val) = curseur.next() {
 
 class Q_Ownership(Question):
     """L'ownership en Rust"""
+    exercices = [
+        #######################################################################
+        # fn main() {
+        #     let original = String::from("Rust");
+        #     let copie = original.clone();
+        #     println!("{}", original);
+        #     println!("{}", copie);
+        # }
+        ["""<h3>Clonage</h3><p>
+        Déclarez une variable <b>original</b> contenant la chaîne de caractères "Rust".
+        Créez une copie indépendante nommée <b>copie</b> en utilisant <code>.clone()</code>.
+        Affichez original et copie, pour montrer que les deux variables restent valides.
+        """,
+        [],
+        [
+            ['let +original( *: *String)? *= *String *:: *from *\\( *"Rust" *\\) *;',
+             "Une variable 'original' contenant 'Rust' a bien été déclarée."],
+            ['let +copie( *: *String)? *= *original *\\. *clone\\( *\\) *;',
+             "Une copie de 'original' a bien été stockée dans une nouvelle variable 'copie'."],
+        ],
+        "(?s:Rust.*Rust)",
+        ],
+        #######################################################################
+        # fn afficher_taille(texte: &String) {
+        #     println!("{}", texte.len());
+        # }
+        # fn main() {
+        #     let mot = String::from("Bonjour");
+        #     afficher_taille(&mot);
+        #     println!("{}", mot);
+        # }
+        ["""<h3>Emprunt</h3><p>
+        Créez une fonction <b>afficher_taille</b> qui prend un <b>&String</b> en paramètre et affiche sa longueur avec <code>.len()</code>. Dans 'main', déclarez une variable <b>mot</b> contenant "Bonjour", appelez afficher_taille en lui prêtant <b>mot</b> avec <b>&,</b> puis affichez à nouveau <b>mot</b> pour montrer qu'il est toujours valide après l'appel.
+        </p>
+        """,
+        [
+            ['fn +afficher_taille *\\( *[a-z]+ *: *& *String *\\)',
+             "La fonction 'afficher_taille' est déclarée avec la bonne signature."],
+        ],
+        [
+            ['let +mot *= *String *:: *from *\\( *"Bonjour" *\\) *;',
+             "'mot' a été initialisé correctement"],
+            ['afficher_taille *\\( *& *mot *\\)',
+             "Appelez afficher_taille en lui prêtant mot avec '&'"],
+        ],
+        "(?s:7.*Bonjour)",
+        ["fn afficher_taille(",  "println!(",
+            [['[a-z]+ *\\. *len( *)',
+             "La longueur du texte est affiché dans un println avec <code>.len()</code>"]]
+        ],
+        ["fn main()",  "println!(",
+            [[', *mot', "le contenu de la variable 'mot' est affiché"]]
+        ],
+        ],
+        #######################################################################
+        # fn ajouter_copie(mut texte: String) -> String {
+        #     texte.push_str(" copie");
+        #     texte
+        # }
+        # fn main() {
+        #     let original = String::from("Rust");
+        #     let resultat = ajouter_copie(original);
+        #     println!("{}", resultat);
+        # }
+        ["""<h3>Empreint mutable</h3><p>
+        Créez une fonction <b>ajouter_copie</b> qui prend une String nommé <b>texte</b> que nous allons modifier en paramètre (par valeur, donc elle en devient propriétaire). On lui ajoute ensuite " copie" avec <code>.push_str(" copie")</code> (oui l'espace est important !), puis retourne cette String modifiée.<br>Dans 'main', déclarez <b>original</b> contenant "Rust", appelez la fonction <code>ajouter_copie</code> avec en argument <b>original</b>, puis affichez uniquement le résultat de cet appel.<br>(Attention, vous ne pouvez plus afficher original, car il a été déplacé dans la fonction).
+        """,
+        [
+            ['fn +ajouter_copie *\\( *mut +texte *: *String *\\) *-> *String',
+             "La fonction 'ajouter_copie' est déclarée avec la bonne signature et le bon type de retour."],
+        ],
+        [
+            ['let +original( *: *String)? *= *String *:: *from *\\( *"Rust" *\\) *;',
+             "'original' est déclarée correctement."],
+            ['ajouter_copie *\\( *original *\\)',
+             "On utilise la fonction ajouter_copie() sur <b>original</b>."],
+        ],
+        "Rust copie",
+        ['fn ajouter_copie(', None,
+            [['texte *\\. *push_str *\\( *" copie" *\\)',
+            """On ajoute ' copie' au texte avec la méthode <code>.push_str(" copie")</code>."""]],
+        ]
+        ]
+    ]
     def question(self):
-        self.version=self.random_version(3)
+        self.nb_version = len(self.exercices)
+        self.version = self.random_version(3)
         question = """
         <h3>L'ownership (propriété)</h3>
         <p>
@@ -2057,168 +1586,27 @@ fn main() {
         N'hésitez pas à tester les autres exercices de ce thème !
         </p>
         """
-
-        Exercice = [
-        """
-        <h4>Exercice :</h4>
-        <h4>Clonage</h4>
-        <p>
-        Déclarez une variable <b>original</b> contenant la chaîne de caractères "Rust".
-        Créez une copie indépendante nommée <b>copie</b> en utilisant <code>.clone()</code>.
-        Affichez original et copie, pour montrer que les deux variables restent valides.
-        </p>
-        """
-        ,
-        """
-        <h4>Exercice :</h4>
-        <h3>Emprunt</h3>
-        <p>
-        Créez une fonction <b>afficher_taille</b> qui prend un <b>&String</b> en paramètre et affiche sa longueur avec <code>.len()</code>. Dans 'main', déclarez une variable <b>mot</b> contenant "Bonjour", appelez afficher_taille en lui prêtant <b>mot</b> avec <b>&,</b> puis affichez à nouveau <b>mot</b> pour montrer qu'il est toujours valide après l'appel.
-        </p>
-        """
-        ,
-        """
-        <h4>Exercice :</h4>
-        <h3>Empreint mutable</h3>
-        <p>
-        Créez une fonction <b>ajouter_copie</b> qui prend une String nommé <b>texte</b> que nous allons modifier en paramètre (par valeur, donc elle en devient propriétaire). On lui ajoute ensuite " copie" avec <code>.push_str(" copie")</code> (oui l'espace est important !), puis retourne cette String modifiée.<br>Dans 'main', déclarez <b>original</b> contenant "Rust", appelez la fonction <code>ajouter_copie</code> avec en argument <b>original</b>, puis affichez uniquement le résultat de cet appel.<br>(Attention, vous ne pouvez plus afficher original, car il a été déplacé dans la fonction).
-        </p>
-        """
-        ]
-        question += Exercice[self.version]
-        return question
+        return question + '<h4>Exercice :</h4>' + self.exercices[self.version][0] + '</p>'
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-        main_struct = extract_struct(source, "fn main()")
-
-        if self.version == 0 :
-
-            self.message(
-                'letoriginal=String::from("Rust");' in canoniseALLNotLower(main_struct),
-                "Une variable 'original' contenant 'Rust' a bien été déclarée."
-            )
-            self.message(
-                'letcopie=original.clone();' in canoniseALLNotLower(main_struct),
-                "Une copie de 'original' a bien été stockée dans une nouvelle variabel 'copie'."
-            )
-            expected ="RustRust"
-            self.message(
-                canoniseALLNotLower(result) == expected,
-                "Le résultat attendu est affiché !"
-            )
-
-        if self.version == 1 :
-
-            afficher_taille_struct = extract_struct(source, "fn afficher_taille(")
-            println_struct = extract_struct(afficher_taille_struct, "println!(", '(', ')')
-            println_struct2 = extract_struct(main_struct, "println!(", '(', ')')
-
-            self.message(
-                'fnafficher_taille(texte:&String)' in canoniseALLNotLower(source),
-                "La fonction 'afficher_taille' est déclarée avec la bonne signature."
-            )
-            self.message(
-                'texte.len()' in println_struct,
-                "La longueur du texte est affiché dans un println avec <code>.len()</code>"
-            )
-            self.message(
-                'letmot=String::from("Bonjour");' in canoniseALLNotLower(main_struct),
-                "'mot' a été initialisé correctement"
-            )
-            self.message(
-                'afficher_taille(&mot)' in main_struct,
-                "Appelez afficher_taille en lui prêtant mot avec '&'"
-            )
-            self.message(
-                ',mot' in canoniseALLNotLower(println_struct2),
-                "le contenu de la variable 'mot' est affiché"
-            )
-            expected = "7Bonjour"
-            self.message(
-                canoniseALLNotLower(result) == expected,
-                "Le résultat attendu est affiché !"
-            )
-
-
-        if self.version == 2 :
-
-            ajouter_copie_struct = extract_struct(source, "fn ajouter_copie(")
-
-            self.message(
-                'fnajouter_copie(muttexte:String)->String' in canoniseALLNotLower(source),
-                "La fonction 'ajouter_copie' est déclarée avec la bonne signature et le bon type de retour."
-            )
-            self.message(
-                'texte.push_str(" copie")' in ajouter_copie_struct,
-                """On ajoute ' copie' au texte avec la méthode <code>.push_str(" copie")</code>."""
-            )
-            self.message(
-                'letoriginal=String::from("Rust");' in canoniseALLNotLower(main_struct),
-                "'original' est déclarée correctement."
-            )
-            self.message(
-                'ajouter_copie(original)' in main_struct,
-                "On utilise la fonction ajouter_copie() sur <b>original</b>."
-            )
-            expected = "Rust copie"
-            self.message(
-                result == expected,
-                "Le résultat attendu est affiché !"
-            )
-
+        source, result = bloc_source_et_execution(self)
+        self.check(source, self.exercices[self.version][1])
+        self.check(extract_struct(source, "fn main()"), self.exercices[self.version][2])
+        for blk_name, sub_blk_name, tests in self.exercices[self.version][4:]:
+            blk = extract_struct(source, blk_name)
+            if sub_blk_name:
+                blk = extract_struct(blk, sub_blk_name, '(', ')')
+            self.check(blk, tests)
+        self.check(result,
+            [['^ *(?i:' + self.exercices[self.version][3] + ') *$', "Le résultat attendu est affiché !"
+            ]])
         if self.all_tests_are_fine:
-            if self.round>=2 :
-                self.display('<p style="background:#CCF">' + "Il n'y a plus de versions alternatives !")
-                self.next_question()
-                return
-            else :
-                self.next_question()
-                self.display(self.new_round_button('Essayer une alternative'))
-                return
+            next_question(self)
 
     def default_answer(self):
         return """fn main() {
 
 }
 """
-
-#Alt 1
-# fn main() {
-#     let original = String::from("Rust");
-#     let copie = original.clone();
-#     println!("{}", original);
-#     println!("{}", copie);
-# }
-
-#Alt 2
-# fn afficher_taille(texte: &String) {
-#     println!("{}", texte.len());
-# }
-
-# fn main() {
-#     let mot = String::from("Bonjour");
-#     afficher_taille(&mot);
-#     println!("{}", mot);
-# }
-
-#Alt 3
-# fn ajouter_copie(mut texte: String) -> String {
-#     texte.push_str(" copie");
-#     texte
-# }
-
-# fn main() {
-#     let original = String::from("Rust");
-#     let resultat = ajouter_copie(original);
-#     println!("{}", resultat);
-# }
-
 
 class Q_structures(Question):
     """Les structures (struct)"""
@@ -2342,35 +1730,24 @@ let p = Personne::nouveau("Alice", 25);</pre>
         </p>
         """
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-
-        block_struct = extract_struct(source, "struct Fruit")
-        block_print = extract_struct(source,"println!(", '(', ')')
-        block_instance = extract_struct(source, "let f")
-
-        self.message(
-            'nom:string' in canoniseALL(block_struct) and 'poids:i32' in canoniseALL(block_struct),
-            "Les éléments 'nom' et 'poids' sont bien définis avec leur bon type"
-        )
-        self.message(
-            'self.nom' in canoniseALL(block_print) and 'self.poids' in canoniseALL(block_print),
-            "Le nom et le poids du fruit sont affichés dans un seul et même print"
-        )
-        self.message(
-            'nom:string::from("pomme"),' in canoniseALL(block_instance) and ('poids:' + str(self.poids) + ',') in canoniseALL(block_instance),
-            "Une instance Pomme a bien été crée"
-        )
-        expected = canoniseALL("Ce fruit s'appelle : Pomme et pèse "+str(self.poids)+" grammes.")
-        self.message(
-            canoniseALL(result) == expected,
-            "La bonne phrase est affiché."
-        )
+        source, result = bloc_source_et_execution(self)
+        self.check(extract_struct(source, "struct Fruit"),
+            [['nom *: *String', "'nom' est bien défini avec son bon type"],
+             ['poids *: *i32', "'poids' est bien défini avec son bon type"],
+            ])
+        self.check(extract_struct(source, "println!(", '(', ')'),
+            [['self\\.nom.*self\\.poids',
+              "Le nom et le poids du fruit sont affichés dans un seul et même print"]
+            ])
+        self.check(extract_struct(source, "let f"),
+            [['nom *: *String *:: *from *\\( *"' + self.nom + '" *\\) *,',
+              "Une instance " + self.nom + " a bien été créée"],
+             ['poids *: *' + str(self.poids) + ' *,',
+              "Son poids a bien été indiqué"]
+            ])
+        self.check(result,
+            [["(?i:Ce fruit s'appelle : " + self.nom + " et pèse " + str(self.poids) + " grammes.)",
+              "La bonne phrase est affiché."]])
         if self.all_tests_are_fine:
             self.display('<p style="background:#8F8">' + 'Bravo !')
             self.next_question()
@@ -2476,26 +1853,25 @@ input.trim().parse().expect("Pas un entier");</pre>
         Vous stockerez dans une variable le résultat d'une saisie clavier de contenant du texte. Vous vous occuperez aussi des potentielles erreurs. Ensuite vous afficherez uniquement le contenu de cette variable.
         </p>
         """
-    def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
-        self.message(
-            'println!("{}", input);' in source or 'println!("{}",input);' in source,
-            "On affiche uniquement le résultat de l'input"
-        )
-        if self.all_tests_are_fine:
-            self.next_question()
+    def expectations(self):
+        value = str(self.random())
+        def input1():        return value
+        def output1(txt):    return value in txt
+        def exit_ok(infos) : return '= 0' in infos[0]
+        return [
+            ['MSG' , "Attend que vous saisissiez une valeur :"],
+            ['EXIT', "La programme se termine sans erreur.", exit_ok],
+            ['MSG' , "Test la saisie d'une ligne :"],
+            ['IN'  , "La ligne est bien lue.", input1],
+            ['OUT' , "La ligne est bien affichée.", output1],
+            ['EXIT', "La programme se termine sans erreur.", exit_ok],
+        ]
+
     def default_answer(self):
         return """use std::io;
 fn main() {
 }
 """
-
 
 class Q_Threads_Process(Question):
     """Threads"""
@@ -2538,13 +1914,7 @@ fn main() {
         </p>
         """
     def tester(self):
-        result = self.worker.execution_result.strip()
-        source = self.worker.source
-        self.display(
-            "La zone en bas à droite contient :<pre>"
-            + self.worker.escape(result)
-            + "</pre>"
-        )
+        source, result = bloc_source_et_execution(self)
         # No tester at the moment
 
         if self.all_tests_are_fine:
@@ -2562,36 +1932,3 @@ fn main() {
 // La partie processus est similaire et a besoin de
 // use std::process::Command
 """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # TITRE DE LA QUESTION  :                   THÈMES ABORDÉS  :
-    # """Hello World et prise en main de C5"""  C5
-    # """La fonction 'println!()'"""            Afficher avec Println!
-    # """Les variables"""                       Déclarer/afficher une variable + préfixer une variable non utilisée
-    # """Les conditions if/else"""              If /else if/ else
-    # """Les variables mutables"""              Variable mutable + If/else
-    # """Les fonctions"""                       Fonction + retour implicite + If/else
-    # """Les boucles loop et while"""           While/loop + Fonction
-    # """Les tableaux"""                        Tableaux + tableaux mutables + modifier une élément du tableau
-    # """Les tableaux et des boucles"""         Boucle for + tableaux + input + modifier un élément du tableau
-    # """Tableaux dynamiques : vecteur"""       vecteur (macro vec!) + modifs + fonctions (plusieurs en un code) + boucle for
-    # """Le pattern matching avec match"""      match
-    # """If let / While let"""                  if let/while let
-    # """L'ownership en Rust"""                 Ownership + fonctions
-    # """Les structures (struct)"""             Structures + instances + méthodes struct avec impl
-    # """La saisie clavier"""                   Saisie clavier (à refaire peut-être, un peu brute de décoffrage)
-    # """Threads et processus séparés"""        thread
-
-    # il manque 2 questions sur thread/fork
