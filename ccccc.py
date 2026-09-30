@@ -3236,7 +3236,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
 
     def coqc(self, lines):
         html = []
-        forger_line = False
+        forget_line = False
         for line in lines.split('\n'):
             show = line.split('     = "lInE ')
             if len(show) == 2:
