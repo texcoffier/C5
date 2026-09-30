@@ -2310,33 +2310,37 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         """Window focus"""
         if not GRADING and self.options['checkpoint'] and self.fullscreen.style.display == 'none':
             self.record_pending_goto()
-    def memorize_inputs(self):
+    def memorize_inputs(self, until=None):
         """Record all input values"""
         if not self.inputs[self.current_question]:
             # In some case INPUT are displayed for the bad question
             # So they are unexpected
             return
         inputs = self.executor.getElementsByTagName('INPUT')
+        found = False
+        self.inputs[self.current_question] = {}
         for value in inputs:
             if value == inputs[-1] and len(value.value) == 0:
                 continue
-            self.inputs[self.current_question][value.input_index] = value.value
+            if not found:
+                self.inputs[self.current_question][value.input_index] = value.value
+            if value == until:
+                found = True
     def oninput(self, event):
         """Send the input to the worker"""
         if event.key == 'Enter':
             self.focus_on_next_input = True
             if self.options['forget_input']:
-                event.target.disabled = True
+                self.memorize_inputs(event.target)
             else:
                 self.memorize_inputs()
             if event.target.run_on_change:
                 self.old_source = ''
                 self.unlock_worker()
-                self.compilation_run() # Force run even if deactivated
+                self.compilation_run(memorize_input=False) # Force run even if deactivated
             else:
                 self.send_input(event.target.value)
                 event.target.run_on_change = True
-
     def clear_if_needed(self, box):
         """Clear only once the new content starts to come
         Returns True if a clear was done
@@ -2777,7 +2781,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                     if not self.options.forget_input:
                         self.executor.appendChild(clear)
                     self.executor.appendChild(document.createElement('BR'))
-                    if not self.options.forget_input and self.input_index in self.inputs[self.current_question]:
+                    if self.input_index in self.inputs[self.current_question]:
                         span.value = self.inputs[self.current_question][self.input_index]
                         self.send_input(span.value)
                         span.run_on_change = True
@@ -3225,6 +3229,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.completion.className = 'completion'
         self.completion.style.display = 'none'
         self.update_gui()
+
+        theme = localStorage['theme']
+        if theme != 'default':
+            document.getElementById('theme').href = "HIGHLIGHT/" + theme + ".css?ticket=" + TICKET
 
     def coqc(self, lines):
         html = []
