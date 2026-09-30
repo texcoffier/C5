@@ -204,7 +204,7 @@ async def editor(session:Session, is_admin:bool, course:CourseConfig, # pylint: 
     return answer(
         session.header(login=login) + f'''
         <title>{title}</title>
-        <link rel="stylesheet" href="HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
+        <link id="theme" rel="stylesheet" href="HIGHLIGHT/{course.theme}.css?ticket={session.ticket}">
         <link rel="stylesheet" href="CSS/ccccc.css?ticket={session.ticket}">
         <script src="HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
         <script>
@@ -1829,6 +1829,7 @@ async def home(request:Request) -> Response:
                      course.title, course.start_timestamp, course.stop_timestamp,
                      login in course.tt_list))
     return answer(f'''{session.header(login=login)}
+<script src="HIGHLIGHT/highlight.js?ticket={session.ticket}"></script>
 <script src="JS/home.js?ticket={session.ticket}"></script>
 <script>home({json.dumps(data)}, {await utilities.LDAP.infos(login)})</script>
 ''')
