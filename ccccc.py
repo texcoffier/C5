@@ -3231,7 +3231,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.update_gui()
 
         theme = localStorage['theme']
-        if theme != 'default':
+        if theme and theme != 'default':
             document.getElementById('theme').href = "HIGHLIGHT/" + theme + ".css?ticket=" + TICKET
 
     def coqc(self, lines):
