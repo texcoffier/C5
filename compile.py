@@ -151,7 +151,7 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self.post('compiler', self.compiler_initial_content())
                 try:
                     self.executable = self.run_compiler(source)
-                except: # pylint: disable bare-except
+                except ValueError as error: # pylint: disable bare-except
                     self.post('compiler',
                         '<b style="color: #F00">' + str(error) + '</b><pre>'
                         + html(error.stack) + '</pre>')
