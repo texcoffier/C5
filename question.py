@@ -164,7 +164,7 @@ class Question:
         if test[0] == 'OUT':
             self.mark(self.to_test_index, test[2](string))
             test = self.next_test()
-            if test[0] == 'OUT':
+            if test and test[0] == 'OUT':
                 self.tester_realtime_display(phase, nr_input, string)
             return
         if test[0] == 'EXIT' and phase != 0:
