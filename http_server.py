@@ -122,8 +122,8 @@ class File:
         elif filename.endswith('.txt'):
             self.mime = 'text/plain'
             self.charset = 'binary'
-        elif filename.endswith('.jpg'):
-            self.mime = 'image/jpg'
+        elif filename.endswith('.whl'):
+            self.mime = 'application/octet-stream'
             self.charset = 'binary'
         else:
             log(f'Unknown mimetype {filename}')

@@ -309,6 +309,7 @@
         def args(txt)          : return '666+-111' in txt
         def resultat(txt)      : return '555' in txt
         def complet(txt)       : return '666+-111=555' in txt
+        def file_created()     : ['the_filename', 'the_content'] in self.worker.files
         def flottant()         : return '3.14'
         def erreur_lecture(txt): return 'ParseIntError' in txt
         def exit_ok(infos)     : return '= 0' in infos[0]
@@ -323,6 +324,7 @@
             ['OUT' , "Affichage des arguments."              , args],
             ['OUT' , "Affichage correcte du résultat."       , resultat],
             ['OUT' , "Affichage complet."                    , complet],
+            ['CHECK',"Le fichier a bien été créé"            , file_created], # filetree_out
             ['EXIT', "Se termine sans erreur."               , exit_ok],
 
             ['MSG' , "Teste l'addition de flottants (doit échouer)."],
@@ -722,12 +724,12 @@ def default_answer(self):
 <tr><td>coach_mouse_short_move_distance<td>3<td>Detect mouse short move: dx+dy distance in keystrokes (0=disabled)</tr>
 <tr><td>coach_mouse_line_bounds_min_move<td>2<td>Detect mouse to line begin/end: min chars moved (0=disabled)</tr>
 <tr><td>coach_retype_after_delete_chars<td>10<td>Detect text retyped after deletion: characters (0=disabled)</tr>
-<tr><td>coach_many_horizontal_arrows_threshold<td>20<td>Detect many ← → successive strokes (0=disabled)</tr>
+<tr><td>coach_many_horizontal_arrows_threshold<td>30<td>Detect many ← → successive strokes (0=disabled)</tr>
 <tr><td>coach_arrow_then_backspace_count<td>3<td>Detect → then Backspace: repetitions (0=disabled)</tr>
-<tr><td>coach_many_vertical_arrows_threshold<td>50<td>Detect many ↑ ↓ successive strokes (0=disabled)</tr>
+<tr><td>coach_many_vertical_arrows_threshold<td>100<td>Detect many ↑ ↓ successive strokes (0=disabled)</tr>
 <tr><td>coach_scroll_full_document_edge_lines<td>3<td>Detect long scroll until X lines to the top/bottom </tr>
 <tr><td>coach_scroll_full_document_min_lines<td>200<td> min lines in document (0=disabled)</tr>
-<tr><td>coach_large_selection_threshold<td>20<td>Detect large manual selection with Shift+arrows (0=disabled)</tr>
+<tr><td>coach_large_selection_threshold<td>100<td>Detect large manual selection with Shift+arrows (0=disabled)</tr>
 <tr><td>coach_delete_word_char_by_char_threshold<td>20<td>Detect word deletion char by char (0=disabled)</tr>
 <tr><td>coach_copy_then_delete_max_delay<td>3000<td>Detect Ctrl+C then Backspace: max delay ms (0=disabled)</tr>
 <tr><th style="background: #FFF" colspan="3">Bloc titles</tr>
@@ -1767,7 +1769,7 @@ server {
     <table>
         <tr>
             <td>127
-            <td>Administre C5 sur la machine locale (même paramètres que c5.py).
+            <td>Administre C5 sur la machine locale (mêmes paramètres que c5.py).
         </tr>
         <tr>
             <td>BUILDINGS/Ariane<br>
@@ -1804,6 +1806,10 @@ server {
         <tr class="cours">
             <td>COMPILE_PYTHON/introduction/questions.py
             <td>Un mini cours Python.
+        </tr>
+        <tr class="cours">
+            <td>COMPILE_PYODIDE/example/questions.py
+            <td>Exemple utilisant Pyodide
         </tr>
         <tr class="cours">
             <td>COMPILE_REMOTE/errors/questions.py
@@ -1976,6 +1982,10 @@ server {
             <td>compile_python.py
             <td>Interpréteur Python (brython).
         </tr>
+        <tr class="compilateur">
+            <td>compile_pyodide.py
+            <td>Interpréteur Python (Pyodide).
+        </tr>
         <tr class="serveur">
             <td>compile_racket.rkt
             <td>Programme LISP interprétant dans une sandbox le fichier
@@ -2136,7 +2146,7 @@ server {
         <li> <tt>dns_server</tt> toutes les requêtes DNS faites.</li>
         <li> <tt>infos_server</tt> toutes les requêtes nom/prénom faites.</li>
         <li> <tt>tests.log</tt> Résumé des tests de régression.</li>
-        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP}/NOM_SESSION/LOGS/LOGIN/</tt>
+        <li> <tt>COMPILE_{JS|CPP|PYTHON|REMOTE|SQL|TEXT|LISP…}/NOM_SESSION/LOGS/LOGIN/</tt>
             <ul>
                 <li> <tt>journal.log</tt> toutes les actions de l'étudiant.<br>
                     <b>Ce fichier est précieux, c'est lui qui permet de noter l'étudiant.</b>
@@ -2164,6 +2174,10 @@ server {
         <li> <tt>xxx-start-c5</tt> script shell lançant C5 avec les mêmes paramètres que
             lors du dernier lancement du serveur.
     </ul>
+
+    <h3>Vue globale de l'ensemble des processus.</h3>
+
+    <img src="architecture.svg" style="with:100%">
 
 
     <h3>Tests de régression.</h3>

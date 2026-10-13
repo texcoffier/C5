@@ -33,12 +33,15 @@ launcher:launcher.c
 
 killer:killer.c
 
+JS/pyodide:
+	cd JS ; GET https://github.com/pyodide/pyodide/releases/download/314.0.7/pyodide-314.0.7.tar.bz2 | bzcat | tar -xvf -
+
 favicon.ico:c5.svg
 	inkscape --export-area-drawing --export-png=$@ $?
 
 prepare:RapydScript node_modules/brython HIGHLIGHT xxx-JSCPP.js \
         node_modules/alasql sandbox/libsandbox.so killer \
-		favicon.ico node_modules/@jcubic/lips node_modules/marked
+		favicon.ico node_modules/@jcubic/lips node_modules/marked JS/pyodide
 	@$(MAKE) -j $$(nproc) \
 		$$(echo COMPILE_*/*/*.py | sed 's/\.py/.js/g') \
 		$$(echo $(COMPILERS) | sed -e 's,^,JS/,' -e 's, , JS/,g' -e 's/\.py/\.js/g') \

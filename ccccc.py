@@ -2989,12 +2989,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.compilation_run()
         elif what == 'shared_worker':
             trace('CCCCC: Launch shared worker', value)
-            url = value + window.location.search
+            url = BASE + value + window.location.search
             compiler_worker = eval( # pylint: disable=eval-used
                 'new SharedWorker("' + url + '", {"type": "module"})')
             channel = eval('new MessageChannel()') # pylint: disable=eval-used
             self.worker.postMessage(['port'], [channel.port1])
-            compiler_worker.port.postMessage(location.search, [channel.port2])
+            compiler_worker.port.postMessage([BASE, location.search, location.hash], [channel.port2])
             compiler_worker.port.start()
             def msg(event):
                 print(event)
