@@ -393,9 +393,10 @@ class CCCCC: # pylint: disable=too-many-public-methods
 
         self.coach_previous_position = self.cursor_position or 0
 
-    def onSocketError(self):
+    def onSocketError(self, event):
         """Can't start the worker"""
-        window.location = self.worker_url # Because it contains the error message
+        alert(event.message)
+        # window.location = self.worker_url # Because it contains the error message
 
     def terminate_init(self):
         """Only terminate init when the worker started"""
@@ -2986,7 +2987,21 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.allow_edit = int(value)
         elif what == 'recompile':
             self.compilation_run()
-
+        elif what == 'shared_worker':
+            trace('CCCCC: Launch shared worker', value)
+            url = value + window.location.search
+            compiler_worker = eval( # pylint: disable=eval-used
+                'new SharedWorker("' + url + '", {"type": "module"})')
+            channel = eval('new MessageChannel()') # pylint: disable=eval-used
+            self.worker.postMessage(['port'], [channel.port1])
+            compiler_worker.port.postMessage(location.search, [channel.port2])
+            compiler_worker.port.start()
+            def msg(event):
+                print(event)
+            compiler_worker.onerror = msg
+            compiler_worker.onmessageerror = msg
+            compiler_worker.onSocketError = msg
+            compiler_worker.onmessage = msg
         for title in document.getElementsByTagName('BLOCTITLE'):
             options = []
             if self.expected_answer[self.current_question]:

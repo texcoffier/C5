@@ -37,6 +37,10 @@ def onmessage(event):
         elif event.data[0] == 'next_question':
             trace('Worker: Next question')
             Compile.worker.start_question()
+        elif event.data[0] == 'port':
+            # Message returned when the compiler ask a shared_worker to the main thread
+            # Store the port to communicate with the asked shared worker
+            Compile.worker.compiler_port = event.ports[0]
 
     else:
         if Compile.worker.shared_buffer:
