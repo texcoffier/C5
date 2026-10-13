@@ -98,23 +98,33 @@ class File:
             self.mime = 'text/html'
         elif filename.endswith('.js'):
             self.mime = 'application/x-javascript'
+        elif filename.endswith('.mjs'):
+            self.mime = 'application/x-javascript'
+        elif filename.endswith('.wasm'):
+            self.mime = 'application/wasm'
+            self.charset = None
+        elif filename.endswith('.json'):
+            self.mime = 'application/json'
+        elif filename.endswith('.zip'):
+            self.mime = 'application/zip'
+            self.charset = 'binary'
         elif filename.endswith('.ico'):
             self.mime = 'image/vnd.microsoft.icon'
-            self.charset = None
+            self.charset = 'binary'
         elif filename.endswith('.css'):
             self.mime = 'text/css'
         elif filename.endswith('.png'):
             self.mime = 'image/png'
-            self.charset = None
+            self.charset = 'binary'
         elif filename.endswith('.gif'):
             self.mime = 'image/gif'
-            self.charset = None
+            self.charset = 'binary'
         elif filename.endswith('.txt'):
             self.mime = 'text/plain'
-            self.charset = None
+            self.charset = 'binary'
         elif filename.endswith('.jpg'):
             self.mime = 'image/jpg'
-            self.charset = None
+            self.charset = 'binary'
         else:
             log(f'Unknown mimetype {filename}')
             self.mime = 'text/plain'
@@ -126,7 +136,7 @@ class File:
             with open(self.filename, "rb") as file:
                 content = file.read()
                 self.cache = 'COMPILE_' not in self.filename
-                if self.charset is not None:
+                if self.charset not in (None, 'binary'):
                     self.content = content.decode(self.charset)
                 else:
                     self.content = content
@@ -136,7 +146,7 @@ class File:
         return answer(
             content or self.get_content(),
             content_type=self.mime,
-            charset=self.charset or 'binary',
+            charset=self.charset,
             cache=self.cache
         )
     @classmethod
@@ -2696,7 +2706,7 @@ def main():
     app.add_routes([web.get('/', home),
                     web.get('/{filename}', handle()), # Only editor
                     web.get('/{filename}/V{version}', handle()), # Only editor
-                    web.get('/JS/{filename}', handle('JS')),
+                    web.get('/JS/{filename:.*}', handle('JS')),
                     web.get('/CSS/{filename}', handle('CSS')),
                     web.get('/node_modules/{filename:.*}', handle('node_modules')),
                     web.get('/HIGHLIGHT/{filename:.*}', handle('HIGHLIGHT')),
