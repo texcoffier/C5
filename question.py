@@ -128,6 +128,8 @@ class Question:
             return
         test = self.get_test()
         if not test:
+            if self.all_tests_are_fine:
+                self.worker.good()
             return
         if test[0] == 'EXIT':
             self.mark(self.to_test_index, test[2](data))
@@ -135,7 +137,7 @@ class Question:
                 self.next_phase()
             else:
                 if self.all_tests_are_fine:
-                    self.next_question()
+                    self.worker.good()
             return
         if test[0] == 'IN' and phase != 0:
             self.mark(self.to_test_index, False)

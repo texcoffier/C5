@@ -243,20 +243,26 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
                 + html(error.stack) + '</pre>')
             self.current_question = current_question # Keep same question
             return
-        if (current_question != self.current_question # Question has been solved now
-                and not self.question_yet_solved(current_question)
-           ):
-            self.post("good", self.source)
-            option = self.options['ANSWERS'][current_question]
-            if option:
-                option[0] = self.source
-                option[1] += 1
-            else:
-                self.options['ANSWERS'][current_question] = [self.source, 1, self.quest.round]
-        else:
-            self.current_question = current_question # Keep same question
+        if current_question != self.current_question: # Question has been solved now
+            self.good(current_question)
         if self.current_question >= len(self.questions):
             self.current_question = len(self.questions) - 1
+
+    def good(self, current_question=None):
+        """The question has been answered correctly"""
+        if current_question is None:
+            current_question = self.current_question
+        if self.question_yet_solved(current_question):
+            self.current_question = current_question # Stay on the same question
+            return
+        self.post("good", self.source)
+        option = self.options['ANSWERS'][current_question]
+        if option:
+            option[0] = self.source
+            option[1] += 1
+        else:
+            self.options['ANSWERS'][current_question] = [self.source, 1, self.quest.round]
+        self.current_question = current_question + 1
 
     def question_yet_solved(self, question):
         """Return True if the current question has been correctly answered"""

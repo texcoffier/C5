@@ -52,7 +52,7 @@ fn main() {
         def flottant()         : return '3.14'
         def erreur_lecture(txt): return 'ParseIntError' in txt
         def exit_ok(infos)     : return '= 0' in infos[0]
-        def exit_error(infos)  : return '= -' in infos[0]
+        def exit_error(infos)  : return '= 0' not in infos[0]
 
         return [
             ['EXIT', "Première exécution terminée."          , TRUE],
@@ -70,3 +70,7 @@ fn main() {
             ['OUT' , "La lecture d'un flottant doit échouer.", erreur_lecture],
             ['EXIT', "Se termine en faisant une erreur."     , exit_error],
         ]
+
+class Q2(Question):
+    def question(self):
+        return "Pas d'autres questions."
