@@ -2796,16 +2796,14 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                         self.executor.innerHTML = self.executor.firstChild.outerHTML
                         self.executor.content_size = 0
                         value = value.split('\033[2J')[-1]
-                    if self.executor.content_size > 1000000:
-                        if self.executor.content_size == 1000001:
+                    if self.executor.content_size > 10000000:
+                        if self.executor.content_size == 10000001:
                             continue
-                        self.executor.content_size = 1000001
+                        self.executor.content_size = 10000001
                         value = 'Truncated...'
                     else:
                         self.executor.content_size += len(value)
                     span = document.createElement('DIV')
-                    # The first space is replaced by an unsecable space
-                    # in order to display it on span start <span> foo</span>
                     if self.options['language'] in ('html', 'markdown'):
                         span.innerHTML = value
                         if self.options['language'] == 'html':
@@ -2822,7 +2820,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                             except ValueError:
                                 pass
                     else:
-                        span.innerHTML = value.replace(' ', ' ')
+                        # The first space is replaced by an unsecable space
+                        # in order to display it on span start <span> foo</span>
+                        if value.startswith('<'):
+                            span.innerHTML = value
+                        else:
+                            span.innerHTML = value.replace(' ', ' ')
                         if value[-1] not in '>\n':
                             span.style.float = 'left'
                         if value[0] == '\n':
