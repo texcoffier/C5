@@ -61,6 +61,8 @@ class Question:
         then 'tester' is called one the first execution is done.
 
         The returned list of test may contains items of these types:
+            ['CHECK', "a message.", a_boolean_function],
+                   No parameters. Usable to check globals variables before EXIT
             ['EXIT', "a message.", a_boolean_function],
                    The parameter contain process exit informations and files.
             ['IN'  , "a message.", a_string_function],
@@ -113,7 +115,7 @@ class Question:
             what = test[0]
             if what == 'MSG':
                 t.append('<p id="test-' + i + '">' + test[1])
-            elif what in ('IN', 'OUT', 'EXIT'):
+            elif what in ('IN', 'OUT', 'CHECK', 'EXIT'):
                 t.append('<li id="test-' + i + '" class="tester">' + test[1])
             else:
                 alert('Bug: ' + what)
@@ -131,6 +133,12 @@ class Question:
             if self.all_tests_are_fine:
                 self.worker.good()
             return
+        while test[0] == 'CHECK':
+            self.mark(self.to_test_index, test[2]())
+            self.next_test()
+            test = self.get_test()
+            if not test:
+                return
         if test[0] == 'EXIT':
             self.mark(self.to_test_index, test[2](data))
             if self.next_test():
