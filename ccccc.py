@@ -3232,6 +3232,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         window.addEventListener('compositionend', bind(self.compositionend, self))
         window.onblur = bind(self.onblur, self)
         window.onfocus = bind(self.onfocus, self)
+        # Disable Fifrefox past with middle button
+        def disable_middle_button(event):
+            if event.button == 1:
+                event.preventDefault()
+        document.onauxclick = disable_middle_button
+
         def do_coloring():
             self.update_gui()
             self.do_coloring = "onresize"
