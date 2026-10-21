@@ -45,9 +45,9 @@ class Session(Compile):
                 output.append(html(line))
                 if not pyodide_stack_start and line.startswith('  File "/lib/python314.zip'):
                     pyodide_stack_start = len(output)
-                if not pyodide_stack_end and 'File "c5.py"' in line:
+                if not pyodide_stack_end and 'File "__c5__.py"' in line:
                     pyodide_stack_end = len(output)
-                if line.startswith('  File "c5.py", line '):
+                if line.startswith('  File "__c5__.py", line '):
                     error.send()
                     error.line_number = int(line.split('line ')[1].split(',')[0])
                     state = 'source'

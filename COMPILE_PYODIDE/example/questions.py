@@ -6,9 +6,14 @@ For regression tests
 # Do not copy this for an examination session.
 # It is for an always open session.
 COURSE_OPTIONS = {
-    'title': "Démonstration de l'exécution Python interne au navigateur web",
+    'title': "Démonstration de l'exécution Python interne au navigateur web avec Pyodide",
     'expected_students_required': 1,
     'display_indent': 0,
+    'allow_copy_paste': 1,
+    'checkpoint': 0,
+    'forbid_question_copy': 0,
+    'allow_ip_change': 1,
+    'state': 'Ready',
     'positions': {
         "question":[1,29,0,60,"#EFE"],
         "tester":[1,29,60,40,"#EFE"],

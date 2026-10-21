@@ -80,7 +80,7 @@ def display_plot(fig=None):
     display_png(buf.getvalue())
 `)
         try {
-            await pyodide.runPythonAsync(event.data[1], { filename: "c5.py", globals: namespace });
+            await pyodide.runPythonAsync(event.data[1], { filename: "__c5__.py", globals: namespace });
             port.postMessage([run_id, "globals", JSON.stringify(namespace.toJs())]);
             for (var filename of event.data[3]) {
                 try {
