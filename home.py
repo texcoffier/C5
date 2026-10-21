@@ -3,7 +3,7 @@
 THEMES = {
     "default" : 'Thème recommandé',
     "ascetic" : 'Monochrome',
-    "grayscale" : 'Monochrome/Fond',
+    # "grayscale" : 'Monochrome/Fond', # Cursor is no visible
     "idea" : 'Gras/Vert/bleu',
     }
 
