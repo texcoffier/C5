@@ -5,8 +5,8 @@ The SharedWorker is started by ccccc.py
 """
 
 class Err:
-    def __init__(self, port):
-        self.port = port
+    """Helper to create error message to send to the GUI"""
+    def __init__(self):
         self.type = 'warning'
         self.line_number = 0
         self.backtrace_lines = []
@@ -14,9 +14,10 @@ class Err:
         self.size = None
         self.source = ''
     def send(self):
+        """Display the current error message in the editor"""
         if self.line_number:
             postMessage([self.type, [self.line_number, self.position, self.size]])
-        self.__init__()
+        self.__init__() # pylint: disable=unnecessary-dunder-call
 class Session(Compile):
     """JavaScript compiler and evaluator"""
     execution_result = ''
@@ -26,8 +27,11 @@ class Session(Compile):
     run_tester_after_exec = False
     run_id = 0
     default_options = {'language': 'python', 'extension': 'py'}
+    source = ''
+    files = None
 
     def pyodide_message(self, event):
+        """Analyse a message receive from the Pyodide shared worker"""
         if event.data[0] != self.run_id:
             return # old compilation result
         data = event.data[1:]
@@ -120,12 +124,13 @@ class Session(Compile):
         return 'fake executable'
 
     def ask_pyodide(self):
+        """Ask the Pyodide SharedWorker to execute the Python code"""
         self.compiler_port.postMessage([self.run_id, self.source,
             self.options['filetree_in'], self.options['filetree_out'],
             self.options['TICKET'], self.options['COURSE']])
 
     def run_executor(self):
-        print('Execute')
+        """Execute the Python program, needs to wait the SharedWorker startup"""
         self.execution_result = ''
         self.files = []
         self.post('executor', '')
@@ -140,5 +145,4 @@ class Session(Compile):
 
     def locals(self): # pylint: disable=no-self-use
         """Returns the local variable dict"""
-        print('locals')
         return self.pyodide_globals
