@@ -297,17 +297,17 @@ class Network:
         for node in self.nodes:
             if not node.is_a_router:
                 continue
-            analyze.nr_interfaces = 0
+            nr_interfaces = 0
             for interfac in node.interfaces:
                 if interfac.active():
                     if interfac.switche not in nr_routers_per_switch:
                         nr_routers_per_switch[interfac.switche] = 0
                     nr_routers_per_switch[interfac.switche] += 1
-                    analyze.nr_interfaces += 1
-            if analyze.nr_interfaces == 0:
+                    nr_interfaces += 1
+            if nr_interfaces == 0:
                 continue
-            if analyze.nr_interfaces > nbr_interface_used:
-                nbr_interface_used = analyze.nr_interfaces
+            if nr_interfaces > analyze.nr_interfaces:
+                analyze.nr_interfaces = nr_interfaces
             analyze.nr_routers += 1
             for route in node.routes:
                 if route.network_dot and route.netmask_dot and route.gateway_dot:
