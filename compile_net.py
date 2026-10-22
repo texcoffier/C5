@@ -247,6 +247,15 @@ class Analyze:
     l_total_ping_distance = 0
     nr_aggregatable = 0
     nr_too_big_destination_network = 0
+
+    def verify(self, *expected):
+        ok = True
+        for expression in expected:
+            if not eval('self.' + expression):
+                ok = False
+                print('Test fail for', expression)
+                print(JSON.stringify(self))
+        return ok
 class Network:
     """The full network"""
     canvas = None
