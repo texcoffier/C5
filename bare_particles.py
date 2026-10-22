@@ -54,6 +54,8 @@ class Particles: # pylint: disable=too-many-instance-attributes
         for name, color in masses:
             if name in positions:
                 x, y = positions[name] # Reuse last position
+                x += Math.random()
+                y += Math.random()
             else:
                 x = self.center_x + width * (Math.random() - 0.5) / 2
                 y = self.center_y + height * (Math.random() - 0.5) / 2
@@ -178,6 +180,7 @@ class Particles: # pylint: disable=too-many-instance-attributes
         if not canvas or canvas.intervalID != self.intervalID:
             clearInterval(self.intervalID)
             return
+        record_positions = True
 
         def update_speed(node1, node2, distance, strength):
             delta_x = node1.coord_x - node2.coord_x
@@ -195,10 +198,9 @@ class Particles: # pylint: disable=too-many-instance-attributes
             delta_y = node1.coord_y - node2.coord_y
             d = delta_x*delta_x + delta_y*delta_y
             if d < 1:
-                # Not a good case, eliminate it.
-                node1.coord_x += 5 * Math.random()
-                node1.coord_y += 5 * Math.random()
-                repulsion(node1, node2)
+                if self.netname in localStorage:
+                    del localStorage[self.netname]
+                record_positions = False
                 return
             delta_x *= -10 / d
             delta_y *= -10 / d
@@ -236,7 +238,8 @@ class Particles: # pylint: disable=too-many-instance-attributes
 
         self.draw()
 
-        positions = {}
-        for node in self.nodes:
-            positions[node.name] = [node.coord_x, node.coord_y]
-        localStorage[self.netname] = JSON.stringify(positions)
+        if record_positions:
+            positions = {}
+            for node in self.nodes:
+                positions[node.name] = [node.coord_x, node.coord_y]
+            localStorage[self.netname] = JSON.stringify(positions)
