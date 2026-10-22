@@ -165,7 +165,7 @@ class Particles: # pylint: disable=too-many-instance-attributes
                 ctx.lineWidth = 1
         ctx.fillStyle = '#000'
         for node in self.nodes:
-            ctx.fillText(node.name, node.coord_x - node.text_width/2, node.coord_y + 4)
+            ctx.fillText(node.name+' ', node.coord_x - node.text_width/2, node.coord_y + 4)
         if spring_zoomed:
             ctx.save()
             self.ctx.font = 3*font + 'px sans-serif'
