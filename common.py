@@ -300,6 +300,12 @@ class QuestionStats:
         return replace_regexp(self.last_default_raw, '[♯✽]', ' ')
     def set_current_default_raw(self, value):
         """The current default has changed"""
+        if PYTHON:
+            self.current_default = self.current_default_raw = value
+            return
+        if '=editor' in COURSE:
+            self.current_default = self.current_default_raw = value
+            return
         trace("Set current_default_raw", value)
         def replace_hash(txt):
             return replace_regexp(txt, '.', '♯')
