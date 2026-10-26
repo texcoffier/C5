@@ -2177,6 +2177,32 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             # Disables these keys to not lost focus
             stop_event(event)
             return
+        elif event.key == 'End' and not event.shiftKey and not event.ctrlKey and self.journal_question.form:
+            pos = self.cursor_position
+            if not self.can_put(pos) and not self.can_put(pos-1):
+                stop_event(event)
+                return
+            while self.source[pos] and self.can_put(pos):
+                pos += 1
+            pos -= 1
+            while self.source[pos] == ' ':
+                pos -= 1
+            pos += 1
+            self.set_cursor_position(pos)
+            stop_event(event)
+            return
+        elif event.key == 'Home' and not event.ctrlKey and self.journal_question.form:
+            pos = self.cursor_position
+            if not self.can_put(pos):
+                pos -= 1
+            while self.source[pos] and self.can_put(pos):
+                pos -= 1
+            pos += 1
+            while self.source[pos] == ' ':
+                pos += 1
+            self.set_cursor_position(pos)
+            stop_event(event)
+            return
         elif (event.key == 'End' or event.key == 'Tab' and not event.shiftKey) and not event.ctrlKey and self.journal_question.form:
             pos = self.cursor_position
             while self.source[pos] and self.can_put(pos):
