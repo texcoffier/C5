@@ -10,6 +10,8 @@ Network simulator and grader
 
 def dotted_to_int(dotted):
     """A.B.C.D → int"""
+    if not dotted:
+        return -1
     value = 0
     dotted = dotted.split('.')
     if len(dotted) != 4:
