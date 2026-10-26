@@ -3091,7 +3091,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def bug_report(self):
         self.popup_message(
         '<p>Vous avez trouvé un bug dans C5 (<b>pas dans le sujet</b>) :<br>\n'
-        + 'Envoyez un message <b>décrivant précisémment le problème</b> à ' + CONFIG['roots'][0] + '<br>\n'
+        + 'Utilisez votre messagerie pour envoyer un message <b>décrivant précisément le problème</b> à « ' + CONFIG['roots'][0] + ' »<br>\n'
         + 'En ajoutant les informations qui suivent :<ul>\n'
         + '<li> Navigateur : '
         + navigator.appCodeName + ' // '
@@ -3105,7 +3105,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         + '<li> [' + (len(JOURNAL.lines)-2) + '] : ' + html(JOURNAL.lines[-2][:80])
         + '<li> [' + (len(JOURNAL.lines)-1) + '] : ' + html(JOURNAL.lines[-1][:80])
         + '</ul>'
-        + 'Cliquer sur OK ne va <b>pas</b> envoyer de message.'
+        + 'Cliquer sur OK ne va <b>pas</b> envoyer de message : '
+        + 'relisez le début de cette alerte.'
         )
 
     def goto_question(self, index):
