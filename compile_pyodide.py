@@ -39,6 +39,8 @@ class Session(Compile):
             self.pyodide_globals = JSON.parse(data[1])
         elif data[0] == 'error':
             self.execution_result += data[1]
+            if self.phase != 0:
+                return
             errors = data[1].strip().split('\n')
             output = []
             state = ''
@@ -91,18 +93,21 @@ class Session(Compile):
         elif data[0] == 'message':
             self.post('executor', data[1])
         elif data[0] == 'stdin':
-            value = self.quest.tester_realtime_input(self.phase, self.nr_input)
-            self.compiler_port.postMessage(value)
+            value = self.read_input()
+            self.compiler_port.postMessage([self.run_id, value])
         elif data[0] == 'stdout':
             if data[1].startswith('data:image/png;base64,'):
                 value = '<img style="width:100%" src="' + data[1][:-1] + '">\n'
             else:
                 value = html(data[1])
-            self.execution_result += data[1]
+            if data[1][0] != '\001':
+                self.execution_result += data[1]
             self.quest.tester_realtime_display(self.phase, self.nr_input, data[1])
             if self.phase != 0:
                 return
             self.post('executor', value)
+            if '\002WAIT' in data[1]:
+                self.compiler_port.postMessage([self.run_id, self.read_input(True)])
         elif data[0] == 'return':
             self.execution_returns += data[1]
             self.quest.tester_realtime_exit(self.phase, self.nr_input, data[1])
@@ -113,6 +118,7 @@ class Session(Compile):
 
     def run_compiler(self, source):
         """Compile, display errors and return the executable"""
+        print('run compiler',  self.run_id)
         if not self.compiler_port:
             if not self.shared_worker_asked:
                 self.post('shared_worker', '/JS/pyodide.mjs')
@@ -130,13 +136,15 @@ class Session(Compile):
             self.options['TICKET'], self.options['COURSE']])
 
     def run_executor(self):
-        """Execute the Python program, needs to wait the SharedWorker startup"""
+        """Execute the Python program"""
+        print('run exec',  self.run_id)
         self.execution_result = ''
         self.files = []
         self.post('executor', '')
         if self.compiler_port:
             self.ask_pyodide()
         else:
+            # wait the SharedWorker startup
             def send():
                 self.compiler_port.onmessage = bind(self.pyodide_message, self)
                 self.compiler_port.start()

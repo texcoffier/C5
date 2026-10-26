@@ -246,6 +246,111 @@ print(await c5.read("example.csv"))
             ['EXIT', "Exécution terminée.", TRUE],
         ]
 
+class Ninth(Question):
+    """Reading keyboard (sys.stdin)"""
+    def question(self):
+        return """Lire un nombre au clavier et faire afficher son carré"""
+    def default_answer(self):
+        return '''
+import c5
+
+print("Taper un nombre entier :")
+i = await c5.input()
+print('Vous avez tapé :', i)
+print('Son carré : ',  '???')
+'''
+    def expectations(self):
+        number = 1000 + int(1000 * self.random())
+        def an_int():
+            return str(number)
+        def square_ok():
+            return str(number * number) in self.worker.execution_result
+        def a_text():
+            return 'foo'
+        def error():
+            return 'ValueError' in self.worker.execution_result
+        def exit_0(exit_value):
+            return exit_value == 0
+        def exit_1(exit_value):
+            return exit_value == 1
+        return [
+            ['EXIT' , "Exécution terminée."          , TRUE],
+            ['IN'   , "Lecture d'un entier"          , an_int],
+            ['CHECK', "Le carré est bien affiché"    , square_ok],
+            ['EXIT' , "Exécution terminée."          , exit_0],
+            ['IN'   , "Lecture d'un non entier"      , a_text],
+            ['CHECK', "Exception ValueError affichée", error],
+            ['EXIT' , "Exécution terminée."          , exit_1],
+        ]
+
+class Tenth(Question):
+    """Using Grapic library"""
+    def question(self):
+        return """Jouez avec le curseur, les boutons et les touches.
+        <p>
+        Appuyez sur 'q' pour valider la question.
+        """
+
+    def default_answer(self):
+        return """import c5
+import math
+import time
+import random
+
+c5.winInit('title', 500, 500)
+c5.fontSize(20)
+start = time.time()
+for i in range(100000):
+    y = int(math.sin(i/10) * 220  +  250)
+    c5.winClear()
+    c5.color(255, 0, 0)
+    c5.circleFill(15, y, 10)
+
+    c5.color(0, 255, 0)
+    c5.grid(400, 400, 500, 500, 5, 6)
+
+    c5.color(0, 0, 255)
+    c5.polygon([[300, 10], [500,10], [400, 200]])
+
+    c5.color(255, 0, 255)
+    c5.rectangleFill(100, (y+250)/2,
+                     200, (y+250)/2 + 100)
+
+    for _ in range(200):
+        c5.put_pixel(
+            random.randint(300, 340),
+            random.randint(300, 340),
+            random.randint(0, 256),
+            random.randint(0, 256),
+            random.randint(0, 256))
+        
+
+    x, y = c5.mousePos()
+    c5.color(255, 255, 0, 200)
+    c5.circleFill(x, y, 50)
+    c5.color(0, 0, 0)
+    c5.circleFill(x, y, 5)
+    c5.print(x + 10, y + 10, f"x={x}")
+    c5.print(x + 10, y - 10, f"y={y}")
+    c5.print(30, 80, f"Key pressed: {c5.Grapic.key}")
+    c5.print(30,100, f"Button pressed: {c5.Grapic.button}")
+    c5.print(30,120, "PRESS «q» to quit")
+    dt = time.time() - start
+    c5.print(30, 40, f"Running time: {round(dt, 1)} seconds")
+    c5.print(30, 60, f"Number of frames: {i}")
+    if dt:
+        c5.print(30, 20, f"Frame rate: {round(i/dt, 1)}")
+    await c5.winDisplay()
+    if c5.isKeyPressed('q'):
+        break
+# c5.winQuit() # Ferme l'affichage
+print('THE END')
+"""
+    def expectations(self):
+        return [
+            ['EXIT', "Exécution terminée.", TRUE],
+        ]
+
 class Last(Question):
     """Testez vos programmes"""
     def question(self):
