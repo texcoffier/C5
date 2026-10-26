@@ -12,6 +12,7 @@ for classe in question_classes: # pylint: disable=undefined-variable
     notation_b = classe().grading_ladder()
     infos.append(
         {
+            'name': classe.__name__,
             'title': classe.__doc__ or '',
             'notation_a': notation_a,
             'notation_b': notation_b

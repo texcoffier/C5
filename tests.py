@@ -1372,16 +1372,20 @@ class Q1(Question):
     def load_zip_real(self, url):
         """Wait the ZIP file downloading"""
         # Using self.goto() will lock selenium firefox driver
-        for _ in range(2): # Sometime ZIP loading fails
+        for i in range(3): # Sometime ZIP loading fails
+            print('\t\tLoad zip, try: ', i)
             self.driver.execute_script(
                 f"window.open('{URL}{url}/test.zip?ticket={self.ticket}')")
+            print('\t\tWindow opened')
             for _ in range(20):
                 time.sleep(0.1)
                 names = glob.glob(os.path.expanduser('~/*/test.zip'))
                 if names:
+                    print(f'\t\tFound {len(names)} in ~/*/test.zip')
                     return names
                 names = glob.glob(os.path.expanduser('~/test.zip'))
                 if names:
+                    print(f'\t\tFound {len(names)} in ~/test.zip')
                     return names
         raise ValueError('Downloaded file not found')
     def load_zip(self, url):
@@ -1823,7 +1827,7 @@ class Q1(Question):
             assert "Bad compiler" in output
 
             output = send('sequential Source Journal Grades Media', 'REMOTE=XXX')
-            if output != '<br><span style="color:#BBB">C5/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/</span><br>C5/COMPILE_REMOTE/test/session.cf <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/</span><br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/</span><br>C5/COMPILE_REMOTE/test/MEDIA/foo.png <br>C5/COMPILE_REMOTE/test/questions.py <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/SRC/</span><br>C5/COMPILE_REMOTE/test/SRC/answer.c <h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/XXX</h2><pre>COMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.js OK\nQEnd: answer.c\nCOMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.json OK\n</pre>':
+            if output != '<br><span style="color:#BBB">C5/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/</span><br>C5/COMPILE_REMOTE/test/session.cf <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/</span><br><span style="color:#BBB">C5/COMPILE_REMOTE/test/LOGS/john.doe/</span><br>C5/COMPILE_REMOTE/test/LOGS/john.doe/journal.log <br>C5/COMPILE_REMOTE/test/LOGS/john.doe/grades.log <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/MEDIA/</span><br>C5/COMPILE_REMOTE/test/MEDIA/foo.png <br>C5/COMPILE_REMOTE/test/questions.py <br><span style="color:#BBB">C5/COMPILE_REMOTE/test/SRC/</span><br>C5/COMPILE_REMOTE/test/SRC/answer.c <h1>Compile and Load configs</h1><h2>COMPILE_REMOTE/XXX</h2><pre>COMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.json OK\nCOMPILE_REMOTE/XXX/questions.py â\x86\x92 COMPILE_REMOTE/XXX/questions.js OK\nQEnd: answer.c\n</pre>':
                 raise ValueError(repr(output))
 
             assert os.path.exists('COMPILE_REMOTE/XXX/questions.py')
