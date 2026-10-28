@@ -136,10 +136,16 @@ class Node:
         self.network = network
         self.index = index
         self.interfaces = []
-        for switche, ip_dot, netmask_dot, line_col in interfaces:
-            i = Interface(self, ip_dot, netmask_dot, switche, line_col)
-            self.interfaces.append(i)
         self.is_a_router = len(interfaces) != 1
+        for switche, ip_dot, netmask_dot, line_col in interfaces:
+            switch_fine = True
+            if self.is_a_router:
+                if switche != '' and (switche < 1 or switche > len(network.hosts)):
+                    switche = ''
+                    switch_fine = False
+            i = Interface(self, ip_dot, netmask_dot, switche, line_col)
+            i.switch_fine = switch_fine
+            self.interfaces.append(i)
         if self.is_a_router:
             self.name = 'ABCDEFGH'[index]
         else:
@@ -641,11 +647,11 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
         nbr_routers = len(interfaces[0])
         for interf in interfaces:
             if len(interf) != nbr_routers:
-                self.post('compiler', "Dans la première table il n'y a pas les bonnes colonnes")
+                self.post('compiler', "Dans la première table il n'y a pas les bonnes colonnes. Si c'était bon avant, annulez les derniers changements.")
                 return
         for route in routes:
             if len(route) != nbr_routers:
-                self.post('compiler', "Dans la deuxième table il n'y a pas les bonnes colonnes")
+                self.post('compiler', "Dans la deuxième table il n'y a pas les bonnes colonnes. Si c'était bon avant, annulez les derniers changements.")
                 return
         if len(networks) == 0:
             self.post('compiler', "Aucun réseau défini. 1:«10.0.0.0/8» 2:«192.168.0.1/24» ...")
@@ -690,16 +696,17 @@ class Session(Compile): # pylint: disable=undefined-variable,invalid-name
             if not router.running:
                 continue
             for interf_router in router.interfaces:
-                if not interf_router.switche or not interf_router.ip_dot:
-                    continue
-                interf_sw = net.by_switch[interf_router.switche][0]
                 ip_int = interf_router.ip_int
                 line, col = interf_router.line_col
                 line += 1
                 col += 1
-                if interf_router.switche < 1 or interf_router.switche > len(net.hosts):
+                if not interf_router.switch_fine:
                     analyze.nr_bad_network_number += 1
                     self.post('error', [line, col, 15])
+                    continue
+                if not interf_router.switche or not interf_router.ip_dot:
+                    continue
+                interf_sw = net.by_switch[interf_router.switche][0]
                 if ip_int <= interf_sw.network_int or ip_int >= interf_sw.broadcast_int:
                     analyze.nr_ip_not_in_network += 1
                     self.post('error', [line+1, col, 15])
