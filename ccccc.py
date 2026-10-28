@@ -1615,6 +1615,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.do_coloring = self.do_update_cursor_position = "oncut"
     def insert_text(self, event, text):
         """Insert the pasted text"""
+        trace('CCCCC: insert_text')
         self.overlay_hide()
         if event.type == 'drop':
             if self.journal_question.form:
@@ -2020,8 +2021,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.current_key = event.key
         self.coach_analyse(event, 0)
         if event.target.tagName == 'INPUT' and event.key not in ('F8', 'F9') and self.completion_running != 'search':
+            trace('CCCCC: INPUT')
             return
         if self.completion_running == 'search' or self.completion_running and event.target is self.editor:
+            trace('CCCCC: search')
             if event.key == 'ArrowUp':
                 direction = -1
             elif event.key == 'ArrowDown':
@@ -2068,22 +2071,26 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             return
         if event.target is self.editor and event.key not in (
                 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'Home', 'End', 'Escape'):
+            trace('CCCCC: move')
             self.clear_highlight_errors()
         if event.key == 'Escape':
+            trace('CCCCC: escape')
             self.answer.style.display = 'none'
             for e in document.getElementsByClassName('select-correction'):
                 e.selectedIndex = 0
             return
         if event.target.tagName == 'TEXTAREA':
             # The teacher enter a comment
+            trace('CCCCC: textarea')
             return
         if self.add_comments and   event.key not in (
                 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'F9', 'F11'
                 ) and not (event.ctrlKey and event.key in  ('r', 'y', 'z', 'a', 'c', 'f')):
+            trace('CCCCC: add_comments')
             stop_event(event)
             return
-
         if event.key == 'Tab' and not self.journal_question.form:
+            trace('CCCCC: tab in form')
             if event.shiftKey:
                 self.update_source() # New because the scheduler may have not yet do its job.
                 self.update_cursor_position_now()
@@ -2098,16 +2105,19 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 document.execCommand('insertHTML', False, '    ')
             stop_event(event)
         elif event.key == 's' and event.ctrlKey:
+            trace('CCCCC: save')
             if GRADING or self.options['feedback']:
                 self.popup_message("Vous n'avez pas le droit de sauvegarder un examen terminé.")
             else:
                 self.save()
             stop_event(event)
         elif event.key == 'f' and event.ctrlKey:
+            trace('CCCCC: Ctrl+F')
             self.start_search()
             stop_event(event)
             return # Do not hide overlay
         elif event.key in 'yz' and event.ctrlKey:
+            trace('CCCCC: Ctrl+ZY')
             stop_event(event)
             if event.key == 'z':
                 if JOURNAL.pending_goto:
@@ -2127,9 +2137,11 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 else:
                     self.goto_line(JOURNAL.pending_goto + 1)
         elif event.key == ' ' and event.ctrlKey:
+            trace('CCCCC: Ctrl+Space')
             self.try_completion()
             return
         elif event.key == 'F9':
+            trace('CCCCC: F9')
             if self.options['automatic_compilation'] == 0: # pylint: disable=singleton-comparison
                 self.user_compilation = self.user_execution = True
                 self.compilation_run()
@@ -2141,8 +2153,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 self.options['automatic_compilation'] = True
             stop_event(event)
         elif event.key == 'F8':
+            trace('CCCCC: F8')
             self.do_indent()
         elif event.key == 'Enter' and event.target is self.editor:
+            trace('CCCCC: Enter')
             self.update_source() # New because the scheduler may have not yet do its job.
             self.update_cursor_position_now()
             if self.journal_question.form:
@@ -2199,10 +2213,12 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 or len(event.key) > 1 and event.key.startswith('F') and event.key not in ('F8', 'F9', 'F11')
                 or event.ctrlKey and event.key in ('b', 'h')
                 ):
+            trace('CCCCC: Event stopped to not lost focus')
             # Disables these keys to not lost focus
             stop_event(event)
             return
         elif event.key == 'End' and not event.shiftKey and not event.ctrlKey and self.journal_question.form:
+            trace('CCCCC: Form End')
             pos = self.cursor_position
             if not self.can_put(pos) and not self.can_put(pos-1):
                 stop_event(event)
@@ -2217,6 +2233,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
             return
         elif event.key == 'Home' and not event.ctrlKey and self.journal_question.form:
+            trace('CCCCC: For Home')
             pos = self.cursor_position
             if not self.can_put(pos):
                 pos -= 1
@@ -2229,6 +2246,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
             return
         elif (event.key == 'End' or event.key == 'Tab' and not event.shiftKey) and not event.ctrlKey and self.journal_question.form:
+            trace('CCCCC: Form tab')
             pos = self.cursor_position
             while self.source[pos] and self.can_put(pos):
                 pos += 1
@@ -2238,6 +2256,7 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
             return
         elif (event.key == 'Home' or event.key == 'Tab' and event.shiftKey) and not event.ctrlKey:
+            trace('CCCCC: Home or Tab')
             if self.journal_question.form:
                 pos = self.cursor_position
                 if pos != 0:
@@ -2268,9 +2287,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             stop_event(event)
             return
         elif len(event.key) > 1 and event.key not in ('Delete', 'Backspace'):
+            trace('CCCCC: Cursor move')
             return # Do not hide overlay: its only a cursor move
         elif self.journal_question.form and not event.ctrlKey:
-            trace('CCCCC form')
+            trace('CCCCC: form')
             self.update_source() # New because the scheduler may have not yet do its job.
             self.update_cursor_position_now()
             nbr_to_delete_left = len(self.get_current_selection())
@@ -2328,6 +2348,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
     def oninputcompose(self, event):
         """Insert composed characters"""
         if self.compositing:
+            return
+        if event.target.className != 'editor':
             return
         if self.journal_question.form and event.data and self.allow_edit and not self.completion_running :
             self.source = insert_text(self.source, self.cursor_position, event.data,
