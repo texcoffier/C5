@@ -2583,7 +2583,7 @@ async def live_link(request:Request) -> StreamResponse:
             ticket = session.ticket.split("-", 2)[1]
         else:
             ticket = session.ticket
-        msg = f'     WS {ticket} {session.login} socket={id(socket)} port={port} msg={message:.5} '
+        msg = f'{request.remote:15} ???      WS {ticket} {session.login:20} socket={id(socket)} port={port} msg={message:.5} '
         if journa:
             msg += f'{journa.login} {journa.course.course} {journa.msg_id} {allow_edit} '
         log(msg + txt)
@@ -2688,7 +2688,7 @@ async def live_link(request:Request) -> StreamResponse:
 
 def log(message):
     """Formatte http_server messages (same beginning than aiohttp messages)"""
-    print(f'{time.strftime("%Y-%m-%d %H:%M:%S")}     {message}', flush=True)
+    print(f'{time.strftime("%Y-%m-%d %H:%M:%S")} {message}', flush=True)
 
 def main():
     """Run http server"""
@@ -2779,10 +2779,10 @@ def main():
                 login = session.login
             else:
                 login = ''
-            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {response.status} "
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {request.remote:15} {response.status} "
                 f"{rtime:5.3f} {request.method[0]} "
-                f"{request.query_string.replace('ticket=ST-', '').split('-')[0]} "
-                f"{login} "
+                f"{request.query_string.replace('ticket=ST-', '').split('-')[0]:6} "
+                f"{login:20} "
                 f"{path}",
                 flush=True)
 
