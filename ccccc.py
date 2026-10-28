@@ -567,7 +567,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
             self.save_button.style.display = 'none'
             if self.stop_button:
                 self.stop_button.style.display = 'none'
-        self.line_height = self.line_numbers.firstChild.offsetHeight
         self.canvas.height = "200px"
         self.canvas.width = self.canvas.offsetWidth
     def insert_media(self, event):
@@ -1125,6 +1124,15 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     start = None
             display()
 
+        if not self.char_width:
+            for line in self.editor_lines:
+                nr_chars = len(line.textContent)
+                if nr_chars:
+                    rect = self.get_rect(line)
+                    self.char_width = rect['width'] / nr_chars
+                    self.line_height = rect['height']
+                    break
+
         if self.options['display_line_numbers']:
             i = 0
             for i, line in enumerate(self.editor_lines):
@@ -1133,10 +1141,6 @@ class CCCCC: # pylint: disable=too-many-public-methods
                     self.line_numbers.appendChild(document.createElement('DIV'))
                     self.line_numbers.childNodes[i].textContent = i+1
                 self.line_numbers.childNodes[i].style.top = rect['top'] + 'px'
-                if not self.char_width:
-                    nr_chars = len(line.textContent)
-                    if nr_chars:
-                        self.char_width = rect['width'] / nr_chars
                 if rect['height'] < self.line_height * 1.8:
                     continue
                 marker = document.createElement('DIV')
@@ -1349,8 +1353,10 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             if line2 == 0:
                 top = 0
             else:
-                last_line = self.line_numbers.childNodes[line2-1] or self.line_numbers.lastChild
-                top = last_line.offsetTop + self.line_height
+                last_line = self.editor_lines[line2-1] or self.editor_lines.lastChild
+                rect = self.get_rect(last_line)
+                top = rect['top'] + rect['height']
+
             bubble_elm.relative_to = [
                 min(column1, column2) * self.char_width,
                 top
