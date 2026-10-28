@@ -565,6 +565,9 @@ class Journal:
         self.content = question.get_current_default()
         self.bubbles = []
         self.position = 0
+        if question.form:
+            while question.current_can_put[self.position] not in ('♯', '✽'):
+                self.position += 1
     def action_R(self, _value, _start):
         """Question next version"""
         self.questions[self.question].round += 1
