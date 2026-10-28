@@ -1106,6 +1106,25 @@ class CCCCC: # pylint: disable=too-many-public-methods
                 line_nr, char_nr, width = line_char
             self.add_highlight_errors(line_nr, char_nr, what, width)
 
+        if self.journal_question.form:
+            start = None
+            width = None
+            def display():
+                if start is not None:
+                    line, column = self.get_line_column(start)
+                    self.add_highlight_errors(line, column+1, 'form_input', width)
+            for pos, value in enumerate(self.journal_question.current_can_put):
+                if value in '♯✽':
+                    if start is None:
+                        start = pos
+                        width = 1
+                    else:
+                        width += 1
+                else:
+                    display()
+                    start = None
+            display()
+
         if self.options['display_line_numbers']:
             i = 0
             for i, line in enumerate(self.editor_lines):

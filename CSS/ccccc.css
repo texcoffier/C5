@@ -153,6 +153,7 @@ DIV.executor>DIV:first-child {
     z-index: 2;
 }
 
+.form_input,
 .error,
 .warning,
 .eval,
@@ -199,6 +200,12 @@ DIV.executor>DIV:first-child {
 
 .char {
     border: var(--char-border) solid #000
+}
+
+.char.form_input {
+    opacity: 1;
+    border-width: 1px;
+    border-style: dashed;
 }
 
 .char.cursor,
