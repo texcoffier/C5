@@ -2634,6 +2634,7 @@ async def live_link(request:Request) -> StreamResponse:
                     if message.startswith('bC') or message.startswith('b-') and journa.course.is_grader(session.login):
                         journa.erase_comment_history(int(message[2:].split(' ')[0]))
                     await journa.write(message, session.login)
+                    journa.course.doing_grading[session.login] = time.time()
             else:
                 warn(f'Bad message ID: {msg_id}')
                 await socket.send_str(f'{port} R')
