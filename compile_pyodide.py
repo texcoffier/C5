@@ -124,13 +124,13 @@ class Session(Compile):
                 self.post('shared_worker', '/JS/pyodide.mjs')
                 self.shared_worker_asked = True
             return 'fake executable'
-        self.run_id += 1
         self.source = source
         self.pyodide_globals = {}
         return 'fake executable'
 
     def ask_pyodide(self):
         """Ask the Pyodide SharedWorker to execute the Python code"""
+        self.run_id += 1
         self.compiler_port.postMessage([self.run_id, self.source,
             self.options['filetree_in'], self.options['filetree_out'],
             self.options['TICKET'], self.options['COURSE']])

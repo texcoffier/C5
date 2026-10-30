@@ -185,9 +185,9 @@ Runner.prototype.log = function (txt) {
     console.log(`PI=${this.port ? this.port.port_id : 'U'} RI=${this.run_id === undefined ? 'U' : this.run_id} WI=${this.wait_input} PK=${this.pending_kill} ${txt}`);
 };
 // Comment the line to activate the traces
-Runner.prototype.log = function (_txt) {} ;
+Runner.prototype.log = function (_txt) { };
 
-Runner.prototype.kill = async function () {
+Runner.prototype.kill = function () {
     if (!this.port) {
         this.log('YET KILLED');
         return;
@@ -196,20 +196,14 @@ Runner.prototype.kill = async function () {
     this.pending_kill = 1;
     if (this.run_id !== undefined)
         this.port.postMessage([this.run_id, 'message', "Arrête le programme en train de s'exécuter"]);
-    while (this.port) {
-        // Boucle infini dans certain cas avec 2 fenêtres, mais pas tout le temps.
-        this.log('KILLING');
-        this.pyodide.FS.writeFile('__stdin__', '\x00KILL', { encoding: "utf8" });
-        await sleep(100);
-    }
-    this.pending_kill = 0;
-    this.log('KILL DONE');
+    this.pyodide.FS.writeFile('__stdin__', '\x00KILL', { encoding: "utf8" });
 };
 Runner.prototype.exited = function () {
     this.log('EXITED');
     this.port = undefined;
     this.run_id = undefined;
     this.wait_input = 0;
+    this.pending_kill = 0;
     this.namespace.destroy();
 };
 Runner.prototype.new_client = async function (event) {
@@ -237,7 +231,7 @@ Runner.prototype.stdout = function (txt) {
         return;
     if (txt.includes('already loaded from default channel'))
         return;
-    if(txt.charAt(0) != '\x01')
+    if (txt.charAt(0) != '\x01')
         txt += '\n'
     this.port.postMessage([this.run_id, 'stdout', txt]);
 };
@@ -294,17 +288,26 @@ Runner.prototype.send_final_state = function (exit_code) {
 Runner.prototype.onmessage = async function (event) {
     var port = event.target;
     var run_id = event.data[0];
-    this.log('RECEIVE CLIENT MESSAGE PI=' + port.port_id + ' RI=' + run_id);
-    while (this.pending_kill)
+    this.log('RECEIVE CLIENT MESSAGE PI=' + port.port_id + ' RI=' + run_id + ' LEN=' + event.data.length);
+
+    // If it is another execution: kill and wait death of the previous one
+    if (this.port && port !== this.port // Not same client
+        || this.run_id !== undefined && run_id !== this.run_id) // Not same execution 
+        this.kill();
+    while (this.pending_kill) {
+        this.log('KILL WAIT');
         await sleep(100);
-    if (this.wait_input && event.data[1] == '\x00KILL') {
-        this.log('KILL RECEIVED');
-        await this.kill();
+    }
+    // No Python process running
+    if (!this.wait_input && event.data.length < 6) {
+        this.log('DISCARD MESSAGE IN TRANSIT TO A KILLED PROCESS');
         return;
     }
-    while (this.port && port !== this.port // Not same client
-        || this.run_id !== undefined && run_id !== this.run_id) // Not same execution 
-        await this.kill();
+    if (this.wait_input && event.data[1] == '\x00KILL') {
+        this.log('KILL RECEIVED');
+        this.kill();
+        return;
+    }
     if (this.wait_input) {
         this.log('INPUT RECEIVED');
         this.pyodide.FS.writeFile('__stdin__', event.data[1], { encoding: "utf8" });
@@ -312,7 +315,7 @@ Runner.prototype.onmessage = async function (event) {
         this.wait_input = 0;
         return;
     }
-    // No Python programm is currently running, starts one.
+    // Starts one.
     this.port = port;
     this.run_id = event.data[0];
     this.source = event.data[1];
@@ -330,12 +333,14 @@ Runner.prototype.onmessage = async function (event) {
     } catch (error) {
         console.log(error.message);
         try {
-            if(!this.pending_kill) {
+            if (!this.pending_kill) {
                 port.postMessage([event.data[0], 'error', error.message]);
                 this.send_final_state(1);
             }
         } catch (e) { }
     }
+    if(this.pending_kill)
+        this.log('KILL DONE');
     this.exited();
 };
 
