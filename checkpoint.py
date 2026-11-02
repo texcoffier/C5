@@ -785,9 +785,9 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def prepare_map(self):
         """Create list of chars to display"""
         # 🪑 🛗 not working on phone
-        translate = {'c': '⑁', 's': '💻', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
+        translate = {'c': '⑁', 's': '🖳', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
                      'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' ', 'a': 'Ⓐ', 'b': 'Ⓑ',
-                     'g': '📝', '>': '→', '<': '←', 'v': '↓', '^': '↑', 'e': '👁'}
+                     'g': '✎', '>': '→', '<': '←', 'v': '↓', '^': '↑', 'e': '👁'}
         if MAPPER:
             translate['g'] = ' '
         self.chars = {}
@@ -1157,8 +1157,8 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
         for char, chars in self.chars.Items():
             move_up = -0.86
             move_left = 0
-            if char == '💻':
-                move_up = -0.75
+            if char == '🖳':
+                move_up = -0.9
                 move_left = 0.15
             elif char == '👁':
                 move_left = 0.15
@@ -1239,7 +1239,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
             "Utilisez la molette pour zoomer.",
             "Tirez le fond d'écran pour le déplacer.",
             "Cliquez sur le sol d'un salle pour zoomer.",
-            "📝 : actions sur la salle"])
+            "✎ : actions sur la salle"])
         column += draw_messages(column, [
             "Les carrés des étudiants :",
             " Appuyez longtemps et tirez pour déplacer l'étudiant.",

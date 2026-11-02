@@ -2121,7 +2121,7 @@ async def adm_building(request:Request) -> Response:
     <table><tr>
     <td>| - +<td>d    <td>w     <td>s <td>c<td>p<td>r <td>l<td>h<td>g <td>a <td>b <td>e<td>v<td>^<td>&gt;<td>&lt;
     </tr><tr>
-    <td>walls<td>doors<td>window<td>💻<td>⑁<td>🖨<td>🚻<td>↕<td>♿<td>📝<td>Ⓐ<td>Ⓑ<td>👁<td>↓<td>↑<td>→   <td>←
+    <td>walls<td>doors<td>window<td>🖳<td>⑁<td>🖨<td>🚻<td>↕<td>♿<td>✎<td>Ⓐ<td>Ⓑ<td>👁<td>↓<td>↑<td>→   <td>←
     </tr></table><br>
     <textarea cols={width} spellcheck="false" style="height:calc(100vh - 5em)"
      name="map">{content}</textarea></form>''')

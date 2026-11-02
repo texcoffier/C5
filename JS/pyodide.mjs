@@ -339,7 +339,7 @@ Runner.prototype.onmessage = async function (event) {
             }
         } catch (e) { }
     }
-    if(this.pending_kill)
+    if (this.pending_kill)
         this.log('KILL DONE');
     this.exited();
 };
