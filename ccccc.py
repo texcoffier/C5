@@ -2923,11 +2923,14 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                         links.append('🚨')
                     else:
                         links.append('👍')
-                    tip = ['Placé par «' + WHERE[1] + '» dans «' + WHERE[2].split(',')[0] + '» (' + WHERE[6] + ')']
+                    if WHERE[1] == '':
+                        tip = ["N'a pas été placé (" + WHERE[6] + ')']
+                    else:
+                        tip = ['Placé par «' + WHERE[1] + '» dans «' + WHERE[2].split(',')[0] + '» (' + WHERE[6] + ')']
                     if WHERE[4]:
                         tip.append(WHERE[4] + ' pertes de focus (' + WHERE[9] + 's)')
                     if WHERE[5]:
-                        tip.append(WHERE[5] + 'questions ok')
+                        tip.append(WHERE[5] + ' questions validées')
                     if WHERE[7]:
                         tip.append(int(WHERE[7]/60) + 'm bonus')
                     if WHERE[11]:
