@@ -774,6 +774,7 @@ class CCCCC: # pylint: disable=too-many-public-methods
         EDITMODE[self.add_comments] = '\n'.join(JOURNAL.lines)
         self.add_comments = value
         JOURNAL.__init__(EDITMODE[self.add_comments] + '\n')
+        self.update_gui()
         self.unlock_worker()
         self.worker.postMessage(['goto', JOURNAL.question])
 
