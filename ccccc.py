@@ -2341,6 +2341,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
         self.overlay_hide()
         trace('CCCCC: onkeydown done', self.compile_now)
     def compositionstart(self, _event):
+        if self.add_comments:
+            return
         self.update_source()
         self.update_cursor_position_now()
         self.compositing = True
