@@ -250,6 +250,8 @@ class Compile: # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def good(self, current_question=None):
         """The question has been answered correctly"""
+        if self.options['GRADING']:
+            return
         if current_question is None:
             current_question = self.current_question
         if self.question_yet_solved(current_question):
