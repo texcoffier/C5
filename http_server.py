@@ -2051,6 +2051,63 @@ async def get_src(request:Request) -> Response:
         return answer('Not allowed', content_type='text/plain')
     return File.get(f'{course.dir_src}/{request.match_info["value"]}').answer()
 
+async def languages():
+    langs = getattr(languages, 'langs', None)
+    if not langs:
+        process = await asyncio.create_subprocess_exec(
+            'locale', '-a', stdout=asyncio.subprocess.PIPE)
+        langs = await process.stdout.read()
+        exit_value = await process.wait()
+        languages.langs = langs = langs.decode('ascii').split()
+    return langs
+
+async def get_man(request:Request) -> Response:
+    """Get a man page"""
+    session = await Session.get_or_fail(request)
+    try:
+        course = CourseConfig.get(utilities.get_course(request.match_info['course']))
+    except ValueError:
+        course = None
+    if not course:
+        return answer('Course unknown', content_type='text/plain')
+    page = request.match_info["value"]
+    if page in get_man.cache:
+        return answer(get_man.cache[page])
+    if page not in course.config['man_pages']:
+        return answer('Are you a hacker?', content_type='text/plain')
+    env = {}
+    if ' ' in page:
+        command, lang_short = page.split(' ', 1)
+        lang = None
+        for i in await languages():
+            if i.startswith(lang_short):
+                lang = i
+                break
+        if not lang:
+            content = f'Ne trouve pas « {lang_short} » dans :<p>{"<br>".join(await languages())}'
+            get_man.cache[page] = content
+            return answer(content)
+        env = os.environ
+        env['LC_ALL'] = lang
+        env['LANG'] = lang
+        # The following 3 lines are here to hide an error message.
+        # The error is with Debian 13 and may be triggered by Apparmor
+        tmp = pathlib.Path('Trash/GROFF')
+        tmp.mkdir(mode=0o700, parents=True, exist_ok=True)
+        env['GROFF_TMPDIR'] = str(tmp.absolute())
+    else:
+        command = page
+    process = await asyncio.create_subprocess_exec(
+        'man', '-Thtml', command, env=env, stdout=asyncio.subprocess.PIPE)
+    content = await process.stdout.read()
+    exit_value = await process.wait()
+    content = content.decode('utf-8')
+    if not content:
+        content = f'Page de manuel inexistante pour « {command} »'
+    get_man.cache[page] = content
+    return answer(content)
+get_man.cache = {}
+
 async def media_info(request:Request) -> Response:
     """Media info"""
     session = await Session.get_or_fail(request)
@@ -2753,6 +2810,7 @@ def main():
                     web.get('/git/{course}', my_git),
                     web.get('/media/{course}/{value}', get_media),
                     web.get('/src/{course}/{value}', get_src),
+                    web.get('/man/{course}/{value}', get_man),
                     web.get('/media_info/{course}/{value}', media_info),
                     web.get('/debug/change_session_ip', change_session_ip),
                     web.get('/stats/{param}', full_stats),

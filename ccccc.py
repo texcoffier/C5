@@ -3091,6 +3091,8 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
                 options.append('<option>Correction</option>')
             if self.options['GRADING']:
                 options.append('<option>Question</option>')
+            for i in self.options['man_pages'] or []:
+                options.append('<option value="Man ' + i + '">Man ' + i.split('_')[0] + '</option>')
             if len(options):
                 content = ('''<select class="select-correction"
                     onchange="ccccc.update_expected_answer(this)">
@@ -3102,19 +3104,6 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             title.outerHTML = content
 
     def update_expected_answer(self, element, source):
-        if element.value not in ('Correction', 'Question'):
-            self.answer.style.display = 'none'
-            return
-
-        if source:
-            title_height = 0
-            bloc = self.layered
-        else:
-            title_height = 60
-            bloc = element
-            while bloc.parentNode is not self.top:
-                bloc = bloc.parentNode
-
         if element.value == 'Correction':
             self.answer.className = 'hljs language-' + self.options['language']
             self.answer.style.whiteSpace = 'break-spaces'
@@ -3125,6 +3114,24 @@ Tirez le bas droite pour agrandir."></TEXTAREA>'''
             self.answer.className = 'question'
             self.answer.style.whiteSpace = 'normal'
             self.answer.innerHTML = self.question.innerHTML.split("</h2>")[1]
+
+        elif element.value.startswith('Man '):
+            self.answer.innerHTML = ('<IFRAME style="margin:0;width:100%;height:100%; border:0px" src="/man/'
+                + COURSE + '/' + element.value[4:] + '?ticket=' + TICKET + '"></IFRAME>')
+
+        else:
+            self.answer.style.display = 'none'
+            return
+
+        bloc = element
+        while bloc.parentNode is not self.top:
+            bloc = bloc.parentNode
+        if bloc.className == 'editor_title':
+            title_height = 0
+            bloc = self.layered
+        else:
+            title_height = 60
+
         self.answer.className += ' floating_bloc'
         self.answer.style.left = bloc.offsetLeft + 'px'
         self.answer.style.width = (bloc.offsetWidth - 30) + 'px'

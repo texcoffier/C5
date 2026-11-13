@@ -98,6 +98,7 @@ DEFAULT_COURSE_OPTIONS = [
     ['version_for_teachers', 1, "Display version tree to teachers"],
     ['version_for_students', 0, "Display version tree to students"],
     ['display_version_toggle',1,"Display the toggle to hide/display version tree"],
+    ['man_pages'            ,[],'Man pages to display as ["rand(3)", "open(2) en", "open(2) fr_FR]'],
 
     "Popup messages",
 
