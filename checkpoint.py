@@ -785,6 +785,7 @@ class Room: # pylint: disable=too-many-instance-attributes,too-many-public-metho
     def prepare_map(self):
         """Create list of chars to display"""
         # 🪑 🛗 not working on phone
+        # 📝 💻 not working on Windows
         translate = {'c': '⑁', 's': '🖳', 'p': '🖨', 'l': '↕', 'r': '🚻', 'h': '♿',
                      'w': ' ', 'd': ' ', '+': ' ', '-': ' ', '|': ' ', 'a': 'Ⓐ', 'b': 'Ⓑ',
                      'g': '✎', '>': '→', '<': '←', 'v': '↓', '^': '↑', 'e': '👁'}
@@ -2804,6 +2805,7 @@ def display_student_screen(journal, feedback, student, letter):
     else:
         before = ''
         cursor = ''
+    feedback.login = student.login
     feedback.innerHTML = (
         '<b>Q' + (journal.question+1)
         + '<var style="font-weight: normal; color: #888">(«<i id="SPY-'
@@ -2869,6 +2871,8 @@ def create_timetravel(login):
     div.className = 'tt_student'
     student = STUDENT_DICT[login]
     letter = spy_letter(student)
+    if letter == '':
+        return
     document.getElementById('tt_students').appendChild(div)
     div.shared_worker, journal = create_shared_worker(login, nothing, readonly=True)
     div.shared_worker.load_journal()
@@ -2878,6 +2882,12 @@ def create_timetravel(login):
 def spy_letter(student):
     letters = []
     for spy in document.getElementById('live_spy').childNodes:
+        if spy.login == student.login:
+            if spy_letter.duplicate:
+                spy_letter.duplicate.style.background = ''
+            spy.style.background = '#DFDE'
+            spy_letter.duplicate = spy
+            return ''
         i = spy.getElementsByTagName('I')
         if len(i):
             letters.append(i[0].innerHTML)
@@ -2901,6 +2911,8 @@ def create_realtime_spy(student):
     Choisir login
     """
     letter = spy_letter(student)
+    if letter == '':
+        return
     feedback = document.createElement('DIV')
     document.getElementById('live_spy').appendChild(feedback)
     def update_real_time(journal):
