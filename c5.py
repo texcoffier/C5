@@ -135,6 +135,23 @@ ACTIONS = {
             apt -y install astyle nginx certbot python3-venv python3-wheel python3-dev libldap-dev libsasl2-dev python3-psutil python3-certbot-nginx npm racket zip curl rsync coq swi-prolog cargo rustfmt groff
             apt -y upgrade
             # set-timezone Europe/Paris
+            echo "
+[Unit]
+Description=Run C5 at boot
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=make
+User={C5_LOGIN}
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WorkingDirectory=/home/{C5_LOGIN}
+
+[Install]
+WantedBy=multi-user.target
+" >/etc/systemd/system/c5.service
+            systemctl daemon-reload
+            systemctl enable c5.service
             '
         """,
     'launcher': f"""#C5_ROOT
