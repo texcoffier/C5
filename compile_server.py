@@ -92,7 +92,7 @@ class Process: # pylint: disable=too-many-instance-attributes
         process.stdin.close()
         assert process.stdout
         indented = await process.stdout.read()
-        process.wait()
+        await process.wait()
         if process.returncode:
             indented = data # Change nothing on error
         else:
