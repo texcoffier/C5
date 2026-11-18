@@ -56,7 +56,9 @@ class Cargo(Compiler):
 
         process = await asyncio.create_subprocess_exec(
             'cargo', 'new', '--bin', project_name,
-            cwd=project_dir.parent
+            cwd=project_dir.parent,
+            # Get rid of: the name `HOME` is not snake_case or kebab-case which is recommended
+            stderr=asyncio.subprocess.DEVNULL,
         )
 
         await process.wait()
