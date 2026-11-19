@@ -2,7 +2,7 @@ BODY {
     background: #CCC;
     font-family: sans-serif;
     --rights-widths: 12em;
-    --rights-heights: calc((100vh - 16em) / 3);
+    --rights-heights: calc((100vh - 16em) / 4);
     --state-widths: 12em;
     --config-widths:  calc(100vw - var(--rights-widths) - var(--state-widths) - 3.6em);
     --messages_height: 10em;
@@ -103,7 +103,7 @@ BODY.multiple DIV.single {
     width: 100%;
 }
 #content TABLE.access TR {
-    height: 16%;
+    height: 14%;
 }
 
 #content TABLE.access TH {

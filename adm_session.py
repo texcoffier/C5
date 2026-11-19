@@ -62,12 +62,15 @@ def update_course_config(config, feedback): # pylint: disable=too-many-locals,to
                         content.append('    ' + JSON.stringify(key)
                                        + ':' + JSON.stringify(value[key]))
                     element.value = '{\n' + ',\n'.join(content) + '\n}'
-                if attr not in ('admins', 'graders', 'proctors', 'expected_students', 'tt'):
+                if attr not in ('admins', 'graders', 'proctors', 'expected_students', 'tt', 'groups'):
                     element.rows = len(content) + 3
                 if element.parentNode.parentNode.cells:
                     tt = element.parentNode.parentNode.cells[0].firstChild
                     if tt.className == 'counter':
-                        tt.innerHTML, element.value = count_words(element)
+                        if element.id == 'groups':
+                            tt.innerHTML, element.value = count_words_groups(element)
+                        else:
+                            tt.innerHTML, element.value = count_words(element)
             elif element.tagName == 'INPUT':
                 if element.type in ('checkbox', 'radio'):
                     element.checked = value != 0
@@ -358,6 +361,10 @@ def select_tab(label):
     <p>""" + DEFAULT_COURSE_OPTIONS_DICT['tt'] + """
         <td><textarea id="tt"></textarea>
     </tr>
+    <tr><th><tt class="counter"></tt> Students with a teacher
+    <p>""" + DEFAULT_COURSE_OPTIONS_DICT['groups'] + """
+        <td><textarea id="groups"></textarea>
+    </tr>
     </table>"""
     elif label == 'Grading':
         content = """
@@ -496,6 +503,7 @@ Choose the data to manage:
         <div><label><input type="checkbox">Student lists</label>
             <div><label><input type="checkbox" name="expected_students"></label></div>
             <div><label><input type="checkbox" name="tt"></label></div>
+            <div><label><input type="checkbox" name="groups"></label></div>
         </div>
         <div><label><input type="checkbox">Students logs</label>
             <div><label><input type="checkbox" name="active_teacher_room">Placement</label></div>
@@ -728,6 +736,33 @@ def count_words(element):
                    + (len(words) - len(uniq)) + ' duplicates</b><br>'
                    + message)
     return message, text
+
+def count_words_groups(element):
+    """Search for duplicate student ID"""
+    text = element.value.strip()
+    if len(text) == 0:
+        return '', text
+    t = []
+    uniq = {}
+    lines = text.split(RegExp('[\n\r]+'))
+    for line in lines:
+        line = line.strip()
+        if line == '':
+            continue
+        items = line.split(RegExp('[ \t]+'))
+        if len(items) != 2:
+            return "Invalid line: «" + line + '»', text
+        student = normalize_login(items[0])
+        teacher = normalize_login(items[1])
+        t.append(student + ' ' + teacher)
+        uniq[student] = True
+
+    message = str(len(uniq))
+    if len(uniq) != len(lines):
+        message = ('<b style="background:#F88; font-size:200%">'
+                   + (len(lines) - len(uniq)) + ' duplicates</b><br>'
+                   + message)
+    return message, '\n'.join(t)
 
 def update_interface():
     """Update grading"""

@@ -337,6 +337,24 @@ async def grade(request:Request) -> Response:
         return answer("Vous n'êtes pas autorisé à noter.")
     return await editor(session, True, course, get_login(request, use_match=True), grading=True)
 
+async def grading(request:Request) -> Response:
+    """Display the grading page"""
+    session, course = await get_teacher_login_and_course(request)
+    is_grader = session.is_grader(course)
+    if not is_grader:
+        return answer("Vous n'êtes pas autorisé à noter.")
+    return answer(session.header() +
+        f'''
+        <link rel="stylesheet" href="CSS/grading.css?ticket={session.ticket}">
+        <script>
+        STUDENTS = {json.dumps(await course.get_students())};
+        COURSE = {json.dumps(course.course)};
+        TICKET = {json.dumps(session.ticket)};
+        </script>
+        <script src="JS/grading.js?ticket={session.ticket}"></script>
+        <title>GRADING {course.course}</title>
+        ''')
+
 async def record_grade(request:Request) -> Response:
     """Log a grade"""
     session, course = await get_teacher_login_and_course(request)
@@ -761,6 +779,10 @@ async def adm_config_course(config:CourseConfig, action:str, value:str, who:str)
         value = xxx_local.normalize_logins(value)
         config.set_parameter('expected_students', value, who=who)
         feedback = f"«{course}» Expected student list updated with «{value}»"
+    elif action == 'groups':
+        value = xxx_local.normalize_logins(value)
+        config.set_parameter('groups', value, who=who)
+        feedback = f"«{course}» Group list updated with «{value}»"
     elif action == 'admins':
         value = xxx_local.normalize_logins(value)
         config.set_parameter('admins', value, who=who)
@@ -1507,6 +1529,7 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
         run = 'Try'
     else:
         run = 'Take'
+    my_students = course.groups.get(session.login, ())
     content.append(f'''
     <tr>
     <td class="clipped course"><div>{course.course.split('=')[1]}</div></td>
@@ -1534,6 +1557,10 @@ def checkpoint_line(session:Session, course:CourseConfig, content:List[str]) -> 
         f'<a target="_blank" href="checkpoint/{course.course}?ticket={session.ticket}">Place</a>'
         if session.is_proctor(course) else ''
     }</div>
+    <td><div>{
+        f'<a target="_blank" href="grading/{course.course}/{"/".join(my_students)}?ticket={session.ticket}">Grade</a>'
+        if my_students and session.is_grader(course) else ''
+    }</div>
     <td class="clipped names"><div>{course.creator}</div>
     {tipped(course.config['admins'])}
     {tipped(course.config['graders'])}
@@ -1558,7 +1585,7 @@ async def checkpoint_list(request:Request) -> Response:
         </div><th><div>Title
         </div><th><div>Students</div><th><div>Waiting</div><th><div>Actives</div><th><div>With me
         </div><th><div>Start date</div><th><div>Stop date</div><th><div>Duration</div><th><div>Options</div><th><div>Edit</div><th><div>👁</div><th><div>Wait room
-        </div><th><div>Creator</div><th><div>Admins</div><th><div>Graders</div><th><div>Proctors</div><th><div>Media</tr>'''
+        </div><div><th>Grade</div><th><div>Creator</div><th><div>Admins</div><th><div>Graders</div><th><div>Proctors</div><th><div>Media</tr>'''
     content = [
         session.header(),
         f'''
@@ -2806,6 +2833,7 @@ def main():
                     web.get('/computer/{course}/{building}/{column}/{line}', computer),
                     web.get('/record_feedback/{course}/{student}/{feedback}', record_feedback),
                     web.get('/grade/{course}/{login}', grade),
+                    web.get('/grading/{course}/{students:.*}', grading),
                     web.get('/zip/{course}', my_zip),
                     web.get('/git/{course}', my_git),
                     web.get('/media/{course}/{value}', get_media),

@@ -2,7 +2,7 @@
 FEEDBACK_LEVEL = {
     0: "Rien",
     1: "Code source commenté",
-    # 2:  "+ correction"
+    # 2:  "+ corrigé"
     # 3: "+ commentaires correcteur",
     4: "+ note totale",
     5: "+ barème détaillé"
@@ -187,4 +187,5 @@ System calls allowable for g++/gcc:
     ['proctors', '', 'Proctors can only place the students'],
     ['expected_students', '', 'The login list of expected students, if not empty only listed students may see the session on their C5 home page.'],
     ['tt', '', 'The logins of student with ⅓ more time'],
+    ['groups', '', 'On each line the student id and teacher id:<br>student1 teacherA<br>student2 teacherA<br>student3 teacherB<br>student4 teacherB'],
 ]

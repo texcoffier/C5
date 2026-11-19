@@ -21,6 +21,7 @@ import urllib.request
 import urllib.parse
 import asyncio
 import inspect
+import collections
 import aiohttp
 from aiohttp import web
 import options
@@ -437,6 +438,13 @@ class CourseConfig: # pylint: disable=too-many-instance-attributes,too-many-publ
         self.expected_students = set_of_logins(self.config['expected_students'])
         if tuple(self.expected_students) == ('',):
             self.expected_students = set()
+        self.groups = collections.defaultdict(list) # Teacher → Students
+        for line in re.split('[\r\n]+', self.config.get('groups', '')):
+            items = re.split('[ \t]+', line.strip())
+            if len(items) == 2:
+                self.groups[items[1]].append(items[0])
+        if tuple(self.groups) == ('',):
+            self.groups = set()
         if os.path.exists(self.dir_media):
             self.media = os.listdir(self.dir_media)
         else:

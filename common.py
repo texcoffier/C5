@@ -2270,6 +2270,43 @@ def login_links(login, onmap=True):
             + '<a target="_blank" href="grade/' + COURSE + '/' + login + '?ticket=' + TICKET
             + '">grade</a>')
 
+def analyze_STUDENT(self, data):
+    """Used by checkpoint.py grading.py"""
+    self.data = data
+    self.login = data[0]
+    self.active = data[1][0]
+    self.teacher = data[1][1]
+    self.room = data[1][2]
+    room = self.room.split(',')
+    self.checkpoint_time = data[1][3]
+    # Show placed students only if
+    #  * It is an exam session
+    #  * or it is in a time span
+    #    The default time span is NOW
+    self.building = self.column = self.line = None
+    if (not window.OPTIONS
+        or OPTIONS.checkpoint
+        or self.checkpoint_time >= ROOM.time_span[0]
+            and self.checkpoint_time <= ROOM.time_span[1]
+        ):
+        if len(room) >= 3:
+            self.building = room[0]
+            self.column = int(room[1])
+            self.line = int(room[2])
+            self.version = room[3]
+    self.blur = data[1][4]
+    self.nr_questions_done = data[1][5] or 0
+    self.hostname = data[1][6]
+    self.bonus_time = data[1][7]
+    self.grade = data[1][8]
+    self.blur_time = data[1][9]
+    self.feedback = data[1][10]
+    self.fullscreen = data[1][11]
+    self.remarks = data[1][12] or ''
+    self.firstname = data[2]['fn'] or '?'
+    self.surname = data[2]['sn'] or '?'
+    self.mail = data[2]['mail'] or ''
+
 try:
     if 'debug' in location.hash:
         def trace(*args):

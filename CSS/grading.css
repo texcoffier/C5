@@ -1,0 +1,130 @@
+BODY {
+    --name-width: 8em;
+    --background: #EFF;
+    --background2: #CFF;
+    --background3: #8FF;
+    --editor-left: calc(var(--name-width) + 2em);
+    margin: 0px;
+}
+
+.labels {
+    position: absolute;
+    border-spacing: 0px;
+    background: var(--background);
+    z-index: 20;
+}
+
+X {
+    background: var(--background3)
+}
+
+G {
+    color: #0B0;
+}
+
+O {
+    color: #ffa500;
+}
+
+E {
+    background: #F00;
+    color: #FFF;
+}
+
+TR {
+    height: 24px;
+}
+
+TR:hover, TR:hover BUTTON {
+    background: var(--background2);
+}
+
+TD:hover {
+    background: var(--background3);
+}
+
+TD:first-child {
+    padding: 0px;
+}
+
+BUTTON {
+    min-width: var(--name-width);
+    width: var(--name-width);
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    margin: 0px;
+}
+
+BUTTON:hover {
+    position: absolute;
+    width: auto;
+    margin-top: -0.8em;
+}
+
+
+/* Grade */
+TD:nth-child(2) {
+    text-align: right;
+}
+
+/* Competence */
+TD:nth-child(4) {
+    text-align: right;
+}
+
+/* Good answers */
+TD:nth-child(6) {
+    text-align: right;
+}
+
+/* Blur */
+TD:nth-child(7) {
+    text-align: right;
+}
+
+/* Nr Grade */
+TD:nth-child(3),
+/* Nr Competence */
+TD:nth-child(5),
+/* Nr Blur */
+TD:nth-child(8) {
+    font-size: 60%;
+    vertical-align: top;
+}
+
+TD:nth-child(13),
+TD:nth-child(14) {
+    font-size: 60%
+}
+
+TD>SUP:before {
+    content: '⭐';
+    font-size: 60%;
+    vertical-align: top;
+    margin-left: -0.5em;
+}
+
+TR:first-child TD {
+    position: sticky;
+    top: 0px;
+    background: #DDF;
+}
+
+.editor IFRAME {
+    position: fixed;
+    top: 0px;
+    left: var(--editor-left);
+    width: calc(100vw - var(--editor-left));
+    height: 100vh;
+    border: 0px;
+    background: #FFF;
+    z-index: 10;
+}
+
+.tip {
+    position: absolute;
+    background: var(--background2);
+    border: 2px solid #888;
+    top: 0px;
+}
