@@ -776,7 +776,8 @@ class CCCCC: # pylint: disable=too-many-public-methods
         JOURNAL.__init__(EDITMODE[self.add_comments] + '\n')
         self.update_gui()
         self.unlock_worker()
-        self.worker.postMessage(['goto', JOURNAL.question])
+        self.journal_question = JOURNAL.questions[JOURNAL.question]
+        self.set_editor_content(JOURNAL.content)
 
     def update_editmode(self, event):
         """Toggle between edit source code and comment it"""
