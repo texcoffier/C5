@@ -654,6 +654,7 @@ class Tests: # pylint: disable=too-many-public-methods
             self.check('.add_master').send_keys('john.doe')
             self.check('.add_master').send_keys(Keys.ENTER)
             self.check('#more', {'innerText': Contains('Master add «john.doe»')})
+            time.sleep(1) # Skip animation
             self.click('#more')
             self.click("BUTTON.del_master_john_doe")
             self.check('#more', {'innerText': Contains('Master del «john.doe»')})
